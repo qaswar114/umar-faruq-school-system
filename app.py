@@ -1,0 +1,379 @@
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import date, datetime
+import os
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
+
+database_url = os.environ.get("DATABASE_URL", "sqlite:///school.db")
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+
+SCHOOL_NAME = "UMAR FARUQ INTEGRATED ACADEMY"
+GRADES = ["PP1","PP2","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6","Grade 7","Grade 8","Grade 9"]
+TERMS = ["Term 1","Term 2","Term 3"]
+TERM_MONTHS = {
+    "Term 1": ["January","February","March"],
+    "Term 2": ["May","June","July"],
+    "Term 3": ["September","October","November"]
+}
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(50), nullable=False)
+
+class Setting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    school_name = db.Column(db.String(200), default=SCHOOL_NAME)
+    phone = db.Column(db.String(100), default="")
+    address = db.Column(db.Text, default="Thank you for choosing us.")
+
+class Pupil(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    admission_no = db.Column(db.String(80), unique=True, nullable=False)
+    full_name = db.Column(db.String(200), nullable=False)
+    gender = db.Column(db.String(20), nullable=False)
+    dob = db.Column(db.String(20), default="")
+    grade = db.Column(db.String(50), nullable=False)
+    guardian_name = db.Column(db.String(200), nullable=False)
+    guardian_phone = db.Column(db.String(80), nullable=False)
+    home_address = db.Column(db.Text, default="")
+    new_admission = db.Column(db.String(10), default="Yes")
+    uses_bus = db.Column(db.String(10), default="No")
+    status = db.Column(db.String(30), default="Active")
+    created_at = db.Column(db.Date, default=date.today)
+
+class FeeStructure(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    academic_year = db.Column(db.Integer, nullable=False)
+    grade = db.Column(db.String(50), nullable=False)
+    term = db.Column(db.String(30), nullable=False)
+    month = db.Column(db.String(30), nullable=False)
+    tuition_fee = db.Column(db.Float, default=0)
+    bus_fee = db.Column(db.Float, default=0)
+    exam_fee = db.Column(db.Float, default=0)
+    admission_fee = db.Column(db.Float, default=0)
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    receipt_no = db.Column(db.String(120), unique=True, nullable=False)
+    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+    academic_year = db.Column(db.Integer, nullable=False)
+    term = db.Column(db.String(30), nullable=False)
+    month = db.Column(db.String(30), nullable=False)
+    tuition_paid = db.Column(db.Float, default=0)
+    bus_paid = db.Column(db.Float, default=0)
+    exam_paid = db.Column(db.Float, default=0)
+    admission_paid = db.Column(db.Float, default=0)
+    payment_method = db.Column(db.String(50), nullable=False)
+    payment_date = db.Column(db.Date, default=date.today)
+    collected_by = db.Column(db.String(80), nullable=False)
+    pupil = db.relationship("Pupil")
+
+class Discount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+    academic_year = db.Column(db.Integer, nullable=False)
+    term = db.Column(db.String(30), default="All Year")
+    amount = db.Column(db.Float, default=0)
+    reason = db.Column(db.String(255), default="")
+    created_at = db.Column(db.Date, default=date.today)
+    created_by = db.Column(db.String(80), default="")
+    pupil = db.relationship("Pupil")
+
+def money(n):
+    return "KES {:,.2f}".format(float(n or 0))
+
+def current_year():
+    return datetime.now().year
+
+def term_months(term):
+    return TERM_MONTHS.get(term, [])
+
+def get_settings():
+    s = Setting.query.first()
+    if not s:
+        s = Setting(school_name=SCHOOL_NAME)
+        db.session.add(s)
+        db.session.commit()
+    return s
+
+def init_database():
+    db.create_all()
+    if not Setting.query.first():
+        db.session.add(Setting(school_name=SCHOOL_NAME, address="Umar Faruq Integrated Academy"))
+    default_users = [
+        ("admin", "admin123", "Admin"),
+        ("registrar", "reg123", "Registrar"),
+        ("bursar", "bursar123", "Bursar"),
+    ]
+    for username, password, role in default_users:
+        if not User.query.filter_by(username=username).first():
+            db.session.add(User(username=username, password_hash=generate_password_hash(password), role=role))
+    db.session.commit()
+
+def login_required():
+    if "username" not in session:
+        return False
+    return True
+
+def role_allowed(*roles):
+    return session.get("role") == "Admin" or session.get("role") in roles
+
+def next_admission_no():
+    count = Pupil.query.count() + 1
+    return f"UFIA/{current_year()}/{count:04d}"
+
+def receipt_no(year, term):
+    term_code = term.replace("Term ", "T")
+    count = Payment.query.filter_by(academic_year=year, term=term).count() + 1
+    return f"UFIA/{year}/{term_code}/{count:05d}"
+
+def get_fee(year, grade, term, month):
+    fee = FeeStructure.query.filter_by(academic_year=year, grade=grade, term=term, month=month).first()
+    if not fee:
+        fee = FeeStructure(academic_year=year, grade=grade, term=term, month=month)
+        db.session.add(fee)
+        db.session.commit()
+    return fee
+
+def monthly_due(pupil, year, term, month):
+    fee = get_fee(year, pupil.grade, term, month)
+    return {
+        "tuition": fee.tuition_fee,
+        "bus": fee.bus_fee if pupil.uses_bus == "Yes" else 0,
+        "exam": fee.exam_fee,
+        "admission": fee.admission_fee if pupil.new_admission == "Yes" else 0,
+    }
+
+def term_due(pupil, year, term):
+    total = {"tuition":0,"bus":0,"exam":0,"admission":0}
+    for m in term_months(term):
+        d = monthly_due(pupil, year, term, m)
+        total["tuition"] += d["tuition"]
+        total["bus"] += d["bus"]
+    first = term_months(term)[0]
+    d = monthly_due(pupil, year, term, first)
+    total["exam"] = d["exam"]
+    total["admission"] = d["admission"]
+    return total
+
+def year_due(pupil, year):
+    total = {"tuition":0,"bus":0,"exam":0,"admission":0}
+    for t in TERMS:
+        d = term_due(pupil, year, t)
+        for k in total:
+            total[k] += d[k]
+    return sum(total.values())
+
+def paid_year(pupil_id, year):
+    rows = Payment.query.filter_by(pupil_id=pupil_id, academic_year=year).all()
+    return sum((p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid) for p in rows)
+
+def paid_month(pupil_id, year, term, month):
+    rows = Payment.query.filter_by(pupil_id=pupil_id, academic_year=year, term=term, month=month).all()
+    return sum((p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid) for p in rows)
+
+def discount_year(pupil_id, year):
+    return sum(d.amount for d in Discount.query.filter_by(pupil_id=pupil_id, academic_year=year).all())
+
+def opening_arrears(pupil, year):
+    bal = 0
+    for y in range(2020, year):
+        bal += year_due(pupil, y) - paid_year(pupil.id, y) - discount_year(pupil.id, y)
+    return bal
+
+@app.before_request
+def setup_once():
+    if not hasattr(app, "_database_initialized"):
+        init_database()
+        app._database_initialized = True
+
+@app.route("/", methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        user = User.query.filter_by(username=request.form["username"].strip()).first()
+        if user and check_password_hash(user.password_hash, request.form["password"].strip()):
+            session["username"] = user.username
+            session["role"] = user.role
+            return redirect(url_for("dashboard"))
+        flash("Wrong username or password.")
+    return render_template("login.html", settings=get_settings())
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+@app.route("/dashboard")
+def dashboard():
+    if not login_required(): return redirect(url_for("login"))
+    total_collected = sum(p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid for p in Payment.query.all())
+    return render_template("dashboard.html", settings=get_settings(), pupils=Pupil.query.count(),
+                           bus=Pupil.query.filter_by(uses_bus="Yes").count(),
+                           collected=total_collected, receipts=Payment.query.count(), money=money)
+
+@app.route("/settings", methods=["GET","POST"])
+def settings():
+    if not login_required(): return redirect(url_for("login"))
+    if not role_allowed("Admin"): 
+        flash("Only Admin can edit branding.")
+        return redirect(url_for("dashboard"))
+    s = get_settings()
+    if request.method == "POST":
+        s.school_name = request.form["school_name"]
+        s.phone = request.form.get("phone","")
+        s.address = request.form.get("address","")
+        db.session.commit()
+        flash("Branding saved.")
+    return render_template("settings.html", settings=s)
+
+@app.route("/pupils", methods=["GET","POST"])
+def pupils():
+    if not login_required(): return redirect(url_for("login"))
+    if request.method == "POST":
+        if not role_allowed("Registrar"):
+            flash("Only Admin or Registrar can register pupils.")
+            return redirect(url_for("pupils"))
+        p = Pupil(admission_no=next_admission_no(), full_name=request.form["full_name"], gender=request.form["gender"],
+                  dob=request.form.get("dob",""), grade=request.form["grade"], guardian_name=request.form["guardian_name"],
+                  guardian_phone=request.form["guardian_phone"], home_address=request.form.get("home_address",""),
+                  new_admission=request.form["new_admission"], uses_bus=request.form["uses_bus"])
+        db.session.add(p); db.session.commit()
+        flash(f"Pupil registered: {p.admission_no}")
+        return redirect(url_for("pupils"))
+    q = request.args.get("q","")
+    query = Pupil.query
+    if q:
+        query = query.filter((Pupil.full_name.ilike(f"%{q}%")) | (Pupil.admission_no.ilike(f"%{q}%")) | (Pupil.grade.ilike(f"%{q}%")))
+    return render_template("pupils.html", settings=get_settings(), grades=GRADES, pupils=query.order_by(Pupil.id.desc()).all(), q=q)
+
+@app.route("/fees", methods=["GET","POST"])
+def fees():
+    if not login_required(): return redirect(url_for("login"))
+    if not role_allowed("Bursar"):
+        flash("Only Admin or Bursar can manage fees.")
+        return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        fee = get_fee(int(request.form["academic_year"]), request.form["grade"], request.form["term"], request.form["month"])
+        fee.tuition_fee = float(request.form.get("tuition_fee") or 0)
+        fee.bus_fee = float(request.form.get("bus_fee") or 0)
+        fee.exam_fee = float(request.form.get("exam_fee") or 0)
+        fee.admission_fee = float(request.form.get("admission_fee") or 0)
+        db.session.commit()
+        flash("Fee structure saved.")
+    return render_template("fees.html", settings=get_settings(), grades=GRADES, terms=TERMS, term_months=TERM_MONTHS,
+                           year=current_year(), fees=FeeStructure.query.order_by(FeeStructure.academic_year.desc()).all(), money=money)
+
+@app.route("/discounts", methods=["GET","POST"])
+def discounts():
+    if not login_required(): return redirect(url_for("login"))
+    if not role_allowed("Bursar"):
+        flash("Only Admin or Bursar can add discounts.")
+        return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        d = Discount(pupil_id=int(request.form["pupil_id"]), academic_year=int(request.form["academic_year"]),
+                     term=request.form["term"], amount=float(request.form.get("amount") or 0),
+                     reason=request.form.get("reason",""), created_by=session["username"])
+        db.session.add(d); db.session.commit()
+        flash("Discount/waiver added.")
+    return render_template("discounts.html", settings=get_settings(), pupils=Pupil.query.all(),
+                           discounts=Discount.query.order_by(Discount.id.desc()).all(), year=current_year(), money=money)
+
+@app.route("/payments", methods=["GET","POST"])
+def payments():
+    if not login_required(): return redirect(url_for("login"))
+    if request.method == "POST":
+        if not role_allowed("Bursar"):
+            flash("Only Admin or Bursar can collect fees.")
+            return redirect(url_for("payments"))
+        year = int(request.form["academic_year"])
+        term = request.form["term"]
+        pay = Payment(receipt_no=receipt_no(year, term), pupil_id=int(request.form["pupil_id"]),
+                      academic_year=year, term=term, month=request.form["month"],
+                      tuition_paid=float(request.form.get("tuition_paid") or 0),
+                      bus_paid=float(request.form.get("bus_paid") or 0),
+                      exam_paid=float(request.form.get("exam_paid") or 0),
+                      admission_paid=float(request.form.get("admission_paid") or 0),
+                      payment_method=request.form["payment_method"], payment_date=datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date(),
+                      collected_by=session["username"])
+        db.session.add(pay); db.session.commit()
+        return redirect(url_for("receipt", payment_id=pay.id))
+    return render_template("payments.html", settings=get_settings(), pupils=Pupil.query.all(), terms=TERMS,
+                           term_months=TERM_MONTHS, year=current_year(), today=date.today(),
+                           payments=Payment.query.order_by(Payment.id.desc()).all(), money=money)
+
+@app.route("/receipt/<int:payment_id>")
+def receipt(payment_id):
+    if not login_required(): return redirect(url_for("login"))
+    p = Payment.query.get_or_404(payment_id)
+    pupil = p.pupil
+    opening = opening_arrears(pupil, p.academic_year)
+    closing = opening + year_due(pupil, p.academic_year) - paid_year(pupil.id, p.academic_year) - discount_year(pupil.id, p.academic_year)
+    return render_template("receipt.html", settings=get_settings(), p=p, pupil=pupil, opening=opening,
+                           closing=closing, discounts=discount_year(pupil.id, p.academic_year), money=money)
+
+@app.route("/balances")
+def balances():
+    if not login_required(): return redirect(url_for("login"))
+    year = int(request.args.get("year", current_year()))
+    term = request.args.get("term", "Term 1")
+    month = request.args.get("month", TERM_MONTHS[term][0])
+    rows = []
+    for p in Pupil.query.all():
+        md = monthly_due(p, year, term, month)
+        opening = opening_arrears(p, year)
+        closing = opening + year_due(p, year) - paid_year(p.id, year) - discount_year(p.id, year)
+        rows.append({"pupil":p, "opening":opening, "month_due":sum(md.values()), "month_paid":paid_month(p.id,year,term,month),
+                     "discounts":discount_year(p.id,year), "closing":closing})
+    return render_template("balances.html", settings=get_settings(), rows=rows, year=year, term=term, month=month,
+                           terms=TERMS, term_months=TERM_MONTHS, money=money)
+
+@app.route("/statement/<int:pupil_id>/<int:year>")
+def statement(pupil_id, year):
+    if not login_required(): return redirect(url_for("login"))
+    pupil = Pupil.query.get_or_404(pupil_id)
+    entries = []
+    bal = opening_arrears(pupil, year)
+    entries.append((f"01/01/{year}", f"Opening Arrears B/F from {year-1}", bal, 0, bal))
+    for term in TERMS:
+        for month in term_months(term):
+            d = monthly_due(pupil, year, term, month)
+            debit = d["tuition"] + d["bus"]
+            if debit:
+                bal += debit
+                entries.append(("", f"{month} {term} Tuition/Bus", debit, 0, bal))
+        first = term_months(term)[0]
+        d = monthly_due(pupil, year, term, first)
+        debit = d["exam"] + d["admission"]
+        if debit:
+            bal += debit
+            entries.append(("", f"{term} Exam/Admission Fees", debit, 0, bal))
+    for d in Discount.query.filter_by(pupil_id=pupil.id, academic_year=year).all():
+        bal -= d.amount
+        entries.append((str(d.created_at), f"Discount/Waiver: {d.reason}", 0, d.amount, bal))
+    for pay in Payment.query.filter_by(pupil_id=pupil.id, academic_year=year).order_by(Payment.payment_date).all():
+        credit = pay.tuition_paid + pay.bus_paid + pay.exam_paid + pay.admission_paid
+        bal -= credit
+        entries.append((str(pay.payment_date), f"Payment {pay.receipt_no} ({pay.term}, {pay.month})", 0, credit, bal))
+    return render_template("statement.html", settings=get_settings(), pupil=pupil, year=year, entries=entries, closing=bal, money=money)
+
+@app.route("/statements")
+def statements():
+    if not login_required(): return redirect(url_for("login"))
+    return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
+
+if __name__ == "__main__":
+    with app.app_context():
+        init_database()
+    app.run(debug=True)
