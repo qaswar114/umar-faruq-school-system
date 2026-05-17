@@ -5,13 +5,18 @@
 <title>{{ settings.school_name }}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-<div class="dropdown" style="display:inline-block; position:relative;">
-    <a href="#">Users ▼</a>
-    <div class="dropdown-content" style="display:none; position:absolute; background:white; min-width:200px; box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:9999;">
-        <a href="/users" style="display:block; padding:10px; color:black;">User Management</a>
-        <a href="/change-password" style="display:block; padding:10px; color:black;">Change Password</a>
-    </div>
-</div>
+body{font-family:Arial;margin:0;background:#f3f6fb;color:#1f2937}
+.header{background:#0b5ed7;color:white;padding:14px 22px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo-small{width:70px;height:70px;border-radius:50%}
+.nav{margin-top:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.nav a{color:white;text-decoration:none;font-weight:bold}
+.container{padding:28px}
+.panel{background:white;padding:24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+.dropdown{display:inline-block;position:relative}
+.dropdown-content{display:none;position:absolute;background:white;min-width:200px;box-shadow:0 4px 8px rgba(0,0,0,0.2);z-index:9999}
+.dropdown-content a{display:block;padding:10px;color:black!important;text-decoration:none}
+.dropdown:hover .dropdown-content{display:block!important}
 </style>
 <script>
 function updateMonths(termId, monthId){
@@ -28,13 +33,12 @@ function updateMonths(termId, monthId){
   <div class="nav">
     {{ session.username }} ({{ session.role }})
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
-   {% if session.role == 'Admin' %}
-<div class="dropdown" style="display:inline-block; position:relative;">
-    <div class="dropdown-content" style="display:none; position:absolute; background:white; min-width:200px; box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:9999;">
+  {% if session.role == 'Admin' %}
+<div class="dropdown">
     <a href="#">Users ▼</a>
-    <div class="dropdown-content" style="display:none; position:absolute; background:white; min-width:200px; box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:1000;">
-        <a href="/users" style="display:block; padding:10px; color:black;">User Management</a>
-        <a href="/change-password" style="display:block; padding:10px; color:black;">Change Password</a>
+    <div class="dropdown-content">
+        <a href="/users">User Management</a>
+        <a href="/change-password">Change Password</a>
     </div>
 </div>
 {% endif %}
