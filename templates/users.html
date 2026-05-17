@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h2>User Management</h2>
+
+    <form method="POST">
+        <div class="two">
+            <div>
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </div>
+
+            <div>
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+        </div>
+
+        <div>
+            <label>Role</label>
+            <select name="role">
+                <option value="admin">Admin</option>
+                <option value="registrar">Registrar</option>
+                <option value="bursar">Bursar</option>
+            </select>
+        </div>
+
+        <br>
+        <button type="submit">Create User</button>
+    </form>
+
+    <hr><br>
+
+    <h3>Change My Password</h3>
+
+    <form method="POST" action="/change_password">
+        <div>
+            <label>New Password</label>
+            <input type="password" name="new_password" required>
+        </div>
+        <br>
+        <button type="submit">Change Password</button>
+    </form>
+</div>
+{% endblock %}
