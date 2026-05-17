@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h2>User Management</h2>
+
+    <form method="POST">
+        <div class="two">
+            <div>
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </div>
+
+            <div>
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+        </div>
+
+        <div>
+            <label>Role</label>
+            <select name="role" required>
+                <option value="Admin">Admin</option>
+                <option value="Registrar">Registrar</option>
+                <option value="Bursar">Bursar</option>
+            </select>
+        </div>
+
+        <br>
+        <button class="btn green">Create User</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>Existing Users</h2>
+
+    <table>
+        <tr>
+            <th>Username</th>
+            <th>Role</th>
+        </tr>
+
+        {% for user in users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.role }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
