@@ -83,11 +83,16 @@ function updateMonths(termId, monthId){
 </div>
 {% endif %}
     <a href="{{ url_for('pupils') }}">Pupils</a>
-    <a href="{{ url_for('fees') }}">Fees</a>
-    <a href="{{ url_for('discounts') }}">Discounts</a>
-    <a href="{{ url_for('payments') }}">Payments</a>
-    <a href="{{ url_for('balances') }}">Balances</a>
-    <a href="{{ url_for('statements') }}">Statements</a>
+   <div class="dropdown">
+    <a href="#">Finance ▼</a>
+    <div class="dropdown-content">
+        <a href="{{ url_for('fees') }}">Fee Structure</a>
+        <a href="{{ url_for('discounts') }}">Discounts</a>
+        <a href="{{ url_for('payments') }}">Payments</a>
+        <a href="{{ url_for('balances') }}">Balances</a>
+        <a href="{{ url_for('statements') }}">Statements</a>
+    </div>
+</div>
     <a href="{{ url_for('settings') }}">Branding</a>
     <a href="{{ url_for('logout') }}">Logout</a>
   </div>
