@@ -372,7 +372,64 @@ def statement(pupil_id, year):
 def statements():
     if not login_required(): return redirect(url_for("login"))
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
+@app.route("/users", methods=["GET", "POST"])
+def users():
+    if not login_required():
+        return redirect(url_for("login"))
 
+    if session.get("role") != "Admin":
+        flash("Only Admin can manage users.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        role = request.form["role"]
+
+        if User.query.filter_by(username=username).first():
+            flash("Username already exists.")
+            return redirect(url_for("users"))
+
+        new_user = User(
+            username=username,
+            password_hash=generate_password_hash(password),
+            role=role
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash("User created successfully.")
+        return redirect(url_for("users"))
+
+    all_users = User.query.order_by(User.id.desc()).all()
+    return render_template("users.html", settings=get_settings(), users=all_users)
+
+
+@app.route("/change-password", methods=["GET", "POST"])
+def change_password():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    user = User.query.filter_by(username=session["username"]).first()
+
+    if request.method == "POST":
+        current_password = request.form["current_password"]
+        new_password = request.form["new_password"]
+        confirm_password = request.form["confirm_password"]
+
+        if not check_password_hash(user.password_hash, current_password):
+            flash("Current password is incorrect.")
+            return redirect(url_for("change_password"))
+
+        if new_password != confirm_password:
+            flash("New passwords do not match.")
+            return redirect(url_for("change_password"))
+
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash("Password changed successfully.")
+        return redirect(url_for("dashboard"))
+
+    return render_template("change_password.html", settings=get_settings())
 if __name__ == "__main__":
     with app.app_context():
         init_database()
