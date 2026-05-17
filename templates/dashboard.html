@@ -1,1 +1,35 @@
-{% extends "base.html" %}{% block content %}<div class="panel"><h2>Dashboard</h2><div class="grid"><div class="card"><h3>Total Pupils</h3><div class="amount">{{ pupils }}</div></div><div class="card"><h3>Bus Pupils</h3><div class="amount">{{ bus }}</div></div><div class="card"><h3>Total Collected</h3><div class="amount">{{ money(collected) }}</div></div><div class="card"><h3>Receipts</h3><div class="amount">{{ receipts }}</div></div></div><br><a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a> <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a> <a class="btn gray" href="{{ url_for('statements') }}">Parent Statement</a></div>{% endblock %}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h1>Dashboard</h1>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Total Pupils</h3>
+            <div class="number">{{ total_pupils }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Bus Pupils</h3>
+            <div class="number">{{ bus_pupils }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Total Collected</h3>
+            <div class="number">KES {{ total_collected }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Receipts</h3>
+            <div class="number">{{ receipts }}</div>
+        </div>
+    </div>
+
+    <div class="action-row">
+        <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
+        <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
+        <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
+    </div>
+</div>
+{% endblock %}
