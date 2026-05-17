@@ -22,6 +22,9 @@ function updateMonths(termId, monthId){
   <div class="nav">
     {{ session.username }} ({{ session.role }})
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% if session.role == 'admin' %}
+<a href="/users">Users</a>
+{% endif %}
     <a href="{{ url_for('pupils') }}">Pupils</a>
     <a href="{{ url_for('fees') }}">Fees</a>
     <a href="{{ url_for('discounts') }}">Discounts</a>
