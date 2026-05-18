@@ -48,9 +48,7 @@ class Pupil(db.Model):
     guardian_name = db.Column(db.String(200), nullable=False)
     guardian_phone = db.Column(db.String(80), nullable=False)
    home_address = db.Column(db.Text, default="")
-parent_phone_2 = db.Column(db.String(80), default="")
-admission_date = db.Column(db.Date, default=date.today)
-photo = db.Column(db.String(255), default="")
+
 new_admission = db.Column(db.String(10), default="Yes")
 uses_bus = db.Column(db.String(10), default="No")
 status = db.Column(db.String(30), default="Active")
