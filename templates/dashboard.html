@@ -17,7 +17,7 @@
 
         <div class="card">
             <h3>Total Collected</h3>
-            <div class="number">KES {{ total_collected }}</div>
+            <div class="number">{{ total_collected }}</div>
         </div>
 
         <div class="card">
@@ -27,11 +27,11 @@
     </div>
 
    <div class="action-row">
-    {% if session.role in ['admin', 'registrar'] %}
+    {% if session.role|lower in ['admin', 'registrar'] %}
     <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
     {% endif %}
 
-    {% if session.role in ['admin', 'bursar'] %}
+   {% if session.role|lower in ['admin', 'bursar'] %}
     <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
     <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
     {% endif %}
