@@ -131,7 +131,7 @@ function updateMonths(termId, monthId){
   <div class="nav">
     {{ session.username }} ({{ session.role }})
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
- {% if session.role == 'admin' %}
+{% if session.role|lower == 'admin' %}
 <div class="dropdown">
     <a href="#">Users ▼</a>
     <div class="dropdown-content">
@@ -140,10 +140,10 @@ function updateMonths(termId, monthId){
     </div>
 </div>
 {% endif %}
-    {% if session.role in ['admin', 'registrar'] %}
+    {% if session.role|lower in ['admin', 'registrar'] %}
 <a href="{{ url_for('pupils') }}">Pupils</a>
 {% endif %}
- {% if session.role in ['admin', 'bursar'] %}
+{% if session.role|lower in ['admin', 'bursar'] %}
 <div class="dropdown">
     <a href="#">Finance ▼</a>
     <div class="dropdown-content">
@@ -155,7 +155,7 @@ function updateMonths(termId, monthId){
     </div>
     </div>
       {% endif %}
-    {% if session.role == 'Admin' %}
+    {% if session.role|lower == 'admin' %}
 <a href="{{ url_for('settings') }}">Branding</a>
 {% endif %}
     <a href="{{ url_for('logout') }}">Logout</a>
