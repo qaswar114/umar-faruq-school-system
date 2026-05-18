@@ -251,7 +251,7 @@ def settings():
         db.session.commit()
         flash("Branding saved.")
     return render_template("settings.html", settings=s)
-    @app.route("/pupils", methods=["GET","POST"])
+@app.route("/pupils", methods=["GET","POST"])
 def pupils():
     if not login_required():
         return redirect(url_for("login"))
