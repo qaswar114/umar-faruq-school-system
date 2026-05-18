@@ -47,13 +47,11 @@ class Pupil(db.Model):
     grade = db.Column(db.String(50), nullable=False)
     guardian_name = db.Column(db.String(200), nullable=False)
     guardian_phone = db.Column(db.String(80), nullable=False)
-   home_address = db.Column(db.Text, default="")
-
-new_admission = db.Column(db.String(10), default="Yes")
-uses_bus = db.Column(db.String(10), default="No")
-status = db.Column(db.String(30), default="Active")
-created_at = db.Column(db.Date, default=date.today)
-
+    home_address = db.Column(db.Text, default="")
+    new_admission = db.Column(db.String(10), default="Yes")
+    uses_bus = db.Column(db.String(10), default="No")
+    status = db.Column(db.String(30), default="Active")
+    created_at = db.Column(db.Date, default=date.today)
 class FeeStructure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     academic_year = db.Column(db.Integer, nullable=False)
