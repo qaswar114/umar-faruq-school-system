@@ -275,7 +275,7 @@ def pupils():
     if q:
         query = query.filter((Pupil.full_name.ilike(f"%{q}%")) | (Pupil.admission_no.ilike(f"%{q}%")) | (Pupil.grade.ilike(f"%{q}%")))
 
-    return render_template("pupils.html", settings=get_settings(), grades=GRADES, pupils=query.order_by(Pupil.id.desc()).all(), q=q)
+  return render_template("pupils.html", settings=get_settings(), grades=GRADES, pupils=query.order_by(Pupil.id.desc()).all(), q=q)
     @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
 def edit_pupil(pupil_id):
     if not login_required():
