@@ -59,11 +59,61 @@ th,td{padding:12px;border-bottom:1px solid #ddd;text-align:left}
 }
     .receipt-box{
     background:white;
-    max-width:900px;
-    margin:30px auto;
-    padding:30px;
-    border-radius:12px;
-    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    width:190mm;
+    min-height:135mm;
+    margin:10px auto;
+    padding:15px 20px;
+    border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    font-size:14px;
+}
+
+.receipt-box h2{
+    margin:5px 0;
+    font-size:28px;
+    text-align:center;
+}
+
+.receipt-box h3{
+    margin:5px 0 10px;
+    font-size:18px;
+    text-align:center;
+}
+
+.receipt-box p{
+    margin:6px 0;
+}
+
+.receipt-box table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    font-size:13px;
+}
+
+.receipt-box th,
+.receipt-box td{
+    padding:6px;
+    border:1px solid #ddd;
+}
+
+@media print{
+    .no-print{
+        display:none;
+    }
+
+    .receipt-box{
+        width:190mm;
+        min-height:135mm;
+        box-shadow:none;
+        margin:0;
+        padding:10mm;
+    }
+
+    body{
+        background:white;
+    }
+}
 }
 </style>
 <script>
