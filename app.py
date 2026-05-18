@@ -251,7 +251,7 @@ def settings():
         db.session.commit()
         flash("Branding saved.")
     return render_template("settings.html", settings=s)
-@app.route("/pupils", methods=["GET","POST"])
+    @app.route("/pupils", methods=["GET","POST"])
 def pupils():
     if not login_required():
         return redirect(url_for("login"))
@@ -261,22 +261,40 @@ def pupils():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        p = Pupil(admission_no=next_admission_no(), full_name=request.form["full_name"], gender=request.form["gender"],
-                  dob=request.form.get("dob",""), grade=request.form["grade"], guardian_name=request.form["guardian_name"],
-                  guardian_phone=request.form["guardian_phone"], home_address=request.form.get("home_address",""),
-                  new_admission=request.form["new_admission"], uses_bus=request.form["uses_bus"])
+        p = Pupil(
+            admission_no=next_admission_no(),
+            full_name=request.form["full_name"],
+            gender=request.form["gender"],
+            dob=request.form.get("dob",""),
+            grade=request.form["grade"],
+            guardian_name=request.form["guardian_name"],
+            guardian_phone=request.form["guardian_phone"],
+            home_address=request.form.get("home_address",""),
+            new_admission=request.form["new_admission"],
+            uses_bus=request.form["uses_bus"]
+        )
         db.session.add(p)
         db.session.commit()
         flash(f"Pupil registered: {p.admission_no}")
         return redirect(url_for("pupils"))
 
-       q = request.args.get("q","")
+    q = request.args.get("q","")
     query = Pupil.query
+
     if q:
-        query = query.filter((Pupil.full_name.ilike(f"%{q}%")) | (Pupil.admission_no.ilike(f"%{q}%")) | (Pupil.grade.ilike(f"%{q}%")))
+        query = query.filter(
+            (Pupil.full_name.ilike(f"%{q}%")) |
+            (Pupil.admission_no.ilike(f"%{q}%")) |
+            (Pupil.grade.ilike(f"%{q}%"))
+        )
 
-    return render_template("pupils.html", settings=get_settings(), grades=GRADES, pupils=query.order_by(Pupil.id.desc()).all(), q=q)
-
+    return render_template(
+        "pupils.html",
+        settings=get_settings(),
+        grades=GRADES,
+        pupils=query.order_by(Pupil.id.desc()).all(),
+        q=q
+    )
 @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
 def edit_pupil(pupil_id):
     if not login_required():
