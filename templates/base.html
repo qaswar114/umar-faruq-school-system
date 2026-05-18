@@ -140,8 +140,11 @@ function updateMonths(termId, monthId){
     </div>
 </div>
 {% endif %}
-    <a href="{{ url_for('pupils') }}">Pupils</a>
-   <div class="dropdown">
+    {% if session.role in ['Admin', 'Registrar'] %}
+<a href="{{ url_for('pupils') }}">Pupils</a>
+{% endif %}
+   {% if session.role in ['Admin', 'Bursar'] %}
+<div class="dropdown">
     <a href="#">Finance ▼</a>
     <div class="dropdown-content">
         <a href="{{ url_for('fees') }}">Fee Structure</a>
@@ -150,8 +153,11 @@ function updateMonths(termId, monthId){
         <a href="{{ url_for('balances') }}">Balances</a>
         <a href="{{ url_for('statements') }}">Statements</a>
     </div>
+    {% endif %}
 </div>
-    <a href="{{ url_for('settings') }}">Branding</a>
+    {% if session.role == 'Admin' %}
+<a href="{{ url_for('settings') }}">Branding</a>
+{% endif %}
     <a href="{{ url_for('logout') }}">Logout</a>
   </div>
 </div>
