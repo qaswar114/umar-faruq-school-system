@@ -26,15 +26,15 @@
         </div>
     </div>
 
-    <div class="action-row">
-      {% if session.role in ['Admin', 'Registrar'] %}
-<a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
-{% endif %}
+   <div class="action-row">
+    {% if session.role in ['Admin', 'Registrar'] %}
+    <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
+    {% endif %}
 
-{% if session.role in ['Admin', 'Bursar'] %}
-<a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
-<a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
-{% endif %}
-    </div>
+    {% if session.role in ['Admin', 'Bursar'] %}
+    <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
+    <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
+    {% endif %}
+</div>
 </div>
 {% endblock %}
