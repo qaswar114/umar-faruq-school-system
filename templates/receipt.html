@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% block content %}
 <div class="receipt receipt-box print-area"><img src="{{ url_for('static', filename='logo.png') }}" 
-style="width:120px;height:auto;display:block;margin:0 auto 20px;"> 
+style="width:70px;height:auto;display:block;margin:0 auto 10px;"
   class="logo-large"><h2>{{settings.school_name}}</h2><h3>OFFICIAL FEE RECEIPT</h3><hr><p><b>Receipt No:</b> {{p.receipt_no}}</p><p><b>Date:</b> 
     {{p.payment_date}}</p><p><b>Pupil:</b> {{pupil.full_name}}</p><p><b>Admission No:</b> {{pupil.admission_no}}</p><p><b>Academic Year:</b> {{p.academic_year}} 
       | <b>Term:</b> {{p.term}} | <b>Month:</b> {{p.month}}</p><table><tr><th>Item</th><th>Paid Now</th></tr><tr><td>Tuition</td><td>{{money(p.tuition_paid)}}
