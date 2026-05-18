@@ -128,10 +128,13 @@ def login_required():
     return True
 
 def role_allowed(*roles):
-    if session.get("role") == "Admin":
-        return True
-    return session.get("role") in roles
+    current_role = session.get("role", "").lower()
+    allowed_roles = [r.lower() for r in roles]
 
+    if current_role == "admin":
+        return True
+
+    return current_role in allowed_roles
 def next_admission_no():
     count = Pupil.query.count() + 1
     return f"UFIA/{current_year()}/{count:04d}"
@@ -243,11 +246,11 @@ def settings():
 @app.route("/pupils", methods=["GET","POST"])
 def pupils():
     if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("Registrar"):
+        if not role_allowed("registrar"):
     flash("Access denied.")
     return redirect(url_for("dashboard"))
     if request.method == "POST":
-        if not role_allowed("Registrar"):
+        if not role_allowed("registrar"):
             flash("Only Admin or Registrar can register pupils.")
             return redirect(url_for("pupils"))
         p = Pupil(admission_no=next_admission_no(), full_name=request.form["full_name"], gender=request.form["gender"],
@@ -266,10 +269,10 @@ def pupils():
 @app.route("/fees", methods=["GET","POST"])
 def fees():
     if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("Bursar"):
+        if not role_allowed("bursar"):
     flash("Access denied.")
     return redirect(url_for("dashboard"))
-    if not role_allowed("Bursar"):
+    if not role_allowed("bursar"):
         flash("Only Admin or Bursar can manage fees.")
         return redirect(url_for("dashboard"))
     if request.method == "POST":
