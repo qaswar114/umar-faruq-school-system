@@ -242,39 +242,40 @@ def settings():
         db.session.commit()
         flash("Branding saved.")
     return render_template("settings.html", settings=s)
-
 @app.route("/pupils", methods=["GET","POST"])
 def pupils():
-    if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("registrar"):
-    flash("Access denied.")
-    return redirect(url_for("dashboard"))
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
-        if not role_allowed("registrar"):
-            flash("Only Admin or Registrar can register pupils.")
-            return redirect(url_for("pupils"))
         p = Pupil(admission_no=next_admission_no(), full_name=request.form["full_name"], gender=request.form["gender"],
                   dob=request.form.get("dob",""), grade=request.form["grade"], guardian_name=request.form["guardian_name"],
                   guardian_phone=request.form["guardian_phone"], home_address=request.form.get("home_address",""),
                   new_admission=request.form["new_admission"], uses_bus=request.form["uses_bus"])
-        db.session.add(p); db.session.commit()
+        db.session.add(p)
+        db.session.commit()
         flash(f"Pupil registered: {p.admission_no}")
         return redirect(url_for("pupils"))
+
     q = request.args.get("q","")
     query = Pupil.query
     if q:
         query = query.filter((Pupil.full_name.ilike(f"%{q}%")) | (Pupil.admission_no.ilike(f"%{q}%")) | (Pupil.grade.ilike(f"%{q}%")))
-    return render_template("pupils.html", settings=get_settings(), grades=GRADES, pupils=query.order_by(Pupil.id.desc()).all(), q=q)
 
+    return render_template("pupils.html", settings=get_settings(), grades=GRADES, pupils=query.order_by(Pupil.id.desc()).all(), q=q)
 @app.route("/fees", methods=["GET","POST"])
 def fees():
-    if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("bursar"):
-    flash("Access denied.")
-    return redirect(url_for("dashboard"))
+    if not login_required():
+        return redirect(url_for("login"))
+
     if not role_allowed("bursar"):
-        flash("Only Admin or Bursar can manage fees.")
+        flash("Access denied.")
         return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         fee = get_fee(int(request.form["academic_year"]), request.form["grade"], request.form["term"], request.form["month"])
         fee.tuition_fee = float(request.form.get("tuition_fee") or 0)
@@ -288,32 +289,34 @@ def fees():
 
 @app.route("/discounts", methods=["GET","POST"])
 def discounts():
-    if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("Bursar"):
-    flash("Access denied.")
-    return redirect(url_for("dashboard"))
-    if not role_allowed("Bursar"):
-        flash("Only Admin or Bursar can add discounts.")
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
         return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         d = Discount(pupil_id=int(request.form["pupil_id"]), academic_year=int(request.form["academic_year"]),
                      term=request.form["term"], amount=float(request.form.get("amount") or 0),
                      reason=request.form.get("reason",""), created_by=session["username"])
-        db.session.add(d); db.session.commit()
+        db.session.add(d)
+        db.session.commit()
         flash("Discount/waiver added.")
     return render_template("discounts.html", settings=get_settings(), pupils=Pupil.query.all(),
                            discounts=Discount.query.order_by(Discount.id.desc()).all(), year=current_year(), money=money)
 
 @app.route("/payments", methods=["GET","POST"])
 def payments():
-    if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("Bursar"):
-    flash("Access denied.")
-    return redirect(url_for("dashboard"))
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
-        if not role_allowed("Bursar"):
-            flash("Only Admin or Bursar can collect fees.")
-            return redirect(url_for("payments"))
+        
         year = int(request.form["academic_year"])
         term = request.form["term"]
         pay = Payment(receipt_no=receipt_no(year, term), pupil_id=int(request.form["pupil_id"]),
@@ -339,13 +342,14 @@ def receipt(payment_id):
     closing = opening + year_due(pupil, p.academic_year) - paid_year(pupil.id, p.academic_year) - discount_year(pupil.id, p.academic_year)
     return render_template("receipt.html", settings=get_settings(), p=p, pupil=pupil, opening=opening,
                            closing=closing, discounts=discount_year(pupil.id, p.academic_year), money=money)
-
 @app.route("/balances")
 def balances():
-    if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("Bursar"):
-    flash("Access denied.")
-    return redirect(url_for("dashboard"))
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
     year = int(request.args.get("year", current_year()))
     term = request.args.get("term", "Term 1")
     month = request.args.get("month", TERM_MONTHS[term][0])
@@ -361,10 +365,12 @@ def balances():
 
 @app.route("/statement/<int:pupil_id>/<int:year>")
 def statement(pupil_id, year):
-    if not login_required(): return redirect(url_for("login"))
-        if not role_allowed("Bursar"):
-    flash("Access denied.")
-    return redirect(url_for("dashboard"))
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
     pupil = Pupil.query.get_or_404(pupil_id)
     entries = []
     bal = opening_arrears(pupil, year)
@@ -393,14 +399,20 @@ def statement(pupil_id, year):
 
 @app.route("/statements")
 def statements():
-    if not login_required(): return redirect(url_for("login"))
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
 @app.route("/users", methods=["GET", "POST"])
 def users():
     if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role") != "Admin":
+    if session.get("role", "").lower() != "admin":
         flash("Only Admin can manage users.")
         return redirect(url_for("dashboard"))
 
