@@ -128,7 +128,9 @@ def login_required():
     return True
 
 def role_allowed(*roles):
-    return session.get("role") == "Admin" or session.get("role") in roles
+    if session.get("role") == "Admin":
+        return True
+    return session.get("role") in roles
 
 def next_admission_no():
     count = Pupil.query.count() + 1
@@ -241,6 +243,9 @@ def settings():
 @app.route("/pupils", methods=["GET","POST"])
 def pupils():
     if not login_required(): return redirect(url_for("login"))
+        if not role_allowed("Registrar"):
+    flash("Access denied.")
+    return redirect(url_for("dashboard"))
     if request.method == "POST":
         if not role_allowed("Registrar"):
             flash("Only Admin or Registrar can register pupils.")
@@ -261,6 +266,9 @@ def pupils():
 @app.route("/fees", methods=["GET","POST"])
 def fees():
     if not login_required(): return redirect(url_for("login"))
+        if not role_allowed("Bursar"):
+    flash("Access denied.")
+    return redirect(url_for("dashboard"))
     if not role_allowed("Bursar"):
         flash("Only Admin or Bursar can manage fees.")
         return redirect(url_for("dashboard"))
@@ -278,6 +286,9 @@ def fees():
 @app.route("/discounts", methods=["GET","POST"])
 def discounts():
     if not login_required(): return redirect(url_for("login"))
+        if not role_allowed("Bursar"):
+    flash("Access denied.")
+    return redirect(url_for("dashboard"))
     if not role_allowed("Bursar"):
         flash("Only Admin or Bursar can add discounts.")
         return redirect(url_for("dashboard"))
@@ -293,6 +304,9 @@ def discounts():
 @app.route("/payments", methods=["GET","POST"])
 def payments():
     if not login_required(): return redirect(url_for("login"))
+        if not role_allowed("Bursar"):
+    flash("Access denied.")
+    return redirect(url_for("dashboard"))
     if request.method == "POST":
         if not role_allowed("Bursar"):
             flash("Only Admin or Bursar can collect fees.")
@@ -326,6 +340,9 @@ def receipt(payment_id):
 @app.route("/balances")
 def balances():
     if not login_required(): return redirect(url_for("login"))
+        if not role_allowed("Bursar"):
+    flash("Access denied.")
+    return redirect(url_for("dashboard"))
     year = int(request.args.get("year", current_year()))
     term = request.args.get("term", "Term 1")
     month = request.args.get("month", TERM_MONTHS[term][0])
@@ -342,6 +359,9 @@ def balances():
 @app.route("/statement/<int:pupil_id>/<int:year>")
 def statement(pupil_id, year):
     if not login_required(): return redirect(url_for("login"))
+        if not role_allowed("Bursar"):
+    flash("Access denied.")
+    return redirect(url_for("dashboard"))
     pupil = Pupil.query.get_or_404(pupil_id)
     entries = []
     bal = opening_arrears(pupil, year)
