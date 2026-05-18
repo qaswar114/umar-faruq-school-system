@@ -153,8 +153,8 @@ function updateMonths(termId, monthId){
         <a href="{{ url_for('balances') }}">Balances</a>
         <a href="{{ url_for('statements') }}">Statements</a>
     </div>
-    {% endif %}
-</div>
+    </div>
+      {% endif %}
     {% if session.role == 'Admin' %}
 <a href="{{ url_for('settings') }}">Branding</a>
 {% endif %}
