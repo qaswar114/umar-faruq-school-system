@@ -222,12 +222,22 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    if not login_required(): return redirect(url_for("login"))
-    total_collected = sum(p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid for p in Payment.query.all())
-    return render_template("dashboard.html", settings=get_settings(), pupils=Pupil.query.count(),
-                           bus=Pupil.query.filter_by(uses_bus="Yes").count(),
-                           collected=total_collected, receipts=Payment.query.count(), money=money)
+    if not login_required():
+        return redirect(url_for("login"))
 
+    total_collected = sum(
+        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+        for p in Payment.query.all()
+    )
+
+    return render_template(
+        "dashboard.html",
+        settings=get_settings(),
+        total_pupils=Pupil.query.count(),
+        bus_pupils=Pupil.query.filter_by(uses_bus="Yes").count(),
+        total_collected=money(total_collected),
+        receipts=Payment.query.count()
+    )
 @app.route("/settings", methods=["GET","POST"])
 def settings():
     if not login_required(): return redirect(url_for("login"))
