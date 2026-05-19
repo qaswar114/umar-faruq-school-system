@@ -12,7 +12,9 @@
     </select>
 
     <button class="btn">Filter</button>
-    <button type="button" class="btn green" onclick="window.print()">Print List</button>
+    <a href="{{ url_for('print_pupils', grade=selected_grade) }}" target="_blank" class="btn green">
+    Print Grade List
+</a>
 </form>
   <table><tr>
 <th>Admission</th>
