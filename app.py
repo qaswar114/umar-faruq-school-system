@@ -281,10 +281,9 @@ def pupils():
     q = request.args.get("q","")
     query = Pupil.query
     selected_grade = request.args.get("grade","")
-if selected_grade:
+    if selected_grade:
     query = query.filter(Pupil.grade == selected_grade)
-
-        if q:
+    if q:
         query = query.filter(
             (Pupil.full_name.ilike(f"%{q}%")) |
             (Pupil.admission_no.ilike(f"%{q}%")) |
