@@ -627,15 +627,18 @@ def users():
         username = request.form["username"].strip()
         password = request.form["password"].strip()
         role = request.form["role"]
+        assigned_grade = request.form.get("assigned_grade", "")
 
         if User.query.filter_by(username=username).first():
             flash("Username already exists.")
             return redirect(url_for("users"))
 
-        new_user = User(
-            username=username,
-            password_hash=generate_password_hash(password),
-            role=role
+    new_user = User(
+        username=username,
+        password_hash=generate_password_hash(password),
+        role=role,
+        assigned_grade=assigned_grade
+
         )
         db.session.add(new_user)
         db.session.commit()
@@ -643,7 +646,7 @@ def users():
         return redirect(url_for("users"))
 
     all_users = User.query.order_by(User.id.desc()).all()
-    return render_template("users.html", settings=get_settings(), users=all_users)
+    return render_template("users.html", settings=get_settings(), users=all_users, grades=GRADES)
 
 
 @app.route("/change-password", methods=["GET", "POST"])
