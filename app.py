@@ -292,7 +292,7 @@ def pupils():
         "pupils.html",
         settings=get_settings(),
         grades=GRADES,
-        pupils=query.order_by(Pupil.id.desc()).all(),
+       pupils=query.order_by(Pupil.grade, Pupil.full_name).all(),
         q=q
     )
 @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
