@@ -24,6 +24,13 @@
                 <option value="registrar">Registrar</option>
                 <option value="bursar">Bursar</option>
             </select>
+            <label>Assigned Grade (For Teachers)</label>
+<select name="assigned_grade">
+    <option value="">None</option>
+    {% for g in grades %}
+    <option value="{{g}}">{{g}}</option>
+    {% endfor %}
+</select>
         </div>
 
         <br>
