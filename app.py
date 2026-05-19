@@ -633,12 +633,11 @@ def users():
             flash("Username already exists.")
             return redirect(url_for("users"))
 
-    new_user = User(
-        username=username,
-        password_hash=generate_password_hash(password),
-        role=role,
-        assigned_grade=assigned_grade
-
+        new_user = User(
+            username=username,
+            password_hash=generate_password_hash(password),
+            role=role,
+            assigned_grade=assigned_grade
         )
         db.session.add(new_user)
         db.session.commit()
