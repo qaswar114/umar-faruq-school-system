@@ -377,7 +377,7 @@ def print_pupils():
         selected_grade=selected_grade,
         today=date.today()
     )
-    @app.route("/attendance", methods=["GET", "POST"])
+@app.route("/attendance", methods=["GET", "POST"])
 def attendance():
     if not login_required():
         return redirect(url_for("login"))
