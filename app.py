@@ -115,7 +115,7 @@ def get_settings():
 
 def init_database():
     db.create_all()
-    try:
+try:
     db.session.execute(db.text("ALTER TABLE \"user\" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT ''"))
     db.session.commit()
 except Exception:
