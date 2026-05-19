@@ -284,12 +284,13 @@ def pupils():
 if selected_grade:
     query = query.filter(Pupil.grade == selected_grade)
 
-    if q:
+        if q:
         query = query.filter(
             (Pupil.full_name.ilike(f"%{q}%")) |
             (Pupil.admission_no.ilike(f"%{q}%")) |
             (Pupil.grade.ilike(f"%{q}%"))
         )
+
     return render_template(
         "pupils.html",
         settings=get_settings(),
