@@ -78,7 +78,12 @@ class Payment(db.Model):
     payment_date = db.Column(db.Date, default=date.today)
     collected_by = db.Column(db.String(80), nullable=False)
     pupil = db.relationship("Pupil")
-
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+    attendance_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), nullable=False)   # Present / Absent / Late
+    pupil = db.relationship("Pupil")
 class Discount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
