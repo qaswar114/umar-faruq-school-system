@@ -313,10 +313,9 @@ def edit_pupil(pupil_id):
         pupil.grade = request.form["grade"]
         pupil.guardian_name = request.form["guardian_name"]
         pupil.guardian_phone = request.form["guardian_phone"]
-        pupil.home_address = request.form.get("home_address", "")
-        pupil.new_admission = request.form["new_admission"]
         pupil.uses_bus = request.form["uses_bus"]
         pupil.status = request.form["status"]
+        pupil.home_address = request.form.get("home_address", "")
 
         db.session.commit()
         flash("Pupil updated successfully.")
