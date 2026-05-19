@@ -326,6 +326,7 @@ def edit_pupil(pupil_id):
         pupil=pupil,
         grades=GRADES,
         settings=get_settings()
+        )
 @app.route("/delete_pupil/<int:pupil_id>", methods=["POST"])
 def delete_pupil(pupil_id):
     if not login_required():
