@@ -265,11 +265,11 @@ def pupils():
             admission_no=next_admission_no(),
             full_name=request.form["full_name"],
             gender=request.form["gender"],
-            dob=request.form.get("dob",""),
+            dob=request.form.get("dob", ""),
             grade=request.form["grade"],
             guardian_name=request.form["guardian_name"],
             guardian_phone=request.form["guardian_phone"],
-            home_address=request.form.get("home_address",""),
+            home_address=request.form.get("home_address", ""),
             new_admission=request.form["new_admission"],
             uses_bus=request.form["uses_bus"]
         )
@@ -278,11 +278,13 @@ def pupils():
         flash(f"Pupil registered: {p.admission_no}")
         return redirect(url_for("pupils"))
 
-    q = request.args.get("q","")
+    q = request.args.get("q", "")
+    selected_grade = request.args.get("grade", "")
     query = Pupil.query
-    selected_grade = request.args.get("grade","")
+
     if selected_grade:
         query = query.filter(Pupil.grade == selected_grade)
+
     if q:
         query = query.filter(
             (Pupil.full_name.ilike(f"%{q}%")) |
@@ -290,7 +292,7 @@ def pupils():
             (Pupil.grade.ilike(f"%{q}%"))
         )
 
-        return render_template(
+    return render_template(
         "pupils.html",
         settings=get_settings(),
         grades=GRADES,
