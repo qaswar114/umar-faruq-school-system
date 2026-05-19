@@ -377,6 +377,58 @@ def print_pupils():
         selected_grade=selected_grade,
         today=date.today()
     )
+    @app.route("/attendance", methods=["GET", "POST"])
+def attendance():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_grade = request.args.get("grade", "")
+    attendance_date = request.args.get("attendance_date", str(date.today()))
+
+    pupils = []
+    if selected_grade:
+        pupils = Pupil.query.filter_by(grade=selected_grade).order_by(Pupil.full_name).all()
+
+    if request.method == "POST":
+        selected_grade = request.form["grade"]
+        attendance_date = request.form["attendance_date"]
+
+        pupils = Pupil.query.filter_by(grade=selected_grade).all()
+
+        for pupil in pupils:
+            status = request.form.get(f"status_{pupil.id}")
+
+            existing = Attendance.query.filter_by(
+                pupil_id=pupil.id,
+                attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date()
+            ).first()
+
+            if existing:
+                existing.status = status
+            else:
+                new_attendance = Attendance(
+                    pupil_id=pupil.id,
+                    attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date(),
+                    status=status
+                )
+                db.session.add(new_attendance)
+
+        db.session.commit()
+        flash("Attendance saved successfully.")
+        return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
+
+    return render_template(
+        "attendance.html",
+        settings=get_settings(),
+        grades=GRADES,
+        pupils=pupils,
+        selected_grade=selected_grade,
+        attendance_date=attendance_date
+    )
 @app.route("/fees", methods=["GET","POST"])
 def fees():
     if not login_required():
