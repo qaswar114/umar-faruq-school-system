@@ -280,6 +280,9 @@ def pupils():
 
     q = request.args.get("q","")
     query = Pupil.query
+    selected_grade = request.args.get("grade","")
+if selected_grade:
+    query = query.filter(Pupil.grade == selected_grade)
 
     if q:
         query = query.filter(
@@ -293,7 +296,8 @@ def pupils():
         settings=get_settings(),
         grades=GRADES,
        pupils=query.order_by(Pupil.grade, Pupil.full_name).all(),
-        q=q
+        q=q,
+        selected_grade=selected_grade
     )
 @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
 def edit_pupil(pupil_id):
