@@ -352,7 +352,7 @@ def delete_pupil(pupil_id):
     db.session.commit()
     flash("Pupil deleted successfully.")
     return redirect(url_for("pupils"))
-    @app.route("/print_pupils")
+@app.route("/print_pupils")
 def print_pupils():
     if not login_required():
         return redirect(url_for("login"))
