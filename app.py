@@ -290,12 +290,11 @@ if selected_grade:
             (Pupil.admission_no.ilike(f"%{q}%")) |
             (Pupil.grade.ilike(f"%{q}%"))
         )
-
     return render_template(
         "pupils.html",
         settings=get_settings(),
         grades=GRADES,
-       pupils=query.order_by(Pupil.grade, Pupil.full_name).all(),
+        pupils=query.order_by(Pupil.grade, Pupil.full_name).all(),
         q=q,
         selected_grade=selected_grade
     )
