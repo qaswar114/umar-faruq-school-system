@@ -115,11 +115,15 @@ def get_settings():
 
 def init_database():
     db.create_all()
-try:
-    db.session.execute(db.text("ALTER TABLE \"user\" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT ''"))
-    db.session.commit()
-except Exception:
-    db.session.rollback()
+
+    try:
+        db.session.execute(
+            db.text('ALTER TABLE "user" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT \'\'')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     if not Setting.query.first():
         db.session.add(Setting(school_name=SCHOOL_NAME, address="Umar Faruq Integrated Academy"))
     default_users = [
