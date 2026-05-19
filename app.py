@@ -326,6 +326,26 @@ def edit_pupil(pupil_id):
         pupil=pupil,
         grades=GRADES,
         settings=get_settings()
+@app.route("/delete_pupil/<int:pupil_id>", methods=["POST"])
+def delete_pupil(pupil_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() != "admin":
+        flash("Only Admin can delete pupils.")
+        return redirect(url_for("pupils"))
+
+    pupil = Pupil.query.get_or_404(pupil_id)
+
+    existing_payments = Payment.query.filter_by(pupil_id=pupil.id).count()
+    if existing_payments > 0:
+        flash("Cannot delete this pupil because payment records exist. Mark as Inactive instead.")
+        return redirect(url_for("pupils"))
+
+    db.session.delete(pupil)
+    db.session.commit()
+    flash("Pupil deleted successfully.")
+    return redirect(url_for("pupils"))
     )
 @app.route("/fees", methods=["GET","POST"])
 def fees():
