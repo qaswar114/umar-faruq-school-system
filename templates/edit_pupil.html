@@ -4,8 +4,11 @@
 <div class="panel">
     <h2>Edit Pupil</h2>
 
-    <form method="post">
+  <form method="post">
+    <label>Full Name</label>
+    <input name="full_name" value="{{ pupil.full_name }}" required>
 
-    </form>
+    <button class="btn green">Update Pupil</button>
+</form>
 </div>
 {% endblock %}
