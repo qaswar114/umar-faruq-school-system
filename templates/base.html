@@ -161,7 +161,13 @@ function updateMonths(termId, monthId){
 {% endif %}
     {% if session.role|lower in ['admin', 'registrar'] %}
 <a href="{{ url_for('pupils') }}">Pupils</a>
-<a href="{{ url_for('attendance') }}">Attendance</a>
+<div class="dropdown">
+    <a href="#">Attendance ▼</a>
+    <div class="dropdown-content">
+        <a href="{{ url_for('attendance') }}">Mark Attendance</a>
+        <a href="{{ url_for('attendance_report') }}">Attendance Report</a>
+    </div>
+</div>
 {% endif %}
 {% if session.role|lower in ['admin', 'bursar'] %}
 <div class="dropdown">
