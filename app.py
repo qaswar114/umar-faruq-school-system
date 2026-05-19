@@ -347,7 +347,7 @@ def delete_pupil(pupil_id):
     db.session.commit()
     flash("Pupil deleted successfully.")
     return redirect(url_for("pupils"))
-    )
+    
 @app.route("/fees", methods=["GET","POST"])
 def fees():
     if not login_required():
