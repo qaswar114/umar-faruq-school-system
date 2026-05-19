@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Print Pupils List</title>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            margin:40px;
+            color:#222;
+        }
+
+        .letterhead{
+            text-align:center;
+            border-bottom:3px solid #0d47a1;
+            padding-bottom:15px;
+            margin-bottom:25px;
+        }
+
+        .logo{
+            width:90px;
+            height:90px;
+            object-fit:contain;
+        }
+
+        h1{
+            margin:8px 0 4px;
+            color:#0d47a1;
+        }
+
+        h2{
+            margin:10px 0;
+        }
+
+        .meta{
+            margin-bottom:20px;
+            font-size:14px;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:20px;
+        }
+
+        th{
+            background:#0d47a1;
+            color:white;
+            padding:10px;
+            border:1px solid #ccc;
+            text-align:left;
+        }
+
+        td{
+            padding:8px;
+            border:1px solid #ccc;
+        }
+
+        .footer{
+            margin-top:40px;
+            border-top:2px solid #0d47a1;
+            padding-top:10px;
+            text-align:center;
+            font-size:13px;
+        }
+
+        @media print{
+            button{
+                display:none;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+<div class="letterhead">
+    <img src="/static/logo.png" class="logo">
+    <h1>{{ settings.school_name }}</h1>
+    <div>{{ settings.address }}</div>
+    <div>{{ settings.phone }}</div>
+</div>
+
+<h2>{{ selected_grade }} Pupils Register</h2>
+
+<div class="meta">
+    Print Date: {{ today }}
+</div>
+
+<table>
+    <tr>
+        <th>No.</th>
+        <th>Admission No</th>
+        <th>Full Name</th>
+        <th>Gender</th>
+        <th>Guardian</th>
+        <th>Phone</th>
+        <th>Status</th>
+    </tr>
+
+    {% for p in pupils %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ p.admission_no }}</td>
+        <td>{{ p.full_name }}</td>
+        <td>{{ p.gender }}</td>
+        <td>{{ p.guardian_name }}</td>
+        <td>{{ p.guardian_phone }}</td>
+        <td>{{ p.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="footer">
+    Umar Faruq Integrated Academy | Official Pupils Register
+</div>
+
+</body>
+</html>
