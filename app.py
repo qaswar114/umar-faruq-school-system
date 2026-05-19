@@ -392,17 +392,17 @@ def attendance():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("registrar"):
+    if not role_allowed("registrar", "teacher"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-selected_grade = request.args.get("grade", "")
-
-if session.get("role", "").lower() == "teacher":
-    current_user = User.query.filter_by(username=session.get("username")).first()
-    if current_user and current_user.assigned_grade:
-        selected_grade = current_user.assigned_grade
+    selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
+
+    if session.get("role", "").lower() == "teacher":
+        current_user = User.query.filter_by(username=session.get("username")).first()
+        if current_user and current_user.assigned_grade:
+            selected_grade = current_user.assigned_grade
 
     pupils = []
     if selected_grade:
@@ -411,6 +411,10 @@ if session.get("role", "").lower() == "teacher":
     if request.method == "POST":
         selected_grade = request.form["grade"]
         attendance_date = request.form["attendance_date"]
+
+        if session.get("role", "").lower() == "teacher":
+            current_user = User.query.filter_by(username=session.get("username")).first()
+            selected_grade = current_user.assigned_grade
 
         pupils = Pupil.query.filter_by(grade=selected_grade).all()
 
@@ -436,7 +440,7 @@ if session.get("role", "").lower() == "teacher":
         flash("Attendance saved successfully.")
         return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
 
-      return render_template(
+    return render_template(
         "attendance.html",
         settings=get_settings(),
         grades=GRADES,
