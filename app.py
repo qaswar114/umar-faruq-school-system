@@ -436,14 +436,14 @@ if session.get("role", "").lower() == "teacher":
         flash("Attendance saved successfully.")
         return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
 
-   return render_template(
-    "attendance.html",
-    settings=get_settings(),
-    pupils=pupils,
-    grades=GRADES,
-    attendance_date=attendance_date,
-    selected_grade=selected_grade
-)
+      return render_template(
+        "attendance.html",
+        settings=get_settings(),
+        grades=GRADES,
+        pupils=pupils,
+        selected_grade=selected_grade,
+        attendance_date=attendance_date
+    )
 @app.route("/attendance_report")
 def attendance_report():
     if not login_required():
