@@ -147,19 +147,19 @@ function updateMonths(termId, monthId){
 {% if session.username %}
 <div class="header">
   <div class="brand"><img src="{{ url_for('static', filename='logo.png') }}" class="logo-small"><div><strong>{{ settings.school_name }}</strong><br><small>School Fees System</small></div></div>
-  <div class="nav">
+<div class="nav">
     {{ session.username }} ({{ session.role }})
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
-      {% elif session.get("role") == "Teacher" %}
-<a href="{{ url_for('dashboard') }}">Dashboard</a>
 
-<div class="dropdown">
-    <button class="dropbtn">Attendance ▼</button>
-    <div class="dropdown-content">
-        <a href="{{ url_for('attendance') }}">Mark Attendance</a>
-        <a href="{{ url_for('attendance_report') }}">Attendance Report</a>
+    {% if session.role|lower == 'teacher' %}
+    <div class="dropdown">
+        <a href="#">Attendance ▼</a>
+        <div class="dropdown-content">
+            <a href="{{ url_for('attendance') }}">Mark Attendance</a>
+            <a href="{{ url_for('attendance_report') }}">Attendance Report</a>
+        </div>
     </div>
-</div>
+    {% endif %}
 
 <a href="{{ url_for('logout') }}">Logout</a>
 {% if session.role|lower == 'admin' %}
