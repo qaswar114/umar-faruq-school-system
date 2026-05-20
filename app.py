@@ -401,7 +401,7 @@ def attendance():
 
    if session.get("role", "").lower() == "teacher":
     current_user = User.query.filter_by(username=session.get("username")).first()
-    if current_user and current_user.assigned_grade:
+     if current_user and current_user.assigned_grade:
         selected_grade = current_user.assigned_grade
 
     pupils = []
