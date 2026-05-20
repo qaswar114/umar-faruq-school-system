@@ -399,7 +399,7 @@ def attendance():
     selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
 
-    if session.get("role", "").lower() == "teacher":
+   if session.get("role", "").lower() == "teacher":
     current_user = User.query.filter_by(username=session.get("username")).first()
     if current_user and current_user.assigned_grade:
         selected_grade = current_user.assigned_grade
