@@ -644,9 +644,10 @@ def users():
 
         new_user = User(
             username=username,
-            password=generate_password_hash(password),
+            password_hash=generate_password_hash(password),
             role=role,
             assigned_grade=request.form.get("assigned_grade", "")
+
 
         )
         db.session.add(new_user)
