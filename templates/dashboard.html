@@ -4,6 +4,20 @@
 <div class="panel">
     <h1>Dashboard</h1>
 
+    {% if session.role|lower == 'teacher' %}
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>My Grade</h3>
+            <div class="number">{{ session.get('assigned_grade', 'Not Assigned') }}</div>
+        </div>
+
+        <div class="card">
+            <h3>My Pupils</h3>
+            <div class="number">{{ total_pupils }}</div>
+        </div>
+    </div>
+
+    {% else %}
     <div class="dashboard-grid">
         <div class="card">
             <h3>Total Pupils</h3>
@@ -25,16 +39,18 @@
             <div class="number">{{ receipts }}</div>
         </div>
     </div>
+    {% endif %}
 
    <div class="action-row">
     {% if session.role|lower in ['admin', 'registrar'] %}
     <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
     {% endif %}
 
-   {% if session.role|lower in ['admin', 'bursar'] %}
+    {% if session.role|lower in ['admin', 'bursar'] %}
     <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
     <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
     {% endif %}
-</div>
+   </div>
+
 </div>
 {% endblock %}
