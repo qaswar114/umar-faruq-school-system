@@ -635,7 +635,42 @@ def statements():
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
 @app.route("/users", methods=["GET", "POST"])
 def users():
-    @app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() != "admin":
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        role = request.form["role"]
+        assigned_grade = request.form.get("assigned_grade", "")
+
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password),
+            role=role,
+            assigned_grade=assigned_grade
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash("User created successfully.")
+        return redirect(url_for("users"))
+
+    all_users = User.query.all()
+
+    return render_template(
+        "users.html",
+        settings=get_settings(),
+        users=all_users,
+        grades=GRADES
+    )
+
+@app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
     if not login_required():
         return redirect(url_for("login"))
