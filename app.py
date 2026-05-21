@@ -650,7 +650,7 @@ def users():
 
         new_user = User(
             username=username,
-            password=generate_password_hash(password),
+            password_hash=generate_password_hash(password),
             role=role,
             assigned_grade=assigned_grade
         )
