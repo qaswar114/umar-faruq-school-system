@@ -586,6 +586,34 @@ def daily_collections():
         total=total,
         money=money
     )
+@app.route("/monthly_collections")
+def monthly_collections():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_month = request.args.get("month", str(date.today())[:7])
+
+    payments = Payment.query.filter(
+        Payment.payment_date.like(f"{selected_month}%")
+    ).order_by(Payment.id.desc()).all()
+
+    total = sum(
+        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+        for p in payments
+    )
+
+    return render_template(
+        "monthly_collections.html",
+        settings=get_settings(),
+        payments=payments,
+        selected_month=selected_month,
+        total=total,
+        money=money
+    )
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
