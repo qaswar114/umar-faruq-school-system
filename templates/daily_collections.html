@@ -34,18 +34,26 @@
             <th>Amount</th>
         </tr>
 
-        {% for p in payments %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ p.receipt_no }}</td>
-            <td>{{ p.pupil.full_name }}</td>
-            <td>{{ p.term }}</td>
-            <td>{{ p.month }}</td>
-            <td>{{ p.payment_method }}</td>
-            <td>{{ p.collected_by }}</td>
-            <td>{{ money(p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) }}</td>
-        </tr>
-        {% endfor %}
+      {% for p in payments %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ p.receipt_no }}</td>
+    <td>{{ p.pupil.full_name }}</td>
+    <td>{{ p.term }}</td>
+    <td>{{ p.month }}</td>
+    <td>{{ p.payment_method }}</td>
+    <td>{{ p.collected_by }}</td>
+    <td>{{ money(p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) }}</td>
+</tr>
+
+{% else %}
+<tr>
+    <td colspan="8" style="text-align:center; padding:20px;">
+        No collections found for this date.
+    </td>
+</tr>
+
+{% endfor %}
     </table>
 </div>
 {% endblock %}
