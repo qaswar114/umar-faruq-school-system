@@ -696,39 +696,26 @@ def edit_user(user_id):
         user=user,
         grades=GRADES
     )
+@app.route("/delete_user/<int:user_id>")
+def delete_user(user_id):
     if not login_required():
         return redirect(url_for("login"))
 
     if session.get("role", "").lower() != "admin":
-        flash("Only Admin can manage users.")
+        flash("Only Admin can delete users.")
         return redirect(url_for("dashboard"))
 
-    if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"].strip()
-        role = request.form["role"]
-        assigned_grade = request.form.get("assigned_grade", "")
+    user = User.query.get_or_404(user_id)
 
-        if User.query.filter_by(username=username).first():
-            flash("Username already exists.")
-            return redirect(url_for("users"))
-
-        new_user = User(
-            username=username,
-            password_hash=generate_password_hash(password),
-            role=role,
-            assigned_grade=request.form.get("assigned_grade", "")
-
-
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        flash("User created successfully.")
+    if user.username == "admin":
+        flash("Main admin cannot be deleted.")
         return redirect(url_for("users"))
 
-    all_users = User.query.order_by(User.id.desc()).all()
-    return render_template("users.html", settings=get_settings(), users=all_users, grades=GRADES)
+    db.session.delete(user)
+    db.session.commit()
 
+    flash("User deleted successfully.")
+    return redirect(url_for("users"))
 
 @app.route("/change-password", methods=["GET", "POST"])
 def change_password():
