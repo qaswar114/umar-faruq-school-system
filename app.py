@@ -558,7 +558,8 @@ def payments():
     return render_template("payments.html", settings=get_settings(), pupils=Pupil.query.all(), terms=TERMS,
                            term_months=TERM_MONTHS, year=current_year(), today=date.today(),
                            payments=Payment.query.order_by(Payment.id.desc()).all(), money=money)
-    @app.route("/daily_collections")
+ 
+@app.route("/daily_collections")
 def daily_collections():
     if not login_required():
         return redirect(url_for("login"))
@@ -585,7 +586,6 @@ def daily_collections():
         total=total,
         money=money
     )
-
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
