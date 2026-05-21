@@ -53,8 +53,15 @@
         <td>{{ u.username }}</td>
         <td>{{ u.role }}</td>
         <td>{{ u.assigned_grade or "-" }}</td>
-        <td>
+       <td>
     <a href="{{ url_for('edit_user', user_id=u.id) }}">Edit</a>
+
+    {% if u.username != 'admin' %}
+    |
+    <a href="{{ url_for('delete_user', user_id=u.id) }}"
+       onclick="return confirm('Delete this user?')"
+       style="color:red;">Delete</a>
+    {% endif %}
 </td>
     </tr>
  {% endfor %}
