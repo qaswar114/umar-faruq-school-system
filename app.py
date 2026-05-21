@@ -558,6 +558,33 @@ def payments():
     return render_template("payments.html", settings=get_settings(), pupils=Pupil.query.all(), terms=TERMS,
                            term_months=TERM_MONTHS, year=current_year(), today=date.today(),
                            payments=Payment.query.order_by(Payment.id.desc()).all(), money=money)
+    @app.route("/daily_collections")
+def daily_collections():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_date = request.args.get("date", str(date.today()))
+    report_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+
+    payments = Payment.query.filter_by(payment_date=report_date).order_by(Payment.id.desc()).all()
+
+    total = sum(
+        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+        for p in payments
+    )
+
+    return render_template(
+        "daily_collections.html",
+        settings=get_settings(),
+        payments=payments,
+        selected_date=selected_date,
+        total=total,
+        money=money
+    )
 
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
