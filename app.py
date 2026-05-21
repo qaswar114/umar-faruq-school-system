@@ -635,6 +635,32 @@ def statements():
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
 @app.route("/users", methods=["GET", "POST"])
 def users():
+    @app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
+def edit_user(user_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() != "admin":
+        flash("Only Admin can edit users.")
+        return redirect(url_for("dashboard"))
+
+    user = User.query.get_or_404(user_id)
+
+    if request.method == "POST":
+        user.role = request.form["role"]
+        user.assigned_grade = request.form.get("assigned_grade", "")
+        user.is_active = True if request.form.get("is_active") == "Active" else False
+
+        db.session.commit()
+        flash("User updated successfully.")
+        return redirect(url_for("users"))
+
+    return render_template(
+        "edit_user.html",
+        settings=get_settings(),
+        user=user,
+        grades=GRADES
+    )
     if not login_required():
         return redirect(url_for("login"))
 
