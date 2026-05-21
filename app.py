@@ -598,7 +598,7 @@ def monthly_collections():
     selected_month = request.args.get("month", str(date.today())[:7])
 
     payments = Payment.query.filter(
-        Payment.payment_date.like(f"{selected_month}%")
+        db.func.strftime('%Y-%m', Payment.date_paid) == selected_month
     ).order_by(Payment.id.desc()).all()
 
     total = sum(
