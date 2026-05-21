@@ -37,10 +37,23 @@
         <br>
         <button type="submit">Create User</button>
     </form>
+   <hr><br>
+   <h3>Existing Users</h3>
 
-    <hr><br>
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+    <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Assigned Grade</th>
+    </tr>
 
-
-    </form>
+    {% for u in users %}
+    <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ u.assigned_grade or "-" }}</td>
+    </tr>
+ {% endfor %}
+</table>
 </div>
 {% endblock %}
