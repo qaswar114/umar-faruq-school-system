@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h1>Edit User</h1>
+
+    <form method="POST">
+        <label>Username</label>
+        <input type="text" value="{{ user.username }}" disabled>
+
+        <label>Role</label>
+        <select name="role">
+            <option value="Admin" {% if user.role=="Admin" %}selected{% endif %}>Admin</option>
+            <option value="Registrar" {% if user.role=="Registrar" %}selected{% endif %}>Registrar</option>
+            <option value="Bursar" {% if user.role=="Bursar" %}selected{% endif %}>Bursar</option>
+            <option value="Teacher" {% if user.role=="Teacher" %}selected{% endif %}>Teacher</option>
+        </select>
+
+        <label>Assigned Grade</label>
+        <select name="assigned_grade">
+            <option value="">None</option>
+            {% for g in grades %}
+            <option value="{{ g }}" {% if user.assigned_grade==g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Active Status</label>
+        <select name="is_active">
+            <option value="1" {% if user.is_active %}selected{% endif %}>Active</option>
+            <option value="0" {% if not user.is_active %}selected{% endif %}>Inactive</option>
+        </select>
+
+        <br><br>
+        <button type="submit">Save Changes</button>
+    </form>
+</div>
+{% endblock %}
