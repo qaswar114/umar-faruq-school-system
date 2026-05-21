@@ -225,6 +225,7 @@ def login():
         if user and check_password_hash(user.password_hash, request.form["password"].strip()):
             session["username"] = user.username
             session["role"] = user.role
+            session["assigned_grade"] = user.assigned_grade
             return redirect(url_for("dashboard"))
         flash("Wrong username or password.")
     return render_template("login.html", settings=get_settings())
