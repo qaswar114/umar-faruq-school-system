@@ -597,8 +597,16 @@ def monthly_collections():
 
     selected_month = request.args.get("month", str(date.today())[:7])
 
+    start_date = datetime.strptime(selected_month + "-01", "%Y-%m-%d").date()
+
+    if start_date.month == 12:
+        end_date = date(start_date.year + 1, 1, 1)
+    else:
+        end_date = date(start_date.year, start_date.month + 1, 1)
+
     payments = Payment.query.filter(
-        db.func.strftime('%Y-%m', Payment.date_paid) == selected_month
+        Payment.payment_date >= start_date,
+        Payment.payment_date < end_date
     ).order_by(Payment.id.desc()).all()
 
     total = sum(
