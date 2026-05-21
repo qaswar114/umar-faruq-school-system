@@ -684,7 +684,7 @@ def edit_user(user_id):
     if request.method == "POST":
         user.role = request.form["role"]
         user.assigned_grade = request.form.get("assigned_grade", "")
-        user.is_active = True if request.form.get("is_active") == "Active" else False
+        user.is_active = bool(int(request.form["is_active"]))
 
         db.session.commit()
         flash("User updated successfully.")
