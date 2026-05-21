@@ -45,6 +45,7 @@
         <th>Username</th>
         <th>Role</th>
         <th>Assigned Grade</th>
+        <th>Action</th>
     </tr>
 
     {% for u in users %}
@@ -52,6 +53,9 @@
         <td>{{ u.username }}</td>
         <td>{{ u.role }}</td>
         <td>{{ u.assigned_grade or "-" }}</td>
+        <td>
+    <a href="{{ url_for('edit_user', user_id=u.id) }}">Edit</a>
+</td>
     </tr>
  {% endfor %}
 </table>
