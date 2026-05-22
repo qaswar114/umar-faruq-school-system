@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h2>Termly Collection Report</h2>
+
+    <form method="get" class="two">
+        <div>
+            <label>Select Year</label>
+            <input type="number" name="year" value="{{ selected_year }}">
+        </div>
+
+        <div>
+            <label>Select Term</label>
+            <select name="term">
+                {% for t in terms %}
+                <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <br>
+            <button class="btn">Load Report</button>
+            <button type="button" class="btn green" onclick="window.print()">Print</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Collections for {{ selected_term }} - {{ selected_year }}</h3>
+    <h2>Total Collected: {{ money(total) }}</h2>
+
+    <table>
+        <tr>
+            <th>No.</th>
+            <th>Receipt</th>
+            <th>Pupil</th>
+            <th>Month</th>
+            <th>Method</th>
+            <th>Collected By</th>
+            <th>Date</th>
+            <th>Amount</th>
+        </tr>
+
+        {% for p in payments %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.receipt_no }}</td>
+            <td>{{ p.pupil.full_name }}</td>
+            <td>{{ p.month }}</td>
+            <td>{{ p.payment_method }}</td>
+            <td>{{ p.collected_by }}</td>
+            <td>{{ p.payment_date }}</td>
+            <td>{{ money(p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" style="text-align:center; padding:20px;">
+                No collections found for this term.
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
