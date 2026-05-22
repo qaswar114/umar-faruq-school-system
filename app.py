@@ -1,8 +1,10 @@
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime
+from xhtml2pdf import pisa
+from io import BytesIO
 import os
 
 app = Flask(__name__)
