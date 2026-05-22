@@ -21,6 +21,27 @@
 <div class="panel">
     <h3>Collections for {{ selected_date }}</h3>
     <h2>Total Collected: {{ money(total) }}</h2>
+    <div class="summary-boxes">
+    <div class="summary-card">
+        <b>Tuition Total</b><br>
+        {{ money(tuition_total) }}
+    </div>
+
+    <div class="summary-card">
+        <b>Bus Total</b><br>
+        {{ money(bus_total) }}
+    </div>
+
+    <div class="summary-card">
+        <b>Exam Total</b><br>
+        {{ money(exam_total) }}
+    </div>
+
+    <div class="summary-card">
+        <b>Admission Total</b><br>
+        {{ money(admission_total) }}
+    </div>
+</div>
 
     <table>
         <tr>
