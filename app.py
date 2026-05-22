@@ -657,7 +657,7 @@ def termly_collections():
     admission_total = sum(p.admission_paid for p in payments)
 
     total = tuition_total + bus_total + exam_total + admission_total
-    )
+    
 
     return render_template(
         "termly_collections.html",
