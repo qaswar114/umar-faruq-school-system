@@ -665,6 +665,10 @@ def termly_collections():
         payments=payments,
         selected_term=selected_term,
         selected_year=selected_year,
+        tuition_total=tuition_total,
+        bus_total=bus_total,
+        exam_total=exam_total,
+        admission_total=admission_total,
         total=total,
         money=money,
         terms=TERMS
