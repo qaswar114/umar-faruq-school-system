@@ -660,23 +660,17 @@ def termly_collections():
     
 
     return render_template(
-        "termly_collections.html",
-        settings=get_settings(),
-        payments=payments,
-        selected_term=selected_term,
-        selected_year=selected_year,
-        tuition_total=tuition_total,
-        bus_total=bus_total,
-        exam_total=exam_total,
-        admission_total=admission_total,
-        tuition_total=tuition_total,
-        bus_total=bus_total,
-        exam_total=exam_total,
-        admission_total=admission_total,
-        total=total,
-        money=money,
-        terms=TERMS
-    )
+    "yearly_collections.html",
+    settings=get_settings(),
+    payments=payments,
+    selected_year=selected_year,
+    tuition_total=tuition_total,
+    bus_total=bus_total,
+    exam_total=exam_total,
+    admission_total=admission_total,
+    total=total,
+    money=money
+)
 @app.route("/yearly_collections")
 def yearly_collections():
     if not login_required():
