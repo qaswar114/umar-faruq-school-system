@@ -100,6 +100,11 @@ class Discount(db.Model):
     pupil = db.relationship("Pupil")
 
 def money(n):
+    def generate_pdf(html):
+    pdf = BytesIO()
+    pisa.CreatePDF(html, dest=pdf)
+    pdf.seek(0)
+    return pdf
     return "KES {:,.2f}".format(float(n or 0))
 
 def current_year():
@@ -571,6 +576,7 @@ def daily_collections():
         return redirect(url_for("dashboard"))
 
     selected_date = request.args.get("date", str(date.today()))
+    export_pdf = request.args.get("pdf")
     report_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
 
     payments = Payment.query.filter_by(payment_date=report_date).order_by(Payment.id.desc()).all()
@@ -582,18 +588,27 @@ def daily_collections():
 
     total = tuition_total + bus_total + exam_total + admission_total
 
-    return render_template(
-        "daily_collections.html",
-        settings=get_settings(),
-        payments=payments,
-        selected_date=selected_date,
-        tuition_total=tuition_total,
-        bus_total=bus_total,
-        exam_total=exam_total,
-        admission_total=admission_total,
-        total=total,
-        money=money
-    )
+    html = render_template(
+    "daily_collections.html",
+    settings=get_settings(),
+    payments=payments,
+    selected_date=selected_date,
+    tuition_total=tuition_total,
+    bus_total=bus_total,
+    exam_total=exam_total,
+    admission_total=admission_total,
+    total=total,
+    money=money
+)
+
+if export_pdf:
+    pdf = generate_pdf(html)
+    response = make_response(pdf.read())
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = "attachment; filename=daily_collections.pdf"
+    return response
+
+return html
 @app.route("/monthly_collections")
 def monthly_collections():
     if not login_required():
