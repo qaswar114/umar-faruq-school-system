@@ -654,6 +654,34 @@ def termly_collections():
         money=money,
         terms=TERMS
     )
+@app.route("/yearly_collections")
+def yearly_collections():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_year = int(request.args.get("year", current_year()))
+
+    payments = Payment.query.filter_by(
+        academic_year=selected_year
+    ).order_by(Payment.id.desc()).all()
+
+    total = sum(
+        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+        for p in payments
+    )
+
+    return render_template(
+        "yearly_collections.html",
+        settings=get_settings(),
+        payments=payments,
+        selected_year=selected_year,
+        total=total,
+        money=money
+    )
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
