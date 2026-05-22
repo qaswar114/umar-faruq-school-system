@@ -21,10 +21,28 @@
 <div class="panel">
     <h3>Collections for {{ selected_month }}</h3>
     <h2>Total Collected: {{ money(total) }}</h2>
-    tuition_total=tuition_total,
-    bus_total=bus_total,
-    exam_total=exam_total,
-    admission_total=admission_total,
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; margin:25px 0;">
+    <div style="background:#eaf2ff; padding:18px; border-radius:12px;">
+        <b>Tuition Total</b>
+        <h3>{{ money(tuition_total) }}</h3>
+    </div>
+
+    <div style="background:#eafff3; padding:18px; border-radius:12px;">
+        <b>Bus Total</b>
+        <h3>{{ money(bus_total) }}</h3>
+    </div>
+
+    <div style="background:#fff6e6; padding:18px; border-radius:12px;">
+        <b>Exam Total</b>
+        <h3>{{ money(exam_total) }}</h3>
+    </div>
+
+    <div style="background:#f3eaff; padding:18px; border-radius:12px;">
+        <b>Admission Total</b>
+        <h3>{{ money(admission_total) }}</h3>
+    </div>
+</div>
+   
 
     <table>
         <tr>
