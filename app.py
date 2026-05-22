@@ -669,6 +669,10 @@ def termly_collections():
         bus_total=bus_total,
         exam_total=exam_total,
         admission_total=admission_total,
+        tuition_total=tuition_total,
+        bus_total=bus_total,
+        exam_total=exam_total,
+        admission_total=admission_total,
         total=total,
         money=money,
         terms=TERMS
@@ -688,9 +692,12 @@ def yearly_collections():
         academic_year=selected_year
     ).order_by(Payment.id.desc()).all()
 
-    total = sum(
-        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-        for p in payments
+   tuition_total = sum(p.tuition_paid for p in payments)
+   bus_total = sum(p.bus_paid for p in payments)
+   exam_total = sum(p.exam_paid for p in payments)
+   admission_total = sum(p.admission_paid for p in payments)
+
+   total = tuition_total + bus_total + exam_total + admission_total
     )
 
     return render_template(
