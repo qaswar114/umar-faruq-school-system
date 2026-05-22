@@ -100,11 +100,16 @@ class Discount(db.Model):
     pupil = db.relationship("Pupil")
 
 def money(n):
+    return "KES {:,.2f}".format(float(n or 0))
+
 def generate_pdf(html):
     pdf = BytesIO()
     pisa.CreatePDF(html, dest=pdf)
     pdf.seek(0)
     return pdf
+
+def current_year():
+    return datetime.now().year
 
 def current_year():
     return datetime.now().year
