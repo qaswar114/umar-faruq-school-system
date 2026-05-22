@@ -573,25 +573,25 @@ def daily_collections():
 
     payments = Payment.query.filter_by(payment_date=report_date).order_by(Payment.id.desc()).all()
 
-tuition_total = sum(p.tuition_paid for p in payments)
-bus_total = sum(p.bus_paid for p in payments)
-exam_total = sum(p.exam_paid for p in payments)
-admission_total = sum(p.admission_paid for p in payments)
+    tuition_total = sum(p.tuition_paid for p in payments)
+    bus_total = sum(p.bus_paid for p in payments)
+    exam_total = sum(p.exam_paid for p in payments)
+    admission_total = sum(p.admission_paid for p in payments)
 
-total = tuition_total + bus_total + exam_total + admission_total
+    total = tuition_total + bus_total + exam_total + admission_total
 
-  return render_template(
-    "daily_collections.html",
-    settings=get_settings(),
-    payments=payments,
-    selected_date=selected_date,
-    tuition_total=tuition_total,
-    bus_total=bus_total,
-    exam_total=exam_total,
-    admission_total=admission_total,
-    total=total,
-    money=money
-)
+    return render_template(
+        "daily_collections.html",
+        settings=get_settings(),
+        payments=payments,
+        selected_date=selected_date,
+        tuition_total=tuition_total,
+        bus_total=bus_total,
+        exam_total=exam_total,
+        admission_total=admission_total,
+        total=total,
+        money=money
+    )
 @app.route("/monthly_collections")
 def monthly_collections():
     if not login_required():
