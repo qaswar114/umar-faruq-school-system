@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h2>Defaulters Report</h2>
+
+    <form method="get" class="two">
+        <div>
+            <label>Select Year</label>
+            <input type="number" name="year" value="{{ year }}">
+        </div>
+
+        <div>
+            <br>
+            <button class="btn">Load Report</button>
+            <button type="button" class="btn green" onclick="window.print()">Print</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Fee Defaulters for {{ year }}</h3>
+
+    <table>
+        <tr>
+            <th>No.</th>
+            <th>Admission No</th>
+            <th>Pupil Name</th>
+            <th>Grade</th>
+            <th>Guardian</th>
+            <th>Phone</th>
+            <th>Total Due</th>
+            <th>Paid</th>
+            <th>Discount</th>
+            <th>Balance</th>
+        </tr>
+
+        {% for row in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.pupil.admission_no }}</td>
+            <td>{{ row.pupil.full_name }}</td>
+            <td>{{ row.pupil.grade }}</td>
+            <td>{{ row.pupil.guardian_name }}</td>
+            <td>{{ row.pupil.guardian_phone }}</td>
+            <td>{{ money(row.total_due) }}</td>
+            <td>{{ money(row.total_paid) }}</td>
+            <td>{{ money(row.discounts) }}</td>
+            <td><b>{{ money(row.balance) }}</b></td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="10" style="text-align:center; padding:20px;">
+                No fee defaulters found.
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
