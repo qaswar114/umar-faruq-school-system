@@ -595,6 +595,7 @@ def daily_collections():
 
     total = tuition_total + bus_total + exam_total + admission_total
 
+   if export_pdf:
     html = render_template(
         "daily_collections_pdf.html",
         settings=get_settings(),
@@ -608,14 +609,24 @@ def daily_collections():
         money=money
     )
 
-    if export_pdf:
-        pdf = generate_pdf(html)
-        response = make_response(pdf.read())
-        response.headers["Content-Type"] = "application/pdf"
-        response.headers["Content-Disposition"] = "attachment; filename=daily_collections.pdf"
-        return response
+    pdf = generate_pdf(html)
+    response = make_response(pdf.read())
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = "attachment; filename=daily_collections.pdf"
+    return response
 
-    return html
+return render_template(
+    "daily_collections.html",
+    settings=get_settings(),
+    payments=payments,
+    selected_date=selected_date,
+    tuition_total=tuition_total,
+    bus_total=bus_total,
+    exam_total=exam_total,
+    admission_total=admission_total,
+    total=total,
+    money=money
+)
 @app.route("/monthly_collections")
 def monthly_collections():
     if not login_required():
