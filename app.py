@@ -581,23 +581,38 @@ def daily_collections():
 
     selected_date = request.args.get("date", str(date.today()))
     export_pdf = request.args.get("pdf")
-
     report_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
 
-    payments = Payment.query.filter_by(
-        payment_date=report_date
-    ).order_by(Payment.id.desc()).all()
+    payments = Payment.query.filter_by(payment_date=report_date).order_by(Payment.id.desc()).all()
 
     tuition_total = sum(p.tuition_paid for p in payments)
     bus_total = sum(p.bus_paid for p in payments)
     exam_total = sum(p.exam_paid for p in payments)
     admission_total = sum(p.admission_paid for p in payments)
-
     total = tuition_total + bus_total + exam_total + admission_total
 
-   if export_pdf:
-    html = render_template(
-        "daily_collections_pdf.html",
+    if export_pdf:
+        html = render_template(
+            "daily_collections_pdf.html",
+            settings=get_settings(),
+            payments=payments,
+            selected_date=selected_date,
+            tuition_total=tuition_total,
+            bus_total=bus_total,
+            exam_total=exam_total,
+            admission_total=admission_total,
+            total=total,
+            money=money
+        )
+
+        pdf = generate_pdf(html)
+        response = make_response(pdf.read())
+        response.headers["Content-Type"] = "application/pdf"
+        response.headers["Content-Disposition"] = "attachment; filename=daily_collections.pdf"
+        return response
+
+    return render_template(
+        "daily_collections.html",
         settings=get_settings(),
         payments=payments,
         selected_date=selected_date,
@@ -608,7 +623,6 @@ def daily_collections():
         total=total,
         money=money
     )
-
     pdf = generate_pdf(html)
     response = make_response(pdf.read())
     response.headers["Content-Type"] = "application/pdf"
