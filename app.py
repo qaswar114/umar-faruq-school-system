@@ -656,37 +656,37 @@ def monthly_collections():
     total = tuition_total + bus_total + exam_total + admission_total
 
     if export_pdf:
-       html = render_template(
-           "monthly_collections_pdf.html",
-           settings=get_settings(),
-           payments=payments,
-           selected_month=selected_month,
-           tuition_total=tuition_total,
-           bus_total=bus_total,
-           exam_total=exam_total,
-           admission_total=admission_total,
-           total=total,
-           money=money
+        html = render_template(
+            "monthly_collections_pdf.html",
+            settings=get_settings(),
+            payments=payments,
+            selected_month=selected_month,
+            tuition_total=tuition_total,
+            bus_total=bus_total,
+            exam_total=exam_total,
+            admission_total=admission_total,
+            total=total,
+            money=money
+        )
+
+        pdf = generate_pdf(html)
+        response = make_response(pdf.read())
+        response.headers["Content-Type"] = "application/pdf"
+        response.headers["Content-Disposition"] = "attachment; filename=monthly_collections.pdf"
+        return response
+
+    return render_template(
+        "monthly_collections.html",
+        settings=get_settings(),
+        payments=payments,
+        selected_month=selected_month,
+        tuition_total=tuition_total,
+        bus_total=bus_total,
+        exam_total=exam_total,
+        admission_total=admission_total,
+        total=total,
+        money=money
     )
-
-    pdf = generate_pdf(html)
-    response = make_response(pdf.read())
-    response.headers["Content-Type"] = "application/pdf"
-    response.headers["Content-Disposition"] = "attachment; filename=monthly_collections.pdf"
-    return response
-
-return render_template(
-    "monthly_collections.html",
-    settings=get_settings(),
-    payments=payments,
-    selected_month=selected_month,
-    tuition_total=tuition_total,
-    bus_total=bus_total,
-    exam_total=exam_total,
-    admission_total=admission_total,
-    total=total,
-    money=money
-)
 @app.route("/termly_collections")
 def termly_collections():
     if not login_required():
