@@ -769,14 +769,15 @@ def defaulters_report():
 
     year = int(request.args.get("year", current_year()))
     selected_grade = request.args.get("grade", "")
+
+    query = Pupil.query.filter_by(status="Active")
+
+    if selected_grade:
+        query = query.filter_by(grade=selected_grade)
+
     rows = []
 
-   query = Pupil.query.filter_by(status="Active")
-
-if selected_grade:
-    query = query.filter_by(grade=selected_grade)
-
-for p in query.all():
+    for p in query.all():
         total_due = year_due(p, year)
         total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
@@ -790,8 +791,9 @@ for p in query.all():
                 "discounts": discounts,
                 "balance": balance
             })
-            total_defaulters = len(rows)
-            total_balance = sum(row["balance"] for row in rows)
+
+    total_defaulters = len(rows)
+    total_balance = sum(row["balance"] for row in rows)
 
     return render_template(
         "defaulters_report.html",
