@@ -784,10 +784,14 @@ def defaulters_report():
                 "discounts": discounts,
                 "balance": balance
             })
+            total_defaulters = len(rows)
+            total_balance = sum(row["balance"] for row in rows)
 
     return render_template(
         "defaulters_report.html",
         settings=get_settings(),
+        total_defaulters=total_defaulters,
+        total_balance=total_balance,
         rows=rows,
         year=year,
         money=money
