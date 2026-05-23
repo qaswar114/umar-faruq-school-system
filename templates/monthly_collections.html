@@ -14,6 +14,10 @@
             <br>
             <button class="btn">Load Report</button>
             <button type="button" class="btn green" onclick="window.print()">Print</button>
+            <a href="{{ url_for('monthly_collections', month=selected_month, pdf=1) }}"
+   class="btn btn-primary">
+   Export PDF
+</a>
         </div>
     </form>
 </div>
