@@ -20,6 +20,17 @@
 
 <div class="panel">
     <h3>Fee Defaulters for {{ year }}</h3>
+    <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:15px; margin:25px 0;">
+    <div style="background:#fff3e6; padding:18px; border-radius:12px;">
+        <b>Total Defaulters</b>
+        <h3>{{ total_defaulters }}</h3>
+    </div>
+
+    <div style="background:#ffecec; padding:18px; border-radius:12px;">
+        <b>Total Outstanding Balance</b>
+        <h3>{{ money(total_balance) }}</h3>
+    </div>
+</div>
 
     <table>
         <tr>
