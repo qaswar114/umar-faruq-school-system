@@ -758,6 +758,40 @@ def yearly_collections():
         total=total,
         money=money
     )
+@app.route("/defaulters_report")
+def defaulters_report():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    year = int(request.args.get("year", current_year()))
+    rows = []
+
+    for p in Pupil.query.filter_by(status="Active").all():
+        total_due = year_due(p, year)
+        total_paid = paid_year(p.id, year)
+        discounts = discount_year(p.id, year)
+        balance = total_due - total_paid - discounts
+
+        if balance > 0:
+            rows.append({
+                "pupil": p,
+                "total_due": total_due,
+                "total_paid": total_paid,
+                "discounts": discounts,
+                "balance": balance
+            })
+
+    return render_template(
+        "defaulters_report.html",
+        settings=get_settings(),
+        rows=rows,
+        year=year,
+        money=money
+    )
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
