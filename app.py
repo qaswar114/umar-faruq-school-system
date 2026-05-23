@@ -596,7 +596,7 @@ def daily_collections():
     total = tuition_total + bus_total + exam_total + admission_total
 
     html = render_template(
-        "daily_collections.html",
+        "daily_collections_pdf.html",
         settings=get_settings(),
         payments=payments,
         selected_date=selected_date,
