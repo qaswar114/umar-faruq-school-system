@@ -9,6 +9,17 @@
             <label>Select Year</label>
             <input type="number" name="year" value="{{ year }}">
         </div>
+        <div>
+    <label>Select Grade</label>
+    <select name="grade">
+        <option value="">All Grades</option>
+        {% for g in grades %}
+        <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
+            {{ g }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
 
         <div>
             <br>
