@@ -514,13 +514,29 @@ def fees():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        fee = get_fee(int(request.form["academic_year"]), request.form["grade"], request.form["term"], request.form["month"])
-        fee.tuition_fee = float(request.form.get("tuition_fee") or 0)
-        fee.bus_fee = float(request.form.get("bus_fee") or 0)
-        fee.exam_fee = float(request.form.get("exam_fee") or 0)
-        fee.admission_fee = float(request.form.get("admission_fee") or 0)
-        db.session.commit()
-        flash("Fee structure saved.")
+    academic_year = int(request.form["academic_year"])
+    grade = request.form["grade"]
+    term = request.form["term"]
+
+    tuition_fee = float(request.form.get("tuition_fee") or 0)
+    bus_fee = float(request.form.get("bus_fee") or 0)
+    exam_fee = float(request.form.get("exam_fee") or 0)
+    admission_fee = float(request.form.get("admission_fee") or 0)
+
+    # Save monthly fees automatically for all months in the selected term
+    for month in TERM_MONTHS.get(term, []):
+        fee = get_fee(academic_year, grade, term, month)
+        fee.tuition_fee = tuition_fee
+        fee.bus_fee = bus_fee
+
+        # Exam fee should only appear once per term, not every month
+        fee.exam_fee = exam_fee if month == TERM_MONTHS[term][0] else 0
+
+        # Admission fee should only appear once, usually at admission/first month
+        fee.admission_fee = admission_fee if month == TERM_MONTHS[term][0] else 0
+
+    db.session.commit()
+    flash("Fee structure saved for all months in the selected term.")
     return render_template("fees.html", settings=get_settings(), grades=GRADES, terms=TERMS, term_months=TERM_MONTHS,
                            year=current_year(), fees=FeeStructure.query.order_by(FeeStructure.academic_year.desc()).all(), money=money)
 
