@@ -2,13 +2,14 @@
   <div class="three">
     <div><label>Academic Year</label><input name="academic_year" type="number" value="{{year}}"></div>
     <div><label>Grade</label><select name="grade">{% for g in grades %}<option>{{g}}</option>{% endfor %}</select></div>
-   <div><label>Term</label><select name="term" id="fTerm">{% for t in terms %}<option>{{t}}</option>{% endfor %}</select></div></div><div class="three">
+   <div><label>Term</label><select name="term" id="fTerm">{% for t in terms %}<option>{{t}}</option>{% endfor %}</select></div></div></div><div class="two">
      
       <div><label>Monthly Tuition</label>
           <input name="tuition_fee" type="number" value="0"></div>
       <div><label>Monthly Bus</label>
         <input name="bus_fee" type="number" value="0"></div>
-    </div><div class="two">
+    </div>
+  <div class="two">
       <div><label>Term Exam Fee</label><input name="exam_fee" type="number" value="0"></div>
       <div><label>Term Admission Fee</label><input name="admission_fee" type="number" value="0"></div></div>
   <button class="btn green">Save Fee Structure</button></form></div><div class="panel"><table><tr><th>Year</th><th>Grade</th><th>Term</th><th>Month</th><th>Tuition</th><th>Bus</th><th>Exam</th><th>Admission</th></tr>{% for f in fees %}<tr><td>{{f.academic_year}}</td><td>{{f.grade}}</td><td>{{f.term}}</td><td>{{f.month}}</td><td>{{money(f.tuition_fee)}}</td><td>{{money(f.bus_fee)}}</td><td>{{money(f.exam_fee)}}</td><td>{{money(f.admission_fee)}}</td></tr>{% endfor %}</table></div>{% endblock %}
