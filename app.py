@@ -526,6 +526,8 @@ def fees():
     # Save monthly fees automatically for all months in the selected term
     for month in TERM_MONTHS.get(term, []):
         fee = get_fee(academic_year, grade, term, month)
+        db.session.add(fee)
+        
         fee.tuition_fee = tuition_fee
         fee.bus_fee = bus_fee
 
