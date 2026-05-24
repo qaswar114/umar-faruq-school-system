@@ -2,8 +2,7 @@
   <div class="three">
     <div><label>Academic Year</label><input name="academic_year" type="number" value="{{year}}"></div>
     <div><label>Grade</label><select name="grade">{% for g in grades %}<option>{{g}}</option>{% endfor %}</select></div>
-   <div><label>Term</label><select name="term" id="fTerm">{% for t in terms %}<option>{{t}}</option>{% endfor %}</select></div></div></div><div class="two">
-     
+   <div><label>Term</label><select name="term" id="fTerm">{% for t in terms %}<option>{{t}}</option>{% endfor %}</select></div></div><div class="two">
       <div><label>Monthly Tuition</label>
           <input name="tuition_fee" type="number" value="0"></div>
       <div><label>Monthly Bus</label>
