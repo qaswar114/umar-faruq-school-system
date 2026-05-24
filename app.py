@@ -537,9 +537,9 @@ def fees():
         # Admission fee should only appear once, usually at admission/first month
         fee.admission_fee = admission_fee if month == TERM_MONTHS[term][0] else 0
 
-    db.session.commit()
-    flash("Fee structure saved successfully.")
-return redirect(url_for("fees"))
+        db.session.commit()
+        flash("Fee structure saved successfully.")
+        return redirect(url_for("fees"))
 
 
 @app.route("/discounts", methods=["GET","POST"])
