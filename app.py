@@ -514,14 +514,14 @@ def fees():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-    academic_year = int(request.form["academic_year"])
-    grade = request.form["grade"]
-    term = request.form["term"]
+        academic_year = int(request.form["academic_year"])
+        grade = request.form["grade"]
+        term = request.form["term"]
 
-    tuition_fee = float(request.form.get("tuition_fee") or 0)
-    bus_fee = float(request.form.get("bus_fee") or 0)
-    exam_fee = float(request.form.get("exam_fee") or 0)
-    admission_fee = float(request.form.get("admission_fee") or 0)
+        tuition_fee = float(request.form.get("tuition_fee") or 0)
+        bus_fee = float(request.form.get("bus_fee") or 0)
+        exam_fee = float(request.form.get("exam_fee") or 0)
+        admission_fee = float(request.form.get("admission_fee") or 0)
 
     # Save monthly fees automatically for all months in the selected term
     for month in TERM_MONTHS.get(term, []):
