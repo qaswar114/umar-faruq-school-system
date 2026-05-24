@@ -538,9 +538,9 @@ def fees():
         fee.admission_fee = admission_fee if month == TERM_MONTHS[term][0] else 0
 
     db.session.commit()
-    flash("Fee structure saved for all months in the selected term.")
-    return render_template("fees.html", settings=get_settings(), grades=GRADES, terms=TERMS, term_months=TERM_MONTHS,
-                           year=current_year(), fees=FeeStructure.query.order_by(FeeStructure.academic_year.desc()).all(), money=money)
+    flash("Fee structure saved successfully.")
+return redirect(url_for("fees"))
+
 
 @app.route("/discounts", methods=["GET","POST"])
 def discounts():
