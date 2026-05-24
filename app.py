@@ -61,7 +61,7 @@ class FeeStructure(db.Model):
     academic_year = db.Column(db.Integer, nullable=False)
     grade = db.Column(db.String(50), nullable=False)
     term = db.Column(db.String(30), nullable=False)
-    month = db.Column(db.String(30), nullable=False)
+    month = db.Column(db.String(30), nullable=True)
     tuition_fee = db.Column(db.Float, default=0)
     bus_fee = db.Column(db.Float, default=0)
     exam_fee = db.Column(db.Float, default=0)
