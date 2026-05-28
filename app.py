@@ -523,22 +523,36 @@ def fees():
         exam_fee = float(request.form.get("exam_fee") or 0)
         admission_fee = float(request.form.get("admission_fee") or 0)
 
-    # Save monthly fees automatically for all months in the selected term
-    for month in TERM_MONTHS.get(term, []):
-        fee = get_fee(academic_year, grade, term, month)
-        db.session.add(fee)
-        
-        fee.tuition_fee = tuition_fee
-        fee.bus_fee = bus_fee
+        # Save fees automatically for all months in the term
+        for month in TERM_MONTHS.get(term, []):
+            fee = get_fee(academic_year, grade, term, month)
 
-        # Exam fee should only appear once per term, not every month
-        fee.exam_fee = exam_fee if month == TERM_MONTHS[term][0] else 0
+            fee.tuition_fee = tuition_fee
+            fee.bus_fee = bus_fee
 
-        # Admission fee should only appear once, usually at admission/first month
-        fee.admission_fee = admission_fee if month == TERM_MONTHS[term][0] else 0
+            # Exam fee only once per term
+            fee.exam_fee = exam_fee if month == TERM_MONTHS[term][0] else 0
+
+            # Admission fee only once
+            fee.admission_fee = admission_fee if month == TERM_MONTHS[term][0] else 0
+
+            db.session.add(fee)
+
         db.session.commit()
+
         flash("Fee structure saved successfully.")
         return redirect(url_for("fees"))
+
+    return render_template(
+        "fees.html",
+        settings=get_settings(),
+        grades=GRADES,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        year=current_year(),
+        fees=FeeStructure.query.order_by(FeeStructure.academic_year.desc()).all(),
+        money=money
+    )
             
 
 @app.route("/discounts", methods=["GET","POST"])
