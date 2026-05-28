@@ -204,7 +204,7 @@ def term_due(pupil, year, term):
     first = term_months(term)[0]
     d = monthly_due(pupil, year, term, first)
     total["exam"] = d["exam"]
-    total["admission"] = d["admission"]
+    total["admission"] = d["admission"] if pupil.new_admission == "Yes" else 0
     return total
 
 def year_due(pupil, year):
