@@ -856,10 +856,11 @@ def balances():
         return redirect(url_for("dashboard"))
     year = int(request.args.get("year", current_year()))
     term = request.args.get("term", "Term 1")
-    month = request.args.get("month", TERM_MONTHS[term][0])
+    months = TERM_MONTHS.get(term, [])
+    month = request.args.get("month", months[0] if months else "")
     rows = []
     for p in Pupil.query.all():
-        md = monthly_due(p, year, term, month)
+        md = monthly_due(p, year, term, month) if month else {"tuition":0,"bus":0,"exam":0,"admission":0}
         opening = opening_arrears(p, year)
         closing = opening + year_due(p, year) - paid_year(p.id, year) - discount_year(p.id, year)
         rows.append({"pupil":p, "opening":opening, "month_due":sum(md.values()), "month_paid":paid_month(p.id,year,term,month),
