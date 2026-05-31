@@ -197,14 +197,21 @@ def monthly_due(pupil, year, term, month):
 
 def term_due(pupil, year, term):
     total = {"tuition":0,"bus":0,"exam":0,"admission":0}
-    for m in term_months(term):
+    months = term_months(term)
+
+    if not months:
+        return total
+
+    for m in months:
         d = monthly_due(pupil, year, term, m)
         total["tuition"] += d["tuition"]
         total["bus"] += d["bus"]
-    first = term_months(term)[0]
+
+    first = months[0]
     d = monthly_due(pupil, year, term, first)
     total["exam"] = d["exam"]
     total["admission"] = d["admission"] if pupil.new_admission == "Yes" else 0
+
     return total
 
 def year_due(pupil, year):
