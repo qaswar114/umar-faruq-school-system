@@ -854,19 +854,45 @@ def balances():
     if not role_allowed("bursar"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
+
     year = int(request.args.get("year", current_year()))
     term = request.args.get("term", "Term 1")
-    months = TERM_MONTHS.get(term, [])
-    month = request.args.get("month", months[0] if months else "")
+
+    months = TERM_MONTHS.get(term, ["January"])
+    month = request.args.get("month", months[0])
+
     rows = []
-    for p in Pupil.query.all():
-        md = monthly_due(p, year, term, month) if month else {"tuition":0,"bus":0,"exam":0,"admission":0}
+
+    for p in Pupil.query.filter_by(status="Active").all():
+        md = monthly_due(p, year, term, month)
+
         opening = opening_arrears(p, year)
-        closing = opening + year_due(p, year) - paid_year(p.id, year) - discount_year(p.id, year)
-        rows.append({"pupil":p, "opening":opening, "month_due":sum(md.values()), "month_paid":paid_month(p.id,year,term,month),
-                     "discounts":discount_year(p.id,year), "closing":closing})
-    return render_template("balances.html", settings=get_settings(), rows=rows, year=year, term=term, month=month,
-                           terms=TERMS, term_months=TERM_MONTHS, money=money)
+        paid = paid_year(p.id, year)
+        discounts = discount_year(p.id, year)
+        due = year_due(p, year)
+
+        closing = opening + due - paid - discounts
+
+        rows.append({
+            "pupil": p,
+            "opening": opening,
+            "month_due": sum(md.values()),
+            "month_paid": paid_month(p.id, year, term, month),
+            "discounts": discounts,
+            "closing": closing
+        })
+
+    return render_template(
+        "balances.html",
+        settings=get_settings(),
+        rows=rows,
+        year=year,
+        term=term,
+        month=month,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        money=money
+    )
 
 @app.route("/statement/<int:pupil_id>/<int:year>")
 def statement(pupil_id, year):
