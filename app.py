@@ -865,26 +865,30 @@ def balances():
     year = int(request.args.get("year", current_year()))
     term = request.args.get("term", "Term 1")
 
-    months = TERM_MONTHS.get(term, ["January"])
-    month = request.args.get("month", months[0])
+    months = TERM_MONTHS.get(term, [])
+    month = request.args.get("month", months[0] if months else "")
 
     rows = []
 
     for p in Pupil.query.filter_by(status="Active").all():
-        md = monthly_due(p, year, term, month)
+        if month:
+            md = monthly_due(p, year, term, month)
+            month_due = sum(md.values())
+            month_paid = paid_month(p.id, year, term, month)
+        else:
+            month_due = 0
+            month_paid = 0
 
-        opening = opening_arrears(p, year)
-        paid = paid_year(p.id, year)
+        year_total_due = year_due(p, year)
+        year_total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
-        due = year_due(p, year)
-
-        closing = opening + due - paid - discounts
+        closing = year_total_due - year_total_paid - discounts
 
         rows.append({
             "pupil": p,
-            "opening": opening,
-            "month_due": sum(md.values()),
-            "month_paid": paid_month(p.id, year, term, month),
+            "opening": 0,
+            "month_due": month_due,
+            "month_paid": month_paid,
             "discounts": discounts,
             "closing": closing
         })
