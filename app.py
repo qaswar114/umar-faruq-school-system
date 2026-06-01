@@ -824,6 +824,8 @@ def defaulters_report():
 
     year = int(request.args.get("year", current_year()))
     selected_grade = request.args.get("grade", "")
+    selected_term = request.args.get("term", "Term 1")
+    selected_month = request.args.get("month", "May")
 
     query = Pupil.query.filter_by(status="Active")
 
@@ -833,7 +835,7 @@ def defaulters_report():
     rows = []
 
     for p in query.all():
-        total_due = due_until_month(p, year, "Term 1", "May")
+        total_due = due_until_month(p, year, selected_term, selected_month)
         total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
         balance = total_due - total_paid - discounts
