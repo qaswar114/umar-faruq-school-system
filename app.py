@@ -896,7 +896,7 @@ def balances():
             month_due = 0
             month_paid = 0
 
-        year_total_due = year_due(p, year)
+        year_total_due = due_until_month(p, year, term, month)
         year_total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
         closing = year_total_due - year_total_paid - discounts
