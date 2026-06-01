@@ -4,22 +4,39 @@
 <div class="panel">
     <h2>Defaulters Report</h2>
 
-    <form method="get" class="two">
+    <form method="get" class="three">
         <div>
             <label>Select Year</label>
             <input type="number" name="year" value="{{ year }}">
         </div>
+
         <div>
-    <label>Select Grade</label>
-    <select name="grade">
-        <option value="">All Grades</option>
-        {% for g in grades %}
-        <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
-            {{ g }}
-        </option>
-        {% endfor %}
-    </select>
-</div>
+            <label>Select Term</label>
+            <select name="term">
+                {% for t in terms %}
+                <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label>Select Month</label>
+            <select name="month">
+                {% for m in term_months[selected_term] %}
+                <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label>Select Grade</label>
+            <select name="grade">
+                <option value="">All Grades</option>
+                {% for g in grades %}
+                <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
         <div>
             <br>
@@ -30,18 +47,19 @@
 </div>
 
 <div class="panel">
-    <h3>Fee Defaulters for {{ year }}</h3>
-    <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:15px; margin:25px 0;">
-    <div style="background:#fff3e6; padding:18px; border-radius:12px;">
-        <b>Total Defaulters</b>
-        <h3>{{ total_defaulters }}</h3>
-    </div>
+    <h3>Fee Defaulters for {{ selected_month }} {{ year }}</h3>
 
-    <div style="background:#ffecec; padding:18px; border-radius:12px;">
-        <b>Total Outstanding Balance</b>
-        <h3>{{ money(total_balance) }}</h3>
+    <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:15px; margin:25px 0;">
+        <div style="background:#fff3e6; padding:18px; border-radius:12px;">
+            <b>Total Defaulters</b>
+            <h3>{{ total_defaulters }}</h3>
+        </div>
+
+        <div style="background:#ffecec; padding:18px; border-radius:12px;">
+            <b>Total Outstanding Balance</b>
+            <h3>{{ money(total_balance) }}</h3>
+        </div>
     </div>
-</div>
 
     <table>
         <tr>
