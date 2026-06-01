@@ -235,6 +235,26 @@ def discount_year(pupil_id, year):
 
 def opening_arrears(pupil, year):
     return 0
+def due_until_month(pupil, year, selected_term, selected_month):
+    if year < 2026:
+        return 0
+
+    total = 0
+    started = False
+
+    for term in TERMS:
+        for month in term_months(term):
+            if year == 2026 and month == "May":
+                started = True
+
+            if started:
+                d = monthly_due(pupil, year, term, month)
+                total += sum(d.values())
+
+            if term == selected_term and month == selected_month:
+                return total
+
+    return total
 
 @app.before_request
 def setup_once():
