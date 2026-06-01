@@ -234,10 +234,7 @@ def discount_year(pupil_id, year):
     return sum(d.amount for d in Discount.query.filter_by(pupil_id=pupil_id, academic_year=year).all())
 
 def opening_arrears(pupil, year):
-    bal = 0
-    for y in range(2020, year):
-        bal += year_due(pupil, y) - paid_year(pupil.id, y) - discount_year(pupil.id, y)
-    return bal
+    return 0
 
 @app.before_request
 def setup_once():
