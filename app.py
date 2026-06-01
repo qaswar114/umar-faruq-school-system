@@ -853,16 +853,20 @@ def defaulters_report():
     total_balance = sum(row["balance"] for row in rows)
 
     return render_template(
-        "defaulters_report.html",
-        settings=get_settings(),
-        grades=GRADES,
-        selected_grade=selected_grade,
-        total_defaulters=total_defaulters,
-        total_balance=total_balance,
-        rows=rows,
-        year=year,
-        money=money
-    )
+    "defaulters_report.html",
+    settings=get_settings(),
+    grades=GRADES,
+    selected_grade=selected_grade,
+    selected_term=selected_term,
+    selected_month=selected_month,
+    terms=TERMS,
+    term_months=TERM_MONTHS,
+    total_defaulters=total_defaulters,
+    total_balance=total_balance,
+    rows=rows,
+    year=year,
+    money=money
+)
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
