@@ -833,7 +833,7 @@ def defaulters_report():
     rows = []
 
     for p in query.all():
-        total_due = year_due(p, year)
+        total_due = due_until_month(p, year, "Term 1", "May")
         total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
         balance = total_due - total_paid - discounts
