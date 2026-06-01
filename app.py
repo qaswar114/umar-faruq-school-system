@@ -1056,6 +1056,20 @@ def change_password():
         return redirect(url_for("dashboard"))
 
     return render_template("change_password.html", settings=get_settings())
+@app.route("/reset_payments_may2026")
+def reset_payments_may2026():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() != "admin":
+        flash("Only Admin can reset payments.")
+        return redirect(url_for("dashboard"))
+
+    Payment.query.delete()
+    db.session.commit()
+
+    flash("All test payments have been cleared. System is ready to start from May 2026.")
+    return redirect(url_for("dashboard"))
 if __name__ == "__main__":
     with app.app_context():
         init_database()
