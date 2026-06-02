@@ -947,15 +947,27 @@ def statement(pupil_id, year):
         return redirect(url_for("dashboard"))
 
     pupil = Pupil.query.get_or_404(pupil_id)
+
     entries = []
     bal = opening_arrears(pupil, year)
 
-if bal > 0:
-    entries.append((f"01/01/{year}", f"Opening Arrears B/F from {year-1}", bal, 0, bal))
+    if bal > 0:
+        entries.append((
+            f"01/01/{year}",
+            f"Opening Arrears B/F from {year-1}",
+            bal,
+            0,
+            bal
+        ))
 
     for term in TERMS:
         for month in term_months(term):
-            if year == 2026 and month not in ["May", "June", "July", "August", "September", "October", "November", "December"]:
+
+            if year == 2026 and month not in [
+                "May", "June", "July",
+                "August", "September", "October",
+                "November", "December"
+            ]:
                 continue
 
             d = monthly_due(pupil, year, term, month)
@@ -963,7 +975,13 @@ if bal > 0:
 
             if debit:
                 bal += debit
-                entries.append(("", f"{month} {term} Fees", debit, 0, bal))
+                entries.append((
+                    "",
+                    f"{month} {term} Fees",
+                    debit,
+                    0,
+                    bal
+                ))
 
             payments = Payment.query.filter_by(
                 pupil_id=pupil.id,
@@ -973,15 +991,37 @@ if bal > 0:
             ).order_by(Payment.payment_date).all()
 
             for pay in payments:
-                credit = pay.tuition_paid + pay.bus_paid + pay.exam_paid + pay.admission_paid
+                credit = (
+                    pay.tuition_paid +
+                    pay.bus_paid +
+                    pay.exam_paid +
+                    pay.admission_paid
+                )
+
                 if credit:
                     bal -= credit
-                    entries.append((str(pay.payment_date), f"Payment {pay.receipt_no} ({term}, {month})", 0, credit, bal))
+                    entries.append((
+                        str(pay.payment_date),
+                        f"Payment {pay.receipt_no} ({term}, {month})",
+                        0,
+                        credit,
+                        bal
+                    ))
 
-    discounts = Discount.query.filter_by(pupil_id=pupil.id, academic_year=year).all()
+    discounts = Discount.query.filter_by(
+        pupil_id=pupil.id,
+        academic_year=year
+    ).all()
+
     for d in discounts:
         bal -= d.amount
-        entries.append((str(d.created_at), f"Discount/Waiver: {d.reason}", 0, d.amount, bal))
+        entries.append((
+            str(d.created_at),
+            f"Discount/Waiver: {d.reason}",
+            0,
+            d.amount,
+            bal
+        ))
 
     return render_template(
         "statement.html",
