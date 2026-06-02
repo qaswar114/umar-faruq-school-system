@@ -597,6 +597,40 @@ def inactive_students():
         selected_grade=selected_grade,
         today=date.today()
     )
+@app.route("/promote_students", methods=["POST"])
+def promote_students():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Only Admin can promote students.")
+        return redirect(url_for("pupils"))
+
+    promotion_map = {
+        "PP1": "PP2",
+        "PP2": "Grade 1",
+        "Grade 1": "Grade 2",
+        "Grade 2": "Grade 3",
+        "Grade 3": "Grade 4",
+        "Grade 4": "Grade 5",
+        "Grade 5": "Grade 6",
+        "Grade 6": "Grade 7",
+        "Grade 7": "Grade 8",
+        "Grade 8": "Grade 9"
+    }
+
+    count = 0
+
+    for pupil in Pupil.query.filter_by(status="Active").all():
+        if pupil.grade in promotion_map:
+            pupil.grade = promotion_map[pupil.grade]
+            count += 1
+
+    db.session.commit()
+
+    flash(f"{count} students promoted successfully.")
+    return redirect(url_for("pupils"))
+    
 @app.route("/attendance", methods=["GET", "POST"])
 def attendance():
     if not login_required():
