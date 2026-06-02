@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Inactive Students</h2>
+
+    <form method="get" style="margin-bottom:15px;">
+        <select name="grade">
+            <option value="">All Grades</option>
+            {% for g in grades %}
+            <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
+                {{ g }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn">Filter</button>
+    </form>
+
+    <table>
+        <tr>
+            <th>Admission No</th>
+            <th>Name</th>
+            <th>Grade</th>
+            <th>Guardian</th>
+            <th>Phone</th>
+            <th>Status</th>
+        </tr>
+
+        {% for p in pupils %}
+        <tr>
+            <td>{{ p.admission_no }}</td>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.grade }}</td>
+            <td>{{ p.guardian_name }}</td>
+            <td>{{ p.guardian_phone }}</td>
+            <td>{{ p.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+{% endblock %}
