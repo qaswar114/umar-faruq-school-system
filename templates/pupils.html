@@ -29,7 +29,11 @@
   </tr>{% for p in pupils %}
 <tr>
 <td>{{p.admission_no}}</td>
-<td>{{p.full_name}}</td>
+<td>
+    <a href="{{ url_for('student_profile', pupil_id=p.id) }}">
+        {{ p.full_name }}
+    </a>
+</td>
 <td>{{p.grade}}</td>
 <td>{{p.guardian_name}}</td>
 <td>{{p.guardian_phone}}</td>
