@@ -383,6 +383,22 @@ def expenses():
         today=date.today(),
         money=money
     )
+@app.route("/expense_report")
+def expense_report():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    rows = Expense.query.order_by(Expense.expense_date.desc()).all()
+
+    total = sum(r.amount for r in rows)
+
+    return render_template(
+        "expense_report.html",
+        settings=get_settings(),
+        rows=rows,
+        total=total,
+        money=money
+    )
 @app.route("/settings", methods=["GET","POST"])
 def settings():
     if not login_required(): return redirect(url_for("login"))
