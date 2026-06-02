@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Student Profile</h2>
+
+    <h3>{{ pupil.full_name }}</h3>
+    <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
+    <p><b>Gender:</b> {{ pupil.gender }}</p>
+    <p><b>Date of Birth:</b> {{ pupil.dob }}</p>
+    <p><b>Grade:</b> {{ pupil.grade }}</p>
+    <p><b>Status:</b> {{ pupil.status }}</p>
+    <p><b>Uses Bus:</b> {{ pupil.uses_bus }}</p>
+    <p><b>New Admission:</b> {{ pupil.new_admission }}</p>
+
+    <hr>
+
+    <h3>Guardian Details</h3>
+    <p><b>Guardian Name:</b> {{ pupil.guardian_name }}</p>
+    <p><b>Phone:</b> {{ pupil.guardian_phone }}</p>
+    <p><b>Address:</b> {{ pupil.home_address }}</p>
+</div>
+
+<div class="panel">
+    <h3>Fee Summary - {{ year }}</h3>
+
+    <table>
+        <tr>
+            <th>Total Due</th>
+            <th>Total Paid</th>
+            <th>Discounts</th>
+            <th>Balance</th>
+        </tr>
+        <tr>
+            <td>{{ money(total_due) }}</td>
+            <td>{{ money(total_paid) }}</td>
+            <td>{{ money(discounts) }}</td>
+            <td><b>{{ money(balance) }}</b></td>
+        </tr>
+    </table>
+
+    <br>
+
+    <a class="btn" href="{{ url_for('statement', pupil_id=pupil.id, year=year) }}">View Statement</a>
+    <a class="btn green" href="{{ url_for('edit_pupil', pupil_id=pupil.id) }}">Edit Student</a>
+</div>
+
+{% endblock %}
