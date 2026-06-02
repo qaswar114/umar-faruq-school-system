@@ -873,7 +873,7 @@ def receipt(payment_id):
     p = Payment.query.get_or_404(payment_id)
     pupil = p.pupil
     opening = opening_arrears(pupil, p.academic_year)
-    closing = opening + year_due(pupil, p.academic_year) - paid_year(pupil.id, p.academic_year) - discount_year(pupil.id, p.academic_year)
+    closing = due_until_month(pupil, p.academic_year, p.term, p.month) - paid_year(pupil.id, p.academic_year) - discount_year(pupil.id, p.academic_year)
     return render_template("receipt.html", settings=get_settings(), p=p, pupil=pupil, opening=opening,
                            closing=closing, discounts=discount_year(pupil.id, p.academic_year), money=money)
 @app.route("/balances")
