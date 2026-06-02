@@ -82,6 +82,13 @@ class Payment(db.Model):
     payment_date = db.Column(db.Date, default=date.today)
     collected_by = db.Column(db.String(80), nullable=False)
     pupil = db.relationship("Pupil")
+class Expense(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    expense_date = db.Column(db.Date, default=date.today)
+    category = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.String(200))
+    amount = db.Column(db.Float, nullable=False)
+    recorded_by = db.Column(db.String(80))
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
