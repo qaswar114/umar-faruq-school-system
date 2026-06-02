@@ -576,6 +576,27 @@ def print_pupils():
         selected_grade=selected_grade,
         today=date.today()
     )
+@app.route("/inactive_students")
+def inactive_students():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    selected_grade = request.args.get("grade", "")
+    query = Pupil.query.filter(Pupil.status != "Active")
+
+    if selected_grade:
+        query = query.filter(Pupil.grade == selected_grade)
+
+    pupils = query.order_by(Pupil.grade, Pupil.full_name).all()
+
+    return render_template(
+        "inactive_students.html",
+        settings=get_settings(),
+        pupils=pupils,
+        grades=GRADES,
+        selected_grade=selected_grade,
+        today=date.today()
+    )
 @app.route("/attendance", methods=["GET", "POST"])
 def attendance():
     if not login_required():
