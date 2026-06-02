@@ -234,7 +234,16 @@ def discount_year(pupil_id, year):
     return sum(d.amount for d in Discount.query.filter_by(pupil_id=pupil_id, academic_year=year).all())
 
 def opening_arrears(pupil, year):
-    return 0
+    if year <= 2026:
+        return 0
+
+    previous_year_due = year_due(pupil, year - 1)
+    previous_year_paid = paid_year(pupil.id, year - 1)
+    previous_year_discount = discount_year(pupil.id, year - 1)
+
+    arrears = previous_year_due - previous_year_paid - previous_year_discount
+
+    return max(0, arrears)
 def due_until_month(pupil, year, selected_term, selected_month):
     if year < 2026:
         return 0
