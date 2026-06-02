@@ -480,6 +480,39 @@ def edit_pupil(pupil_id):
         pupil.grade = request.form["grade"]
         pupil.guardian_name = request.form["guardian_name"]
         pupil.guardian_phone = request.form["guardian_phone"]
+        pupil.home_address = request.form.get("home_address", "")
+        pupil.new_admission = request.form["new_admission"]
+        pupil.uses_bus = request.form["uses_bus"]
+        pupil.status = request.form["status"]
+
+        db.session.commit()
+        flash("Pupil details updated successfully.")
+        return redirect(url_for("pupils"))
+
+    return render_template(
+        "edit_pupil.html",
+        settings=get_settings(),
+        pupil=pupil,
+        grades=GRADES
+    )
+@app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
+def edit_pupil(pupil_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    pupil = Pupil.query.get_or_404(pupil_id)
+
+    if request.method == "POST":
+        pupil.full_name = request.form["full_name"]
+        pupil.gender = request.form["gender"]
+        pupil.dob = request.form.get("dob", "")
+        pupil.grade = request.form["grade"]
+        pupil.guardian_name = request.form["guardian_name"]
+        pupil.guardian_phone = request.form["guardian_phone"]
         pupil.uses_bus = request.form["uses_bus"]
         pupil.status = request.form["status"]
         pupil.home_address = request.form.get("home_address", "")
