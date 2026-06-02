@@ -523,6 +523,19 @@ def student_profile(pupil_id):
         balance=balance,
         money=money
     )
+@app.route("/exit_pupil/<int:pupil_id>", methods=["POST"])
+def exit_pupil(pupil_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    pupil = Pupil.query.get_or_404(pupil_id)
+
+    pupil.status = "Inactive"
+
+    db.session.commit()
+
+    flash("Pupil marked as inactive successfully.")
+    return redirect(url_for("pupils"))
 @app.route("/delete_pupil/<int:pupil_id>", methods=["POST"])
 def delete_pupil(pupil_id):
     if not login_required():
