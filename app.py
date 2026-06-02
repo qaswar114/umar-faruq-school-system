@@ -948,7 +948,10 @@ def statement(pupil_id, year):
 
     pupil = Pupil.query.get_or_404(pupil_id)
     entries = []
-    bal = 0
+    bal = opening_arrears(pupil, year)
+
+if bal > 0:
+    entries.append((f"01/01/{year}", f"Opening Arrears B/F from {year-1}", bal, 0, bal))
 
     for term in TERMS:
         for month in term_months(term):
