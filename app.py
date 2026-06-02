@@ -297,35 +297,36 @@ def dashboard():
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
         for p in Payment.query.all()
     )
+
     today_collection = sum(
-    p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-    for p in Payment.query.filter_by(payment_date=date.today()).all()
-)
+        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+        for p in Payment.query.filter_by(payment_date=date.today()).all()
+    )
 
-current_month = date.today().month
-current_year_num = date.today().year
+    current_month = date.today().month
+    current_year_num = date.today().year
 
-month_collection = 0
-for p in Payment.query.all():
-    if p.payment_date.month == current_month and p.payment_date.year == current_year_num:
-        month_collection += (
-            p.tuition_paid +
-            p.bus_paid +
-            p.exam_paid +
-            p.admission_paid
-        )
+    month_collection = 0
+    for p in Payment.query.all():
+        if p.payment_date.month == current_month and p.payment_date.year == current_year_num:
+            month_collection += (
+                p.tuition_paid +
+                p.bus_paid +
+                p.exam_paid +
+                p.admission_paid
+            )
 
-defaulters = 0
-outstanding = 0
+    defaulters = 0
+    outstanding = 0
 
-for pupil in Pupil.query.filter_by(status="Active").all():
-    bal = year_due(pupil, current_year_num) - paid_year(pupil.id, current_year_num) - discount_year(pupil.id, current_year_num)
+    for pupil in Pupil.query.filter_by(status="Active").all():
+        bal = year_due(pupil, current_year_num) - paid_year(pupil.id, current_year_num) - discount_year(pupil.id, current_year_num)
 
-    if bal > 0:
-        defaulters += 1
-        outstanding += bal
+        if bal > 0:
+            defaulters += 1
+            outstanding += bal
 
-return render_template(
+    return render_template(
         "dashboard.html",
         settings=get_settings(),
         total_pupils=Pupil.query.count(),
@@ -335,7 +336,7 @@ return render_template(
         today_collection=money(today_collection),
         month_collection=money(month_collection),
         defaulters=defaulters,
-        outstanding=money(outstanding),
+        outstanding=money(outstanding)
     )
 @app.route("/settings", methods=["GET","POST"])
 def settings():
