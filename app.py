@@ -495,6 +495,34 @@ def edit_pupil(pupil_id):
         grades=GRADES,
         settings=get_settings()
         )
+@app.route("/student_profile/<int:pupil_id>")
+def student_profile(pupil_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    pupil = Pupil.query.get_or_404(pupil_id)
+    year = current_year()
+
+    total_due = due_until_month(pupil, year, "Term 2", "May")
+    total_paid = paid_year(pupil.id, year)
+    discounts = discount_year(pupil.id, year)
+    balance = total_due - total_paid - discounts
+
+    return render_template(
+        "student_profile.html",
+        settings=get_settings(),
+        pupil=pupil,
+        year=year,
+        total_due=total_due,
+        total_paid=total_paid,
+        discounts=discounts,
+        balance=balance,
+        money=money
+    )
 @app.route("/delete_pupil/<int:pupil_id>", methods=["POST"])
 def delete_pupil(pupil_id):
     if not login_required():
