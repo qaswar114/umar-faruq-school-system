@@ -936,6 +936,39 @@ def balances():
         term_months=TERM_MONTHS,
         money=money
     )
+@app.route("/credits")
+def credits():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    year = int(request.args.get("year", current_year()))
+
+    rows = []
+
+    for p in Pupil.query.filter_by(status="Active").all():
+        due = year_due(p, year)
+        paid = paid_year(p.id, year)
+        discounts = discount_year(p.id, year)
+
+        balance = due - paid - discounts
+
+        if balance < 0:
+            rows.append({
+                "pupil": p,
+                "credit": abs(balance)
+            })
+
+    return render_template(
+        "credits.html",
+        settings=get_settings(),
+        rows=rows,
+        year=year,
+        money=money
+    )
 
 @app.route("/statement/<int:pupil_id>/<int:year>")
 def statement(pupil_id, year):
