@@ -1096,6 +1096,20 @@ def reset_payments_may2026():
 
     flash("All test payments have been cleared. System is ready to start from May 2026.")
     return redirect(url_for("dashboard"))
+    @app.route("/reset_fee_structure_may2026")
+def reset_fee_structure_may2026():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() != "admin":
+        flash("Only Admin can reset fee structure.")
+        return redirect(url_for("dashboard"))
+
+    FeeStructure.query.delete()
+    db.session.commit()
+
+    flash("Old fee structures cleared. You can now enter clean fees from May 2026.")
+    return redirect(url_for("fees"))
 if __name__ == "__main__":
     with app.app_context():
         init_database()
