@@ -1112,6 +1112,8 @@ def reset_fee_structure_may2026():
 
     flash("Old fee structures cleared. You can now enter clean fees from May 2026.")
     return redirect(url_for("fees"))
+
+
 if __name__ == "__main__":
     with app.app_context():
         init_database()
