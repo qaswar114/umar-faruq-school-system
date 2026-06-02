@@ -12,6 +12,11 @@
     </select>
 
     <button class="btn">Filter</button>
+    {% if session.get("role", "")|lower == "admin" %}
+<form method="post" action="{{ url_for('promote_students') }}" onsubmit="return confirm('Are you sure you want to promote all active students to the next grade? This action cannot be undone easily.');" style="margin-top:15px;">
+    <button type="submit" class="btn green">Promote All Students</button>
+</form>
+{% endif %}
     <a href="{{ url_for('print_pupils', grade=selected_grade) }}" target="_blank" class="btn green">
     Print Grade List
 </a>
