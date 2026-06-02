@@ -1097,7 +1097,8 @@ def reset_payments_may2026():
 
     flash("All test payments have been cleared. System is ready to start from May 2026.")
     return redirect(url_for("dashboard"))
-    @app.route("/reset_fee_structure_may2026")
+    
+@app.route("/reset_fee_structure_may2026")
 def reset_fee_structure_may2026():
     if not login_required():
         return redirect(url_for("login"))
