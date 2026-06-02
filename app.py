@@ -1082,6 +1082,7 @@ def change_password():
         return redirect(url_for("dashboard"))
 
     return render_template("change_password.html", settings=get_settings())
+    
 @app.route("/reset_payments_may2026")
 def reset_payments_may2026():
     if not login_required():
