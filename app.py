@@ -54,6 +54,7 @@ class Pupil(db.Model):
     home_address = db.Column(db.Text, default="")
     new_admission = db.Column(db.String(10), default="Yes")
     uses_bus = db.Column(db.String(10), default="No")
+    photo = db.Column(db.String(255), default="")
     status = db.Column(db.String(30), default="Active")
     created_at = db.Column(db.Date, default=date.today)
 class FeeStructure(db.Model):
