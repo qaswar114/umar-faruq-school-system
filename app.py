@@ -345,6 +345,44 @@ def dashboard():
         defaulters=defaulters,
         outstanding=money(outstanding)
     )
+@app.route("/expenses", methods=["GET", "POST"])
+def expenses():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        expense_date = request.form.get("expense_date")
+        category = request.form.get("category")
+        description = request.form.get("description")
+        amount = float(request.form.get("amount") or 0)
+
+        exp = Expense(
+            expense_date=datetime.strptime(expense_date, "%Y-%m-%d").date() if expense_date else date.today(),
+            category=category,
+            description=description,
+            amount=amount,
+            recorded_by=session.get("username")
+        )
+
+        db.session.add(exp)
+        db.session.commit()
+
+        flash("Expense recorded successfully.")
+        return redirect(url_for("expenses"))
+
+    rows = Expense.query.order_by(Expense.expense_date.desc()).all()
+
+    return render_template(
+        "expenses.html",
+        settings=get_settings(),
+        rows=rows,
+        today=date.today(),
+        money=money
+    )
 @app.route("/settings", methods=["GET","POST"])
 def settings():
     if not login_required(): return redirect(url_for("login"))
