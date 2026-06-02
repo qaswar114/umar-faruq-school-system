@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Expense Management</h2>
+
+    <form method="post">
+        <div class="three">
+            <div>
+                <label>Date</label>
+                <input type="date" name="expense_date" value="{{today}}">
+            </div>
+
+            <div>
+                <label>Category</label>
+                <select name="category">
+                    <option>Salaries</option>
+                    <option>Rent</option>
+                    <option>Electricity</option>
+                    <option>Water</option>
+                    <option>Fuel</option>
+                    <option>Stationery</option>
+                    <option>Maintenance</option>
+                    <option>Other</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Amount</label>
+                <input type="number" step="0.01" name="amount" required>
+            </div>
+        </div>
+
+        <label>Description</label>
+        <input type="text" name="description">
+
+        <br><br>
+        <button class="btn">Save Expense</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>Expenses List</h2>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Amount</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{r.expense_date}}</td>
+            <td>{{r.category}}</td>
+            <td>{{r.description}}</td>
+            <td>{{money(r.amount)}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
