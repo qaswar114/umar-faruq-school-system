@@ -325,7 +325,7 @@ for pupil in Pupil.query.filter_by(status="Active").all():
         defaulters += 1
         outstanding += bal
 
-    return render_template(
+return render_template(
         "dashboard.html",
         settings=get_settings(),
         total_pupils=Pupil.query.count(),
