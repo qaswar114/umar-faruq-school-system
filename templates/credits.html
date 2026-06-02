@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="panel">
+    <h2>Credit / Advance Payments Report</h2>
+
+    <form method="get">
+        <label>Year</label>
+        <input type="number" name="year" value="{{ year }}">
+        <button class="btn">View</button>
+        <button type="button" class="btn green" onclick="window.print()">Print</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Parents With Advance Payments - {{ year }}</h3>
+
+    <table>
+        <tr>
+            <th>No.</th>
+            <th>Admission No</th>
+            <th>Pupil</th>
+            <th>Grade</th>
+            <th>Credit Amount</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.pupil.admission_no }}</td>
+            <td>
+                <a href="{{ url_for('statement', pupil_id=r.pupil.id, year=year) }}">
+                    {{ r.pupil.full_name }}
+                </a>
+            </td>
+            <td>{{ r.pupil.grade }}</td>
+            <td><b>{{ money(r.credit) }}</b></td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" style="text-align:center; padding:20px;">
+                No advance payments found.
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
