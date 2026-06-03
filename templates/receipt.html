@@ -1,4 +1,73 @@
 {% extends "base.html" %}{% block content %}
+<style>
+@media print {
+  @page {
+    size: A6 portrait;
+    margin: 5mm;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 95mm;
+    min-height: 130mm;
+    font-size: 11px;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .receipt-box {
+    padding: 5px;
+    margin: 0;
+  }
+
+  .receipt-box h2 {
+    font-size: 15px;
+    margin: 3px 0;
+  }
+
+  .receipt-box h3 {
+    font-size: 13px;
+    margin: 3px 0;
+  }
+
+  .receipt-box p {
+    margin: 3px 0;
+  }
+
+  .receipt-box table {
+    width: 100%;
+    font-size: 11px;
+    border-collapse: collapse;
+  }
+
+  .receipt-box th,
+  .receipt-box td {
+    padding: 2px;
+  }
+
+  .logo-large {
+    width: 45px !important;
+    margin-bottom: 3px !important;
+  }
+}
+</style>
 <div class="receipt receipt-box print-area"><img src="{{ url_for('static', filename='logo.png') }}" 
 style="width:70px;height:auto;display:block;margin:0 auto 10px;"
   class="logo-large"><h2>{{settings.school_name}}</h2><h3>OFFICIAL FEE RECEIPT</h3><hr><p><b>Receipt No:</b> {{p.receipt_no}}</p><p><b>Date:</b> 
