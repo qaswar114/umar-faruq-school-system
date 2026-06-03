@@ -151,6 +151,13 @@ def init_database():
         db.session.commit()
     except Exception:
         db.session.rollback()
+    try:
+        db.session.execute(
+            db.text('ALTER TABLE pupil ADD COLUMN photo VARCHAR(255) DEFAULT \'\'')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     if not Setting.query.first():
         db.session.add(Setting(school_name=SCHOOL_NAME, address="Umar Faruq Integrated Academy"))
