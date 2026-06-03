@@ -847,7 +847,7 @@ def payments():
         return redirect(url_for("receipt", payment_id=pay.id))
     pupils = Pupil.query.order_by(Pupil.full_name.asc()).all()
 
-return render_template("payments.html", settings=get_settings(), pupils=pupils, terms=TERMS,
+    return render_template("payments.html", settings=get_settings(), pupils=pupils, terms=TERMS,
                            term_months=TERM_MONTHS, year=current_year(), today=date.today(),
                            payments=Payment.query.order_by(Payment.id.desc()).all(), money=money)
  
