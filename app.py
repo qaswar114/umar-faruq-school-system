@@ -434,6 +434,12 @@ def pupils():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
+        photo_file = request.files.get("photo")
+        photo_filename = ""
+
+        if photo_file and photo_file.filename:
+            photo_filename = secure_filename(photo_file.filename)
+            photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
         p = Pupil(
             admission_no=next_admission_no(),
             full_name=request.form["full_name"],
@@ -444,7 +450,9 @@ def pupils():
             guardian_phone=request.form["guardian_phone"],
             home_address=request.form.get("home_address", ""),
             new_admission=request.form["new_admission"],
-            uses_bus=request.form["uses_bus"]
+            uses_bus=request.form["uses_bus"],
+            photo=photo_filename
+            
         )
         db.session.add(p)
         db.session.commit()
