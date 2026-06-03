@@ -4,6 +4,14 @@
 <div class="panel">
     <h2>Student Profile</h2>
 
+{% if pupil.photo %}
+<div style="margin-bottom:20px;">
+    <img src="{{ url_for('static', filename='uploads/' + pupil.photo) }}"
+         style="width:150px;height:150px;border-radius:10px;border:2px solid #ccc;object-fit:cover;">
+</div>
+{% endif %}
+
+<h3>{{ pupil.full_name }}</h3>
     <h3>{{ pupil.full_name }}</h3>
     <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
     <p><b>Gender:</b> {{ pupil.gender }}</p>
