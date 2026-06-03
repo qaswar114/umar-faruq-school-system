@@ -41,16 +41,25 @@
 <script>
 document.getElementById("studentSearch").addEventListener("keyup", function () {
     let search = this.value.toLowerCase();
+    let select = document.querySelector('select[name="pupil_id"]');
+    let firstMatch = null;
 
-    document.querySelectorAll('select[name="pupil_id"] option').forEach(function(option) {
+    select.querySelectorAll("option").forEach(function(option) {
         let txt = option.textContent.toLowerCase();
 
         if (txt.includes(search)) {
             option.style.display = "";
+            if (!firstMatch) {
+                firstMatch = option;
+            }
         } else {
             option.style.display = "none";
         }
     });
+
+    if (firstMatch) {
+        select.value = firstMatch.value;
+    }
 });
 </script>
 {% endblock %}
