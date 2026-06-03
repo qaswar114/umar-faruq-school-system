@@ -504,6 +504,12 @@ def edit_pupil(pupil_id):
         pupil.status = request.form["status"]
         pupil.home_address = request.form.get("home_address", "")
 
+        photo_file = request.files.get("photo")
+
+    if photo_file and photo_file.filename:
+        photo_filename = secure_filename(photo_file.filename)
+        photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
+        pupil.photo = photo_filename
         db.session.commit()
         flash("Pupil updated successfully.")
         return redirect(url_for("pupils"))
