@@ -4,11 +4,19 @@
 <div class="panel">
     <h2>Edit Pupil</h2>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <div class="two">
         <div>
             <label>Full Name</label>
             <input name="full_name" value="{{ pupil.full_name }}" required>
+            <label>Student Photo</label>
+            <input type="file" name="photo" accept="image/*">
+
+{% if pupil.photo %}
+    <img src="{{ url_for('static', filename='uploads/' + pupil.photo) }}"
+         width="120"
+         style="margin-top:10px;border-radius:8px;">
+{% endif %}
 
             <label>Gender</label>
             <select name="gender">
