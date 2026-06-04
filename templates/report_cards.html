@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Report Cards</h2>
+
+    <form method="get">
+        <div class="three">
+            <div>
+                <label>Exam</label>
+                <select name="exam_id" required>
+                    <option value="">Select Exam</option>
+                    {% for e in exams %}
+                    <option value="{{ e.id }}" {% if selected_exam|string == e.id|string %}selected{% endif %}>
+                        {{ e.exam_name }} - {{ e.grade }} - {{ e.term }} {{ e.academic_year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Grade/Class</label>
+                <select name="grade" required>
+                    <option value="">Select Grade</option>
+                    {% for g in grades %}
+                    <option {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button class="btn">Load Pupils</button>
+    </form>
+</div>
+
+{% if pupils %}
+<div class="panel">
+    <h3>Pupils for Report Cards</h3>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Pupil</th>
+            <th>Admission No</th>
+            <th>Grade</th>
+            <th>Action</th>
+        </tr>
+
+        {% for p in pupils %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.admission_no }}</td>
+            <td>{{ p.grade }}</td>
+            <td>
+                <a class="btn" href="/report_card/{{ p.id }}/{{ selected_exam }}">
+                    View Report
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
