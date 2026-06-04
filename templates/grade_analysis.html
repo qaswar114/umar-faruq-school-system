@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Grade Analysis</h2>
+
+    <form method="get">
+        <div class="three">
+            <div>
+                <label>Exam</label>
+                <select name="exam_id" required>
+                    <option value="">Select Exam</option>
+                    {% for e in exams %}
+                    <option value="{{ e.id }}" {% if selected_exam|string == e.id|string %}selected{% endif %}>
+                        {{ e.exam_name }} - {{ e.grade }} - {{ e.term }} {{ e.academic_year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Grade/Class</label>
+                <select name="grade" required>
+                    <option value="">Select Grade</option>
+                    {% for g in grades %}
+                    <option {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button class="btn">Analyze</button>
+    </form>
+</div>
+
+{% if rows %}
+<div class="panel">
+    <h3>Subject Performance Analysis</h3>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Subject</th>
+            <th>No. of Pupils</th>
+            <th>Average</th>
+            <th>Highest</th>
+            <th>Lowest</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.subject.subject_name }}</td>
+            <td>{{ r.count }}</td>
+            <td>{{ "%.2f"|format(r.average) }}</td>
+            <td>{{ r.highest }}</td>
+            <td>{{ r.lowest }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <button onclick="window.print()" class="btn">Print Analysis</button>
+</div>
+{% endif %}
+
+{% endblock %}
