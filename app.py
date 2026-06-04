@@ -1348,10 +1348,10 @@ if pupil and pupil.guardian_phone:
     "Communication"
    )
         
-        save_audit(
+    save_audit(
             f"Recorded payment: {pay.receipt_no}",
             "Finance"
-        )
+    )
         return redirect(url_for("receipt", payment_id=pay.id))
     pupils = Pupil.query.order_by(Pupil.full_name.asc()).all()
 
