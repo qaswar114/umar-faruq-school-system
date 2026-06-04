@@ -1352,7 +1352,7 @@ if pupil and pupil.guardian_phone:
             f"Recorded payment: {pay.receipt_no}",
             "Finance"
     )
-        return redirect(url_for("receipt", payment_id=pay.id))
+    return redirect(url_for("receipt", payment_id=pay.id))
     pupils = Pupil.query.order_by(Pupil.full_name.asc()).all()
 
     return render_template("payments.html", settings=get_settings(), pupils=pupils, terms=TERMS,
