@@ -115,6 +115,14 @@ class Subject(db.Model):
     grade = db.Column(db.String(50), nullable=False)
     teacher_name = db.Column(db.String(100), default="")
     status = db.Column(db.String(20), default="Active")
+class Exam(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    exam_name = db.Column(db.String(100), nullable=False)
+    academic_year = db.Column(db.Integer, nullable=False)
+    term = db.Column(db.String(30), nullable=False)
+    grade = db.Column(db.String(50), nullable=False)
+    total_marks = db.Column(db.Float, default=100)
+    status = db.Column(db.String(20), default="Active")
 
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
@@ -147,6 +155,12 @@ def init_database():
        
     try:
         Subject.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    
+    try:
+        Exam.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
