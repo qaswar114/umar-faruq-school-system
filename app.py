@@ -264,6 +264,15 @@ def role_allowed(*roles):
         return True
 
     return current_role in allowed_roles
+def save_audit(action, module="System"):
+    log = AuditLog(
+        username=session.get("username", ""),
+        role=session.get("role", ""),
+        action=action,
+        module=module
+    )
+    db.session.add(log)
+    db.session.commit()
 def next_admission_no():
     count = Pupil.query.count() + 1
     return f"UFIA/{current_year()}/{count:04d}"
