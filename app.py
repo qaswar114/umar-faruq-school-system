@@ -1289,7 +1289,6 @@ def discounts():
         flash("Discount/waiver added.")
     return render_template("discounts.html", settings=get_settings(), pupils=Pupil.query.all(),
                            discounts=Discount.query.order_by(Discount.id.desc()).all(), year=current_year(), money=money)
-
 @app.route("/payments", methods=["GET","POST"])
 def payments():
     if not login_required():
@@ -1300,64 +1299,84 @@ def payments():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        
         year = int(request.form["academic_year"])
         term = request.form["term"]
-        pay = Payment(receipt_no=receipt_no(year, term), pupil_id=int(request.form["pupil_id"]),
-                      academic_year=year, term=term, month=request.form["month"],
-                      tuition_paid=float(request.form.get("tuition_paid") or 0),
-                      bus_paid=float(request.form.get("bus_paid") or 0),
-                      exam_paid=float(request.form.get("exam_paid") or 0),
-                      admission_paid=float(request.form.get("admission_paid") or 0),
-                      payment_method=request.form["payment_method"], payment_date=datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date(),
-                      collected_by=session["username"])
-        db.session.add(pay);
+
+        pay = Payment(
+            receipt_no=receipt_no(year, term),
+            pupil_id=int(request.form["pupil_id"]),
+            academic_year=year,
+            term=term,
+            month=request.form["month"],
+            tuition_paid=float(request.form.get("tuition_paid") or 0),
+            bus_paid=float(request.form.get("bus_paid") or 0),
+            exam_paid=float(request.form.get("exam_paid") or 0),
+            admission_paid=float(request.form.get("admission_paid") or 0),
+            payment_method=request.form["payment_method"],
+            payment_date=datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date(),
+            collected_by=session["username"]
+        )
+
+        db.session.add(pay)
         db.session.commit()
-pupil = Pupil.query.get(pay.pupil_id)
 
-balance = (
-    due_until_month(pupil, pay.academic_year, pay.term, pay.month)
-    - paid_year(pupil.id, pay.academic_year)
-    - discount_year(pupil.id, pay.academic_year)
-)
+        pupil = Pupil.query.get(pay.pupil_id)
+        school = get_settings()
 
-amount_paid = (
-    pay.tuition_paid +
-    pay.bus_paid +
-    pay.exam_paid +
-    pay.admission_paid
-)
+        amount_paid = (
+            pay.tuition_paid +
+            pay.bus_paid +
+            pay.exam_paid +
+            pay.admission_paid
+        )
 
-if pupil and pupil.guardian_phone:
-    sms = SMSMessage(
-        recipient_name=pupil.guardian_name,
-        phone=pupil.guardian_phone,
-        message=(
-            f"Dear {pupil.guardian_name}, we have received KES {amount_paid:,.2f} "
-            f"for {pupil.full_name}. Receipt No: {pay.receipt_no}. "
-            f"Balance: KES {balance:,.2f}. Thank you. {settings.school_name}"
-        ),
-        category="Payment Confirmation",
-        created_by=session.get("username", "")
-    )
-    db.session.add(sms)
-    db.session.commit()
+        balance = (
+            due_until_month(pupil, pay.academic_year, pay.term, pay.month)
+            - paid_year(pupil.id, pay.academic_year)
+            - discount_year(pupil.id, pay.academic_year)
+        )
 
-    save_audit(
-    f"Generated payment confirmation SMS: {pay.receipt_no}",
-    "Communication"
-   )
-        
-    save_audit(
+        save_audit(
             f"Recorded payment: {pay.receipt_no}",
             "Finance"
-    )
-    return redirect(url_for("receipt", payment_id=pay.id))
+        )
+
+        if pupil and pupil.guardian_phone:
+            sms = SMSMessage(
+                recipient_name=pupil.guardian_name,
+                phone=pupil.guardian_phone,
+                message=(
+                    f"Dear {pupil.guardian_name}, we have received KES {amount_paid:,.2f} "
+                    f"for {pupil.full_name}. Receipt No: {pay.receipt_no}. "
+                    f"Balance: KES {balance:,.2f}. Thank you. {school.school_name}"
+                ),
+                category="Payment Confirmation",
+                created_by=session.get("username", "")
+            )
+
+            db.session.add(sms)
+            db.session.commit()
+
+            save_audit(
+                f"Generated payment confirmation SMS: {pay.receipt_no}",
+                "Communication"
+            )
+
+        return redirect(url_for("receipt", payment_id=pay.id))
+
     pupils = Pupil.query.order_by(Pupil.full_name.asc()).all()
 
-    return render_template("payments.html", settings=get_settings(), pupils=pupils, terms=TERMS,
-                           term_months=TERM_MONTHS, year=current_year(), today=date.today(),
-                           payments=Payment.query.order_by(Payment.id.desc()).all(), money=money)
+    return render_template(
+        "payments.html",
+        settings=get_settings(),
+        pupils=pupils,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        year=current_year(),
+        today=date.today(),
+        payments=Payment.query.order_by(Payment.id.desc()).all(),
+        money=money
+    )
  
 @app.route("/daily_collections")
 def daily_collections():
