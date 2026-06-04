@@ -806,6 +806,37 @@ def attendance_report():
         late=late
     )
 
+@app.route("/report_cards")
+def report_cards():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_exam = request.args.get("exam_id", "")
+    selected_grade = request.args.get("grade", "")
+
+    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    pupils = []
+
+    if selected_exam and selected_grade:
+        pupils = Pupil.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).order_by(Pupil.full_name).all()
+
+    return render_template(
+        "report_cards.html",
+        settings=get_settings(),
+        exams=exams,
+        grades=GRADES,
+        pupils=pupils,
+        selected_exam=selected_exam,
+        selected_grade=selected_grade
+    )
+
 @app.route("/marks", methods=["GET", "POST"])
 def marks():
     if not login_required():
