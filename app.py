@@ -968,6 +968,39 @@ def grade_analysis():
         rows=rows
     )
 
+@app.route("/teacher_remarks")
+def teacher_remarks():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_exam = request.args.get("exam_id", "")
+    selected_grade = request.args.get("grade", "")
+
+    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    rows = []
+
+    if selected_exam and selected_grade:
+        marks = Mark.query.join(Pupil).filter(
+            Mark.exam_id == int(selected_exam),
+            Pupil.grade == selected_grade
+        ).order_by(Pupil.full_name).all()
+
+        rows = marks
+
+    return render_template(
+        "teacher_remarks.html",
+        settings=get_settings(),
+        exams=exams,
+        grades=GRADES,
+        selected_exam=selected_exam,
+        selected_grade=selected_grade,
+        rows=rows
+    )
+
 @app.route("/marks", methods=["GET", "POST"])
 def marks():
     if not login_required():
