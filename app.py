@@ -144,6 +144,11 @@ def get_settings():
 
 def init_database():
     db.create_all()
+        try:
+        Subject.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     try:
         db.session.execute(
