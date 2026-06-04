@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Announcements</h2>
+
+    <form method="post">
+        <label>Title</label>
+        <input type="text" name="title" required>
+
+        <label>Audience</label>
+        <select name="audience">
+            <option>All</option>
+            <option>Parents</option>
+            <option>Teachers</option>
+            <option>Students</option>
+        </select>
+
+        <label>Message</label>
+        <textarea name="message" rows="5" style="width:100%;" required></textarea>
+
+        <br><br>
+        <button type="submit">Post Announcement</button>
+    </form>
+
+    <hr>
+
+    <h3>Existing Announcements</h3>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Title</th>
+            <th>Audience</th>
+            <th>Message</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{ r.created_at }}</td>
+            <td>{{ r.title }}</td>
+            <td>{{ r.audience }}</td>
+            <td>{{ r.message }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
