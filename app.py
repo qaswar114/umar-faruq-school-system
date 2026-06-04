@@ -218,7 +218,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-        try:
+    try:
         Announcement.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
@@ -1751,6 +1751,44 @@ def statements():
         return redirect(url_for("dashboard"))
 
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
+
+@app.route("/announcements", methods=["GET", "POST"])
+def announcements():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher", "receptionist"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        ann = Announcement(
+            title=request.form["title"],
+            message=request.form["message"],
+            audience=request.form["audience"],
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(ann)
+        db.session.commit()
+
+        save_audit(
+            f"Created announcement: {ann.title}",
+            "Communication"
+        )
+
+        flash("Announcement created successfully.")
+        return redirect(url_for("announcements"))
+
+    rows = Announcement.query.order_by(
+        Announcement.created_at.desc()
+    ).all()
+
+    return render_template(
+        "announcements.html",
+        settings=get_settings(),
+        rows=rows
+    )
 
 @app.route("/staff", methods=["GET", "POST"])
 def staff():
