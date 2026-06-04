@@ -1859,6 +1859,29 @@ def edit_user(user_id):
         user=user,
         grades=GRADES
     )
+
+@app.route("/reset_user_password/<int:user_id>", methods=["POST"])
+def reset_user_password(user_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() not in ["admin", "super admin"]:
+        flash("Only Admin can reset passwords.")
+        return redirect(url_for("users"))
+
+    user = User.query.get_or_404(user_id)
+    new_password = request.form["new_password"]
+
+    user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+
+    save_audit(
+        f"Reset password for user: {user.username}",
+        "Security"
+    )
+
+    flash("Password reset successfully.")
+    return redirect(url_for("users"))
 @app.route("/delete_user/<int:user_id>")
 def delete_user(user_id):
     if not login_required():
