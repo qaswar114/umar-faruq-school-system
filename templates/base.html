@@ -174,12 +174,13 @@ function updateMonths(termId, monthId){
 {% if session.role|lower in ['admin', 'teacher'] %}
 <div class="dropdown">
     <a href="#">Academics ▼</a>
-    <div class="dropdown-content">
-        <a href="{{ url_for('subjects') }}">Subjects Setup</a>
-        <a href="{{ url_for('exams') }}">Exam Setup</a>
-        <a href="{{ url_for('marks') }}">Marks Entry</a>
-        <a href="{{ url_for('report_cards') }}">Report Cards</a>
-    </div>
+   <div class="dropdown-content">
+    <a href="{{ url_for('subjects') }}">Subjects Setup</a>
+    <a href="{{ url_for('exams') }}">Exam Setup</a>
+    <a href="{{ url_for('marks') }}">Marks Entry</a>
+    <a href="{{ url_for('report_cards') }}">Report Cards</a>
+    <a href="{{ url_for('rankings') }}">Rankings</a>
+</div>
 </div>
 {% endif %}
     
