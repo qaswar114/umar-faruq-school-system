@@ -53,6 +53,7 @@
         <td>{{ u.username }}</td>
         <td>{{ u.role }}</td>
         <td>{{ u.assigned_grade or "-" }}</td>
+        
        <td>
     <a href="{{ url_for('edit_user', user_id=u.id) }}">Edit</a>
 
@@ -62,6 +63,19 @@
        onclick="return confirm('Delete this user?')"
        style="color:red;">Delete</a>
     {% endif %}
+           <br><br>
+
+<form method="post"
+      action="/reset_user_password/{{ u.id }}">
+    <input type="text"
+           name="new_password"
+           placeholder="New Password"
+           required>
+
+    <button type="submit" class="btn">
+        Reset Password
+    </button>
+</form>
 </td>
     </tr>
  {% endfor %}
