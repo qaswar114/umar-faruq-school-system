@@ -38,6 +38,16 @@ class User(db.Model):
     role = db.Column(db.String(50), nullable=False)
     assigned_grade = db.Column(db.String(50), default="")
     is_active = db.Column(db.Boolean, default=True)
+class Staff(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(200), nullable=False)
+    phone = db.Column(db.String(80), default="")
+    email = db.Column(db.String(120), default="")
+    id_no = db.Column(db.String(80), default="")
+    role = db.Column(db.String(50), nullable=False)
+    assigned_grade = db.Column(db.String(50), default="")
+    date_joined = db.Column(db.Date, default=date.today)
+    status = db.Column(db.String(20), default="Active")
 
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -178,6 +188,11 @@ def init_database():
 
     try:
         Mark.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    try:
+        Staff.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -1681,6 +1696,41 @@ def statements():
         return redirect(url_for("dashboard"))
 
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
+
+@app.route("/staff", methods=["GET", "POST"])
+def staff():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() != "admin":
+        flash("Only Admin can manage staff.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        staff_member = Staff(
+            full_name=request.form["full_name"],
+            phone=request.form.get("phone", ""),
+            email=request.form.get("email", ""),
+            id_no=request.form.get("id_no", ""),
+            role=request.form["role"],
+            assigned_grade=request.form.get("assigned_grade", ""),
+            status=request.form.get("status", "Active")
+        )
+
+        db.session.add(staff_member)
+        db.session.commit()
+
+        flash("Staff profile added successfully.")
+        return redirect(url_for("staff"))
+
+    rows = Staff.query.order_by(Staff.full_name).all()
+
+    return render_template(
+        "staff.html",
+        settings=get_settings(),
+        rows=rows,
+        grades=GRADES
+    )
 @app.route("/users", methods=["GET", "POST"])
 def users():
     if not login_required():
