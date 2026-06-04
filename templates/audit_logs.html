@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Audit Logs</h2>
+    <p>This page shows recent system activities.</p>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Date / Time</th>
+            <th>User</th>
+            <th>Role</th>
+            <th>Module</th>
+            <th>Action</th>
+        </tr>
+
+        {% for log in logs %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ log.created_at }}</td>
+            <td>{{ log.username }}</td>
+            <td>{{ log.role }}</td>
+            <td>{{ log.module }}</td>
+            <td>{{ log.action }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6">No audit logs recorded yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
