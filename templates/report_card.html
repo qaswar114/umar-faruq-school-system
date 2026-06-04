@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2 style="text-align:center;">{{ settings.school_name }}</h2>
+    <h3 style="text-align:center;">PUPIL REPORT CARD</h3>
+
+    <hr>
+
+    <p><b>Name:</b> {{ pupil.full_name }}</p>
+    <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
+    <p><b>Grade:</b> {{ pupil.grade }}</p>
+    <p><b>Exam:</b> {{ exam.exam_name }} | {{ exam.term }} | {{ exam.academic_year }}</p>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Subject</th>
+            <th>Marks</th>
+            <th>Teacher Remark</th>
+        </tr>
+
+        {% for m in marks %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ m.subject.subject_name }}</td>
+            <td>{{ m.marks_obtained }}</td>
+            <td>{{ m.teacher_remark }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4">No marks entered yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+
+    <p><b>Total Marks:</b> {{ total }}</p>
+    <p><b>Average:</b> {{ "%.2f"|format(average) }}</p>
+
+    <br>
+
+    <button onclick="window.print()" class="btn">Print Report Card</button>
+</div>
+
+{% endblock %}
