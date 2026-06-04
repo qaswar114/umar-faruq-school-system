@@ -868,6 +868,55 @@ def report_card(pupil_id, exam_id):
         average=average
     )
 
+@app.route("/rankings")
+def rankings():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_exam = request.args.get("exam_id", "")
+    selected_grade = request.args.get("grade", "")
+
+    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    rows = []
+
+    if selected_exam and selected_grade:
+        pupils = Pupil.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).order_by(Pupil.full_name).all()
+
+        for pupil in pupils:
+            marks = Mark.query.filter_by(
+                pupil_id=pupil.id,
+                exam_id=int(selected_exam)
+            ).all()
+
+            total = sum(m.marks_obtained for m in marks)
+            count = len(marks)
+            average = total / count if count > 0 else 0
+
+            rows.append({
+                "pupil": pupil,
+                "total": total,
+                "average": average
+            })
+
+        rows = sorted(rows, key=lambda x: x["total"], reverse=True)
+
+    return render_template(
+        "rankings.html",
+        settings=get_settings(),
+        exams=exams,
+        grades=GRADES,
+        selected_exam=selected_exam,
+        selected_grade=selected_grade,
+        rows=rows
+    )
+
 @app.route("/marks", methods=["GET", "POST"])
 def marks():
     if not login_required():
