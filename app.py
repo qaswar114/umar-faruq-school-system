@@ -545,6 +545,12 @@ def pupils():
         )
         db.session.add(p)
         db.session.commit()
+        
+        save_audit(
+            f"Registered new pupil: {p.full_name} ({p.admission_no})",
+            "Students"
+        )
+        
         flash(f"Pupil registered: {p.admission_no}")
         return redirect(url_for("pupils"))
 
@@ -1274,7 +1280,13 @@ def payments():
                       admission_paid=float(request.form.get("admission_paid") or 0),
                       payment_method=request.form["payment_method"], payment_date=datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date(),
                       collected_by=session["username"])
-        db.session.add(pay); db.session.commit()
+        db.session.add(pay);
+        db.session.commit()
+        
+        save_audit(
+            f"Recorded payment: {pay.receipt_no}",
+            "Finance"
+        )
         return redirect(url_for("receipt", payment_id=pay.id))
     pupils = Pupil.query.order_by(Pupil.full_name.asc()).all()
 
@@ -1803,6 +1815,11 @@ def users():
 
         db.session.add(new_user)
         db.session.commit()
+
+        save_audit(
+            f"Created user account: {username}",
+           "Security"
+        )
 
         flash("User created successfully.")
         return redirect(url_for("users"))
