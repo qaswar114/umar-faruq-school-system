@@ -56,6 +56,15 @@ class AuditLog(db.Model):
     module = db.Column(db.String(100), default="")
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+class Announcement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    audience = db.Column(db.String(50), default="All")  # All / Parents / Teachers / Students
+    created_by = db.Column(db.String(80), default="")
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    status = db.Column(db.String(20), default="Active")
+
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_name = db.Column(db.String(200), default=SCHOOL_NAME)
@@ -205,6 +214,12 @@ def init_database():
         db.session.rollback()
     try:
         AuditLog.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+        try:
+        Announcement.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
