@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Bulk SMS</h2>
+
+    <form method="get">
+        <label>Select Grade/Class</label>
+        <select name="grade" required>
+            <option value="">Select Grade</option>
+            {% for g in grades %}
+            <option {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn">Load Parents</button>
+    </form>
+</div>
+
+{% if selected_grade %}
+<div class="panel">
+    <h3>Send Message to {{ selected_grade }} Parents</h3>
+    <p>Total parents found: {{ pupils|length }}</p>
+
+    <form method="post">
+        <input type="hidden" name="grade" value="{{ selected_grade }}">
+
+        <label>Category</label>
+        <select name="category">
+            <option>General</option>
+            <option>Fees</option>
+            <option>Attendance</option>
+            <option>Announcement</option>
+            <option>Exam</option>
+        </select>
+
+        <label>Message</label>
+        <textarea name="message" rows="5" style="width:100%;" required></textarea>
+
+        <br><br>
+        <button class="btn green">Save Bulk SMS</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}
