@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Fee Reminders</h2>
+
+    <form method="get">
+        <div class="three">
+            <div>
+                <label>Academic Year</label>
+                <input type="number" name="year" value="{{ year }}">
+            </div>
+
+            <div>
+                <label>Grade/Class</label>
+                <select name="grade">
+                    <option value="">All Grades</option>
+                    {% for g in grades %}
+                    <option {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Term</label>
+                <select name="term" id="remTerm" onchange="updateMonths('remTerm','remMonth')">
+                    {% for t in terms %}
+                    <option {% if selected_term == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Month</label>
+                <select name="month" id="remMonth">
+                    {% for m in term_months[selected_term] %}
+                    <option {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button class="btn">Load Defaulters</button>
+    </form>
+</div>
+
+{% if rows %}
+<div class="panel">
+    <h3>Parents with Outstanding Balances</h3>
+
+    <form method="post">
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Pupil</th>
+                <th>Grade</th>
+                <th>Guardian</th>
+                <th>Phone</th>
+                <th>Balance</th>
+            </tr>
+
+            {% for r in rows %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ r.pupil.full_name }}</td>
+                <td>{{ r.pupil.grade }}</td>
+                <td>{{ r.pupil.guardian_name }}</td>
+                <td>{{ r.pupil.guardian_phone }}</td>
+                <td>{{ money(r.balance) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <br>
+        <button class="btn green">Generate Fee Reminder SMS</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}
