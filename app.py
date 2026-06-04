@@ -65,6 +65,16 @@ class Announcement(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     status = db.Column(db.String(20), default="Active")
 
+class SMSMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    recipient_name = db.Column(db.String(200), default="")
+    phone = db.Column(db.String(80), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), default="General")
+    status = db.Column(db.String(30), default="Pending")
+    created_by = db.Column(db.String(80), default="")
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_name = db.Column(db.String(200), default=SCHOOL_NAME)
@@ -220,6 +230,12 @@ def init_database():
 
     try:
         Announcement.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        SMSMessage.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -1751,6 +1767,43 @@ def statements():
         return redirect(url_for("dashboard"))
 
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
+
+@app.route("/sms_messages", methods=["GET", "POST"])
+def sms_messages():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        sms = SMSMessage(
+            recipient_name=request.form.get("recipient_name", ""),
+            phone=request.form["phone"],
+            message=request.form["message"],
+            category=request.form.get("category", "General"),
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(sms)
+        db.session.commit()
+
+        save_audit(
+            f"Created SMS message for: {sms.recipient_name} ({sms.phone})",
+            "Communication"
+        )
+
+        flash("SMS message saved as pending.")
+        return redirect(url_for("sms_messages"))
+
+    rows = SMSMessage.query.order_by(SMSMessage.created_at.desc()).all()
+
+    return render_template(
+        "sms_messages.html",
+        settings=get_settings(),
+        rows=rows
+    )
 
 @app.route("/announcements", methods=["GET", "POST"])
 def announcements():
