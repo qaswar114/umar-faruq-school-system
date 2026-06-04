@@ -144,7 +144,8 @@ def get_settings():
 
 def init_database():
     db.create_all()
-        try:
+       
+    try:
         Subject.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
