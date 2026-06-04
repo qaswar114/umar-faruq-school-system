@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Subjects Setup</h2>
+
+    <form method="post">
+        <div class="three">
+            <div>
+                <label>Subject Name</label>
+                <input name="subject_name" required placeholder="e.g. Mathematics">
+            </div>
+
+            <div>
+                <label>Grade/Class</label>
+                <select name="grade" required>
+                    {% for g in grades %}
+                    <option>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Teacher Name</label>
+                <input name="teacher_name" placeholder="e.g. Teacher Amina">
+            </div>
+        </div>
+
+        <br>
+
+        <button class="btn">Add Subject</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Registered Subjects</h3>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Subject</th>
+            <th>Grade</th>
+            <th>Teacher</th>
+            <th>Status</th>
+        </tr>
+
+        {% for s in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.subject_name }}</td>
+            <td>{{ s.grade }}</td>
+            <td>{{ s.teacher_name }}</td>
+            <td>{{ s.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No subjects added yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
