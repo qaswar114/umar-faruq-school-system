@@ -1313,6 +1313,40 @@ def payments():
                       collected_by=session["username"])
         db.session.add(pay);
         db.session.commit()
+pupil = Pupil.query.get(pay.pupil_id)
+
+balance = (
+    due_until_month(pupil, pay.academic_year, pay.term, pay.month)
+    - paid_year(pupil.id, pay.academic_year)
+    - discount_year(pupil.id, pay.academic_year)
+)
+
+amount_paid = (
+    pay.tuition_paid +
+    pay.bus_paid +
+    pay.exam_paid +
+    pay.admission_paid
+)
+
+if pupil and pupil.guardian_phone:
+    sms = SMSMessage(
+        recipient_name=pupil.guardian_name,
+        phone=pupil.guardian_phone,
+        message=(
+            f"Dear {pupil.guardian_name}, we have received KES {amount_paid:,.2f} "
+            f"for {pupil.full_name}. Receipt No: {pay.receipt_no}. "
+            f"Balance: KES {balance:,.2f}. Thank you. {settings.school_name}"
+        ),
+        category="Payment Confirmation",
+        created_by=session.get("username", "")
+    )
+    db.session.add(sms)
+    db.session.commit()
+
+    save_audit(
+    f"Generated payment confirmation SMS: {pay.receipt_no}",
+    "Communication"
+   )
         
         save_audit(
             f"Recorded payment: {pay.receipt_no}",
