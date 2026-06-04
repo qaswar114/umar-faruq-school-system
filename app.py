@@ -109,6 +109,12 @@ class Discount(db.Model):
     created_at = db.Column(db.Date, default=date.today)
     created_by = db.Column(db.String(80), default="")
     pupil = db.relationship("Pupil")
+class Subject(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject_name = db.Column(db.String(100), nullable=False)
+    grade = db.Column(db.String(50), nullable=False)
+    teacher_name = db.Column(db.String(100), default="")
+    status = db.Column(db.String(20), default="Active")
 
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
@@ -751,6 +757,37 @@ def attendance_report():
         present=present,
         absent=absent,
         late=late
+    )
+@app.route("/subjects", methods=["GET", "POST"])
+def subjects():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        subject = Subject(
+            subject_name=request.form["subject_name"],
+            grade=request.form["grade"],
+            teacher_name=request.form.get("teacher_name", ""),
+            status=request.form.get("status", "Active")
+        )
+
+        db.session.add(subject)
+        db.session.commit()
+
+        flash("Subject added successfully.")
+        return redirect(url_for("subjects"))
+
+    rows = Subject.query.order_by(Subject.grade, Subject.subject_name).all()
+
+    return render_template(
+        "subjects.html",
+        settings=get_settings(),
+        grades=GRADES,
+        rows=rows
     )
 @app.route("/fees", methods=["GET","POST"])
 def fees():
