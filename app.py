@@ -1759,6 +1759,26 @@ def staff():
         rows=rows,
         grades=GRADES
     )
+
+@app.route("/audit_logs")
+def audit_logs():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if session.get("role", "").lower() not in ["admin", "super admin"]:
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    logs = AuditLog.query.order_by(
+        AuditLog.created_at.desc()
+    ).limit(500).all()
+
+    return render_template(
+        "audit_logs.html",
+        settings=get_settings(),
+        logs=logs
+    )
+    
 @app.route("/users", methods=["GET", "POST"])
 def users():
     if not login_required():
