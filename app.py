@@ -48,6 +48,13 @@ class Staff(db.Model):
     assigned_grade = db.Column(db.String(50), default="")
     date_joined = db.Column(db.Date, default=date.today)
     status = db.Column(db.String(20), default="Active")
+class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), default="")
+    role = db.Column(db.String(50), default="")
+    action = db.Column(db.String(255), nullable=False)
+    module = db.Column(db.String(100), default="")
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -193,6 +200,11 @@ def init_database():
         db.session.rollback()
     try:
         Staff.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    try:
+        AuditLog.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
