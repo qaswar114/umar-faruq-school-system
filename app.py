@@ -123,6 +123,17 @@ class Exam(db.Model):
     grade = db.Column(db.String(50), nullable=False)
     total_marks = db.Column(db.Float, default=100)
     status = db.Column(db.String(20), default="Active")
+class Mark(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+    exam_id = db.Column(db.Integer, db.ForeignKey("exam.id"), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey("subject.id"), nullable=False)
+    marks_obtained = db.Column(db.Float, default=0)
+    teacher_remark = db.Column(db.String(255), default="")
+
+    pupil = db.relationship("Pupil")
+    exam = db.relationship("Exam")
+    subject = db.relationship("Subject")
 
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
