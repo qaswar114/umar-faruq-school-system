@@ -420,6 +420,7 @@ def expenses():
         today=date.today(),
         money=money
     )
+    
 @app.route("/expense_report")
 def expense_report():
     if not login_required():
@@ -436,6 +437,7 @@ def expense_report():
         total=total,
         money=money
     )
+    
 @app.route("/settings", methods=["GET","POST"])
 def settings():
     if not login_required(): return redirect(url_for("login"))
@@ -450,6 +452,7 @@ def settings():
         db.session.commit()
         flash("Branding saved.")
     return render_template("settings.html", settings=s)
+    
 @app.route("/pupils", methods=["GET","POST"])
 def pupils():
     if not login_required():
@@ -546,6 +549,7 @@ def edit_pupil(pupil_id):
         grades=GRADES,
         settings=get_settings()
         )
+    
 @app.route("/student_profile/<int:pupil_id>")
 def student_profile(pupil_id):
     if not login_required():
@@ -574,6 +578,7 @@ def student_profile(pupil_id):
         balance=balance,
         money=money
     )
+    
 @app.route("/exit_pupil/<int:pupil_id>", methods=["POST"])
 def exit_pupil(pupil_id):
     if not login_required():
@@ -587,6 +592,7 @@ def exit_pupil(pupil_id):
 
     flash("Pupil marked as inactive successfully.")
     return redirect(url_for("pupils"))
+    
 @app.route("/delete_pupil/<int:pupil_id>", methods=["POST"])
 def delete_pupil(pupil_id):
     if not login_required():
@@ -607,6 +613,7 @@ def delete_pupil(pupil_id):
     db.session.commit()
     flash("Pupil deleted successfully.")
     return redirect(url_for("pupils"))
+    
 @app.route("/print_pupils")
 def print_pupils():
     if not login_required():
@@ -627,6 +634,7 @@ def print_pupils():
         selected_grade=selected_grade,
         today=date.today()
     )
+    
 @app.route("/inactive_students")
 def inactive_students():
     if not login_required():
@@ -648,6 +656,7 @@ def inactive_students():
         selected_grade=selected_grade,
         today=date.today()
     )
+    
 @app.route("/promote_students", methods=["POST"])
 def promote_students():
     if not login_required():
@@ -743,6 +752,7 @@ def attendance():
         selected_grade=selected_grade,
         attendance_date=attendance_date
     )
+    
 @app.route("/attendance_report")
 def attendance_report():
     if not login_required():
@@ -778,6 +788,43 @@ def attendance_report():
         absent=absent,
         late=late
     )
+
+@app.route("/exams", methods=["GET", "POST"])
+def exams():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        exam = Exam(
+            exam_name=request.form["exam_name"],
+            academic_year=int(request.form["academic_year"]),
+            term=request.form["term"],
+            grade=request.form["grade"],
+            total_marks=float(request.form.get("total_marks") or 100),
+            status=request.form.get("status", "Active")
+        )
+
+        db.session.add(exam)
+        db.session.commit()
+
+        flash("Exam added successfully.")
+        return redirect(url_for("exams"))
+
+    rows = Exam.query.order_by(Exam.academic_year.desc(), Exam.term, Exam.grade).all()
+
+    return render_template(
+        "exams.html",
+        settings=get_settings(),
+        grades=GRADES,
+        terms=TERMS,
+        year=current_year(),
+        rows=rows
+    )
+    
 @app.route("/subjects", methods=["GET", "POST"])
 def subjects():
     if not login_required():
