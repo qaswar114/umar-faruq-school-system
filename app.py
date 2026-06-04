@@ -837,6 +837,37 @@ def report_cards():
         selected_grade=selected_grade
     )
 
+@app.route("/report_card/<int:pupil_id>/<int:exam_id>")
+def report_card(pupil_id, exam_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    pupil = Pupil.query.get_or_404(pupil_id)
+    exam = Exam.query.get_or_404(exam_id)
+
+    marks = Mark.query.filter_by(
+        pupil_id=pupil.id,
+        exam_id=exam.id
+    ).all()
+
+    total = sum(m.marks_obtained for m in marks)
+    count = len(marks)
+    average = total / count if count > 0 else 0
+
+    return render_template(
+        "report_card.html",
+        settings=get_settings(),
+        pupil=pupil,
+        exam=exam,
+        marks=marks,
+        total=total,
+        average=average
+    )
+
 @app.route("/marks", methods=["GET", "POST"])
 def marks():
     if not login_required():
