@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Exam Setup</h2>
+
+    <form method="post">
+        <div class="three">
+            <div>
+                <label>Exam Name</label>
+                <input name="exam_name" required placeholder="e.g. Mid Term Exam">
+            </div>
+
+            <div>
+                <label>Academic Year</label>
+                <input name="academic_year" type="number" value="{{ year }}" required>
+            </div>
+
+            <div>
+                <label>Term</label>
+                <select name="term" required>
+                    {% for t in terms %}
+                    <option>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Grade/Class</label>
+                <select name="grade" required>
+                    {% for g in grades %}
+                    <option>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Total Marks</label>
+                <input name="total_marks" type="number" value="100" required>
+            </div>
+        </div>
+
+        <br>
+        <button class="btn">Add Exam</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Registered Exams</h3>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Exam</th>
+            <th>Year</th>
+            <th>Term</th>
+            <th>Grade</th>
+            <th>Total Marks</th>
+            <th>Status</th>
+        </tr>
+
+        {% for e in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ e.exam_name }}</td>
+            <td>{{ e.academic_year }}</td>
+            <td>{{ e.term }}</td>
+            <td>{{ e.grade }}</td>
+            <td>{{ e.total_marks }}</td>
+            <td>{{ e.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No exams added yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
