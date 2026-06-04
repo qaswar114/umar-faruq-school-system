@@ -241,6 +241,11 @@ def role_allowed(*roles):
     current_role = session.get("role", "").lower()
     allowed_roles = [r.lower() for r in roles]
 
+    # Super Admin can access everything
+    if current_role == "super admin":
+        return True
+
+    # Admin can access everything except Super Admin-only areas
     if current_role == "admin":
         return True
 
