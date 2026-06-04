@@ -1768,6 +1768,66 @@ def statements():
 
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
 
+@app.route("/bulk_sms", methods=["GET", "POST"])
+def bulk_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    selected_grade = request.args.get("grade", "")
+    pupils = []
+
+    if selected_grade:
+        pupils = Pupil.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).order_by(Pupil.full_name).all()
+
+    if request.method == "POST":
+        grade = request.form["grade"]
+        message = request.form["message"]
+        category = request.form.get("category", "General")
+
+        pupils = Pupil.query.filter_by(
+            grade=grade,
+            status="Active"
+        ).all()
+
+        count = 0
+
+        for p in pupils:
+            if p.guardian_phone:
+                sms = SMSMessage(
+                    recipient_name=p.guardian_name,
+                    phone=p.guardian_phone,
+                    message=message,
+                    category=category,
+                    created_by=session.get("username", "")
+                )
+                db.session.add(sms)
+                count += 1
+
+        db.session.commit()
+
+        save_audit(
+            f"Created bulk SMS for {count} parents in {grade}",
+            "Communication"
+        )
+
+        flash(f"Bulk SMS saved for {count} parents.")
+        return redirect(url_for("bulk_sms", grade=grade))
+
+    return render_template(
+        "bulk_sms.html",
+        settings=get_settings(),
+        grades=GRADES,
+        selected_grade=selected_grade,
+        pupils=pupils
+    )
+
 @app.route("/sms_messages", methods=["GET", "POST"])
 def sms_messages():
     if not login_required():
