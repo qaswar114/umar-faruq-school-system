@@ -1768,6 +1768,94 @@ def statements():
 
     return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
 
+@app.route("/fee_reminders", methods=["GET", "POST"])
+def fee_reminders():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    year = int(request.args.get("year", current_year()))
+    selected_grade = request.args.get("grade", "")
+    selected_term = request.args.get("term", "Term 1")
+    selected_month = request.args.get("month", "May")
+
+    rows = []
+
+    query = Pupil.query.filter_by(status="Active")
+
+    if selected_grade:
+        query = query.filter_by(grade=selected_grade)
+
+    for p in query.order_by(Pupil.grade, Pupil.full_name).all():
+        total_due = due_until_month(p, year, selected_term, selected_month)
+        total_paid = paid_year(p.id, year)
+        discounts = discount_year(p.id, year)
+        balance = total_due - total_paid - discounts
+
+        if balance > 0:
+            rows.append({
+                "pupil": p,
+                "balance": balance
+            })
+
+    if request.method == "POST":
+        count = 0
+
+        for row in rows:
+            p = row["pupil"]
+            balance = row["balance"]
+
+            if p.guardian_phone:
+                message = (
+                    f"Dear {p.guardian_name}, your child {p.full_name} "
+                    f"has an outstanding fee balance of KES {balance:,.2f}. "
+                    f"Kindly clear the balance. {settings.school_name}"
+                )
+
+                sms = SMSMessage(
+                    recipient_name=p.guardian_name,
+                    phone=p.guardian_phone,
+                    message=message,
+                    category="Fees",
+                    created_by=session.get("username", "")
+                )
+
+                db.session.add(sms)
+                count += 1
+
+        db.session.commit()
+
+        save_audit(
+            f"Created fee reminder SMS for {count} parents",
+            "Communication"
+        )
+
+        flash(f"Fee reminder SMS saved for {count} parents.")
+        return redirect(url_for(
+            "fee_reminders",
+            year=year,
+            grade=selected_grade,
+            term=selected_term,
+            month=selected_month
+        ))
+
+    return render_template(
+        "fee_reminders.html",
+        settings=get_settings(),
+        grades=GRADES,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        rows=rows,
+        year=year,
+        selected_grade=selected_grade,
+        selected_term=selected_term,
+        selected_month=selected_month,
+        money=money
+    )
+
 @app.route("/bulk_sms", methods=["GET", "POST"])
 def bulk_sms():
     if not login_required():
