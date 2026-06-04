@@ -223,10 +223,12 @@ def init_database():
     if not Setting.query.first():
         db.session.add(Setting(school_name=SCHOOL_NAME, address="Umar Faruq Integrated Academy"))
     default_users = [
+        ("superadmin", "super123", "Super Admin"),
         ("admin", "admin123", "Admin"),
         ("registrar", "reg123", "Registrar"),
         ("bursar", "bursar123", "Bursar"),
-    ]
+        ("reception", "recep123", "Receptionist"),
+   ]
     for username, password, role in default_users:
         if not User.query.filter_by(username=username).first():
             db.session.add(User(username=username, password_hash=generate_password_hash(password), role=role))
@@ -495,7 +497,7 @@ def pupils():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("registrar"):
+    if not role_allowed("registrar", "receptionist"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -553,7 +555,7 @@ def edit_pupil(pupil_id):
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("registrar"):
+    if not role_allowed("registrar", "receptionist"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
