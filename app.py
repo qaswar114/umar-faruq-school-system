@@ -630,11 +630,11 @@ def edit_pupil(pupil_id):
         pupil.home_address = request.form.get("home_address", "")
 
         photo_file = request.files.get("photo")
+        if photo_file and photo_file.filename:
+            photo_filename = secure_filename(photo_file.filename)
+            photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
+            pupil.photo = photo_filename
 
-    if photo_file and photo_file.filename:
-        photo_filename = secure_filename(photo_file.filename)
-        photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
-        pupil.photo = photo_filename
         db.session.commit()
         flash("Pupil updated successfully.")
         return redirect(url_for("pupils"))
@@ -644,7 +644,7 @@ def edit_pupil(pupil_id):
         pupil=pupil,
         grades=GRADES,
         settings=get_settings()
-        )
+    )
     
 @app.route("/student_profile/<int:pupil_id>")
 def student_profile(pupil_id):
@@ -1550,7 +1550,7 @@ def termly_collections():
     
 
     return render_template(
-    "yearly_collections.html",
+    "termly_collections.html",
     settings=get_settings(),
     payments=payments,
     selected_year=selected_year,
@@ -1894,7 +1894,7 @@ def fee_reminders():
                 message = (
                     f"Dear {p.guardian_name}, your child {p.full_name} "
                     f"has an outstanding fee balance of KES {balance:,.2f}. "
-                    f"Kindly clear the balance. {settings.school_name}"
+                    f"Kindly clear the balance. {get_settings().school_name}"
                 )
 
                 sms = SMSMessage(
