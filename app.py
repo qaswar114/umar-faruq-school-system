@@ -974,6 +974,50 @@ def report_card(pupil_id, exam_id):
     count = len(marks)
     average = total / count if count > 0 else 0
 
+    grade_letter = "E"
+    if average >= 80:
+        grade_letter = "A"
+    elif average >= 70:
+        grade_letter = "B"
+    elif average >= 60:
+        grade_letter = "C"
+    elif average >= 50:
+        grade_letter = "D"
+
+    classmates = Pupil.query.filter_by(
+        grade=pupil.grade,
+        status="Active"
+    ).all()
+
+    ranking_list = []
+
+    for student in classmates:
+        student_marks = Mark.query.filter_by(
+            pupil_id=student.id,
+            exam_id=exam.id
+        ).all()
+
+        student_total = sum(m.marks_obtained for m in student_marks)
+
+        ranking_list.append({
+            "pupil_id": student.id,
+            "total": student_total
+        })
+
+    ranking_list = sorted(
+        ranking_list,
+        key=lambda x: x["total"],
+        reverse=True
+    )
+
+    position = "-"
+    for index, item in enumerate(ranking_list, start=1):
+        if item["pupil_id"] == pupil.id:
+            position = index
+            break
+
+    class_size = len(ranking_list)
+
     return render_template(
         "report_card.html",
         settings=get_settings(),
@@ -981,7 +1025,11 @@ def report_card(pupil_id, exam_id):
         exam=exam,
         marks=marks,
         total=total,
-        average=average
+        average=average,
+        grade_letter=grade_letter,
+        position=position,
+        class_size=class_size,
+        today=date.today()
     )
 
 @app.route("/rankings")
