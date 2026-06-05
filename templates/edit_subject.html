@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Edit Subject</h2>
+
+    <form method="post">
+        <label>Subject Name</label>
+        <input name="subject_name" value="{{ subject.subject_name }}" required>
+
+        <label>Grade/Class</label>
+        <select name="grade" required>
+            {% for g in grades %}
+            <option {% if subject.grade == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Teacher Name</label>
+        <input name="teacher_name" value="{{ subject.teacher_name }}">
+
+        <label>Status</label>
+        <select name="status">
+            <option {% if subject.status == "Active" %}selected{% endif %}>Active</option>
+            <option {% if subject.status == "Inactive" %}selected{% endif %}>Inactive</option>
+        </select>
+
+        <br><br>
+        <button class="btn green">Update Subject</button>
+        <a href="{{ url_for('subjects') }}" class="btn">Cancel</a>
+    </form>
+</div>
+
+{% endblock %}
