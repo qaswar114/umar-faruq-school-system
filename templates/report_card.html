@@ -5,6 +5,10 @@
 @media print {
     .no-print, header, nav {
         display: none !important;
+        @page {
+    size: A4;
+    margin: 5mm;
+}
     }
 
     body {
@@ -20,43 +24,44 @@
 
 .report-card {
     background: white;
-    border: 3px solid #0b5ed7;
-    padding: 25px;
-    max-width: 900px;
+    border: 2px solid #0b5ed7;
+    padding: 10px;
+    max-width: 800px;
     margin: auto;
+    font-size: 12px;
 }
 
 .report-header {
     text-align: center;
-    border-bottom: 2px solid #0b5ed7;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
+    border-bottom: 1px solid #0b5ed7;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
 }
 
 .report-logo {
-    width: 90px;
-    height: 90px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
 }
 
 .report-title {
-    font-size: 26px;
+    font-size: 18px;
     font-weight: bold;
     color: #0b5ed7;
 }
 
 .report-subtitle {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: bold;
 }
 
 .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px 25px;
-    margin: 15px 0;
+    gap: 4px 15px;
+    margin: 8px 0;
     border: 1px solid #ccc;
-    padding: 12px;
+    padding: 6px;
 }
 
 .report-table {
@@ -68,8 +73,9 @@
 .report-table th,
 .report-table td {
     border: 1px solid #333;
-    padding: 8px;
+    padding: 3px;
     text-align: left;
+    font-size: 11px;
 }
 
 .report-table th {
@@ -85,23 +91,23 @@
 
 .summary-box {
     border: 1px solid #333;
-    padding: 10px;
+    padding: 5px;
     text-align: center;
     font-weight: bold;
 }
 
 .remarks-box {
     border: 1px solid #333;
-    min-height: 60px;
-    padding: 10px;
-    margin-top: 15px;
+    min-height: 35px;
+    padding: 5px;
+    margin-top: 8px;
 }
 
 .signature-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 25px;
-    margin-top: 35px;
+    gap: 15px;
+    margin-top: 15px;
     text-align: center;
 }
 
@@ -111,12 +117,13 @@
 }
 
 .stamp-box {
-    border: 2px dashed #333;
-    width: 180px;
-    height: 80px;
-    margin: 25px auto 0;
+    border: 1px dashed #333;
+    width: 120px;
+    height: 50px;
+    margin: 10px auto 0;
     text-align: center;
-    padding-top: 25px;
+    padding-top: 15px;
+    font-size: 11px;
     font-weight: bold;
 }
 </style>
@@ -192,15 +199,14 @@
     </div>
 
     <div class="remarks-box">
-        <b>Head Teacher Remarks:</b><br>
-        ________________________________________________________________
-    </div>
+    <b>Head Teacher Remarks:</b> Promoted to next grade.
+  </div>
 
     <div class="signature-grid">
-        <div class="signature-line">Class Teacher Signature</div>
-        <div class="signature-line">Head Teacher Signature</div>
-        <div class="signature-line">Parent Signature</div>
-    </div>
+         <div class="signature-line">Class Teacher</div>
+         <div class="signature-line">Head Teacher</div>
+         <div class="signature-line">Parent</div>
+   </div>
 
     <div class="stamp-box">
         SCHOOL STAMP
