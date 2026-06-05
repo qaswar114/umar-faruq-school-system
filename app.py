@@ -1540,8 +1540,8 @@ def termly_collections():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    selected_term = request.args.get("term", "Term 1")
     selected_year = int(request.args.get("year", current_year()))
+    selected_term = request.args.get("term", "Term 1")
 
     payments = Payment.query.filter_by(
         academic_year=selected_year,
@@ -1554,20 +1554,21 @@ def termly_collections():
     admission_total = sum(p.admission_paid for p in payments)
 
     total = tuition_total + bus_total + exam_total + admission_total
-    
 
     return render_template(
-    "termly_collections.html",
-    settings=get_settings(),
-    payments=payments,
-    selected_year=selected_year,
-    tuition_total=tuition_total,
-    bus_total=bus_total,
-    exam_total=exam_total,
-    admission_total=admission_total,
-    total=total,
-    money=money
-)
+        "termly_collections.html",
+        settings=get_settings(),
+        payments=payments,
+        selected_year=selected_year,
+        selected_term=selected_term,
+        terms=TERMS,
+        tuition_total=tuition_total,
+        bus_total=bus_total,
+        exam_total=exam_total,
+        admission_total=admission_total,
+        total=total,
+        money=money
+    )
 @app.route("/yearly_collections")
 def yearly_collections():
     if not login_required():
