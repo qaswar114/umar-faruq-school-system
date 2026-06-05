@@ -1321,6 +1321,34 @@ def subjects():
         grades=GRADES,
         rows=rows
     )
+
+@app.route("/edit_subject/<int:subject_id>", methods=["GET", "POST"])
+def edit_subject(subject_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    subject = Subject.query.get_or_404(subject_id)
+
+    if request.method == "POST":
+        subject.subject_name = request.form["subject_name"]
+        subject.grade = request.form["grade"]
+        subject.teacher_name = request.form.get("teacher_name", "")
+        subject.status = request.form.get("status", "Active")
+
+        db.session.commit()
+        flash("Subject updated successfully.")
+        return redirect(url_for("subjects"))
+
+    return render_template(
+        "edit_subject.html",
+        settings=get_settings(),
+        subject=subject,
+        grades=GRADES
+    )
 @app.route("/fees", methods=["GET","POST"])
 def fees():
     if not login_required():
