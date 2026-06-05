@@ -1,67 +1,295 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Report Card</title>
+{% extends "base.html" %}
+{% block content %}
 
-    <style>
-        body{
-            font-family: Arial, sans-serif;
-            background:#fff;
-            margin:0;
-            padding:20px;
-        }
+<style>
+.report-card {
+    background: white;
+    border: 2px solid #000;
+    padding: 8px;
+    max-width: 760px;
+    margin: 0 auto;
+    font-size: 11px;
+    color: #000;
+}
 
-        .report-card{
-            width:800px;
-            margin:auto;
-            border:2px solid #000;
-            padding:10px;
-        }
+.report-header {
+    text-align: center;
+    border-bottom: 1px solid #000;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+}
 
-        .print-btn{
-            text-align:center;
-            margin:15px;
-        }
+.report-logo {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
 
-        @media print{
-            .print-btn{
-                display:none;
-            }
+.report-title {
+    font-size: 17px;
+    font-weight: bold;
+}
 
-            body{
-                margin:0;
-                padding:0;
-            }
+.report-subtitle {
+    font-size: 13px;
+    font-weight: bold;
+}
 
-            .report-card{
-                width:100%;
-                border:2px solid #000;
-                box-shadow:none;
-            }
-        }
-    </style>
-</head>
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 12px;
+    border: 1px solid #999;
+    padding: 5px;
+    margin: 6px 0;
+}
 
-<body>
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+}
 
-<div class="print-btn">
-    <button onclick="window.print()">Print Report Card</button>
+.report-table th,
+.report-table td {
+    border: 1px solid #333;
+    padding: 3px;
+    font-size: 10.5px;
+}
+
+.report-table th {
+    background: #eee;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.summary-box {
+    border: 1px solid #333;
+    padding: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.remarks-box {
+    border: 1px solid #333;
+    min-height: 25px;
+    padding: 4px;
+    margin-top: 6px;
+}
+
+.signature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+    text-align: center;
+}
+
+.signature-line {
+    border-top: 1px solid #000;
+    padding-top: 4px;
+}
+
+.stamp-box {
+    border: 1px dashed #333;
+    width: 110px;
+    height: 35px;
+    margin: 8px auto 0;
+    text-align: center;
+    padding-top: 10px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.no-print {
+    margin-bottom: 10px;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 5mm;
+    }
+
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .no-print,
+    .site-header,
+    .navbar,
+    .topbar,
+    .sidebar,
+    nav,
+    header {
+        display: none !important;
+    }
+
+    .panel {
+        box-shadow: none !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .report-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 6px !important;
+        border: 2px solid #000 !important;
+        font-size: 10px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .report-logo {
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .report-title {
+        font-size: 15px !important;
+    }
+
+    .report-subtitle {
+        font-size: 12px !important;
+    }
+
+    .info-grid {
+        padding: 4px !important;
+        margin: 4px 0 !important;
+        gap: 2px 8px !important;
+    }
+
+    .report-table {
+        margin-top: 4px !important;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 2px !important;
+        font-size: 9.5px !important;
+    }
+
+    .summary-grid {
+        margin-top: 4px !important;
+        gap: 4px !important;
+    }
+
+    .summary-box {
+        padding: 3px !important;
+    }
+
+    .remarks-box {
+        min-height: 20px !important;
+        padding: 3px !important;
+        margin-top: 4px !important;
+    }
+
+    .signature-grid {
+        margin-top: 12px !important;
+    }
+
+    .stamp-box {
+        height: 30px !important;
+        padding-top: 7px !important;
+        margin-top: 6px !important;
+    }
+}
+</style>
+
+<div class="no-print">
+    <button onclick="window.print()" class="btn">Print Report Card</button>
+    <a href="{{ url_for('report_cards') }}" class="btn">Back</a>
 </div>
 
-<div class="report-card">
+<div class="panel">
+    <div class="report-card">
 
-    <!-- SCHOOL LOGO -->
+        <div class="report-header">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="report-logo">
+            <div class="report-title">{{ settings.school_name }}</div>
+            <div>{{ settings.address }}</div>
+            <div>{{ settings.phone }}</div>
+            <div class="report-subtitle">OFFICIAL PUPIL REPORT CARD</div>
+        </div>
 
-    <center>
-        <img src="{{ url_for('static', filename='logo.png') }}"
-             width="60">
-        <h3>UMAR FARUQ INTEGRATED ACADEMY</h3>
-        <h4>OFFICIAL PUPIL REPORT CARD</h4>
-    </center>
+        <div class="info-grid">
+            <div><b>Pupil Name:</b> {{ pupil.full_name }}</div>
+            <div><b>Admission No:</b> {{ pupil.admission_no }}</div>
+            <div><b>Grade/Class:</b> {{ pupil.grade }}</div>
+            <div><b>Gender:</b> {{ pupil.gender }}</div>
+            <div><b>Exam:</b> {{ exam.exam_name }}</div>
+            <div><b>Term:</b> {{ exam.term }}</div>
+            <div><b>Academic Year:</b> {{ exam.academic_year }}</div>
+            <div><b>Date Printed:</b> {{ today }}</div>
+        </div>
 
-    <!-- KEEP ALL YOUR CURRENT REPORT CARD TABLES HERE -->
+        <table class="report-table">
+            <tr>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Marks</th>
+                <th>Teacher Remark</th>
+            </tr>
 
+            {% for m in marks %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ m.subject.subject_name }}</td>
+                <td>{{ m.marks_obtained }}</td>
+                <td>{{ m.teacher_remark }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align:center;">No marks entered yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <div class="summary-grid">
+            <div class="summary-box">Total<br>{{ total }}</div>
+            <div class="summary-box">Average<br>{{ "%.2f"|format(average) }}</div>
+            <div class="summary-box">Grade<br>{{ grade_letter }}</div>
+            <div class="summary-box">Position<br>{{ position }} / {{ class_size }}</div>
+        </div>
+
+        <div class="remarks-box">
+            <b>Class Teacher Remarks:</b>
+            {% if average >= 80 %}
+                Excellent performance. Keep it up.
+            {% elif average >= 70 %}
+                Very good performance. Continue working hard.
+            {% elif average >= 60 %}
+                Good performance. More effort will improve the results.
+            {% elif average >= 50 %}
+                Fair performance. Needs more revision and guidance.
+            {% else %}
+                Needs serious improvement and close academic support.
+            {% endif %}
+        </div>
+
+        <div class="remarks-box">
+            <b>Head Teacher Remarks:</b> Promoted to next grade.
+        </div>
+
+        <div class="signature-grid">
+            <div class="signature-line">Class Teacher</div>
+            <div class="signature-line">Head Teacher</div>
+            <div class="signature-line">Parent</div>
+        </div>
+
+        <div class="stamp-box">SCHOOL STAMP</div>
+
+    </div>
 </div>
 
-</body>
-</html>
+{% endblock %}
