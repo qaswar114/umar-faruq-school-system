@@ -1175,64 +1175,81 @@ def marks():
         return redirect(url_for("dashboard"))
 
     selected_exam = request.args.get("exam_id", "")
-    selected_subject = request.args.get("subject_id", "")
     selected_grade = request.args.get("grade", "")
 
     exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
-    subjects = Subject.query.filter_by(status="Active").order_by(Subject.grade, Subject.subject_name).all()
-
     pupils = []
-    if selected_grade:
-        pupils = Pupil.query.filter_by(grade=selected_grade, status="Active").order_by(Pupil.full_name).all()
+    subjects = []
+    existing_marks = {}
+
+    if selected_exam and selected_grade:
+        pupils = Pupil.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).order_by(Pupil.full_name).all()
+
+        subjects = Subject.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).order_by(Subject.subject_name).all()
+
+        marks_rows = Mark.query.filter_by(
+            exam_id=int(selected_exam)
+        ).all()
+
+        for m in marks_rows:
+            existing_marks[(m.pupil_id, m.subject_id)] = m
 
     if request.method == "POST":
         exam_id = int(request.form["exam_id"])
-        subject_id = int(request.form["subject_id"])
         grade = request.form["grade"]
 
-        pupils = Pupil.query.filter_by(grade=grade, status="Active").all()
+        pupils = Pupil.query.filter_by(
+            grade=grade,
+            status="Active"
+        ).all()
+
+        subjects = Subject.query.filter_by(
+            grade=grade,
+            status="Active"
+        ).all()
 
         for pupil in pupils:
-            mark_value = float(request.form.get(f"mark_{pupil.id}") or 0)
-            remark = request.form.get(f"remark_{pupil.id}", "")
+            for subject in subjects:
+                mark_value = float(request.form.get(f"mark_{pupil.id}_{subject.id}") or 0)
+                remark = request.form.get(f"remark_{pupil.id}_{subject.id}", "")
 
-            existing = Mark.query.filter_by(
-                pupil_id=pupil.id,
-                exam_id=exam_id,
-                subject_id=subject_id
-            ).first()
-
-            if existing:
-                existing.marks_obtained = mark_value
-                existing.teacher_remark = remark
-            else:
-                mark = Mark(
+                existing = Mark.query.filter_by(
                     pupil_id=pupil.id,
                     exam_id=exam_id,
-                    subject_id=subject_id,
-                    marks_obtained=mark_value,
-                    teacher_remark=remark
-                )
-                db.session.add(mark)
+                    subject_id=subject.id
+                ).first()
+
+                if existing:
+                    existing.marks_obtained = mark_value
+                    existing.teacher_remark = remark
+                else:
+                    mark = Mark(
+                        pupil_id=pupil.id,
+                        exam_id=exam_id,
+                        subject_id=subject.id,
+                        marks_obtained=mark_value,
+                        teacher_remark=remark
+                    )
+                    db.session.add(mark)
 
         db.session.commit()
-        flash("Marks saved successfully.")
-        return redirect(url_for("marks", exam_id=exam_id, subject_id=subject_id, grade=grade))
-
-    existing_marks = {}
-    if selected_exam and selected_subject:
-        for m in Mark.query.filter_by(exam_id=int(selected_exam), subject_id=int(selected_subject)).all():
-            existing_marks[m.pupil_id] = m
+        flash("All subject marks saved successfully.")
+        return redirect(url_for("marks", exam_id=exam_id, grade=grade))
 
     return render_template(
         "marks.html",
         settings=get_settings(),
         grades=GRADES,
         exams=exams,
-        subjects=subjects,
         pupils=pupils,
+        subjects=subjects,
         selected_exam=selected_exam,
-        selected_subject=selected_subject,
         selected_grade=selected_grade,
         existing_marks=existing_marks
     )
