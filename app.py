@@ -806,7 +806,10 @@ def attendance():
 
     pupils = []
     if selected_grade:
-        pupils = Pupil.query.filter_by(grade=selected_grade).order_by(Pupil.full_name).all()
+        pupils = Pupil.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).order_by(Pupil.full_name).all()
 
     if request.method == "POST":
         selected_grade = request.form["grade"]
@@ -814,42 +817,68 @@ def attendance():
 
         if session.get("role", "").lower() == "teacher":
             current_user = User.query.filter_by(username=session.get("username")).first()
-            selected_grade = current_user.assigned_grade
+            if current_user and current_user.assigned_grade:
+                selected_grade = current_user.assigned_grade
 
-        pupils = Pupil.query.filter_by(grade=selected_grade).all()
+        pupils = Pupil.query.filter_by(
+            grade=selected_grade,
+            status="Active"
+        ).all()
+
+        absent_count = 0
+        attendance_day = datetime.strptime(attendance_date, "%Y-%m-%d").date()
 
         for pupil in pupils:
-            status = request.form.get(f"status_{pupil.id}")
+            status = request.form.get(f"status_{pupil.id}", "Present")
 
             existing = Attendance.query.filter_by(
                 pupil_id=pupil.id,
-                attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date()
+                attendance_date=attendance_day
             ).first()
 
-        if existing:
-           existing.status = status
-        else:
-           new_attendance = Attendance(
-           pupil_id=pupil.id,
-           attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date(),
-           status=status
-    )
-    db.session.add(new_attendance)
+            if existing:
+                existing.status = status
+            else:
+                new_attendance = Attendance(
+                    pupil_id=pupil.id,
+                    attendance_date=attendance_day,
+                    status=status
+                )
+                db.session.add(new_attendance)
 
-        if status == "Absent" and pupil.guardian_phone:
-            sms = SMSMessage(
-            recipient_name=pupil.guardian_name,
-            phone=pupil.guardian_phone,
-            message=(
-            f"Dear {pupil.guardian_name}, your child {pupil.full_name} "
-            f"has been marked Absent today {attendance_date}. "
-            f"Kindly contact the school if necessary. {get_settings().school_name}"
-        ),
-        category="Attendance Alert",
-        created_by=session.get("username", "")
+            if status == "Absent" and pupil.guardian_phone:
+                sms = SMSMessage(
+                    recipient_name=pupil.guardian_name,
+                    phone=pupil.guardian_phone,
+                    message=(
+                        f"Dear {pupil.guardian_name}, your child {pupil.full_name} "
+                        f"has been marked Absent today {attendance_date}. "
+                        f"Kindly contact the school if necessary. {get_settings().school_name}"
+                    ),
+                    category="Attendance Alert",
+                    created_by=session.get("username", "")
+                )
+                db.session.add(sms)
+                absent_count += 1
+
+        db.session.commit()
+
+        save_audit(
+            f"Saved attendance for {selected_grade} on {attendance_date}. Absence alerts: {absent_count}",
+            "Attendance"
+        )
+
+        flash(f"Attendance saved successfully. {absent_count} absence alerts saved.")
+        return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
+
+    return render_template(
+        "attendance.html",
+        settings=get_settings(),
+        grades=GRADES,
+        pupils=pupils,
+        selected_grade=selected_grade,
+        attendance_date=attendance_date
     )
-    db.session.add(sms)
-    
 @app.route("/attendance_report")
 def attendance_report():
     if not login_required():
