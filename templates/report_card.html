@@ -1,295 +1,304 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Card</title>
 
-<style>
-.report-card {
-    background: white;
-    border: 2px solid #000;
-    padding: 8px;
-    max-width: 760px;
-    margin: 0 auto;
-    font-size: 11px;
-    color: #000;
-}
+    <style>
+        body {
+            background: white;
+            margin: 0;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+        }
 
-.report-header {
-    text-align: center;
-    border-bottom: 1px solid #000;
-    padding-bottom: 4px;
-    margin-bottom: 6px;
-}
+        .report-card {
+            background: white;
+            border: 2px solid #000;
+            padding: 8px;
+            max-width: 760px;
+            margin: 0 auto;
+            font-size: 11px;
+            color: #000;
+        }
 
-.report-logo {
-    width: 45px;
-    height: 45px;
-    object-fit: contain;
-}
+        .report-header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
 
-.report-title {
-    font-size: 17px;
-    font-weight: bold;
-}
+        .report-logo {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+        }
 
-.report-subtitle {
-    font-size: 13px;
-    font-weight: bold;
-}
+        .report-title {
+            font-size: 17px;
+            font-weight: bold;
+        }
 
-.info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3px 12px;
-    border: 1px solid #999;
-    padding: 5px;
-    margin: 6px 0;
-}
+        .report-subtitle {
+            font-size: 13px;
+            font-weight: bold;
+        }
 
-.report-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 5px;
-}
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px 12px;
+            border: 1px solid #999;
+            padding: 5px;
+            margin: 6px 0;
+        }
 
-.report-table th,
-.report-table td {
-    border: 1px solid #333;
-    padding: 3px;
-    font-size: 10.5px;
-}
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
 
-.report-table th {
-    background: #eee;
-}
+        .report-table th,
+        .report-table td {
+            border: 1px solid #333;
+            padding: 3px;
+            font-size: 10.5px;
+        }
 
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-top: 6px;
-}
+        .report-table th {
+            background: #eee;
+        }
 
-.summary-box {
-    border: 1px solid #333;
-    padding: 4px;
-    text-align: center;
-    font-weight: bold;
-}
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 6px;
+        }
 
-.remarks-box {
-    border: 1px solid #333;
-    min-height: 25px;
-    padding: 4px;
-    margin-top: 6px;
-}
+        .summary-box {
+            border: 1px solid #333;
+            padding: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
 
-.signature-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-top: 16px;
-    text-align: center;
-}
+        .remarks-box {
+            border: 1px solid #333;
+            min-height: 25px;
+            padding: 4px;
+            margin-top: 6px;
+        }
 
-.signature-line {
-    border-top: 1px solid #000;
-    padding-top: 4px;
-}
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+            text-align: center;
+        }
 
-.stamp-box {
-    border: 1px dashed #333;
-    width: 110px;
-    height: 35px;
-    margin: 8px auto 0;
-    text-align: center;
-    padding-top: 10px;
-    font-size: 10px;
-    font-weight: bold;
-}
+        .signature-line {
+            border-top: 1px solid #000;
+            padding-top: 4px;
+        }
 
-.no-print {
-    margin-bottom: 10px;
-}
+        .stamp-box {
+            border: 1px dashed #333;
+            width: 110px;
+            height: 35px;
+            margin: 8px auto 0;
+            text-align: center;
+            padding-top: 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
 
-@media print {
-    @page {
-        size: A4;
-        margin: 5mm;
-    }
+        .no-print {
+            text-align: center;
+            margin-bottom: 10px;
+        }
 
-    body {
-        background: white !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid #333;
+            background: #eee;
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
 
-    .no-print,
-    .site-header,
-    .navbar,
-    .topbar,
-    .sidebar,
-    nav,
-    header {
-        display: none !important;
-    }
+        @media print {
+            @page {
+                size: A4;
+                margin: 5mm;
+            }
 
-    .panel {
-        box-shadow: none !important;
-        background: white !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
 
-    .report-card {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 6px !important;
-        border: 2px solid #000 !important;
-        font-size: 10px !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-    }
+            .no-print {
+                display: none !important;
+            }
 
-    .report-logo {
-        width: 38px !important;
-        height: 38px !important;
-    }
+            .report-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 6px !important;
+                border: 2px solid #000 !important;
+                font-size: 10px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
 
-    .report-title {
-        font-size: 15px !important;
-    }
+            .report-logo {
+                width: 38px !important;
+                height: 38px !important;
+            }
 
-    .report-subtitle {
-        font-size: 12px !important;
-    }
+            .report-title {
+                font-size: 15px !important;
+            }
 
-    .info-grid {
-        padding: 4px !important;
-        margin: 4px 0 !important;
-        gap: 2px 8px !important;
-    }
+            .report-subtitle {
+                font-size: 12px !important;
+            }
 
-    .report-table {
-        margin-top: 4px !important;
-    }
+            .info-grid {
+                padding: 4px !important;
+                margin: 4px 0 !important;
+                gap: 2px 8px !important;
+            }
 
-    .report-table th,
-    .report-table td {
-        padding: 2px !important;
-        font-size: 9.5px !important;
-    }
+            .report-table {
+                margin-top: 4px !important;
+            }
 
-    .summary-grid {
-        margin-top: 4px !important;
-        gap: 4px !important;
-    }
+            .report-table th,
+            .report-table td {
+                padding: 2px !important;
+                font-size: 9.5px !important;
+            }
 
-    .summary-box {
-        padding: 3px !important;
-    }
+            .summary-grid {
+                margin-top: 4px !important;
+                gap: 4px !important;
+            }
 
-    .remarks-box {
-        min-height: 20px !important;
-        padding: 3px !important;
-        margin-top: 4px !important;
-    }
+            .summary-box {
+                padding: 3px !important;
+            }
 
-    .signature-grid {
-        margin-top: 12px !important;
-    }
+            .remarks-box {
+                min-height: 20px !important;
+                padding: 3px !important;
+                margin-top: 4px !important;
+            }
 
-    .stamp-box {
-        height: 30px !important;
-        padding-top: 7px !important;
-        margin-top: 6px !important;
-    }
-}
-</style>
+            .signature-grid {
+                margin-top: 12px !important;
+            }
+
+            .stamp-box {
+                height: 30px !important;
+                padding-top: 7px !important;
+                margin-top: 6px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
 
 <div class="no-print">
     <button onclick="window.print()" class="btn">Print Report Card</button>
     <a href="{{ url_for('report_cards') }}" class="btn">Back</a>
 </div>
 
-<div class="panel">
-    <div class="report-card">
+<div class="report-card">
 
-        <div class="report-header">
-            <img src="{{ url_for('static', filename='logo.png') }}" class="report-logo">
-            <div class="report-title">{{ settings.school_name }}</div>
-            <div>{{ settings.address }}</div>
-            <div>{{ settings.phone }}</div>
-            <div class="report-subtitle">OFFICIAL PUPIL REPORT CARD</div>
-        </div>
-
-        <div class="info-grid">
-            <div><b>Pupil Name:</b> {{ pupil.full_name }}</div>
-            <div><b>Admission No:</b> {{ pupil.admission_no }}</div>
-            <div><b>Grade/Class:</b> {{ pupil.grade }}</div>
-            <div><b>Gender:</b> {{ pupil.gender }}</div>
-            <div><b>Exam:</b> {{ exam.exam_name }}</div>
-            <div><b>Term:</b> {{ exam.term }}</div>
-            <div><b>Academic Year:</b> {{ exam.academic_year }}</div>
-            <div><b>Date Printed:</b> {{ today }}</div>
-        </div>
-
-        <table class="report-table">
-            <tr>
-                <th>#</th>
-                <th>Subject</th>
-                <th>Marks</th>
-                <th>Teacher Remark</th>
-            </tr>
-
-            {% for m in marks %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ m.subject.subject_name }}</td>
-                <td>{{ m.marks_obtained }}</td>
-                <td>{{ m.teacher_remark }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" style="text-align:center;">No marks entered yet.</td>
-            </tr>
-            {% endfor %}
-        </table>
-
-        <div class="summary-grid">
-            <div class="summary-box">Total<br>{{ total }}</div>
-            <div class="summary-box">Average<br>{{ "%.2f"|format(average) }}</div>
-            <div class="summary-box">Grade<br>{{ grade_letter }}</div>
-            <div class="summary-box">Position<br>{{ position }} / {{ class_size }}</div>
-        </div>
-
-        <div class="remarks-box">
-            <b>Class Teacher Remarks:</b>
-            {% if average >= 80 %}
-                Excellent performance. Keep it up.
-            {% elif average >= 70 %}
-                Very good performance. Continue working hard.
-            {% elif average >= 60 %}
-                Good performance. More effort will improve the results.
-            {% elif average >= 50 %}
-                Fair performance. Needs more revision and guidance.
-            {% else %}
-                Needs serious improvement and close academic support.
-            {% endif %}
-        </div>
-
-        <div class="remarks-box">
-            <b>Head Teacher Remarks:</b> Promoted to next grade.
-        </div>
-
-        <div class="signature-grid">
-            <div class="signature-line">Class Teacher</div>
-            <div class="signature-line">Head Teacher</div>
-            <div class="signature-line">Parent</div>
-        </div>
-
-        <div class="stamp-box">SCHOOL STAMP</div>
-
+    <div class="report-header">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="report-logo">
+        <div class="report-title">{{ settings.school_name }}</div>
+        <div>{{ settings.address }}</div>
+        <div>{{ settings.phone }}</div>
+        <div class="report-subtitle">OFFICIAL PUPIL REPORT CARD</div>
     </div>
+
+    <div class="info-grid">
+        <div><b>Pupil Name:</b> {{ pupil.full_name }}</div>
+        <div><b>Admission No:</b> {{ pupil.admission_no }}</div>
+        <div><b>Grade/Class:</b> {{ pupil.grade }}</div>
+        <div><b>Gender:</b> {{ pupil.gender }}</div>
+        <div><b>Exam:</b> {{ exam.exam_name }}</div>
+        <div><b>Term:</b> {{ exam.term }}</div>
+        <div><b>Academic Year:</b> {{ exam.academic_year }}</div>
+        <div><b>Date Printed:</b> {{ today }}</div>
+    </div>
+
+    <table class="report-table">
+        <tr>
+            <th>#</th>
+            <th>Subject</th>
+            <th>Marks</th>
+            <th>Teacher Remark</th>
+        </tr>
+
+        {% for m in marks %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ m.subject.subject_name }}</td>
+            <td>{{ m.marks_obtained }}</td>
+            <td>{{ m.teacher_remark }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" style="text-align:center;">No marks entered yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="summary-grid">
+        <div class="summary-box">Total<br>{{ total }}</div>
+        <div class="summary-box">Average<br>{{ "%.2f"|format(average) }}</div>
+        <div class="summary-box">Grade<br>{{ grade_letter }}</div>
+        <div class="summary-box">Position<br>{{ position }} / {{ class_size }}</div>
+    </div>
+
+    <div class="remarks-box">
+        <b>Class Teacher Remarks:</b>
+        {% if average >= 80 %}
+            Excellent performance. Keep it up.
+        {% elif average >= 70 %}
+            Very good performance. Continue working hard.
+        {% elif average >= 60 %}
+            Good performance. More effort will improve the results.
+        {% elif average >= 50 %}
+            Fair performance. Needs more revision and guidance.
+        {% else %}
+            Needs serious improvement and close academic support.
+        {% endif %}
+    </div>
+
+    <div class="remarks-box">
+        <b>Head Teacher Remarks:</b> Promoted to next grade.
+    </div>
+
+    <div class="signature-grid">
+        <div class="signature-line">Class Teacher</div>
+        <div class="signature-line">Head Teacher</div>
+        <div class="signature-line">Parent</div>
+    </div>
+
+    <div class="stamp-box">SCHOOL STAMP</div>
+
 </div>
 
-{% endblock %}
+</body>
+</html>
