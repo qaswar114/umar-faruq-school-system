@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -827,29 +826,29 @@ def attendance():
                 attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date()
             ).first()
 
-            if existing:
-                existing.status = status
-            else:
-                new_attendance = Attendance(
-                    pupil_id=pupil.id,
-                    attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date(),
-                    status=status
-                )
-                db.session.add(new_attendance)
-                db.session.commit()       
-
-      
-                flash("Attendance saved successfully.")
-                return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
-
-    return render_template(
-        "attendance.html",
-        settings=get_settings(),
-        grades=GRADES,
-        pupils=pupils,
-        selected_grade=selected_grade,
-        attendance_date=attendance_date
+        if existing:
+           existing.status = status
+        else:
+           new_attendance = Attendance(
+           pupil_id=pupil.id,
+           attendance_date=datetime.strptime(attendance_date, "%Y-%m-%d").date(),
+           status=status
     )
+    db.session.add(new_attendance)
+
+if status == "Absent" and pupil.guardian_phone:
+    sms = SMSMessage(
+        recipient_name=pupil.guardian_name,
+        phone=pupil.guardian_phone,
+        message=(
+            f"Dear {pupil.guardian_name}, your child {pupil.full_name} "
+            f"has been marked Absent today {attendance_date}. "
+            f"Kindly contact the school if necessary. {get_settings().school_name}"
+        ),
+        category="Attendance Alert",
+        created_by=session.get("username", "")
+    )
+    db.session.add(sms)
     
 @app.route("/attendance_report")
 def attendance_report():
