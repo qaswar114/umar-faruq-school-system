@@ -409,16 +409,19 @@ def setup_once():
 def login():
     if request.method == "POST":
         user = User.query.filter_by(username=request.form["username"].strip()).first()
-        if user and not user.is_active:
-           flash("This account has been disabled. Contact Admin.")
-           return redirect(url_for("login"))
 
-if user and check_password_hash(user.password_hash, request.form["password"].strip()):
+        if user and not user.is_active:
+            flash("This account has been disabled. Contact Admin.")
+            return redirect(url_for("login"))
+
+        if user and check_password_hash(user.password_hash, request.form["password"].strip()):
             session["username"] = user.username
             session["role"] = user.role
             session["assigned_grade"] = user.assigned_grade
             return redirect(url_for("dashboard"))
+
         flash("Wrong username or password.")
+
     return render_template("login.html", settings=get_settings())
 
 @app.route("/logout")
