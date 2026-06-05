@@ -1,18 +1,153 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2 style="text-align:center;">{{ settings.school_name }}</h2>
-    <h3 style="text-align:center;">PUPIL REPORT CARD</h3>
+<style>
+@media print {
+    .no-print, header, nav {
+        display: none !important;
+    }
 
-    <hr>
+    body {
+        background: white !important;
+    }
 
-    <p><b>Name:</b> {{ pupil.full_name }}</p>
-    <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
-    <p><b>Grade:</b> {{ pupil.grade }}</p>
-    <p><b>Exam:</b> {{ exam.exam_name }} | {{ exam.term }} | {{ exam.academic_year }}</p>
+    .report-card {
+        box-shadow: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+}
 
-    <table>
+.report-card {
+    background: white;
+    border: 3px solid #0b5ed7;
+    padding: 25px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.report-header {
+    text-align: center;
+    border-bottom: 2px solid #0b5ed7;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.report-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+}
+
+.report-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #0b5ed7;
+}
+
+.report-subtitle {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 25px;
+    margin: 15px 0;
+    border: 1px solid #ccc;
+    padding: 12px;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.report-table th,
+.report-table td {
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: left;
+}
+
+.report-table th {
+    background: #eaf2ff;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.summary-box {
+    border: 1px solid #333;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.remarks-box {
+    border: 1px solid #333;
+    min-height: 60px;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+.signature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-top: 35px;
+    text-align: center;
+}
+
+.signature-line {
+    border-top: 1px solid #000;
+    padding-top: 8px;
+}
+
+.stamp-box {
+    border: 2px dashed #333;
+    width: 180px;
+    height: 80px;
+    margin: 25px auto 0;
+    text-align: center;
+    padding-top: 25px;
+    font-weight: bold;
+}
+</style>
+
+<div class="no-print" style="margin-bottom:15px;">
+    <button onclick="window.print()" class="btn">Print Report Card</button>
+    <a href="{{ url_for('report_cards') }}" class="btn">Back</a>
+</div>
+
+<div class="report-card">
+
+    <div class="report-header">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="report-logo">
+        <div class="report-title">{{ settings.school_name }}</div>
+        <div>{{ settings.address }}</div>
+        <div>{{ settings.phone }}</div>
+        <div class="report-subtitle">OFFICIAL PUPIL REPORT CARD</div>
+    </div>
+
+    <div class="info-grid">
+        <div><b>Pupil Name:</b> {{ pupil.full_name }}</div>
+        <div><b>Admission No:</b> {{ pupil.admission_no }}</div>
+        <div><b>Grade/Class:</b> {{ pupil.grade }}</div>
+        <div><b>Gender:</b> {{ pupil.gender }}</div>
+        <div><b>Exam:</b> {{ exam.exam_name }}</div>
+        <div><b>Term:</b> {{ exam.term }}</div>
+        <div><b>Academic Year:</b> {{ exam.academic_year }}</div>
+        <div><b>Date Printed:</b> {{ today }}</div>
+    </div>
+
+    <table class="report-table">
         <tr>
             <th>#</th>
             <th>Subject</th>
@@ -29,19 +164,48 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="4">No marks entered yet.</td>
+            <td colspan="4" style="text-align:center;">No marks entered yet.</td>
         </tr>
         {% endfor %}
     </table>
 
-    <br>
+    <div class="summary-grid">
+        <div class="summary-box">Total<br>{{ total }}</div>
+        <div class="summary-box">Average<br>{{ "%.2f"|format(average) }}</div>
+        <div class="summary-box">Grade<br>{{ grade_letter }}</div>
+        <div class="summary-box">Position<br>{{ position }} / {{ class_size }}</div>
+    </div>
 
-    <p><b>Total Marks:</b> {{ total }}</p>
-    <p><b>Average:</b> {{ "%.2f"|format(average) }}</p>
+    <div class="remarks-box">
+        <b>Class Teacher Remarks:</b><br>
+        {% if average >= 80 %}
+            Excellent performance. Keep it up.
+        {% elif average >= 70 %}
+            Very good performance. Continue working hard.
+        {% elif average >= 60 %}
+            Good performance. More effort will improve the results.
+        {% elif average >= 50 %}
+            Fair performance. Needs more revision and guidance.
+        {% else %}
+            Needs serious improvement and close academic support.
+        {% endif %}
+    </div>
 
-    <br>
+    <div class="remarks-box">
+        <b>Head Teacher Remarks:</b><br>
+        ________________________________________________________________
+    </div>
 
-    <button onclick="window.print()" class="btn">Print Report Card</button>
+    <div class="signature-grid">
+        <div class="signature-line">Class Teacher Signature</div>
+        <div class="signature-line">Head Teacher Signature</div>
+        <div class="signature-line">Parent Signature</div>
+    </div>
+
+    <div class="stamp-box">
+        SCHOOL STAMP
+    </div>
+
 </div>
 
 {% endblock %}
