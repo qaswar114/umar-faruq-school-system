@@ -836,11 +836,11 @@ def attendance():
     )
     db.session.add(new_attendance)
 
-if status == "Absent" and pupil.guardian_phone:
-    sms = SMSMessage(
-        recipient_name=pupil.guardian_name,
-        phone=pupil.guardian_phone,
-        message=(
+        if status == "Absent" and pupil.guardian_phone:
+            sms = SMSMessage(
+            recipient_name=pupil.guardian_name,
+            phone=pupil.guardian_phone,
+            message=(
             f"Dear {pupil.guardian_name}, your child {pupil.full_name} "
             f"has been marked Absent today {attendance_date}. "
             f"Kindly contact the school if necessary. {get_settings().school_name}"
