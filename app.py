@@ -836,25 +836,11 @@ def attendance():
                     status=status
                 )
                 db.session.add(new_attendance)
+                db.session.commit()       
 
-            if status == "Absent" and pupil.guardian_phone:
-                sms = SMSMessage(
-                    recipient_name=pupil.guardian_name,
-                    phone=pupil.guardian_phone,
-                    message=(
-                        f"Dear {pupil.guardian_name}, your child {pupil.full_name} "
-                        f"was marked absent on {attendance_date}. "
-                        f"Kindly contact the school. {settings.school_name}"
-                    ),
-                    category="Attendance Alert",
-                    created_by=session.get("username", "")
-                )
-                db.session.add(sms)
-                
-
-        db.session.commit()
-        flash("Attendance saved successfully.")
-        return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
+      
+                flash("Attendance saved successfully.")
+                return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
 
     return render_template(
         "attendance.html",
