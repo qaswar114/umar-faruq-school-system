@@ -2225,7 +2225,8 @@ def reset_user_password(user_id):
 
     flash("Password reset successfully.")
     return redirect(url_for("users"))
-@app.route("/delete_user/<int:user_id>")
+    
+@app.route("/delete_user/<int:user_id>", methods=["POST"])
 def delete_user(user_id):
     if not login_required():
         return redirect(url_for("login"))
