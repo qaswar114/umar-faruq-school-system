@@ -3,130 +3,63 @@
 
 <style>
 @media print {
-    .no-print, header, nav {
-        display: none !important;
-        @page {
-    size: A4;
-    margin: 5mm;
-}
+    @page {
+        size: A4;
+        margin: 5mm;
     }
 
     body {
         background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body > *:not(.report-card) {
+        display: none !important;
+    }
+
+    .no-print {
+        display: none !important;
     }
 
     .report-card {
-        box-shadow: none !important;
-        margin: 0 !important;
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 6px !important;
+        box-shadow: none !important;
+        border: 2px solid #000 !important;
+        font-size: 10.5px !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 2px !important;
+        font-size: 10px !important;
+    }
+
+    .remarks-box {
+        min-height: 25px !important;
+        margin-top: 5px !important;
+        padding: 4px !important;
+    }
+
+    .signature-grid {
+        margin-top: 10px !important;
+    }
+
+    .stamp-box {
+        height: 38px !important;
+        padding-top: 8px !important;
+        margin-top: 6px !important;
     }
 }
-
-.report-card {
-    background: white;
-    border: 2px solid #0b5ed7;
-    padding: 10px;
-    max-width: 800px;
-    margin: auto;
-    font-size: 12px;
-}
-
-.report-header {
-    text-align: center;
-    border-bottom: 1px solid #0b5ed7;
-    padding-bottom: 5px;
-    margin-bottom: 8px;
-}
-
-.report-logo {
-    width: 50px;
-    height: 50px;
-    object-fit: contain;
-}
-
-.report-title {
-    font-size: 18px;
-    font-weight: bold;
-    color: #0b5ed7;
-}
-
-.report-subtitle {
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 15px;
-    margin: 8px 0;
-    border: 1px solid #ccc;
-    padding: 6px;
-}
-
-.report-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-
-.report-table th,
-.report-table td {
-    border: 1px solid #333;
-    padding: 3px;
-    text-align: left;
-    font-size: 11px;
-}
-
-.report-table th {
-    background: #eaf2ff;
-}
-
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.summary-box {
-    border: 1px solid #333;
-    padding: 5px;
-    text-align: center;
-    font-weight: bold;
-}
-
-.remarks-box {
-    border: 1px solid #333;
-    min-height: 35px;
-    padding: 5px;
-    margin-top: 8px;
-}
-
-.signature-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-top: 15px;
-    text-align: center;
-}
-
-.signature-line {
-    border-top: 1px solid #000;
-    padding-top: 8px;
-}
-
-.stamp-box {
-    border: 1px dashed #333;
-    width: 120px;
-    height: 50px;
-    margin: 10px auto 0;
-    text-align: center;
-    padding-top: 15px;
-    font-size: 11px;
-    font-weight: bold;
-}
-</style>
 
 <div class="no-print" style="margin-bottom:15px;">
     <button onclick="window.print()" class="btn">Print Report Card</button>
