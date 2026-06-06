@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+
+<h2>Edit School</h2>
+
+<form method="POST">
+
+<label>School Name</label>
+<input name="school_name"
+value="{{school.school_name}}">
+
+<label>Motto</label>
+<input name="motto"
+value="{{school.motto}}">
+
+<label>Phone</label>
+<input name="phone"
+value="{{school.phone}}">
+
+<label>Email</label>
+<input name="email"
+value="{{school.email}}">
+
+<label>Address</label>
+<textarea name="address">{{school.address}}</textarea>
+
+<label>Primary Colour</label>
+<input
+type="color"
+name="primary_color"
+value="{{school.primary_color}}">
+
+<label>Secondary Colour</label>
+<input
+type="color"
+name="secondary_color"
+value="{{school.secondary_color}}">
+
+<label>Subscription</label>
+
+<select name="subscription_status">
+
+<option
+value="active"
+{% if school.subscription_status=="active" %}
+selected
+{% endif %}
+>
+Active
+</option>
+
+<option
+value="trial"
+{% if school.subscription_status=="trial" %}
+selected
+{% endif %}
+>
+Trial
+</option>
+
+<option
+value="expired"
+{% if school.subscription_status=="expired" %}
+selected
+{% endif %}
+>
+Expired
+</option>
+
+</select>
+
+<label>Status</label>
+
+<select name="is_active">
+
+<option
+value="active"
+{% if school.is_active %}
+selected
+{% endif %}
+>
+Active
+</option>
+
+<option
+value="inactive"
+{% if not school.is_active %}
+selected
+{% endif %}
+>
+Suspended
+</option>
+
+</select>
+
+<br><br>
+
+<button
+type="submit"
+class="btn">
+
+Save Changes
+
+</button>
+
+<a
+href="{{url_for('schools')}}"
+class="btn">
+
+Cancel
+
+</a>
+
+</form>
+
+</div>
+
+{% endblock %}
