@@ -132,6 +132,7 @@ class FeeStructure(db.Model):
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     receipt_no = db.Column(db.String(120), unique=True, nullable=False)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
     academic_year = db.Column(db.Integer, nullable=False)
