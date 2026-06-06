@@ -244,8 +244,8 @@
         <tr>
             <th>#</th>
             <th>Subject</th>
-            <th>Marks</th>
-            <th>Teacher Remark</th>
+            <th>Score</th>
+            <th>CBC Level</th>
         </tr>
 
         {% for m in marks %}
@@ -253,7 +253,18 @@
             <td>{{ loop.index }}</td>
             <td>{{ m.subject.subject_name }}</td>
             <td>{{ m.marks_obtained }}</td>
-            <td>{{ m.teacher_remark }}</td>
+
+            <td>
+               {% if m.marks_obtained >= 80 %}
+               EE
+               {% elif m.marks_obtained >= 50 %}
+               ME
+               {% elif m.marks_obtained >= 30 %}
+               AE
+               {% else %}
+               BE
+              {% endif %}
+             </td>
         </tr>
         {% else %}
         <tr>
@@ -261,6 +272,14 @@
         </tr>
         {% endfor %}
     </table>
+    <div class="remarks-box">
+          <b>CBC Performance Levels</b><br>
+
+          EE = Exceeding Expectations<br>
+          ME = Meeting Expectations<br>
+          AE = Approaching Expectations<br>
+          BE = Below Expectations
+         </div>
 
     <div class="summary-grid">
         <div class="summary-box">Total<br>{{ total }}</div>
