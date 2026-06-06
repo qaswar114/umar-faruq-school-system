@@ -755,7 +755,7 @@ def pupils():
 
     q = request.args.get("q", "")
     selected_grade = request.args.get("grade", "")
-    query = Pupil.query
+    query = Pupil.query.filter_by(school_id=current_school_id())
 
     if selected_grade:
         query = query.filter(Pupil.grade == selected_grade)
