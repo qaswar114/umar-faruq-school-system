@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Create New School</h2>
+
+    <form method="post">
+        <h3>School Information</h3>
+
+        <label>School Name</label>
+        <input name="school_name" required>
+
+        <label>Motto</label>
+        <input name="motto">
+
+        <label>Phone</label>
+        <input name="phone">
+
+        <label>Email</label>
+        <input name="email">
+
+        <label>Address</label>
+        <textarea name="address"></textarea>
+
+        <h3>Branding Colours</h3>
+
+        <label>Primary Colour</label>
+        <input type="color" name="primary_color" value="#0b5ed7">
+
+        <label>Secondary Colour</label>
+        <input type="color" name="secondary_color" value="#ffffff">
+
+        <h3>Subscription</h3>
+
+        <label>Subscription Status</label>
+        <select name="subscription_status">
+            <option value="active">Active</option>
+            <option value="trial">Trial</option>
+            <option value="expired">Expired</option>
+        </select>
+
+        <h3>School Admin Account</h3>
+
+        <label>Admin Username</label>
+        <input name="admin_username" required>
+
+        <label>Admin Password</label>
+        <input name="admin_password" required>
+
+        <br><br>
+        <button class="btn" type="submit">Create School</button>
+        <a class="btn secondary" href="{{ url_for('schools') }}">Cancel</a>
+    </form>
+</div>
+
+{% endblock %}
