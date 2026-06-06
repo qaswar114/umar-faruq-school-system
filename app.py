@@ -224,7 +224,7 @@ def get_settings():
 def init_database():
     db.create_all()
     
-        if not School.query.first():
+    if not School.query.first():
         db.session.add(School(
             school_name="Umar Faruq Integrated Academy",
             motto="",
@@ -280,7 +280,7 @@ def init_database():
         db.session.rollback()
 
     try:
-    db.session.execute(
+        db.session.execute(
         db.text('ALTER TABLE "user" ADD COLUMN school_id INTEGER DEFAULT 1')
     )
     db.session.commit()
@@ -472,9 +472,9 @@ def login():
 
         school = School.query.get(user.school_id) if user else None
 
-if user and (not school or not school.is_active or school.subscription_status != "active"):
-    flash("This school account is not active. Contact system owner.")
-    return redirect(url_for("login"))
+        if user and (not school or not school.is_active or school.subscription_status != "active"):
+            flash("This school account is not active. Contact system owner.")
+            return redirect(url_for("login"))
 
         if user and not user.is_active:
             flash("This account has been disabled. Contact Admin.")
