@@ -223,7 +223,7 @@ def get_settings():
 
 def init_database():
     db.create_all()
-    
+
     if not School.query.first():
         db.session.add(School(
             school_name="Umar Faruq Integrated Academy",
@@ -238,13 +238,13 @@ def init_database():
             is_active=True
         ))
         db.session.commit()
-       
+
     try:
         Subject.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
-    
+
     try:
         Exam.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
@@ -256,11 +256,13 @@ def init_database():
         db.session.commit()
     except Exception:
         db.session.rollback()
+
     try:
         Staff.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
         db.session.rollback()
+
     try:
         AuditLog.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
@@ -281,11 +283,27 @@ def init_database():
 
     try:
         db.session.execute(
-        db.text('ALTER TABLE "user" ADD COLUMN school_id INTEGER DEFAULT 1')
-    )
-    db.session.commit()
-except Exception:
-    db.session.rollback()
+            db.text('ALTER TABLE "user" ADD COLUMN school_id INTEGER DEFAULT 1')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        db.session.execute(
+            db.text('ALTER TABLE pupil ADD COLUMN school_id INTEGER DEFAULT 1')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        db.session.execute(
+            db.text('ALTER TABLE payment ADD COLUMN school_id INTEGER DEFAULT 1')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     try:
         db.session.execute(
@@ -302,6 +320,7 @@ except Exception:
         db.session.commit()
     except Exception:
         db.session.rollback()
+
     try:
         db.session.execute(
             db.text('ALTER TABLE pupil ADD COLUMN photo VARCHAR(255) DEFAULT \'\'')
@@ -311,28 +330,33 @@ except Exception:
         db.session.rollback()
 
     if not Setting.query.first():
-        db.session.add(Setting(school_name=SCHOOL_NAME, address="Umar Faruq Integrated Academy"))
+        db.session.add(Setting(
+            school_name=SCHOOL_NAME,
+            address="Umar Faruq Integrated Academy"
+        ))
+
     default_users = [
         ("superadmin", "super123", "Super Admin"),
         ("admin", "admin123", "Admin"),
         ("registrar", "reg123", "Registrar"),
         ("bursar", "bursar123", "Bursar"),
         ("reception", "recep123", "Receptionist"),
-   ]
+    ]
+
     for username, password, role in default_users:
-    user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
 
-    if not user:
-        db.session.add(User(
-            school_id=1,
-            username=username,
-            password_hash=generate_password_hash(password),
-            role=role
-        ))
-    else:
-        user.school_id = user.school_id or 1
+        if not user:
+            db.session.add(User(
+                school_id=1,
+                username=username,
+                password_hash=generate_password_hash(password),
+                role=role
+            ))
+        else:
+            user.school_id = user.school_id or 1
+
     db.session.commit()
-
 def login_required():
     if "username" not in session:
         return False
