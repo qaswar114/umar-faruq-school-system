@@ -929,7 +929,10 @@ def exit_pupil(pupil_id):
     if not login_required():
         return redirect(url_for("login"))
 
-    pupil = Pupil.query.get_or_404(pupil_id)
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
     pupil.status = "Inactive"
 
@@ -1676,6 +1679,7 @@ def payments():
         term = request.form["term"]
 
         pay = Payment(
+            school_id=current_school_id(),
             receipt_no=receipt_no(year, term),
             pupil_id=int(request.form["pupil_id"]),
             academic_year=year,
@@ -1737,7 +1741,10 @@ def payments():
 
         return redirect(url_for("receipt", payment_id=pay.id))
 
-    pupils = Pupil.query.order_by(Pupil.full_name.asc()).all()
+    pupils = Pupil.query.filter_by(
+        school_id=current_school_id(),
+        status="Active"
+    ).order_by(Pupil.full_name.asc()).all()
 
     return render_template(
         "payments.html",
@@ -1747,7 +1754,9 @@ def payments():
         term_months=TERM_MONTHS,
         year=current_year(),
         today=date.today(),
-        payments=Payment.query.order_by(Payment.id.desc()).all(),
+        payments=Payment.query.filter_by(
+            school_id=current_school_id()
+        ).order_by(Payment.id.desc()).all(),
         money=money
     )
  
@@ -1764,7 +1773,10 @@ def daily_collections():
     export_pdf = request.args.get("pdf")
     report_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
 
-    payments = Payment.query.filter_by(payment_date=report_date).order_by(Payment.id.desc()).all()
+    payments = Payment.query.filter_by(
+        school_id=current_school_id(),
+        payment_date=report_date
+    ).order_by(Payment.id.desc()).all()
 
     tuition_total = sum(p.tuition_paid for p in payments)
     bus_total = sum(p.bus_paid for p in payments)
@@ -1825,6 +1837,7 @@ def monthly_collections():
         end_date = date(start_date.year, start_date.month + 1, 1)
 
     payments = Payment.query.filter(
+        Payment.school_id == current_school_id(),
         Payment.payment_date >= start_date,
         Payment.payment_date < end_date
     ).order_by(Payment.id.desc()).all()
@@ -1881,6 +1894,7 @@ def termly_collections():
     selected_term = request.args.get("term", "Term 1")
 
     payments = Payment.query.filter_by(
+        school_id=current_school_id(),
         academic_year=selected_year,
         term=selected_term
     ).order_by(Payment.id.desc()).all()
@@ -1918,6 +1932,7 @@ def yearly_collections():
     selected_year = int(request.args.get("year", current_year()))
 
     payments = Payment.query.filter_by(
+        school_id=current_school_id(),
         academic_year=selected_year
     ).order_by(Payment.id.desc()).all()
 
@@ -2000,7 +2015,10 @@ def defaulters_report():
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
-    p = Payment.query.get_or_404(payment_id)
+    p = Payment.query.filter_by(
+        id=payment_id,
+        school_id=current_school_id()
+   ).first_or_404()
     pupil = p.pupil
     opening = opening_arrears(pupil, p.academic_year)
     closing = due_until_month(pupil, p.academic_year, p.term, p.month) - paid_year(pupil.id, p.academic_year) - discount_year(pupil.id, p.academic_year)
@@ -2023,7 +2041,10 @@ def balances():
 
     rows = []
 
-    for p in Pupil.query.filter_by(status="Active").all():
+    for p in Pupil.query.filter_by(
+        school_id=current_school_id(),
+        status="Active"
+    ).all():
         if month:
             md = monthly_due(p, year, term, month)
             month_due = sum(md.values())
@@ -2070,7 +2091,10 @@ def credits():
 
     rows = []
 
-    for p in Pupil.query.filter_by(status="Active").all():
+    for p in Pupil.query.filter_by(
+        school_id=current_school_id(),
+        status="Active"
+    ).all():
         due = year_due(p, year)
         paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
@@ -2100,7 +2124,10 @@ def statement(pupil_id, year):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    pupil = Pupil.query.get_or_404(pupil_id)
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
     entries = []
     bal = opening_arrears(pupil, year)
@@ -2196,7 +2223,14 @@ def statements():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    return render_template("statements.html", settings=get_settings(), pupils=Pupil.query.all(), year=current_year())
+    return render_template(
+        "statements.html",
+        settings=get_settings(),
+        pupils=Pupil.query.filter_by(
+        school_id=current_school_id()
+        ).order_by(Pupil.full_name).all(),
+        year=current_year()
+)
 
 @app.route("/fee_reminders", methods=["GET", "POST"])
 def fee_reminders():
