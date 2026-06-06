@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+
+<h2>Create New School</h2>
+
+<form method="POST">
+
+<h3>School Information</h3>
+
+<p>
+<label>School Name</label><br>
+<input type="text" name="school_name" required>
+</p>
+
+<p>
+<label>Motto</label><br>
+<input type="text" name="motto">
+</p>
+
+<p>
+<label>Phone</label><br>
+<input type="text" name="phone">
+</p>
+
+<p>
+<label>Email</label><br>
+<input type="email" name="email">
+</p>
+
+<p>
+<label>Address</label><br>
+<textarea name="address"></textarea>
+</p>
+
+<h3>Branding</h3>
+
+<p>
+<label>Primary Colour</label><br>
+<input type="color" name="primary_color" value="#0b5ed7">
+</p>
+
+<p>
+<label>Secondary Colour</label><br>
+<input type="color" name="secondary_color" value="#ffffff">
+</p>
+
+<h3>Subscription</h3>
+
+<select name="subscription_status">
+<option value="trial">Trial</option>
+<option value="active">Active</option>
+<option value="expired">Expired</option>
+</select>
+
+<h3>School Administrator</h3>
+
+<p>
+<label>Username</label><br>
+<input type="text" name="admin_username" required>
+</p>
+
+<p>
+<label>Password</label><br>
+<input type="password" name="admin_password" required>
+</p>
+
+<br>
+
+<button type="submit">
+Create School
+</button>
+
+<a href="{{ url_for('schools') }}">
+Cancel
+</a>
+
+</form>
+
+</div>
+
+{% endblock %}
