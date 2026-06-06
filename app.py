@@ -105,6 +105,7 @@ class Setting(db.Model):
 
 class Pupil(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     admission_no = db.Column(db.String(80), unique=True, nullable=False)
     full_name = db.Column(db.String(200), nullable=False)
     gender = db.Column(db.String(20), nullable=False)
