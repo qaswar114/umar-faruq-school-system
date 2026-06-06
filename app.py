@@ -587,6 +587,50 @@ def schools():
         settings=get_settings(),
         schools=schools
     )
+
+@app.route("/create_school", methods=["GET", "POST"])
+def create_school():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not super_admin_required():
+        flash("Only Super Admin can create schools.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        school = School(
+            school_name=request.form["school_name"],
+            motto=request.form.get("motto", ""),
+            phone=request.form.get("phone", ""),
+            email=request.form.get("email", ""),
+            address=request.form.get("address", ""),
+            primary_color=request.form.get("primary_color", "#0b5ed7"),
+            secondary_color=request.form.get("secondary_color", "#ffffff"),
+            subscription_status=request.form.get("subscription_status", "active"),
+            is_active=True
+        )
+
+        db.session.add(school)
+        db.session.commit()
+
+        admin_username = request.form["admin_username"]
+        admin_password = request.form["admin_password"]
+
+        school_admin = User(
+            school_id=school.id,
+            username=admin_username,
+            password_hash=generate_password_hash(admin_password),
+            role="Admin",
+            is_active=True
+        )
+
+        db.session.add(school_admin)
+        db.session.commit()
+
+        flash("School created successfully.")
+        return redirect(url_for("schools"))
+
+    return render_template("create_school.html", settings=get_settings())
     
 @app.route("/expenses", methods=["GET", "POST"])
 def expenses():
