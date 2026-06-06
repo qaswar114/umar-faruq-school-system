@@ -30,6 +30,28 @@ TERM_MONTHS = {
     "Term 3": ["September","October","November"]
 }
 
+class School(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_name = db.Column(db.String(200), nullable=False)
+    motto = db.Column(db.String(200), default="")
+
+    phone = db.Column(db.String(100), default="")
+    email = db.Column(db.String(120), default="")
+    address = db.Column(db.Text, default="")
+
+    logo = db.Column(db.String(200), default="logo.png")
+    stamp = db.Column(db.String(200), default="")
+    headteacher_signature = db.Column(db.String(200), default="")
+
+    primary_color = db.Column(db.String(20), default="#0b5ed7")
+    secondary_color = db.Column(db.String(20), default="#ffffff")
+
+    subscription_status = db.Column(db.String(20), default="active")
+    is_active = db.Column(db.Boolean, default=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
