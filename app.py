@@ -859,7 +859,10 @@ def edit_pupil(pupil_id):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    pupil = Pupil.query.get_or_404(pupil_id)
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
     if request.method == "POST":
         pupil.full_name = request.form["full_name"]
