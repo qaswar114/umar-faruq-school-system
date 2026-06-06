@@ -278,6 +278,14 @@ def init_database():
         db.session.rollback()
 
     try:
+    db.session.execute(
+        db.text('ALTER TABLE "user" ADD COLUMN school_id INTEGER DEFAULT 1')
+    )
+    db.session.commit()
+except Exception:
+    db.session.rollback()
+
+    try:
         db.session.execute(
             db.text('ALTER TABLE "user" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT \'\'')
         )
