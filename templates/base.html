@@ -150,6 +150,10 @@ function updateMonths(termId, monthId){
 <div class="nav">
     {{ session.username }} ({{ session.role }})
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    
+    {% if session.get("role", "").lower() == "super admin" %}
+    <a href="{{ url_for('schools') }}">Schools Management</a>
+    {% endif %}
 
     {% if session.role|lower == 'teacher' %}
     <div class="dropdown">
