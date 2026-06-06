@@ -42,7 +42,7 @@
             border-bottom: 1px solid #000;
             padding-bottom: 4px;
             margin-bottom: 6px;
-            background: linear-gradient(90deg,#0b3d91,#2563eb);
+            background: #5DADE2;
             color: white;
         }
 
@@ -378,8 +378,17 @@
       </div>
 
       <div class="summary-box">
-      Overall CBC Level<br>{{ grade_letter }}
-      </div>
+              Overall CBC Level<br>
+             {% if average >= 80 %}
+                  EE
+               {% elif average >= 50 %}
+                  ME
+              {% elif average >= 30 %}
+                  AE
+              {% else %}
+               BE
+              {% endif %}
+             </div>
 
      <div class="summary-box">
     Class Position<br>{{ position }} / {{ class_size }}
