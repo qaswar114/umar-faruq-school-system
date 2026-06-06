@@ -394,8 +394,17 @@ def save_audit(action, module="System"):
     db.session.add(log)
     db.session.commit()
 def next_admission_no():
-    count = Pupil.query.count() + 1
-    return f"UFIA/{current_year()}/{count:04d}"
+    school_id = current_school_id()
+    count = Pupil.query.filter_by(school_id=school_id).count() + 1
+
+    school = current_school()
+    prefix = "SCH"
+
+    if school and school.school_name:
+        words = school.school_name.split()
+        prefix = "".join([w[0] for w in words[:3]]).upper()
+
+    return f"{prefix}/{current_year()}/{count:04d}"
 
 def receipt_no(year, term):
     term_code = term.replace("Term ", "T")
@@ -934,7 +943,7 @@ def print_pupils():
         return redirect(url_for("login"))
 
     selected_grade = request.args.get("grade", "")
-    query = Pupil.query
+    query = Pupil.query.filter_by(school_id=current_school_id())
 
     if selected_grade:
         query = query.filter(Pupil.grade == selected_grade)
@@ -955,7 +964,9 @@ def inactive_students():
         return redirect(url_for("login"))
 
     selected_grade = request.args.get("grade", "")
-    query = Pupil.query.filter(Pupil.status != "Active")
+    query = Pupil.query.filter_by(
+         school_id=current_school_id()
+    ).filter(Pupil.status != "Active")
 
     if selected_grade:
         query = query.filter(Pupil.grade == selected_grade)
@@ -1921,7 +1932,10 @@ def defaulters_report():
     selected_term = request.args.get("term", "Term 1")
     selected_month = request.args.get("month", "May")
 
-    query = Pupil.query.filter_by(status="Active")
+    query = Pupil.query.filter_by(
+         school_id=current_school_id(),
+         status="Active"
+    )
 
     if selected_grade:
         query = query.filter_by(grade=selected_grade)
@@ -2178,7 +2192,10 @@ def fee_reminders():
 
     rows = []
 
-    query = Pupil.query.filter_by(status="Active")
+    query = Pupil.query.filter_by(
+         school_id=current_school_id(),
+         status="Active"
+    )
 
     if selected_grade:
         query = query.filter_by(grade=selected_grade)
