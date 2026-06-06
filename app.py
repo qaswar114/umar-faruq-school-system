@@ -32,7 +32,7 @@ TERM_MONTHS = {
 
 class School(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-
+    
     school_name = db.Column(db.String(200), nullable=False)
     motto = db.Column(db.String(200), default="")
 
@@ -54,6 +54,7 @@ class School(db.Model):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), nullable=False)
