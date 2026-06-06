@@ -541,21 +541,28 @@ def dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
+    school_id = current_school_id()
+    current_month = date.today().month
+    current_year_num = date.today().year
+
+    payments_query = Payment.query.filter_by(school_id=school_id)
+    pupils_query = Pupil.query.filter_by(school_id=school_id)
+
     total_collected = sum(
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-        for p in Payment.query.all()
+        for p in payments_query.all()
     )
 
     today_collection = sum(
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-        for p in Payment.query.filter_by(payment_date=date.today()).all()
+        for p in Payment.query.filter_by(
+            school_id=school_id,
+            payment_date=date.today()
+        ).all()
     )
 
-    current_month = date.today().month
-    current_year_num = date.today().year
-
     month_collection = 0
-    for p in Payment.query.all():
+    for p in payments_query.all():
         if p.payment_date.month == current_month and p.payment_date.year == current_year_num:
             month_collection += (
                 p.tuition_paid +
@@ -567,8 +574,15 @@ def dashboard():
     defaulters = 0
     outstanding = 0
 
-    for pupil in Pupil.query.filter_by(status="Active").all():
-        bal = year_due(pupil, current_year_num) - paid_year(pupil.id, current_year_num) - discount_year(pupil.id, current_year_num)
+    for pupil in Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).all():
+        bal = (
+            year_due(pupil, current_year_num)
+            - paid_year(pupil.id, current_year_num)
+            - discount_year(pupil.id, current_year_num)
+        )
 
         if bal > 0:
             defaulters += 1
@@ -577,16 +591,18 @@ def dashboard():
     return render_template(
         "dashboard.html",
         settings=get_settings(),
-        total_pupils=Pupil.query.count(),
-        bus_pupils=Pupil.query.filter_by(uses_bus="Yes").count(),
+        total_pupils=pupils_query.count(),
+        bus_pupils=Pupil.query.filter_by(
+            school_id=school_id,
+            uses_bus="Yes"
+        ).count(),
         total_collected=money(total_collected),
-        receipts=Payment.query.count(),
+        receipts=payments_query.count(),
         today_collection=money(today_collection),
         month_collection=money(month_collection),
         defaulters=defaulters,
         outstanding=money(outstanding)
     )
-
 @app.route("/schools")
 def schools():
 
