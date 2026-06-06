@@ -4,6 +4,13 @@
 <div class="panel">
     <h1>Dashboard</h1>
 
+{% if session.get("school_name") %}
+<div class="notice">
+    <b>Current School:</b> {{ session.get("school_name") }}
+</div>
+<br>
+{% endif %}
+
     {% if session.role|lower == 'teacher' %}
     <div class="dashboard-grid">
         <div class="card">
