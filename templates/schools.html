@@ -14,17 +14,12 @@
 
     <table>
         <tr>
-            <td>
-    <a href="{{ url_for('switch_school', school_id=school.id) }}"
-       class="btn btn-success btn-sm">
-       Open
-    </a>
-
-    <a href="{{ url_for('edit_school', school_id=school.id) }}"
-       class="btn btn-primary btn-sm">
-       Edit
-    </a>
-</td>
+            <th>School Name</th>
+            <th>Phone</th>
+            <th>Subscription</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
         </tr>
 
         {% for school in schools %}
@@ -40,6 +35,10 @@
                 {% endif %}
             </td>
             <td>{{ school.created_at }}</td>
+            <td>
+                <a href="{{ url_for('switch_school', school_id=school.id) }}" class="btn">Open</a>
+                <a href="{{ url_for('edit_school', school_id=school.id) }}" class="btn">Edit</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
