@@ -508,6 +508,8 @@ def login():
             session["username"] = user.username
             session["role"] = user.role
             session["assigned_grade"] = user.assigned_grade
+            session["school_id"] = user.school_id
+            session["school_name"] = school.school_name if school else ""
             return redirect(url_for("dashboard"))
 
         flash("Wrong username or password.")
