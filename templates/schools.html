@@ -14,11 +14,17 @@
 
     <table>
         <tr>
-            <th>School Name</th>
-            <th>Phone</th>
-            <th>Subscription</th>
-            <th>Status</th>
-            <th>Created</th>
+            <td>
+    <a href="{{ url_for('switch_school', school_id=school.id) }}"
+       class="btn btn-success btn-sm">
+       Open
+    </a>
+
+    <a href="{{ url_for('edit_school', school_id=school.id) }}"
+       class="btn btn-primary btn-sm">
+       Edit
+    </a>
+</td>
         </tr>
 
         {% for school in schools %}
