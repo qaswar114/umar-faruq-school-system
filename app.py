@@ -727,7 +727,7 @@ def pupils():
         if photo_file and photo_file.filename:
             photo_filename = secure_filename(photo_file.filename)
             photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
-       p = Pupil(
+        p = Pupil(
             school_id=current_school_id(),
             admission_no=next_admission_no(),
             full_name=request.form["full_name"],
