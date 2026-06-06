@@ -208,6 +208,28 @@
                 padding-top: 7px !important;
                 margin-top: 6px !important;
             }
+            .cbc-key {
+    border: 1px solid #333;
+    padding: 5px;
+    margin-top: 6px;
+}
+
+.cbc-key table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+}
+
+.cbc-key th,
+.cbc-key td {
+    border: 1px solid #333;
+    padding: 3px;
+    font-size: 10.5px;
+}
+
+.cbc-key th {
+    background: #eee;
+}
         }
     </style>
 </head>
@@ -226,24 +248,38 @@
         <div class="report-title">{{ settings.school_name }}</div>
         <div>{{ settings.address }}</div>
         <div>{{ settings.phone }}</div>
-        <div class="report-subtitle">OFFICIAL PUPIL REPORT CARD</div>
+        <div class="report-subtitle">
+               COMPETENCY BASED CURRICULUM (CBC)<br>
+                 LEARNER'S PROGRESS REPORT
+        </div>
     </div>
 
-    <div class="info-grid">
-        <div><b>Pupil Name:</b> {{ pupil.full_name }}</div>
-        <div><b>Admission No:</b> {{ pupil.admission_no }}</div>
-        <div><b>Grade/Class:</b> {{ pupil.grade }}</div>
-        <div><b>Gender:</b> {{ pupil.gender }}</div>
-        <div><b>Exam:</b> {{ exam.exam_name }}</div>
-        <div><b>Term:</b> {{ exam.term }}</div>
-        <div><b>Academic Year:</b> {{ exam.academic_year }}</div>
-        <div><b>Date Printed:</b> {{ today }}</div>
-    </div>
+    <table class="report-table">
+    <tr>
+        <td><b>Learner Name:</b> {{ pupil.full_name }}</td>
+        <td><b>Admission No:</b> {{ pupil.admission_no }}</td>
+    </tr>
+
+    <tr>
+        <td><b>Grade/Class:</b> {{ pupil.grade }}</td>
+        <td><b>Gender:</b> {{ pupil.gender }}</td>
+    </tr>
+
+    <tr>
+        <td><b>Assessment:</b> {{ exam.exam_name }}</td>
+        <td><b>Term:</b> {{ exam.term }}</td>
+    </tr>
+
+    <tr>
+        <td><b>Academic Year:</b> {{ exam.academic_year }}</td>
+        <td><b>Date Printed:</b> {{ today }}</td>
+    </tr>
+</table>
 
     <table class="report-table">
         <tr>
             <th>#</th>
-            <th>Subject</th>
+            <th>Learning Area</th>
             <th>Score</th>
             <th>CBC Level</th>
         </tr>
@@ -272,31 +308,48 @@
         </tr>
         {% endfor %}
     </table>
-    <div class="remarks-box">
-          <b>CBC Performance Levels</b><br>
-
-          EE = Exceeding Expectations<br>
-          ME = Meeting Expectations<br>
-          AE = Approaching Expectations<br>
-          BE = Below Expectations
-         </div>
+    <div class="cbc-key">
+    <b>CBC Performance Levels</b>
+    <table>
+        <tr>
+            <th>Level</th>
+            <th>Meaning</th>
+        </tr>
+        <tr>
+            <td>EE</td>
+            <td>Exceeding Expectations</td>
+        </tr>
+        <tr>
+            <td>ME</td>
+            <td>Meeting Expectations</td>
+        </tr>
+        <tr>
+            <td>AE</td>
+            <td>Approaching Expectations</td>
+        </tr>
+        <tr>
+            <td>BE</td>
+            <td>Below Expectations</td>
+        </tr>
+    </table>
+</div>
 
     <div class="summary-grid">
-        <div class="summary-box">Total<br>{{ total }}</div>
-        <div class="summary-box">Average<br>{{ "%.2f"|format(average) }}</div>
-        <div class="summary-box">
-    CBC Level<br>
-    {% if average >= 80 %}
-        EE
-    {% elif average >= 50 %}
-        ME
-    {% elif average >= 30 %}
-        AE
-    {% else %}
-        BE
-    {% endif %}
-</div>
-        <div class="summary-box">Position<br>{{ position }} / {{ class_size }}</div>
+       <div class="summary-box">
+       Total Score<br>{{ total }}
+       </div>
+
+      <div class="summary-box">
+      Average Score<br>{{ "%.2f"|format(average) }}
+      </div>
+
+      <div class="summary-box">
+      Overall CBC Level<br>{{ grade_letter }}
+      </div>
+
+     <div class="summary-box">
+    Class Position<br>{{ position }} / {{ class_size }}
+    </div>
     </div>
     <div class="remarks-box">
     <b>CBC Performance Level Key:</b>
@@ -320,7 +373,8 @@
    </div>
 
     <div class="remarks-box">
-        <b>Head Teacher Remarks:</b> Promoted to next grade.
+    <b>Head Teacher Remarks:</b>
+    The learner has demonstrated satisfactory progress and is ready for the next learning level.
     </div>
 
     <div class="signature-grid">
