@@ -220,6 +220,21 @@ def get_settings():
 
 def init_database():
     db.create_all()
+    
+        if not School.query.first():
+        db.session.add(School(
+            school_name="Umar Faruq Integrated Academy",
+            motto="",
+            phone="",
+            email="",
+            address="Mandera",
+            logo="logo.png",
+            primary_color="#0b5ed7",
+            secondary_color="#ffffff",
+            subscription_status="active",
+            is_active=True
+        ))
+        db.session.commit()
        
     try:
         Subject.__table__.create(db.engine, checkfirst=True)
