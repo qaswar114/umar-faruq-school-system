@@ -465,6 +465,12 @@ def login():
     if request.method == "POST":
         user = User.query.filter_by(username=request.form["username"].strip()).first()
 
+        school = School.query.get(user.school_id) if user else None
+
+if user and (not school or not school.is_active or school.subscription_status != "active"):
+    flash("This school account is not active. Contact system owner.")
+    return redirect(url_for("login"))
+
         if user and not user.is_active:
             flash("This account has been disabled. Contact Admin.")
             return redirect(url_for("login"))
