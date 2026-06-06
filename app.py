@@ -318,8 +318,17 @@ except Exception:
         ("reception", "recep123", "Receptionist"),
    ]
     for username, password, role in default_users:
-        if not User.query.filter_by(username=username).first():
-            db.session.add(User(username=username, password_hash=generate_password_hash(password), role=role))
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        db.session.add(User(
+            school_id=1,
+            username=username,
+            password_hash=generate_password_hash(password),
+            role=role
+        ))
+    else:
+        user.school_id = user.school_id or 1
     db.session.commit()
 
 def login_required():
