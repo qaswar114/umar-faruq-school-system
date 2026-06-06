@@ -377,6 +377,12 @@ def role_allowed(*roles):
     return current_role in allowed_roles
 def super_admin_required():
     return session.get("role", "").lower() == "super admin"
+
+def current_school_id():
+    return session.get("school_id", 1)
+
+def current_school():
+    return School.query.get(current_school_id())
     
 def save_audit(action, module="System"):
     log = AuditLog(
