@@ -639,6 +639,55 @@ def create_school():
         return redirect(url_for("schools"))
 
     return render_template("create_school.html", settings=get_settings())
+@app.route("/switch_school/<int:school_id>")
+def switch_school(school_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not super_admin_required():
+        flash("Only Super Admin can switch schools.")
+        return redirect(url_for("dashboard"))
+
+    school = School.query.get_or_404(school_id)
+
+    session["school_id"] = school.id
+    session["school_name"] = school.school_name
+
+    flash(f"Now managing {school.school_name}")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/edit_school/<int:school_id>", methods=["GET", "POST"])
+def edit_school(school_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not super_admin_required():
+        flash("Only Super Admin can edit schools.")
+        return redirect(url_for("dashboard"))
+
+    school = School.query.get_or_404(school_id)
+
+    if request.method == "POST":
+        school.school_name = request.form["school_name"]
+        school.motto = request.form.get("motto", "")
+        school.phone = request.form.get("phone", "")
+        school.email = request.form.get("email", "")
+        school.address = request.form.get("address", "")
+        school.primary_color = request.form.get("primary_color", "#0b5ed7")
+        school.secondary_color = request.form.get("secondary_color", "#ffffff")
+        school.subscription_status = request.form.get("subscription_status", "active")
+        school.is_active = True if request.form.get("is_active") == "active" else False
+
+        db.session.commit()
+        flash("School updated successfully.")
+        return redirect(url_for("schools"))
+
+    return render_template(
+        "edit_school.html",
+        settings=get_settings(),
+        school=school
+    )
     
 @app.route("/expenses", methods=["GET", "POST"])
 def expenses():
