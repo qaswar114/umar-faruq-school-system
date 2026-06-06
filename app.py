@@ -351,6 +351,9 @@ def role_allowed(*roles):
         return True
 
     return current_role in allowed_roles
+def super_admin_required():
+    return session.get("role", "").lower() == "super admin"
+    
 def save_audit(action, module="System"):
     log = AuditLog(
         username=session.get("username", ""),
