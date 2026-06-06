@@ -265,24 +265,40 @@
     <div class="summary-grid">
         <div class="summary-box">Total<br>{{ total }}</div>
         <div class="summary-box">Average<br>{{ "%.2f"|format(average) }}</div>
-        <div class="summary-box">Grade<br>{{ grade_letter }}</div>
+        <div class="summary-box">
+    CBC Level<br>
+    {% if average >= 80 %}
+        EE
+    {% elif average >= 50 %}
+        ME
+    {% elif average >= 30 %}
+        AE
+    {% else %}
+        BE
+    {% endif %}
+</div>
         <div class="summary-box">Position<br>{{ position }} / {{ class_size }}</div>
     </div>
+    <div class="remarks-box">
+    <b>CBC Performance Level Key:</b>
+    EE - Exceeding Expectations |
+    ME - Meeting Expectations |
+    AE - Approaching Expectations |
+    BE - Below Expectations
+</div>
 
     <div class="remarks-box">
-        <b>Class Teacher Remarks:</b>
-        {% if average >= 80 %}
-            Excellent performance. Keep it up.
-        {% elif average >= 70 %}
-            Very good performance. Continue working hard.
-        {% elif average >= 60 %}
-            Good performance. More effort will improve the results.
-        {% elif average >= 50 %}
-            Fair performance. Needs more revision and guidance.
-        {% else %}
-            Needs serious improvement and close academic support.
-        {% endif %}
-    </div>
+    <b>Class Teacher Remarks:</b>
+    {% if average >= 80 %}
+        The learner is exceeding expectations and demonstrates excellent competency in most learning areas.
+    {% elif average >= 50 %}
+        The learner is meeting expectations and has shown good progress in the assessed learning areas.
+    {% elif average >= 30 %}
+        The learner is approaching expectations and requires more practice, guidance and support.
+    {% else %}
+        The learner is below expectations and requires close follow-up, remedial support and parental involvement.
+    {% endif %}
+   </div>
 
     <div class="remarks-box">
         <b>Head Teacher Remarks:</b> Promoted to next grade.
