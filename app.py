@@ -545,6 +545,25 @@ def dashboard():
         defaulters=defaulters,
         outstanding=money(outstanding)
     )
+
+@app.route("/schools")
+def schools():
+
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not super_admin_required():
+        flash("Only Super Admin can manage schools.")
+        return redirect(url_for("dashboard"))
+
+    schools = School.query.order_by(School.school_name).all()
+
+    return render_template(
+        "schools.html",
+        settings=get_settings(),
+        schools=schools
+    )
+    
 @app.route("/expenses", methods=["GET", "POST"])
 def expenses():
     if not login_required():
