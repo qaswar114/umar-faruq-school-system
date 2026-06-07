@@ -5,113 +5,93 @@
 
 <h2>Edit School</h2>
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
+
+<h3>School Information</h3>
 
 <label>School Name</label>
-<input name="school_name"
-value="{{school.school_name}}">
+<input name="school_name" value="{{ school.school_name }}">
 
 <label>Motto</label>
-<input name="motto"
-value="{{school.motto}}">
+<input name="motto" value="{{ school.motto }}">
 
 <label>Phone</label>
-<input name="phone"
-value="{{school.phone}}">
+<input name="phone" value="{{ school.phone }}">
 
 <label>Email</label>
-<input name="email"
-value="{{school.email}}">
+<input name="email" value="{{ school.email }}">
 
 <label>Address</label>
-<textarea name="address">{{school.address}}</textarea>
+<textarea name="address" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;">{{ school.address }}</textarea>
 
-<label>Primary Colour</label>
-<input
-type="color"
-name="primary_color"
-value="{{school.primary_color}}">
+<hr>
 
-<label>Secondary Colour</label>
-<input
-type="color"
-name="secondary_color"
-value="{{school.secondary_color}}">
+<h3>Branding</h3>
+
+<label>Current Logo</label>
+{% if school.logo %}
+    <img src="{{ url_for('static', filename=school.logo) }}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;margin:10px 0;">
+{% else %}
+    <p>No logo uploaded.</p>
+{% endif %}
+
+<label>Upload New Logo</label>
+<input type="file" name="logo" accept="image/*">
+
+<label>Current Stamp</label>
+{% if school.stamp %}
+    <img src="{{ url_for('static', filename=school.stamp) }}" style="width:120px;height:auto;margin:10px 0;">
+{% else %}
+    <p>No stamp uploaded.</p>
+{% endif %}
+
+<label>Upload New Stamp</label>
+<input type="file" name="stamp" accept="image/*">
+
+<label>Current Headteacher Signature</label>
+{% if school.headteacher_signature %}
+    <img src="{{ url_for('static', filename=school.headteacher_signature) }}" style="width:160px;height:auto;margin:10px 0;">
+{% else %}
+    <p>No signature uploaded.</p>
+{% endif %}
+
+<label>Upload New Headteacher Signature</label>
+<input type="file" name="headteacher_signature" accept="image/*">
+
+<div class="two">
+    <div>
+        <label>Primary Colour</label>
+        <input type="color" name="primary_color" value="{{ school.primary_color }}">
+    </div>
+
+    <div>
+        <label>Secondary Colour</label>
+        <input type="color" name="secondary_color" value="{{ school.secondary_color }}">
+    </div>
+</div>
+
+<hr>
+
+<h3>Subscription</h3>
 
 <label>Subscription</label>
-
 <select name="subscription_status">
-
-<option
-value="active"
-{% if school.subscription_status=="active" %}
-selected
-{% endif %}
->
-Active
-</option>
-
-<option
-value="trial"
-{% if school.subscription_status=="trial" %}
-selected
-{% endif %}
->
-Trial
-</option>
-
-<option
-value="expired"
-{% if school.subscription_status=="expired" %}
-selected
-{% endif %}
->
-Expired
-</option>
-
+    <option value="active" {% if school.subscription_status=="active" %}selected{% endif %}>Active</option>
+    <option value="trial" {% if school.subscription_status=="trial" %}selected{% endif %}>Trial</option>
+    <option value="expired" {% if school.subscription_status=="expired" %}selected{% endif %}>Expired</option>
 </select>
 
 <label>Status</label>
-
 <select name="is_active">
-
-<option
-value="active"
-{% if school.is_active %}
-selected
-{% endif %}
->
-Active
-</option>
-
-<option
-value="inactive"
-{% if not school.is_active %}
-selected
-{% endif %}
->
-Suspended
-</option>
-
+    <option value="active" {% if school.is_active %}selected{% endif %}>Active</option>
+    <option value="inactive" {% if not school.is_active %}selected{% endif %}>Suspended</option>
 </select>
 
 <br><br>
 
-<button
-type="submit"
-class="btn">
+<button type="submit" class="btn">Save Changes</button>
 
-Save Changes
-
-</button>
-
-<a
-href="{{url_for('schools')}}"
-class="btn">
-
-Cancel
-
-</a>
+<a href="{{ url_for('schools') }}" class="btn" style="background:#6c757d;">Cancel</a>
 
 </form>
 
