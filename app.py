@@ -69,6 +69,7 @@ class Staff(db.Model):
     email = db.Column(db.String(120), default="")
     id_no = db.Column(db.String(80), default="")
     role = db.Column(db.String(50), nullable=False)
+    assigned_subjects = db.Column(db.String(255), default="")
     assigned_grade = db.Column(db.String(50), default="")
     date_joined = db.Column(db.Date, default=date.today)
     status = db.Column(db.String(20), default="Active")
