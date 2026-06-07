@@ -3103,6 +3103,11 @@ def change_password():
     if not login_required():
         return redirect(url_for("login"))
 
+   if session.get("role", "").lower() == "super admin":
+    user = User.query.filter_by(
+        username=session["username"]
+    ).first_or_404()
+else:
     user = User.query.filter_by(
         username=session["username"],
         school_id=current_school_id()
