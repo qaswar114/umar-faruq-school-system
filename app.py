@@ -1463,9 +1463,22 @@ def report_cards():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    is_teacher = session.get("role", "").lower() == "teacher"
 
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
+
+    if is_teacher:
+        current_user = User.query.filter_by(
+            username=session.get("username"),
+            school_id=school_id
+        ).first()
+
+        if current_user and current_user.assigned_grade:
+            selected_grade = current_user.assigned_grade
+        else:
+            flash("You have not been assigned to any grade. Contact Admin.")
+            return redirect(url_for("dashboard"))
 
     exams = Exam.query.filter_by(
         school_id=school_id,
@@ -1490,7 +1503,6 @@ def report_cards():
         selected_exam=selected_exam,
         selected_grade=selected_grade
     )
-
 @app.route("/report_card/<int:pupil_id>/<int:exam_id>")
 def report_card(pupil_id, exam_id):
     if not login_required():
