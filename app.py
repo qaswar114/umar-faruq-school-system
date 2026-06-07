@@ -2865,18 +2865,46 @@ def staff():
     school_id = current_school_id()
 
     if request.method == "POST":
+        role = request.form["role"]
+        assigned_grade = request.form.get("assigned_grade", "")
+
         staff_member = Staff(
             school_id=school_id,
             full_name=request.form["full_name"],
             phone=request.form.get("phone", ""),
             email=request.form.get("email", ""),
             id_no=request.form.get("id_no", ""),
-            role=request.form["role"],
-            assigned_grade=request.form.get("assigned_grade", ""),
+            role=role,
+            assigned_grade=assigned_grade,
             status=request.form.get("status", "Active")
         )
 
         db.session.add(staff_member)
+
+        if request.form.get("create_login") == "yes":
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "").strip()
+
+            if not username or not password:
+                flash("Username and temporary password are required when creating a login account.")
+                return redirect(url_for("staff"))
+
+            existing_user = User.query.filter_by(username=username).first()
+            if existing_user:
+                flash("Username already exists. Choose another username.")
+                return redirect(url_for("staff"))
+
+            new_user = User(
+                school_id=school_id,
+                username=username,
+                password_hash=generate_password_hash(password),
+                role=role,
+                assigned_grade=assigned_grade,
+                is_active=True
+            )
+
+            db.session.add(new_user)
+
         db.session.commit()
 
         save_audit(
