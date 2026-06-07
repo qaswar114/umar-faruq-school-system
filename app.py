@@ -725,23 +725,51 @@ def create_school():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
+        logo_filename = "logo.png"
+        stamp_filename = ""
+        signature_filename = ""
+
+        logo_file = request.files.get("logo")
+        stamp_file = request.files.get("stamp")
+        signature_file = request.files.get("headteacher_signature")
+
+        if logo_file and logo_file.filename:
+            logo_filename = secure_filename(logo_file.filename)
+            logo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], logo_filename))
+
+        if stamp_file and stamp_file.filename:
+            stamp_filename = secure_filename(stamp_file.filename)
+            stamp_file.save(os.path.join(app.config["UPLOAD_FOLDER"], stamp_filename))
+
+        if signature_file and signature_file.filename:
+            signature_filename = secure_filename(signature_file.filename)
+            signature_file.save(os.path.join(app.config["UPLOAD_FOLDER"], signature_filename))
+
         school = School(
             school_name=request.form["school_name"],
             motto=request.form.get("motto", ""),
             phone=request.form.get("phone", ""),
             email=request.form.get("email", ""),
             address=request.form.get("address", ""),
+            logo="uploads/" + logo_filename if logo_filename != "logo.png" else "logo.png",
+            stamp="uploads/" + stamp_filename if stamp_filename else "",
+            headteacher_signature="uploads/" + signature_filename if signature_filename else "",
             primary_color=request.form.get("primary_color", "#0b5ed7"),
             secondary_color=request.form.get("secondary_color", "#ffffff"),
-            subscription_status=request.form.get("subscription_status", "active"),
+            subscription_status=request.form.get("subscription_status", "trial"),
             is_active=True
         )
 
         db.session.add(school)
         db.session.commit()
 
-        admin_username = request.form["admin_username"]
-        admin_password = request.form["admin_password"]
+        admin_username = request.form["admin_username"].strip()
+        admin_password = request.form["admin_password"].strip()
+
+        existing_user = User.query.filter_by(username=admin_username).first()
+        if existing_user:
+            flash("That admin username already exists. Choose another username.")
+            return redirect(url_for("create_school"))
 
         school_admin = User(
             school_id=school.id,
@@ -754,8 +782,16 @@ def create_school():
         db.session.add(school_admin)
         db.session.commit()
 
-        flash("School created successfully.")
-        return redirect(url_for("schools"))
+        session["school_id"] = school.id
+        session["school_name"] = school.school_name
+
+        save_audit(
+            f"Created new school: {school.school_name}",
+            "Schools"
+        )
+
+        flash("School created successfully. You are now managing the new school.")
+        return redirect(url_for("dashboard"))
 
     return render_template("create_school.html", settings=get_settings())
 @app.route("/switch_school/<int:school_id>")
