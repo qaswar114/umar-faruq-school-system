@@ -448,7 +448,7 @@ def receipt_no(year, term):
         academic_year=year,
         term=term
     ).count() + 1
-    return f"UFIA/{year}/{term_code}/{count:05d}"}"
+    return f"UFIA/{year}/{term_code}/{count:05d}"
 
 def get_fee(year, grade, term, month):
     school_id = current_school_id()
