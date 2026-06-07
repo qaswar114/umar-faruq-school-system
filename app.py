@@ -62,6 +62,7 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
 class Staff(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     full_name = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(80), default="")
     email = db.Column(db.String(120), default="")
@@ -72,6 +73,7 @@ class Staff(db.Model):
     status = db.Column(db.String(20), default="Active")
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     username = db.Column(db.String(80), default="")
     role = db.Column(db.String(50), default="")
     action = db.Column(db.String(255), nullable=False)
@@ -80,6 +82,7 @@ class AuditLog(db.Model):
 
 class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     title = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
     audience = db.Column(db.String(50), default="All")  # All / Parents / Teachers / Students
@@ -89,6 +92,7 @@ class Announcement(db.Model):
 
 class SMSMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     recipient_name = db.Column(db.String(200), default="")
     phone = db.Column(db.String(80), nullable=False)
     message = db.Column(db.Text, nullable=False)
@@ -121,6 +125,7 @@ class Pupil(db.Model):
     created_at = db.Column(db.Date, default=date.today)
 class FeeStructure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     academic_year = db.Column(db.Integer, nullable=False)
     grade = db.Column(db.String(50), nullable=False)
     term = db.Column(db.String(30), nullable=False)
@@ -148,6 +153,7 @@ class Payment(db.Model):
     pupil = db.relationship("Pupil")
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     expense_date = db.Column(db.Date, default=date.today)
     category = db.Column(db.String(50), nullable=False)
     description = db.Column(db.String(200))
@@ -161,6 +167,7 @@ class Attendance(db.Model):
     pupil = db.relationship("Pupil")
 class Discount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
     academic_year = db.Column(db.Integer, nullable=False)
     term = db.Column(db.String(30), default="All Year")
@@ -171,12 +178,14 @@ class Discount(db.Model):
     pupil = db.relationship("Pupil")
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     subject_name = db.Column(db.String(100), nullable=False)
     grade = db.Column(db.String(50), nullable=False)
     teacher_name = db.Column(db.String(100), default="")
     status = db.Column(db.String(20), default="Active")
 class Exam(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     exam_name = db.Column(db.String(100), nullable=False)
     academic_year = db.Column(db.Integer, nullable=False)
     term = db.Column(db.String(30), nullable=False)
@@ -185,6 +194,7 @@ class Exam(db.Model):
     status = db.Column(db.String(20), default="Active")
 class Mark(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
     exam_id = db.Column(db.Integer, db.ForeignKey("exam.id"), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey("subject.id"), nullable=False)
@@ -305,6 +315,29 @@ def init_database():
     except Exception:
         db.session.rollback()
 
+        school_specific_tables = [
+        "staff",
+        "audit_log",
+        "announcement",
+        "sms_message",
+        "fee_structure",
+        "expense",
+        "attendance",
+        "discount",
+        "subject",
+        "exam",
+        "mark"
+    ]
+
+    for table in school_specific_tables:
+        try:
+            db.session.execute(
+                db.text(f"ALTER TABLE {table} ADD COLUMN school_id INTEGER DEFAULT 1")
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
     try:
         db.session.execute(
             db.text('ALTER TABLE "user" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT \'\'')
@@ -386,6 +419,7 @@ def current_school():
     
 def save_audit(action, module="System"):
     log = AuditLog(
+        school_id=current_school_id(),
         username=session.get("username", ""),
         role=session.get("role", ""),
         action=action,
@@ -407,18 +441,39 @@ def next_admission_no():
     return f"{prefix}/{current_year()}/{count:04d}"
 
 def receipt_no(year, term):
+    school_id = current_school_id()
     term_code = term.replace("Term ", "T")
-    count = Payment.query.filter_by(academic_year=year, term=term).count() + 1
-    return f"UFIA/{year}/{term_code}/{count:05d}"
+    count = Payment.query.filter_by(
+        school_id=school_id,
+        academic_year=year,
+        term=term
+    ).count() + 1
+    return f"UFIA/{year}/{term_code}/{count:05d}"}"
 
 def get_fee(year, grade, term, month):
-    fee = FeeStructure.query.filter_by(academic_year=year, grade=grade, term=term, month=month).first()
+    school_id = current_school_id()
+
+    fee = FeeStructure.query.filter_by(
+        school_id=school_id,
+        academic_year=year,
+        grade=grade,
+        term=term,
+        month=month
+    ).first()
+
     if not fee:
-        fee = FeeStructure(academic_year=year, grade=grade, term=term, month=month)
+        fee = FeeStructure(
+            school_id=school_id,
+            academic_year=year,
+            grade=grade,
+            term=term,
+            month=month
+        )
         db.session.add(fee)
         db.session.commit()
-    return fee
 
+    return fee
+    
 def monthly_due(pupil, year, term, month):
     fee = get_fee(year, pupil.grade, term, month)
     return {
@@ -456,15 +511,33 @@ def year_due(pupil, year):
     return sum(total.values())
 
 def paid_year(pupil_id, year):
-    rows = Payment.query.filter_by(pupil_id=pupil_id, academic_year=year).all()
-    return sum((p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid) for p in rows)
+    rows = Payment.query.filter_by(
+        school_id=current_school_id(),
+        pupil_id=pupil_id,
+        academic_year=year
+    ).all()
+
+    return sum((p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) for p in rows)
 
 def paid_month(pupil_id, year, term, month):
-    rows = Payment.query.filter_by(pupil_id=pupil_id, academic_year=year, term=term, month=month).all()
-    return sum((p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid) for p in rows)
+    rows = Payment.query.filter_by(
+        school_id=current_school_id(),
+        pupil_id=pupil_id,
+        academic_year=year,
+        term=term,
+        month=month
+    ).all()
+
+    return sum((p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) for p in rows)
 
 def discount_year(pupil_id, year):
-    return sum(d.amount for d in Discount.query.filter_by(pupil_id=pupil_id, academic_year=year).all())
+    return sum(
+        d.amount for d in Discount.query.filter_by(
+            school_id=current_school_id(),
+            pupil_id=pupil_id,
+            academic_year=year
+        ).all()
+    )
 
 def opening_arrears(pupil, year):
     if year <= 2026:
@@ -1050,17 +1123,23 @@ def attendance():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = session.get("school_id")
+
     selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
 
     if session.get("role", "").lower() == "teacher":
-        current_user = User.query.filter_by(username=session.get("username")).first()
+        current_user = User.query.filter_by(
+            username=session.get("username"),
+            school_id=school_id
+        ).first()
         if current_user and current_user.assigned_grade:
             selected_grade = current_user.assigned_grade
 
     pupils = []
     if selected_grade:
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Pupil.full_name).all()
@@ -1070,11 +1149,15 @@ def attendance():
         attendance_date = request.form["attendance_date"]
 
         if session.get("role", "").lower() == "teacher":
-            current_user = User.query.filter_by(username=session.get("username")).first()
+            current_user = User.query.filter_by(
+                username=session.get("username"),
+                school_id=school_id
+            ).first()
             if current_user and current_user.assigned_grade:
                 selected_grade = current_user.assigned_grade
 
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).all()
@@ -1086,6 +1169,7 @@ def attendance():
             status = request.form.get(f"status_{pupil.id}", "Present")
 
             existing = Attendance.query.filter_by(
+                school_id=school_id,
                 pupil_id=pupil.id,
                 attendance_date=attendance_day
             ).first()
@@ -1094,6 +1178,7 @@ def attendance():
                 existing.status = status
             else:
                 new_attendance = Attendance(
+                    school_id=school_id,
                     pupil_id=pupil.id,
                     attendance_date=attendance_day,
                     status=status
@@ -1102,6 +1187,7 @@ def attendance():
 
             if status == "Absent" and pupil.guardian_phone:
                 sms = SMSMessage(
+                    school_id=school_id,
                     recipient_name=pupil.guardian_name,
                     phone=pupil.guardian_phone,
                     message=(
@@ -1142,6 +1228,8 @@ def attendance_report():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
 
@@ -1149,6 +1237,8 @@ def attendance_report():
 
     if selected_grade:
         records = Attendance.query.join(Pupil).filter(
+            Attendance.school_id == school_id,
+            Pupil.school_id == school_id,
             Pupil.grade == selected_grade,
             Attendance.attendance_date == datetime.strptime(attendance_date, "%Y-%m-%d").date()
         ).all()
@@ -1168,7 +1258,6 @@ def attendance_report():
         absent=absent,
         late=late
     )
-
 @app.route("/report_cards")
 def report_cards():
     if not login_required():
