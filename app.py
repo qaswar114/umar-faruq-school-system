@@ -338,7 +338,7 @@ def init_database():
     ]
 
     for table in school_specific_tables:
-        try:
+    try:
             db.session.execute(
                 db.text(f"ALTER TABLE {table} ADD COLUMN school_id INTEGER DEFAULT 1")
             )
@@ -354,7 +354,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-        try:
+    try:
         db.session.execute(
             db.text('ALTER TABLE "user" ADD COLUMN assigned_subjects VARCHAR(255) DEFAULT \'\'')
         )
