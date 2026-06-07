@@ -225,11 +225,17 @@ def term_months(term):
     return TERM_MONTHS.get(term, [])
 
 def get_settings():
+    school = current_school()
+
+    if school:
+        return school
+
     s = Setting.query.first()
     if not s:
         s = Setting(school_name=SCHOOL_NAME)
         db.session.add(s)
         db.session.commit()
+
     return s
 
 def init_database():
@@ -859,20 +865,31 @@ def expense_report():
         total=total,
         money=money
     )
-@app.route("/settings", methods=["GET","POST"])
+    
+@app.route("/settings", methods=["GET", "POST"])
 def settings():
-    if not login_required(): return redirect(url_for("login"))
-    if not role_allowed("Admin"): 
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
         flash("Only Admin can edit branding.")
         return redirect(url_for("dashboard"))
-    s = get_settings()
+
+    school = current_school()
+
     if request.method == "POST":
-        s.school_name = request.form["school_name"]
-        s.phone = request.form.get("phone","")
-        s.address = request.form.get("address","")
+        school.school_name = request.form["school_name"]
+        school.phone = request.form.get("phone", "")
+        school.address = request.form.get("address", "")
+
         db.session.commit()
+
+        session["school_name"] = school.school_name
+
         flash("Branding saved.")
-    return render_template("settings.html", settings=s)
+        return redirect(url_for("settings"))
+
+    return render_template("settings.html", settings=school)
     
 @app.route("/pupils", methods=["GET","POST"])
 def pupils():
@@ -1055,6 +1072,7 @@ def delete_pupil(pupil_id):
 
     db.session.delete(pupil)
     db.session.commit()
+
     flash("Pupil deleted successfully.")
     return redirect(url_for("pupils"))
     
