@@ -796,6 +796,8 @@ def expenses():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         expense_date = request.form.get("expense_date")
         category = request.form.get("category")
@@ -803,6 +805,7 @@ def expenses():
         amount = float(request.form.get("amount") or 0)
 
         exp = Expense(
+            school_id=school_id,
             expense_date=datetime.strptime(expense_date, "%Y-%m-%d").date() if expense_date else date.today(),
             category=category,
             description=description,
@@ -813,10 +816,17 @@ def expenses():
         db.session.add(exp)
         db.session.commit()
 
+        save_audit(
+            f"Recorded expense: {category} - KES {amount:,.2f}",
+            "Finance"
+        )
+
         flash("Expense recorded successfully.")
         return redirect(url_for("expenses"))
 
-    rows = Expense.query.order_by(Expense.expense_date.desc()).all()
+    rows = Expense.query.filter_by(
+        school_id=school_id
+    ).order_by(Expense.expense_date.desc()).all()
 
     return render_template(
         "expenses.html",
@@ -831,7 +841,13 @@ def expense_report():
     if not login_required():
         return redirect(url_for("login"))
 
-    rows = Expense.query.order_by(Expense.expense_date.desc()).all()
+    school_id = current_school_id()
+
+    rows = Expense.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        Expense.expense_date.desc()
+    ).all()
 
     total = sum(r.amount for r in rows)
 
@@ -842,7 +858,6 @@ def expense_report():
         total=total,
         money=money
     )
-    
 @app.route("/settings", methods=["GET","POST"])
 def settings():
     if not login_required(): return redirect(url_for("login"))
