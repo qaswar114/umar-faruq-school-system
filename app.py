@@ -668,6 +668,51 @@ def dashboard():
             recent_schools=recent_schools
         )
 
+        if session.get("role", "").lower() == "teacher":
+        school_id = current_school_id()
+        assigned_grade = session.get("assigned_grade", "")
+
+        today = date.today()
+
+        pupils_count = Pupil.query.filter_by(
+            school_id=school_id,
+            grade=assigned_grade,
+            status="Active"
+        ).count()
+
+        today_attendance = Attendance.query.join(Pupil).filter(
+            Attendance.school_id == school_id,
+            Pupil.school_id == school_id,
+            Pupil.grade == assigned_grade,
+            Attendance.attendance_date == today
+        ).all()
+
+        present = sum(1 for r in today_attendance if r.status == "Present")
+        absent = sum(1 for r in today_attendance if r.status == "Absent")
+        late = sum(1 for r in today_attendance if r.status == "Late")
+
+        active_exams = Exam.query.filter_by(
+            school_id=school_id,
+            status="Active"
+        ).count()
+
+        announcements = Announcement.query.filter_by(
+            school_id=school_id,
+            status="Active"
+        ).order_by(Announcement.created_at.desc()).limit(5).all()
+
+        return render_template(
+            "teacher_dashboard.html",
+            settings=get_settings(),
+            assigned_grade=assigned_grade,
+            pupils_count=pupils_count,
+            present=present,
+            absent=absent,
+            late=late,
+            active_exams=active_exams,
+            announcements=announcements
+        )
+
     school_id = current_school_id()
     current_month = date.today().month
     current_year_num = date.today().year
