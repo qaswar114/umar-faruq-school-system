@@ -668,7 +668,7 @@ def dashboard():
             recent_schools=recent_schools
         )
 
-        if session.get("role", "").lower() == "teacher":
+    if session.get("role", "").lower() == "teacher":
         school_id = current_school_id()
         assigned_grade = session.get("assigned_grade", "")
 
