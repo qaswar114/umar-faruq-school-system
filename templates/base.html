@@ -146,8 +146,15 @@ function updateMonths(termId, monthId){
 <body>
 {% if session.username %}
 <div class="header">
-  <div class="brand"><img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo-small">{{ settings.school_name }}</strong><br><small>School Fees System</small></div></div>
-<div class="nav">
+  <div class="brand">
+    <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo-small">
+    <div>
+      <strong>{{ settings.school_name }}</strong><br>
+      <small>School Fees System</small>
+    </div>
+  </div>
+
+  <div class="nav">
     {{ session.username }} ({{ session.role }})
     <a href="{{ url_for('dashboard') }}">Dashboard</a>
     
