@@ -161,6 +161,7 @@ class Expense(db.Model):
     recorded_by = db.Column(db.String(80))
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
     attendance_date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False)   # Present / Absent / Late
@@ -307,7 +308,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-    try:
+        try:
         db.session.execute(
             db.text('ALTER TABLE payment ADD COLUMN school_id INTEGER DEFAULT 1')
         )
@@ -315,7 +316,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-        school_specific_tables = [
+    school_specific_tables = [
         "staff",
         "audit_log",
         "announcement",
@@ -1038,9 +1039,16 @@ def delete_pupil(pupil_id):
         flash("Only Admin can delete pupils.")
         return redirect(url_for("pupils"))
 
-    pupil = Pupil.query.get_or_404(pupil_id)
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
-    existing_payments = Payment.query.filter_by(pupil_id=pupil.id).count()
+    existing_payments = Payment.query.filter_by(
+        school_id=current_school_id(),
+        pupil_id=pupil.id
+    ).count()
+
     if existing_payments > 0:
         flash("Cannot delete this pupil because payment records exist. Mark as Inactive instead.")
         return redirect(url_for("pupils"))
@@ -1119,7 +1127,10 @@ def promote_students():
 
     count = 0
 
-    for pupil in Pupil.query.filter_by(status="Active").all():
+    for pupil in Pupil.query.filter_by(
+           school_id=current_school_id(),
+           status="Active"
+    ).all():
         if pupil.grade in promotion_map:
             pupil.grade = promotion_map[pupil.grade]
             count += 1
@@ -1807,7 +1818,9 @@ def fees():
         terms=TERMS,
         term_months=TERM_MONTHS,
         year=current_year(),
-        fees=FeeStructure.query.order_by(FeeStructure.academic_year.desc()).all(),
+        fees=FeeStructure.query.filter_by(
+            school_id=current_school_id()
+      ).order_by(FeeStructure.academic_year.desc()).all(),
         money=money
     )
             
@@ -2363,12 +2376,11 @@ def statement(pupil_id, year):
                     bal
                 ))
 
-            payments = Payment.query.filter_by(
+            discounts = Discount.query.filter_by(
+                school_id=current_school_id(),
                 pupil_id=pupil.id,
-                academic_year=year,
-                term=term,
-                month=month
-            ).order_by(Payment.payment_date).all()
+                academic_year=year
+           ).all()
 
             for pay in payments:
                 credit = (
