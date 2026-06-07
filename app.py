@@ -308,7 +308,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-        try:
+    try:
         db.session.execute(
             db.text('ALTER TABLE payment ADD COLUMN school_id INTEGER DEFAULT 1')
         )
