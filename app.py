@@ -867,7 +867,30 @@ def edit_school(school_id):
         school.subscription_status = request.form.get("subscription_status", "active")
         school.is_active = True if request.form.get("is_active") == "active" else False
 
+        logo_file = request.files.get("logo")
+        stamp_file = request.files.get("stamp")
+        signature_file = request.files.get("headteacher_signature")
+
+        if logo_file and logo_file.filename:
+            logo_filename = secure_filename(logo_file.filename)
+            logo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], logo_filename))
+            school.logo = "uploads/" + logo_filename
+
+        if stamp_file and stamp_file.filename:
+            stamp_filename = secure_filename(stamp_file.filename)
+            stamp_file.save(os.path.join(app.config["UPLOAD_FOLDER"], stamp_filename))
+            school.stamp = "uploads/" + stamp_filename
+
+        if signature_file and signature_file.filename:
+            signature_filename = secure_filename(signature_file.filename)
+            signature_file.save(os.path.join(app.config["UPLOAD_FOLDER"], signature_filename))
+            school.headteacher_signature = "uploads/" + signature_filename
+
         db.session.commit()
+
+        if session.get("school_id") == school.id:
+            session["school_name"] = school.school_name
+
         flash("School updated successfully.")
         return redirect(url_for("schools"))
 
