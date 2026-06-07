@@ -1,1 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
 
+<div class="panel">
+    <h2>Staff Management</h2>
+
+    <form method="post">
+
+        <h3>Staff Profile</h3>
+
+        <div class="three">
+            <div>
+                <label>Full Name</label>
+                <input name="full_name" required placeholder="e.g. Teacher Amina Hassan">
+            </div>
+
+            <div>
+                <label>Phone</label>
+                <input name="phone" placeholder="07xxxxxxxx">
+            </div>
+
+            <div>
+                <label>Email</label>
+                <input type="email" name="email" placeholder="teacher@email.com">
+            </div>
+
+            <div>
+                <label>ID Number</label>
+                <input name="id_no" placeholder="National ID / Passport">
+            </div>
+
+            <div>
+                <label>Role</label>
+                <select name="role" required>
+                    <option>Admin</option>
+                    <option>Bursar</option>
+                    <option>Teacher</option>
+                    <option>Receptionist</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Assigned Grade</label>
+                <select name="assigned_grade">
+                    <option value="">None</option>
+                    {% for g in grades %}
+                    <option>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <hr>
+
+        <h3>Login Account</h3>
+
+        <label>
+            <input type="checkbox" name="create_login" value="yes" style="width:auto;">
+            Create login account for this staff member
+        </label>
+
+        <div class="two">
+            <div>
+                <label>Username</label>
+                <input name="username" placeholder="e.g. teacheramina">
+            </div>
+
+            <div>
+                <label>Temporary Password</label>
+                <input name="password" type="text" placeholder="e.g. 123456">
+            </div>
+        </div>
+
+        <label>
+            <input type="checkbox" name="force_password_change" value="yes" checked style="width:auto;">
+            Force password change on first login
+        </label>
+
+        <br><br>
+
+        <button class="btn">Add Staff</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Staff List</h3>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>ID No</th>
+            <th>Role</th>
+            <th>Grade</th>
+            <th>Status</th>
+        </tr>
+
+        {% for s in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.full_name }}</td>
+            <td>{{ s.phone }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.id_no }}</td>
+            <td>{{ s.role }}</td>
+            <td>{{ s.assigned_grade }}</td>
+            <td>{{ s.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8">No staff profiles added yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
