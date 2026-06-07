@@ -1812,7 +1812,7 @@ def fees():
     )
             
 
-@app.route("/discounts", methods=["GET","POST"])
+@app.route("/discounts", methods=["GET", "POST"])
 def discounts():
     if not login_required():
         return redirect(url_for("login"))
@@ -1821,15 +1821,48 @@ def discounts():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
-        d = Discount(pupil_id=int(request.form["pupil_id"]), academic_year=int(request.form["academic_year"]),
-                     term=request.form["term"], amount=float(request.form.get("amount") or 0),
-                     reason=request.form.get("reason",""), created_by=session["username"])
+        d = Discount(
+            school_id=school_id,
+            pupil_id=int(request.form["pupil_id"]),
+            academic_year=int(request.form["academic_year"]),
+            term=request.form["term"],
+            amount=float(request.form.get("amount") or 0),
+            reason=request.form.get("reason", ""),
+            created_by=session["username"]
+        )
+
         db.session.add(d)
         db.session.commit()
+
+        save_audit(
+            f"Added discount for pupil ID {d.pupil_id}: KES {d.amount:,.2f}",
+            "Finance"
+        )
+
         flash("Discount/waiver added.")
-    return render_template("discounts.html", settings=get_settings(), pupils=Pupil.query.all(),
-                           discounts=Discount.query.order_by(Discount.id.desc()).all(), year=current_year(), money=money)
+        return redirect(url_for("discounts"))
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Pupil.full_name).all()
+
+    discounts = Discount.query.filter_by(
+        school_id=school_id
+    ).order_by(Discount.id.desc()).all()
+
+    return render_template(
+        "discounts.html",
+        settings=get_settings(),
+        pupils=pupils,
+        discounts=discounts,
+        year=current_year(),
+        money=money
+    )
+    
 @app.route("/payments", methods=["GET","POST"])
 def payments():
     if not login_required():
@@ -2692,9 +2725,16 @@ def audit_logs():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    logs = AuditLog.query.order_by(
-        AuditLog.created_at.desc()
-    ).limit(500).all()
+    if session.get("role", "").lower() == "super admin":
+        logs = AuditLog.query.order_by(
+            AuditLog.created_at.desc()
+        ).limit(500).all()
+    else:
+        logs = AuditLog.query.filter_by(
+            school_id=current_school_id()
+        ).order_by(
+            AuditLog.created_at.desc()
+        ).limit(500).all()
 
     return render_template(
         "audit_logs.html",
