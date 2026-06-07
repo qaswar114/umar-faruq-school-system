@@ -1513,11 +1513,26 @@ def report_card(pupil_id, exam_id):
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    is_teacher = session.get("role", "").lower() == "teacher"
 
     pupil = Pupil.query.filter_by(
         id=pupil_id,
         school_id=school_id
     ).first_or_404()
+
+    if is_teacher:
+        current_user = User.query.filter_by(
+            username=session.get("username"),
+            school_id=school_id
+        ).first()
+
+        if not current_user or not current_user.assigned_grade:
+            flash("You have not been assigned to any grade. Contact Admin.")
+            return redirect(url_for("dashboard"))
+
+        if pupil.grade != current_user.assigned_grade:
+            flash("Access denied. You can only view report cards for your assigned grade.")
+            return redirect(url_for("report_cards"))
 
     exam = Exam.query.filter_by(
         id=exam_id,
