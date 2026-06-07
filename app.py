@@ -310,6 +310,14 @@ def init_database():
 
     try:
         db.session.execute(
+            db.text("ALTER TABLE staff ADD COLUMN assigned_subjects VARCHAR(255) DEFAULT ''")
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        db.session.execute(
             db.text('ALTER TABLE pupil ADD COLUMN school_id INTEGER DEFAULT 1')
         )
         db.session.commit()
