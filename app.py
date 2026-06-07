@@ -725,7 +725,7 @@ def create_school():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        logo_filename = "logo.png"
+        logo_filename = ""
         stamp_filename = ""
         signature_filename = ""
 
@@ -751,7 +751,7 @@ def create_school():
             phone=request.form.get("phone", ""),
             email=request.form.get("email", ""),
             address=request.form.get("address", ""),
-            logo="uploads/" + logo_filename if logo_filename != "logo.png" else "logo.png",
+            logo="uploads/" + logo_filename if logo_filename else "logo.png",
             stamp="uploads/" + stamp_filename if stamp_filename else "",
             headteacher_signature="uploads/" + signature_filename if signature_filename else "",
             primary_color=request.form.get("primary_color", "#0b5ed7"),
