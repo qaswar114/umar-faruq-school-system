@@ -59,6 +59,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     assigned_grade = db.Column(db.String(50), default="")
+    assigned_subjects = db.Column(db.String(255), default="")
     is_active = db.Column(db.Boolean, default=True)
 class Staff(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -348,6 +349,14 @@ def init_database():
     try:
         db.session.execute(
             db.text('ALTER TABLE "user" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT \'\'')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+        try:
+        db.session.execute(
+            db.text('ALTER TABLE "user" ADD COLUMN assigned_subjects VARCHAR(255) DEFAULT \'\'')
         )
         db.session.commit()
     except Exception:
