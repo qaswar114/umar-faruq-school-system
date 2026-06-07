@@ -3041,7 +3041,7 @@ def staff():
        grades=GRADES,
        subjects=subjects
 )
-    )
+    
 @app.route("/audit_logs")
 def audit_logs():
     if not login_required():
