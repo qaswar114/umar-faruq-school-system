@@ -2966,8 +2966,18 @@ def staff():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    subjects = Subject.query.filter_by(
+    school_id=school_id,
+    status="Active"
+).order_by(
+    Subject.grade,
+    Subject.subject_name
+).all()
 
     if request.method == "POST":
+        selected_subjects = ",".join(
+    request.form.getlist("assigned_subjects")
+    )
         role = request.form["role"]
         assigned_grade = request.form.get("assigned_grade", "")
 
@@ -2979,6 +2989,7 @@ def staff():
             id_no=request.form.get("id_no", ""),
             role=role,
             assigned_grade=assigned_grade,
+            assigned_subjects=selected_subjects,
             status=request.form.get("status", "Active")
         )
 
@@ -3003,6 +3014,7 @@ def staff():
                 password_hash=generate_password_hash(password),
                 role=role,
                 assigned_grade=assigned_grade,
+                assigned_subjects=selected_subjects,
                 is_active=True
             )
 
@@ -3023,10 +3035,12 @@ def staff():
     ).order_by(Staff.full_name).all()
 
     return render_template(
-        "staff.html",
-        settings=get_settings(),
-        rows=rows,
-        grades=GRADES
+       "staff.html",
+       settings=get_settings(),
+       rows=rows,
+       grades=GRADES,
+       subjects=subjects
+)
     )
 @app.route("/audit_logs")
 def audit_logs():
