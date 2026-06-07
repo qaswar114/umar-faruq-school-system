@@ -635,6 +635,39 @@ def dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
+    if session.get("role", "").lower() == "super admin":
+        total_schools = School.query.count()
+        active_schools = School.query.filter_by(is_active=True).count()
+        trial_schools = School.query.filter_by(subscription_status="trial").count()
+        expired_schools = School.query.filter_by(subscription_status="expired").count()
+
+        total_pupils = Pupil.query.count()
+        total_staff = Staff.query.count()
+        total_sms = SMSMessage.query.count()
+
+        total_collected = sum(
+            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+            for p in Payment.query.all()
+        )
+
+        recent_schools = School.query.order_by(
+            School.created_at.desc()
+        ).limit(5).all()
+
+        return render_template(
+            "super_dashboard.html",
+            settings=get_settings(),
+            total_schools=total_schools,
+            active_schools=active_schools,
+            trial_schools=trial_schools,
+            expired_schools=expired_schools,
+            total_pupils=total_pupils,
+            total_staff=total_staff,
+            total_sms=total_sms,
+            total_collected=money(total_collected),
+            recent_schools=recent_schools
+        )
+
     school_id = current_school_id()
     current_month = date.today().month
     current_year_num = date.today().year
