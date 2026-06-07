@@ -1267,14 +1267,21 @@ def report_cards():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
 
-    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Exam.academic_year.desc()).all()
+
     pupils = []
 
     if selected_exam and selected_grade:
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Pupil.full_name).all()
@@ -1298,10 +1305,20 @@ def report_card(pupil_id, exam_id):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    pupil = Pupil.query.get_or_404(pupil_id)
-    exam = Exam.query.get_or_404(exam_id)
+    school_id = current_school_id()
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id
+    ).first_or_404()
+
+    exam = Exam.query.filter_by(
+        id=exam_id,
+        school_id=school_id
+    ).first_or_404()
 
     marks = Mark.query.filter_by(
+        school_id=school_id,
         pupil_id=pupil.id,
         exam_id=exam.id
     ).all()
@@ -1321,6 +1338,7 @@ def report_card(pupil_id, exam_id):
         grade_letter = "D"
 
     classmates = Pupil.query.filter_by(
+        school_id=school_id,
         grade=pupil.grade,
         status="Active"
     ).all()
@@ -1329,6 +1347,7 @@ def report_card(pupil_id, exam_id):
 
     for student in classmates:
         student_marks = Mark.query.filter_by(
+            school_id=school_id,
             pupil_id=student.id,
             exam_id=exam.id
         ).all()
@@ -1367,7 +1386,6 @@ def report_card(pupil_id, exam_id):
         class_size=class_size,
         today=date.today()
     )
-
 @app.route("/rankings")
 def rankings():
     if not login_required():
@@ -1377,20 +1395,28 @@ def rankings():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
 
-    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Exam.academic_year.desc()).all()
+
     rows = []
 
     if selected_exam and selected_grade:
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Pupil.full_name).all()
 
         for pupil in pupils:
             marks = Mark.query.filter_by(
+                school_id=school_id,
                 pupil_id=pupil.id,
                 exam_id=int(selected_exam)
             ).all()
@@ -1426,20 +1452,28 @@ def grade_analysis():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
 
-    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Exam.academic_year.desc()).all()
+
     rows = []
 
     if selected_exam and selected_grade:
         subjects = Subject.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Subject.subject_name).all()
 
         for subject in subjects:
             marks = Mark.query.filter_by(
+                school_id=school_id,
                 exam_id=int(selected_exam),
                 subject_id=subject.id
             ).all()
@@ -1467,7 +1501,6 @@ def grade_analysis():
         selected_grade=selected_grade,
         rows=rows
     )
-
 @app.route("/teacher_remarks")
 def teacher_remarks():
     if not login_required():
@@ -1477,19 +1510,25 @@ def teacher_remarks():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
 
-    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Exam.academic_year.desc()).all()
+
     rows = []
 
     if selected_exam and selected_grade:
-        marks = Mark.query.join(Pupil).filter(
+        rows = Mark.query.join(Pupil).filter(
+            Mark.school_id == school_id,
+            Pupil.school_id == school_id,
             Mark.exam_id == int(selected_exam),
             Pupil.grade == selected_grade
         ).order_by(Pupil.full_name).all()
-
-        rows = marks
 
     return render_template(
         "teacher_remarks.html",
@@ -1500,7 +1539,6 @@ def teacher_remarks():
         selected_grade=selected_grade,
         rows=rows
     )
-
 @app.route("/marks", methods=["GET", "POST"])
 def marks():
     if not login_required():
@@ -1510,26 +1548,35 @@ def marks():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
 
-    exams = Exam.query.filter_by(status="Active").order_by(Exam.academic_year.desc()).all()
+    exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Exam.academic_year.desc()).all()
+
     pupils = []
     subjects = []
     existing_marks = {}
 
     if selected_exam and selected_grade:
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Pupil.full_name).all()
 
         subjects = Subject.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Subject.subject_name).all()
 
         marks_rows = Mark.query.filter_by(
+            school_id=school_id,
             exam_id=int(selected_exam)
         ).all()
 
@@ -1541,11 +1588,13 @@ def marks():
         grade = request.form["grade"]
 
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=grade,
             status="Active"
         ).all()
 
         subjects = Subject.query.filter_by(
+            school_id=school_id,
             grade=grade,
             status="Active"
         ).all()
@@ -1556,6 +1605,7 @@ def marks():
                 remark = request.form.get(f"remark_{pupil.id}_{subject.id}", "")
 
                 existing = Mark.query.filter_by(
+                    school_id=school_id,
                     pupil_id=pupil.id,
                     exam_id=exam_id,
                     subject_id=subject.id
@@ -1566,6 +1616,7 @@ def marks():
                     existing.teacher_remark = remark
                 else:
                     mark = Mark(
+                        school_id=school_id,
                         pupil_id=pupil.id,
                         exam_id=exam_id,
                         subject_id=subject.id,
@@ -1589,7 +1640,6 @@ def marks():
         selected_grade=selected_grade,
         existing_marks=existing_marks
     )
-
 @app.route("/exams", methods=["GET", "POST"])
 def exams():
     if not login_required():
@@ -1599,8 +1649,11 @@ def exams():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         exam = Exam(
+            school_id=school_id,
             exam_name=request.form["exam_name"],
             academic_year=int(request.form["academic_year"]),
             term=request.form["term"],
@@ -1615,7 +1668,9 @@ def exams():
         flash("Exam added successfully.")
         return redirect(url_for("exams"))
 
-    rows = Exam.query.order_by(Exam.academic_year.desc(), Exam.term, Exam.grade).all()
+    rows = Exam.query.filter_by(
+        school_id=school_id
+    ).order_by(Exam.academic_year.desc(), Exam.term, Exam.grade).all()
 
     return render_template(
         "exams.html",
@@ -1625,7 +1680,6 @@ def exams():
         year=current_year(),
         rows=rows
     )
-    
 @app.route("/subjects", methods=["GET", "POST"])
 def subjects():
     if not login_required():
@@ -1635,8 +1689,11 @@ def subjects():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         subject = Subject(
+            school_id=school_id,
             subject_name=request.form["subject_name"],
             grade=request.form["grade"],
             teacher_name=request.form.get("teacher_name", ""),
@@ -1649,7 +1706,9 @@ def subjects():
         flash("Subject added successfully.")
         return redirect(url_for("subjects"))
 
-    rows = Subject.query.order_by(Subject.grade, Subject.subject_name).all()
+    rows = Subject.query.filter_by(
+        school_id=school_id
+    ).order_by(Subject.grade, Subject.subject_name).all()
 
     return render_template(
         "subjects.html",
@@ -1657,7 +1716,6 @@ def subjects():
         grades=GRADES,
         rows=rows
     )
-
 @app.route("/edit_subject/<int:subject_id>", methods=["GET", "POST"])
 def edit_subject(subject_id):
     if not login_required():
@@ -1667,7 +1725,10 @@ def edit_subject(subject_id):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    subject = Subject.query.get_or_404(subject_id)
+    subject = Subject.query.filter_by(
+        id=subject_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
     if request.method == "POST":
         subject.subject_name = request.form["subject_name"]
