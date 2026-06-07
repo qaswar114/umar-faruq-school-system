@@ -18,15 +18,34 @@
                 </select>
             </div>
 
-            <div>
-                <label>Grade/Class</label>
-                <select name="grade" required>
-                    <option value="">Select Grade</option>
-                    {% for g in grades %}
-                    <option {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            {% if session.role|lower == "teacher" %}
+
+<div>
+    <label>Assigned Grade</label>
+    <input type="text"
+           value="{{ selected_grade }}"
+           readonly>
+
+    <input type="hidden"
+           name="grade"
+           value="{{ selected_grade }}">
+</div>
+
+{% else %}
+
+<div>
+    <label>Grade/Class</label>
+    <select name="grade" required>
+        <option value="">Select Grade</option>
+        {% for g in grades %}
+        <option {% if selected_grade == g %}selected{% endif %}>
+            {{ g }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+
+{% endif %}
         </div>
 
         <button class="btn">Analyze</button>
