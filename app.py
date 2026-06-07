@@ -396,6 +396,20 @@ def init_database():
         else:
             user.school_id = user.school_id or 1
 
+        bustani = School.query.filter(
+        School.school_name.ilike("%Bustani%")
+    ).first()
+
+    if bustani:
+        bustani.logo = "bustani_logo.png"
+
+    umar = School.query.filter(
+        School.school_name.ilike("%Umar%")
+    ).first()
+
+    if umar:
+        umar.logo = "logo.png"
+
     db.session.commit()
 def login_required():
     if "username" not in session:
