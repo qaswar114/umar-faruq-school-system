@@ -1870,6 +1870,7 @@ def payments():
 
         if pupil and pupil.guardian_phone:
             sms = SMSMessage(
+                school_id=current_school_id(),
                 recipient_name=pupil.guardian_name,
                 phone=pupil.guardian_phone,
                 message=(
@@ -2433,6 +2434,7 @@ def fee_reminders():
                 )
 
                 sms = SMSMessage(
+                    school_id=current_school_id(),
                     recipient_name=p.guardian_name,
                     phone=p.guardian_phone,
                     message=message,
@@ -2482,11 +2484,14 @@ def bulk_sms():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     selected_grade = request.args.get("grade", "")
     pupils = []
 
     if selected_grade:
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=selected_grade,
             status="Active"
         ).order_by(Pupil.full_name).all()
@@ -2497,6 +2502,7 @@ def bulk_sms():
         category = request.form.get("category", "General")
 
         pupils = Pupil.query.filter_by(
+            school_id=school_id,
             grade=grade,
             status="Active"
         ).all()
@@ -2506,6 +2512,7 @@ def bulk_sms():
         for p in pupils:
             if p.guardian_phone:
                 sms = SMSMessage(
+                    school_id=school_id,
                     recipient_name=p.guardian_name,
                     phone=p.guardian_phone,
                     message=message,
@@ -2532,7 +2539,6 @@ def bulk_sms():
         selected_grade=selected_grade,
         pupils=pupils
     )
-
 @app.route("/sms_messages", methods=["GET", "POST"])
 def sms_messages():
     if not login_required():
@@ -2542,8 +2548,11 @@ def sms_messages():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         sms = SMSMessage(
+            school_id=school_id,
             recipient_name=request.form.get("recipient_name", ""),
             phone=request.form["phone"],
             message=request.form["message"],
@@ -2562,7 +2571,9 @@ def sms_messages():
         flash("SMS message saved as pending.")
         return redirect(url_for("sms_messages"))
 
-    rows = SMSMessage.query.order_by(SMSMessage.created_at.desc()).all()
+    rows = SMSMessage.query.filter_by(
+        school_id=school_id
+    ).order_by(SMSMessage.created_at.desc()).all()
 
     return render_template(
         "sms_messages.html",
@@ -2579,8 +2590,11 @@ def announcements():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         ann = Announcement(
+            school_id=school_id,
             title=request.form["title"],
             message=request.form["message"],
             audience=request.form["audience"],
@@ -2598,7 +2612,9 @@ def announcements():
         flash("Announcement created successfully.")
         return redirect(url_for("announcements"))
 
-    rows = Announcement.query.order_by(
+    rows = Announcement.query.filter_by(
+        school_id=school_id
+    ).order_by(
         Announcement.created_at.desc()
     ).all()
 
@@ -2607,7 +2623,7 @@ def announcements():
         settings=get_settings(),
         rows=rows
     )
-
+    
 @app.route("/staff", methods=["GET", "POST"])
 def staff():
     if not login_required():
@@ -2617,8 +2633,11 @@ def staff():
         flash("Only Admin can manage staff.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         staff_member = Staff(
+            school_id=school_id,
             full_name=request.form["full_name"],
             phone=request.form.get("phone", ""),
             email=request.form.get("email", ""),
@@ -2631,10 +2650,17 @@ def staff():
         db.session.add(staff_member)
         db.session.commit()
 
+        save_audit(
+            f"Added staff member: {staff_member.full_name}",
+            "Staff"
+        )
+
         flash("Staff profile added successfully.")
         return redirect(url_for("staff"))
 
-    rows = Staff.query.order_by(Staff.full_name).all()
+    rows = Staff.query.filter_by(
+        school_id=school_id
+    ).order_by(Staff.full_name).all()
 
     return render_template(
         "staff.html",
@@ -2642,7 +2668,6 @@ def staff():
         rows=rows,
         grades=GRADES
     )
-
 @app.route("/audit_logs")
 def audit_logs():
     if not login_required():
@@ -2671,6 +2696,8 @@ def users():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -2678,6 +2705,7 @@ def users():
         assigned_grade = request.form.get("assigned_grade", "")
 
         new_user = User(
+            school_id=school_id,
             username=username,
             password_hash=generate_password_hash(password),
             role=role,
@@ -2689,13 +2717,15 @@ def users():
 
         save_audit(
             f"Created user account: {username}",
-           "Security"
+            "Security"
         )
 
         flash("User created successfully.")
         return redirect(url_for("users"))
 
-    all_users = User.query.all()
+    all_users = User.query.filter_by(
+        school_id=school_id
+    ).order_by(User.username).all()
 
     return render_template(
         "users.html",
@@ -2703,6 +2733,7 @@ def users():
         users=all_users,
         grades=GRADES
     )
+
 
 @app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
@@ -2713,7 +2744,10 @@ def edit_user(user_id):
         flash("Only Admin can edit users.")
         return redirect(url_for("dashboard"))
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.filter_by(
+        id=user_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
     if request.method == "POST":
         user.role = request.form["role"]
@@ -2721,6 +2755,12 @@ def edit_user(user_id):
         user.is_active = bool(int(request.form["is_active"]))
 
         db.session.commit()
+
+        save_audit(
+            f"Updated user account: {user.username}",
+            "Security"
+        )
+
         flash("User updated successfully.")
         return redirect(url_for("users"))
 
@@ -2731,6 +2771,7 @@ def edit_user(user_id):
         grades=GRADES
     )
 
+
 @app.route("/reset_user_password/<int:user_id>", methods=["POST"])
 def reset_user_password(user_id):
     if not login_required():
@@ -2740,10 +2781,14 @@ def reset_user_password(user_id):
         flash("Only Admin can reset passwords.")
         return redirect(url_for("users"))
 
-    user = User.query.get_or_404(user_id)
-    new_password = request.form["new_password"]
+    user = User.query.filter_by(
+        id=user_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
+    new_password = request.form["new_password"]
     user.password_hash = generate_password_hash(new_password)
+
     db.session.commit()
 
     save_audit(
@@ -2753,7 +2798,8 @@ def reset_user_password(user_id):
 
     flash("Password reset successfully.")
     return redirect(url_for("users"))
-    
+
+
 @app.route("/delete_user/<int:user_id>", methods=["POST"])
 def delete_user(user_id):
     if not login_required():
@@ -2763,24 +2809,40 @@ def delete_user(user_id):
         flash("Only Admin can delete users.")
         return redirect(url_for("dashboard"))
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.filter_by(
+        id=user_id,
+        school_id=current_school_id()
+    ).first_or_404()
 
     if user.username == "admin":
         flash("Main admin cannot be deleted.")
         return redirect(url_for("users"))
 
+    if user.username == session.get("username"):
+        flash("You cannot delete your own account while logged in.")
+        return redirect(url_for("users"))
+
     db.session.delete(user)
     db.session.commit()
 
+    save_audit(
+        f"Deleted user account: {user.username}",
+        "Security"
+    )
+
     flash("User deleted successfully.")
     return redirect(url_for("users"))
+
 
 @app.route("/change-password", methods=["GET", "POST"])
 def change_password():
     if not login_required():
         return redirect(url_for("login"))
 
-    user = User.query.filter_by(username=session["username"]).first()
+    user = User.query.filter_by(
+        username=session["username"],
+        school_id=current_school_id()
+    ).first_or_404()
 
     if request.method == "POST":
         current_password = request.form["current_password"]
@@ -2797,6 +2859,12 @@ def change_password():
 
         user.password_hash = generate_password_hash(new_password)
         db.session.commit()
+
+        save_audit(
+            f"Changed own password: {user.username}",
+            "Security"
+        )
+
         flash("Password changed successfully.")
         return redirect(url_for("dashboard"))
 
