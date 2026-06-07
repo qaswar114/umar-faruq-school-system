@@ -1744,9 +1744,22 @@ def marks():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    is_teacher = session.get("role", "").lower() == "teacher"
 
     selected_exam = request.args.get("exam_id", "")
     selected_grade = request.args.get("grade", "")
+
+    if is_teacher:
+        current_user = User.query.filter_by(
+            username=session.get("username"),
+            school_id=school_id
+        ).first()
+
+        if current_user and current_user.assigned_grade:
+            selected_grade = current_user.assigned_grade
+        else:
+            flash("You have not been assigned to any grade. Contact Admin.")
+            return redirect(url_for("dashboard"))
 
     exams = Exam.query.filter_by(
         school_id=school_id,
@@ -1781,6 +1794,18 @@ def marks():
     if request.method == "POST":
         exam_id = int(request.form["exam_id"])
         grade = request.form["grade"]
+
+        if is_teacher:
+            current_user = User.query.filter_by(
+                username=session.get("username"),
+                school_id=school_id
+            ).first()
+
+            if current_user and current_user.assigned_grade:
+                grade = current_user.assigned_grade
+            else:
+                flash("You have not been assigned to any grade. Contact Admin.")
+                return redirect(url_for("dashboard"))
 
         pupils = Pupil.query.filter_by(
             school_id=school_id,
