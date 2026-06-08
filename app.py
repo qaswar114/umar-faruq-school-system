@@ -2851,6 +2851,9 @@ def fee_reminders():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+    school = get_settings()
+
     year = int(request.args.get("year", current_year()))
     selected_grade = request.args.get("grade", "")
     selected_term = request.args.get("term", "Term 1")
@@ -2859,8 +2862,8 @@ def fee_reminders():
     rows = []
 
     query = Pupil.query.filter_by(
-         school_id=current_school_id(),
-         status="Active"
+        school_id=school_id,
+        status="Active"
     )
 
     if selected_grade:
@@ -2875,43 +2878,67 @@ def fee_reminders():
         if balance > 0:
             rows.append({
                 "pupil": p,
+                "total_due": total_due,
+                "total_paid": total_paid,
+                "discounts": discounts,
                 "balance": balance
             })
 
     if request.method == "POST":
         count = 0
+        skipped = 0
 
         for row in rows:
             p = row["pupil"]
             balance = row["balance"]
 
-            if p.guardian_phone:
-                message = (
-                    f"Dear {p.guardian_name}, your child {p.full_name} "
-                    f"has an outstanding fee balance of KES {balance:,.2f}. "
-                    f"Kindly clear the balance. {get_settings().school_name}"
-                )
+            if not p.guardian_phone:
+                skipped += 1
+                continue
 
-                sms = SMSMessage(
-                    school_id=current_school_id(),
-                    recipient_name=p.guardian_name,
-                    phone=p.guardian_phone,
-                    message=message,
-                    category="Fees",
-                    created_by=session.get("username", "")
-                )
+            duplicate_sms = SMSMessage.query.filter(
+                SMSMessage.school_id == school_id,
+                SMSMessage.phone == p.guardian_phone,
+                SMSMessage.category == "Fees",
+                SMSMessage.status == "Pending",
+                SMSMessage.message.ilike(f"%{p.full_name}%"),
+                SMSMessage.message.ilike(f"%KES {balance:,.2f}%")
+            ).first()
 
-                db.session.add(sms)
-                count += 1
+            if duplicate_sms:
+                skipped += 1
+                continue
+
+            message = (
+                f"{school.school_name}\n\n"
+                f"FEE REMINDER\n\n"
+                f"Dear Parent, {p.full_name} has an outstanding fee balance "
+                f"of KES {balance:,.2f} for {selected_term}, {selected_month} {year}.\n\n"
+                f"Kindly clear the balance or contact the school accounts office.\n\n"
+                f"Thank you."
+            )
+
+            sms = SMSMessage(
+                school_id=school_id,
+                recipient_name=p.guardian_name,
+                phone=p.guardian_phone,
+                message=message,
+                category="Fees",
+                status="Pending",
+                created_by=session.get("username", "")
+            )
+
+            db.session.add(sms)
+            count += 1
 
         db.session.commit()
 
         save_audit(
-            f"Created fee reminder SMS for {count} parents",
+            f"Created fee reminder SMS for {count} parents. Skipped: {skipped}",
             "Communication"
         )
 
-        flash(f"Fee reminder SMS saved for {count} parents.")
+        flash(f"{count} fee reminder SMS saved as pending. {skipped} skipped.")
         return redirect(url_for(
             "fee_reminders",
             year=year,
