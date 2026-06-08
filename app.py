@@ -2892,24 +2892,72 @@ def sms_messages():
     school_id = current_school_id()
 
     if request.method == "POST":
-        sms = SMSMessage(
-            school_id=school_id,
-            recipient_name=request.form.get("recipient_name", ""),
-            phone=request.form["phone"],
-            message=request.form["message"],
-            category=request.form.get("category", "General"),
-            created_by=session.get("username", "")
-        )
+        send_to = request.form.get("send_to", "single")
+        message = request.form["message"]
+        category = request.form.get("category", "General")
+        count = 0
 
-        db.session.add(sms)
+        if send_to == "single":
+            sms = SMSMessage(
+                school_id=school_id,
+                recipient_name=request.form.get("recipient_name", ""),
+                phone=request.form["phone"],
+                message=message,
+                category=category,
+                created_by=session.get("username", "")
+            )
+            db.session.add(sms)
+            count = 1
+
+        elif send_to == "grade":
+            grade = request.form.get("grade")
+
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                grade=grade,
+                status="Active"
+            ).all()
+
+            for p in pupils:
+                if p.guardian_phone:
+                    sms = SMSMessage(
+                        school_id=school_id,
+                        recipient_name=p.guardian_name,
+                        phone=p.guardian_phone,
+                        message=message,
+                        category=category,
+                        created_by=session.get("username", "")
+                    )
+                    db.session.add(sms)
+                    count += 1
+
+        elif send_to == "all":
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active"
+            ).all()
+
+            for p in pupils:
+                if p.guardian_phone:
+                    sms = SMSMessage(
+                        school_id=school_id,
+                        recipient_name=p.guardian_name,
+                        phone=p.guardian_phone,
+                        message=message,
+                        category=category,
+                        created_by=session.get("username", "")
+                    )
+                    db.session.add(sms)
+                    count += 1
+
         db.session.commit()
 
         save_audit(
-            f"Created SMS message for: {sms.recipient_name} ({sms.phone})",
+            f"Created {count} SMS message(s). Category: {category}",
             "Communication"
         )
 
-        flash("SMS message saved as pending.")
+        flash(f"{count} SMS message(s) saved as pending.")
         return redirect(url_for("sms_messages"))
 
     rows = SMSMessage.query.filter_by(
@@ -2919,9 +2967,9 @@ def sms_messages():
     return render_template(
         "sms_messages.html",
         settings=get_settings(),
-        rows=rows
+        rows=rows,
+        grades=GRADES
     )
-
 @app.route("/announcements", methods=["GET", "POST"])
 def announcements():
     if not login_required():
