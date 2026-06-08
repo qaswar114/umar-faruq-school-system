@@ -2,31 +2,47 @@
 {% block content %}
 
 <div class="panel">
-    <h2>SMS Messages</h2>
+    <h2>SMS Communication Centre</h2>
 
     <form method="post">
+
+        <label>Send To</label>
+        <select name="send_to" id="send_to">
+            <option value="single">One Parent</option>
+            <option value="grade">One Grade / Class</option>
+            <option value="all">All Parents</option>
+        </select>
+
         <div class="three">
             <div>
                 <label>Recipient Name</label>
-                <input name="recipient_name" placeholder="e.g. Parent of Ahmed">
+                <input name="recipient_name" placeholder="Required for one parent only">
             </div>
 
             <div>
                 <label>Phone Number</label>
-                <input name="phone" required placeholder="e.g. 07xxxxxxxx">
+                <input name="phone" placeholder="Required for one parent only">
             </div>
 
             <div>
-                <label>Category</label>
-                <select name="category">
-                    <option>General</option>
-                    <option>Fees</option>
-                    <option>Attendance</option>
-                    <option>Announcement</option>
-                    <option>Exam</option>
+                <label>Grade/Class</label>
+                <select name="grade">
+                    <option value="">Select Grade</option>
+                    {% for g in grades %}
+                    <option>{{ g }}</option>
+                    {% endfor %}
                 </select>
             </div>
         </div>
+
+        <label>Category</label>
+        <select name="category">
+            <option>General</option>
+            <option>Fees</option>
+            <option>Attendance</option>
+            <option>Announcement</option>
+            <option>Exam</option>
+        </select>
 
         <label>Message</label>
         <textarea name="message" rows="5" style="width:100%;" required></textarea>
