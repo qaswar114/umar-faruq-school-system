@@ -4,10 +4,44 @@
 <div class="panel">
     <h2>SMS Communication Centre</h2>
 
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Pending SMS</h3>
+            <div class="number">{{ pending_count }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Sent SMS</h3>
+            <div class="number">{{ sent_count }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Attendance Alerts</h3>
+            <div class="number">{{ attendance_alert_count }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Failed SMS</h3>
+            <div class="number">{{ failed_count }}</div>
+        </div>
+    </div>
+
+    <br>
+
     <form method="post">
+        <input type="hidden" name="action" value="send_pending">
+        <button class="btn green">Send Pending SMS</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Create New SMS</h3>
+
+    <form method="post">
+        <input type="hidden" name="action" value="create_sms">
 
         <label>Send To</label>
-        <select name="send_to" id="send_to">
+        <select name="send_to">
             <option value="single">One Parent</option>
             <option value="grade">One Grade / Class</option>
             <option value="all">All Parents</option>
@@ -39,7 +73,7 @@
         <select name="category">
             <option>General</option>
             <option>Fees</option>
-            <option>Attendance</option>
+            <option>Attendance Alert</option>
             <option>Announcement</option>
             <option>Exam</option>
         </select>
@@ -48,12 +82,43 @@
         <textarea name="message" rows="5" style="width:100%;" required></textarea>
 
         <br><br>
-        <button class="btn">Save SMS</button>
+        <button class="btn">Save SMS as Pending</button>
     </form>
 </div>
 
 <div class="panel">
-    <h3>Saved SMS Messages</h3>
+    <h3>SMS History</h3>
+
+    <form method="get">
+        <div class="two">
+            <div>
+                <label>Status</label>
+                <select name="status">
+                    <option value="">All</option>
+                    <option value="Pending" {% if selected_status == "Pending" %}selected{% endif %}>Pending</option>
+                    <option value="Sent" {% if selected_status == "Sent" %}selected{% endif %}>Sent</option>
+                    <option value="Failed" {% if selected_status == "Failed" %}selected{% endif %}>Failed</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Category</label>
+                <select name="category">
+                    <option value="">All</option>
+                    <option value="General" {% if selected_category == "General" %}selected{% endif %}>General</option>
+                    <option value="Fees" {% if selected_category == "Fees" %}selected{% endif %}>Fees</option>
+                    <option value="Attendance Alert" {% if selected_category == "Attendance Alert" %}selected{% endif %}>Attendance Alert</option>
+                    <option value="Announcement" {% if selected_category == "Announcement" %}selected{% endif %}>Announcement</option>
+                    <option value="Exam" {% if selected_category == "Exam" %}selected{% endif %}>Exam</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn">Filter</button>
+        <a href="{{ url_for('sms_messages') }}" class="btn" style="background:#6c757d;">Reset</a>
+    </form>
+
+    <br>
 
     <table>
         <tr>
@@ -78,7 +143,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="7">No SMS messages saved yet.</td>
+            <td colspan="7">No SMS messages found.</td>
         </tr>
         {% endfor %}
     </table>
