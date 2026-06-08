@@ -689,7 +689,6 @@ def dashboard():
     if session.get("role", "").lower() == "teacher":
         school_id = current_school_id()
         assigned_grade = session.get("assigned_grade", "")
-
         today = date.today()
 
         pupils_count = Pupil.query.filter_by(
@@ -717,7 +716,9 @@ def dashboard():
         announcements = Announcement.query.filter_by(
             school_id=school_id,
             status="Active"
-        ).order_by(Announcement.created_at.desc()).limit(5).all()
+        ).order_by(
+            Announcement.created_at.desc()
+        ).limit(5).all()
 
         return render_template(
             "teacher_dashboard.html",
@@ -732,8 +733,9 @@ def dashboard():
         )
 
     school_id = current_school_id()
-    current_month = date.today().month
-    current_year_num = date.today().year
+    today = date.today()
+    current_month = today.month
+    current_year_num = today.year
 
     payments_query = Payment.query.filter_by(school_id=school_id)
     pupils_query = Pupil.query.filter_by(school_id=school_id)
@@ -747,7 +749,7 @@ def dashboard():
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
         for p in Payment.query.filter_by(
             school_id=school_id,
-            payment_date=date.today()
+            payment_date=today
         ).all()
     )
 
@@ -764,10 +766,12 @@ def dashboard():
     defaulters = 0
     outstanding = 0
 
-    for pupil in Pupil.query.filter_by(
+    active_pupils = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).all():
+    ).all()
+
+    for pupil in active_pupils:
         bal = (
             year_due(pupil, current_year_num)
             - paid_year(pupil.id, current_year_num)
@@ -777,6 +781,55 @@ def dashboard():
         if bal > 0:
             defaulters += 1
             outstanding += bal
+
+    today_attendance = Attendance.query.filter_by(
+        school_id=school_id,
+        attendance_date=today
+    ).all()
+
+    present_today = sum(1 for r in today_attendance if r.status == "Present")
+    absent_today = sum(1 for r in today_attendance if r.status == "Absent")
+    late_today = sum(1 for r in today_attendance if r.status == "Late")
+
+    pending_sms = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    pending_attendance_alerts = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending",
+        category="Attendance Alert"
+    ).count()
+
+    pending_payment_alerts = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending",
+        category="Payment Confirmation"
+    ).count()
+
+    new_admissions_month = Pupil.query.filter(
+        Pupil.school_id == school_id,
+        Pupil.created_at >= date(current_year_num, current_month, 1)
+    ).count()
+
+    total_staff = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    total_teachers = Staff.query.filter_by(
+        school_id=school_id,
+        role="Teacher",
+        status="Active"
+    ).count()
+
+    upcoming_exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(
+        Exam.academic_year.desc()
+    ).limit(5).all()
 
     return render_template(
         "dashboard.html",
@@ -791,7 +844,17 @@ def dashboard():
         today_collection=money(today_collection),
         month_collection=money(month_collection),
         defaulters=defaulters,
-        outstanding=money(outstanding)
+        outstanding=money(outstanding),
+        present_today=present_today,
+        absent_today=absent_today,
+        late_today=late_today,
+        pending_sms=pending_sms,
+        pending_attendance_alerts=pending_attendance_alerts,
+        pending_payment_alerts=pending_payment_alerts,
+        new_admissions_month=new_admissions_month,
+        total_staff=total_staff,
+        total_teachers=total_teachers,
+        upcoming_exams=upcoming_exams
     )
 @app.route("/schools")
 def schools():
