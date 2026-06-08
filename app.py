@@ -3035,6 +3035,7 @@ def sms_messages():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    today = date.today()
 
     if request.method == "POST":
         action = request.form.get("action", "create_sms")
@@ -3180,12 +3181,43 @@ def sms_messages():
 
     attendance_alert_count = SMSMessage.query.filter_by(
         school_id=school_id,
+        status="Pending",
         category="Attendance Alert"
+    ).count()
+
+    payment_alert_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending",
+        category="Payment Confirmation"
     ).count()
 
     fee_alert_count = SMSMessage.query.filter_by(
         school_id=school_id,
+        status="Pending",
         category="Fees"
+    ).count()
+
+    announcement_alert_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending",
+        category="Announcement"
+    ).count()
+
+    exam_alert_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending",
+        category="Exam"
+    ).count()
+
+    today_created = SMSMessage.query.filter(
+        SMSMessage.school_id == school_id,
+        SMSMessage.created_at >= datetime.combine(today, datetime.min.time())
+    ).count()
+
+    today_sent = SMSMessage.query.filter(
+        SMSMessage.school_id == school_id,
+        SMSMessage.status == "Sent",
+        SMSMessage.created_at >= datetime.combine(today, datetime.min.time())
     ).count()
 
     return render_template(
@@ -3197,7 +3229,12 @@ def sms_messages():
         sent_count=sent_count,
         failed_count=failed_count,
         attendance_alert_count=attendance_alert_count,
+        payment_alert_count=payment_alert_count,
         fee_alert_count=fee_alert_count,
+        announcement_alert_count=announcement_alert_count,
+        exam_alert_count=exam_alert_count,
+        today_created=today_created,
+        today_sent=today_sent,
         selected_status=selected_status,
         selected_category=selected_category
     )
