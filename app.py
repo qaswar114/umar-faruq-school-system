@@ -2181,7 +2181,7 @@ def discounts():
         money=money
     )
     
-@app.route("/payments", methods=["GET","POST"])
+@app.route("/payments", methods=["GET", "POST"])
 def payments():
     if not login_required():
         return redirect(url_for("login"))
@@ -2190,12 +2190,14 @@ def payments():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     if request.method == "POST":
         year = int(request.form["academic_year"])
         term = request.form["term"]
 
         pay = Payment(
-            school_id=current_school_id(),
+            school_id=school_id,
             receipt_no=receipt_no(year, term),
             pupil_id=int(request.form["pupil_id"]),
             academic_year=year,
@@ -2213,7 +2215,11 @@ def payments():
         db.session.add(pay)
         db.session.commit()
 
-        pupil = Pupil.query.get(pay.pupil_id)
+        pupil = Pupil.query.filter_by(
+            id=pay.pupil_id,
+            school_id=school_id
+        ).first()
+
         school = get_settings()
 
         amount_paid = (
@@ -2223,43 +2229,68 @@ def payments():
             pay.admission_paid
         )
 
-        balance = (
-            due_until_month(pupil, pay.academic_year, pay.term, pay.month)
-            - paid_year(pupil.id, pay.academic_year)
-            - discount_year(pupil.id, pay.academic_year)
-        )
+        balance = 0
+
+        if pupil:
+            balance = (
+                due_until_month(pupil, pay.academic_year, pay.term, pay.month)
+                - paid_year(pupil.id, pay.academic_year)
+                - discount_year(pupil.id, pay.academic_year)
+            )
 
         save_audit(
             f"Recorded payment: {pay.receipt_no}",
             "Finance"
         )
 
-        if pupil and pupil.guardian_phone:
-            sms = SMSMessage(
-                school_id=current_school_id(),
-                recipient_name=pupil.guardian_name,
-                phone=pupil.guardian_phone,
-                message=(
-                    f"Dear {pupil.guardian_name}, we have received KES {amount_paid:,.2f} "
-                    f"for {pupil.full_name}. Receipt No: {pay.receipt_no}. "
-                    f"Balance: KES {balance:,.2f}. Thank you. {school.school_name}"
-                ),
-                category="Payment Confirmation",
-                created_by=session.get("username", "")
-            )
+        if pupil and pupil.guardian_phone and amount_paid > 0:
+            duplicate_sms = SMSMessage.query.filter_by(
+                school_id=school_id,
+                category="Payment Confirmation"
+            ).filter(
+                SMSMessage.message.ilike(f"%{pay.receipt_no}%")
+            ).first()
 
-            db.session.add(sms)
-            db.session.commit()
+            if not duplicate_sms:
+                if balance <= 0:
+                    balance_text = (
+                        "Your account is fully cleared. Thank you for supporting the school."
+                    )
+                else:
+                    balance_text = f"Current Balance: KES {balance:,.2f}"
 
-            save_audit(
-                f"Generated payment confirmation SMS: {pay.receipt_no}",
-                "Communication"
-            )
+                sms = SMSMessage(
+                    school_id=school_id,
+                    recipient_name=pupil.guardian_name,
+                    phone=pupil.guardian_phone,
+                    message=(
+                        f"{school.school_name}\n\n"
+                        f"PAYMENT RECEIVED\n\n"
+                        f"Learner: {pupil.full_name}\n"
+                        f"Amount Paid: KES {amount_paid:,.2f}\n"
+                        f"Receipt No: {pay.receipt_no}\n"
+                        f"{balance_text}\n\n"
+                        f"Thank you.\n"
+                        f"Accounts Office."
+                    ),
+                    category="Payment Confirmation",
+                    status="Pending",
+                    created_by=session.get("username", "")
+                )
 
+                db.session.add(sms)
+                db.session.commit()
+
+                save_audit(
+                    f"Generated payment confirmation SMS: {pay.receipt_no}",
+                    "Communication"
+                )
+
+        flash("Payment recorded successfully. Payment confirmation SMS prepared if guardian phone exists.")
         return redirect(url_for("receipt", payment_id=pay.id))
 
     pupils = Pupil.query.filter_by(
-        school_id=current_school_id(),
+        school_id=school_id,
         status="Active"
     ).order_by(Pupil.full_name.asc()).all()
 
@@ -2272,7 +2303,7 @@ def payments():
         year=current_year(),
         today=date.today(),
         payments=Payment.query.filter_by(
-            school_id=current_school_id()
+            school_id=school_id
         ).order_by(Payment.id.desc()).all(),
         money=money
     )
