@@ -11,9 +11,11 @@
         <label>Role</label>
         <select name="role">
             <option value="Admin" {% if user.role=="Admin" %}selected{% endif %}>Admin</option>
-            <option value="Registrar" {% if user.role=="Registrar" %}selected{% endif %}>Registrar</option>
+            <option value="Principal" {% if user.role=="Principal" %}selected{% endif %}>Principaln</option>
             <option value="Bursar" {% if user.role=="Bursar" %}selected{% endif %}>Bursar</option>
+            <option value="Registrar" {% if user.role=="Registrar" %}selected{% endif %}>Registrar</option>
             <option value="Teacher" {% if user.role=="Teacher" %}selected{% endif %}>Teacher</option>
+            <option value="Receptionist" {% if user.role=="Receptionist" %}selected{% endif %}>Receptionist</option>
         </select>
 
         <label>Assigned Grade</label>
