@@ -1336,20 +1336,26 @@ def attendance():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    school_id = session.get("school_id")
+    school_id = current_school_id()
+    is_teacher = session.get("role", "").lower() == "teacher"
 
     selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
 
-    if session.get("role", "").lower() == "teacher":
+    if is_teacher:
         current_user = User.query.filter_by(
             username=session.get("username"),
             school_id=school_id
         ).first()
+
         if current_user and current_user.assigned_grade:
             selected_grade = current_user.assigned_grade
+        else:
+            flash("You have not been assigned to any grade. Contact Admin.")
+            return redirect(url_for("dashboard"))
 
     pupils = []
+
     if selected_grade:
         pupils = Pupil.query.filter_by(
             school_id=school_id,
@@ -1361,13 +1367,17 @@ def attendance():
         selected_grade = request.form["grade"]
         attendance_date = request.form["attendance_date"]
 
-        if session.get("role", "").lower() == "teacher":
+        if is_teacher:
             current_user = User.query.filter_by(
                 username=session.get("username"),
                 school_id=school_id
             ).first()
+
             if current_user and current_user.assigned_grade:
                 selected_grade = current_user.assigned_grade
+            else:
+                flash("You have not been assigned to any grade. Contact Admin.")
+                return redirect(url_for("dashboard"))
 
         pupils = Pupil.query.filter_by(
             school_id=school_id,
@@ -1377,6 +1387,7 @@ def attendance():
 
         absent_count = 0
         attendance_day = datetime.strptime(attendance_date, "%Y-%m-%d").date()
+        school_name = get_settings().school_name
 
         for pupil in pupils:
             status = request.form.get(f"status_{pupil.id}", "Present")
@@ -1386,6 +1397,8 @@ def attendance():
                 pupil_id=pupil.id,
                 attendance_date=attendance_day
             ).first()
+
+            previous_status = existing.status if existing else None
 
             if existing:
                 existing.status = status
@@ -1399,20 +1412,31 @@ def attendance():
                 db.session.add(new_attendance)
 
             if status == "Absent" and pupil.guardian_phone:
-                sms = SMSMessage(
-                    school_id=school_id,
-                    recipient_name=pupil.guardian_name,
-                    phone=pupil.guardian_phone,
-                    message=(
-                        f"Dear {pupil.guardian_name}, your child {pupil.full_name} "
-                        f"has been marked Absent today {attendance_date}. "
-                        f"Kindly contact the school if necessary. {get_settings().school_name}"
-                    ),
-                    category="Attendance Alert",
-                    created_by=session.get("username", "")
-                )
-                db.session.add(sms)
-                absent_count += 1
+                duplicate_sms = SMSMessage.query.filter(
+                    SMSMessage.school_id == school_id,
+                    SMSMessage.phone == pupil.guardian_phone,
+                    SMSMessage.category == "Attendance Alert",
+                    SMSMessage.message.ilike(f"%{pupil.full_name}%"),
+                    SMSMessage.message.ilike(f"%{attendance_date}%")
+                ).first()
+
+                if not duplicate_sms and previous_status != "Absent":
+                    sms = SMSMessage(
+                        school_id=school_id,
+                        recipient_name=pupil.guardian_name,
+                        phone=pupil.guardian_phone,
+                        message=(
+                            f"{school_name}\n\n"
+                            f"Dear Parent, your child {pupil.full_name} has been marked ABSENT "
+                            f"today, {attendance_date}.\n\n"
+                            f"Kindly contact the school if this is incorrect.\n\n"
+                            f"Thank you."
+                        ),
+                        category="Attendance Alert",
+                        created_by=session.get("username", "")
+                    )
+                    db.session.add(sms)
+                    absent_count += 1
 
         db.session.commit()
 
@@ -1421,7 +1445,7 @@ def attendance():
             "Attendance"
         )
 
-        flash(f"Attendance saved successfully. {absent_count} absence alerts saved.")
+        flash(f"Attendance saved successfully. {absent_count} absence alert(s) saved.")
         return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
 
     return render_template(
