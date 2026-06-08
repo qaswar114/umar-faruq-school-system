@@ -2916,18 +2916,49 @@ def sms_messages():
     school_id = current_school_id()
 
     if request.method == "POST":
+        action = request.form.get("action", "create_sms")
+
+        if action == "send_pending":
+            pending_messages = SMSMessage.query.filter_by(
+                school_id=school_id,
+                status="Pending"
+            ).all()
+
+            count = 0
+
+            for sms in pending_messages:
+                sms.status = "Sent"
+                count += 1
+
+            db.session.commit()
+
+            save_audit(
+                f"Marked {count} pending SMS message(s) as sent",
+                "Communication"
+            )
+
+            flash(f"{count} pending SMS message(s) marked as sent.")
+            return redirect(url_for("sms_messages"))
+
         send_to = request.form.get("send_to", "single")
         message = request.form["message"]
         category = request.form.get("category", "General")
         count = 0
 
         if send_to == "single":
+            phone = request.form.get("phone", "").strip()
+
+            if not phone:
+                flash("Phone number is required for one-parent SMS.")
+                return redirect(url_for("sms_messages"))
+
             sms = SMSMessage(
                 school_id=school_id,
                 recipient_name=request.form.get("recipient_name", ""),
-                phone=request.form["phone"],
+                phone=phone,
                 message=message,
                 category=category,
+                status="Pending",
                 created_by=session.get("username", "")
             )
             db.session.add(sms)
@@ -2935,6 +2966,10 @@ def sms_messages():
 
         elif send_to == "grade":
             grade = request.form.get("grade")
+
+            if not grade:
+                flash("Please select a grade/class.")
+                return redirect(url_for("sms_messages"))
 
             pupils = Pupil.query.filter_by(
                 school_id=school_id,
@@ -2950,6 +2985,7 @@ def sms_messages():
                         phone=p.guardian_phone,
                         message=message,
                         category=category,
+                        status="Pending",
                         created_by=session.get("username", "")
                     )
                     db.session.add(sms)
@@ -2969,6 +3005,7 @@ def sms_messages():
                         phone=p.guardian_phone,
                         message=message,
                         category=category,
+                        status="Pending",
                         created_by=session.get("username", "")
                     )
                     db.session.add(sms)
@@ -2984,15 +3021,64 @@ def sms_messages():
         flash(f"{count} SMS message(s) saved as pending.")
         return redirect(url_for("sms_messages"))
 
-    rows = SMSMessage.query.filter_by(
+    selected_status = request.args.get("status", "")
+    selected_category = request.args.get("category", "")
+
+    query = SMSMessage.query.filter_by(
         school_id=school_id
-    ).order_by(SMSMessage.created_at.desc()).all()
+    )
+
+    if selected_status:
+        query = query.filter(
+            SMSMessage.status == selected_status
+        )
+
+    if selected_category:
+        query = query.filter(
+            SMSMessage.category == selected_category
+        )
+
+    rows = query.order_by(
+        SMSMessage.created_at.desc()
+    ).all()
+
+    pending_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    sent_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    failed_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
+
+    attendance_alert_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        category="Attendance Alert"
+    ).count()
+
+    fee_alert_count = SMSMessage.query.filter_by(
+        school_id=school_id,
+        category="Fees"
+    ).count()
 
     return render_template(
         "sms_messages.html",
         settings=get_settings(),
         rows=rows,
-        grades=GRADES
+        grades=GRADES,
+        pending_count=pending_count,
+        sent_count=sent_count,
+        failed_count=failed_count,
+        attendance_alert_count=attendance_alert_count,
+        fee_alert_count=fee_alert_count,
+        selected_status=selected_status,
+        selected_category=selected_category
     )
 @app.route("/announcements", methods=["GET", "POST"])
 def announcements():
