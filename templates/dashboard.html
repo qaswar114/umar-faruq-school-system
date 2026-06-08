@@ -1,39 +1,25 @@
 {% extends "base.html" %}
-
 {% block content %}
+
 <div class="panel">
-    <h1>Dashboard</h1>
+    <h1>Smart Dashboard</h1>
 
-{% if session.get("school_name") %}
-<div class="notice">
-    <b>Current School:</b> {{ session.get("school_name") }}
-</div>
-<br>
-{% endif %}
-
-    {% if session.role|lower == 'teacher' %}
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>My Grade</h3>
-            <div class="number">{{ session.get('assigned_grade', 'Not Assigned') }}</div>
-        </div>
-
-        <div class="card">
-            <h3>My Pupils</h3>
-            <div class="number">{{ total_pupils }}</div>
-        </div>
+    {% if session.get("school_name") %}
+    <div class="notice">
+        <b>Current School:</b> {{ session.get("school_name") }}
     </div>
+    {% endif %}
 
-    {% else %}
+    <h3>Finance Overview</h3>
     <div class="dashboard-grid">
         <div class="card">
-            <h3>Total Pupils</h3>
-            <div class="number">{{ total_pupils }}</div>
+            <h3>Today's Collection</h3>
+            <div class="number">{{ today_collection }}</div>
         </div>
 
         <div class="card">
-            <h3>Bus Pupils</h3>
-            <div class="number">{{ bus_pupils }}</div>
+            <h3>This Month</h3>
+            <div class="number">{{ month_collection }}</div>
         </div>
 
         <div class="card">
@@ -42,22 +28,130 @@
         </div>
 
         <div class="card">
-            <h3>Receipts</h3>
-            <div class="number">{{ receipts }}</div>
+            <h3>Outstanding Fees</h3>
+            <div class="number">{{ outstanding }}</div>
         </div>
     </div>
-    {% endif %}
 
-   <div class="action-row">
-    {% if session.role|lower in ['admin', 'registrar'] %}
-    <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
-    {% endif %}
+    <h3>School Activity Today</h3>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Total Pupils</h3>
+            <div class="number">{{ total_pupils }}</div>
+        </div>
 
-    {% if session.role|lower in ['admin', 'bursar'] %}
-    <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
-    <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
+        <div class="card">
+            <h3>Present Today</h3>
+            <div class="number">{{ present_today }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Absent Today</h3>
+            <div class="number">{{ absent_today }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Late Today</h3>
+            <div class="number">{{ late_today }}</div>
+        </div>
+    </div>
+
+    <h3>Communication Centre</h3>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Pending SMS</h3>
+            <div class="number">{{ pending_sms }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Attendance Alerts</h3>
+            <div class="number">{{ pending_attendance_alerts }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Payment Alerts</h3>
+            <div class="number">{{ pending_payment_alerts }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Defaulters</h3>
+            <div class="number">{{ defaulters }}</div>
+        </div>
+    </div>
+
+    <h3>Growth & Staff</h3>
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>New Admissions</h3>
+            <div class="number">{{ new_admissions_month }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Bus Pupils</h3>
+            <div class="number">{{ bus_pupils }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Teachers</h3>
+            <div class="number">{{ total_teachers }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Total Staff</h3>
+            <div class="number">{{ total_staff }}</div>
+        </div>
+    </div>
+
+    <br>
+
+    <div class="action-row">
+        {% if session.role|lower in ['admin', 'registrar'] %}
+        <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
+        {% endif %}
+
+        {% if session.role|lower in ['admin', 'bursar'] %}
+        <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
+        <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
+        <a class="btn" href="{{ url_for('defaulters_report') }}">Defaulters Report</a>
+        {% endif %}
+
+        {% if session.role|lower in ['admin', 'teacher', 'receptionist', 'bursar'] %}
+        <a class="btn" href="{{ url_for('sms_messages') }}">Communication Centre</a>
+        {% endif %}
+
+        {% if session.role|lower in ['admin', 'registrar', 'teacher'] %}
+        <a class="btn" href="{{ url_for('attendance') }}">Attendance</a>
+        {% endif %}
+    </div>
+
+    <br><br>
+
+    <h3>Upcoming / Active Exams</h3>
+
+    {% if upcoming_exams %}
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Exam</th>
+            <th>Grade</th>
+            <th>Term</th>
+            <th>Year</th>
+        </tr>
+
+        {% for exam in upcoming_exams %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ exam.exam_name }}</td>
+            <td>{{ exam.grade }}</td>
+            <td>{{ exam.term }}</td>
+            <td>{{ exam.academic_year }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="notice">No active exams set.</div>
     {% endif %}
-   </div>
 
 </div>
+
 {% endblock %}
