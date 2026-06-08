@@ -856,6 +856,130 @@ def dashboard():
         total_teachers=total_teachers,
         upcoming_exams=upcoming_exams
     )
+
+@app.route("/business_dashboard")
+def business_dashboard():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    today = date.today()
+    year = today.year
+    month = today.month
+
+    active_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).all()
+
+    total_pupils = len(active_pupils)
+
+    total_expected = 0
+    total_paid = 0
+    total_discount = 0
+    outstanding = 0
+    defaulters = 0
+
+    grade_balances = {}
+
+    for pupil in active_pupils:
+        due = year_due(pupil, year)
+        paid = paid_year(pupil.id, year)
+        discount = discount_year(pupil.id, year)
+        balance = due - paid - discount
+
+        total_expected += due
+        total_paid += paid
+        total_discount += discount
+
+        if balance > 0:
+            outstanding += balance
+            defaulters += 1
+            grade_balances[pupil.grade] = grade_balances.get(pupil.grade, 0) + balance
+
+    collection_rate = 0
+    if total_expected > 0:
+        collection_rate = (total_paid / total_expected) * 100
+
+    top_defaulter_grade = "-"
+    top_defaulter_amount = 0
+
+    if grade_balances:
+        top_defaulter_grade = max(grade_balances, key=grade_balances.get)
+        top_defaulter_amount = grade_balances[top_defaulter_grade]
+
+    today_collection = sum(
+        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+        for p in Payment.query.filter_by(
+            school_id=school_id,
+            payment_date=today
+        ).all()
+    )
+
+    month_collection = 0
+    for p in Payment.query.filter_by(school_id=school_id).all():
+        if p.payment_date.month == month and p.payment_date.year == year:
+            month_collection += (
+                p.tuition_paid +
+                p.bus_paid +
+                p.exam_paid +
+                p.admission_paid
+            )
+
+    attendance_today = Attendance.query.filter_by(
+        school_id=school_id,
+        attendance_date=today
+    ).all()
+
+    present_today = sum(1 for a in attendance_today if a.status == "Present")
+    absent_today = sum(1 for a in attendance_today if a.status == "Absent")
+    late_today = sum(1 for a in attendance_today if a.status == "Late")
+
+    attendance_rate = 0
+    if total_pupils > 0:
+        attendance_rate = (present_today / total_pupils) * 100
+
+    pending_sms = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    sent_sms = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    new_admissions = Pupil.query.filter(
+        Pupil.school_id == school_id,
+        Pupil.created_at >= date(year, month, 1)
+    ).count()
+
+    return render_template(
+        "business_dashboard.html",
+        settings=get_settings(),
+        total_pupils=total_pupils,
+        total_expected=money(total_expected),
+        total_paid=money(total_paid),
+        total_discount=money(total_discount),
+        outstanding=money(outstanding),
+        defaulters=defaulters,
+        collection_rate=round(collection_rate, 1),
+        top_defaulter_grade=top_defaulter_grade,
+        top_defaulter_amount=money(top_defaulter_amount),
+        today_collection=money(today_collection),
+        month_collection=money(month_collection),
+        present_today=present_today,
+        absent_today=absent_today,
+        late_today=late_today,
+        attendance_rate=round(attendance_rate, 1),
+        pending_sms=pending_sms,
+        sent_sms=sent_sms,
+        new_admissions=new_admissions
+    )
 @app.route("/schools")
 def schools():
 
