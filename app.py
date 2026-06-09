@@ -3523,9 +3523,10 @@ def sms_wallet():
         return redirect(url_for("login"))
 
     if not role_allowed("admin"):
-        flash("Only Admin can manage SMS wallet.")
+        flash("Only Admin can manage SMS Centre.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
     wallet = get_sms_wallet()
 
     if request.method == "POST":
@@ -3543,17 +3544,35 @@ def sms_wallet():
         db.session.commit()
 
         save_audit(
-            f"Loaded {amount} SMS credits. New balance: {wallet.sms_balance}",
+            f"Purchased {amount} SMS. New balance: {wallet.sms_balance}",
             "Communication"
         )
 
-        flash(f"{amount} SMS credits loaded successfully.")
+        flash(f"{amount} SMS purchased successfully.")
         return redirect(url_for("sms_wallet"))
+
+    pending_sms = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    sent_sms = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    failed_sms = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
 
     return render_template(
         "sms_wallet.html",
         settings=get_settings(),
-        wallet=wallet
+        wallet=wallet,
+        pending_sms=pending_sms,
+        sent_sms=sent_sms,
+        failed_sms=failed_sms
     )
     
 @app.route("/staff", methods=["GET", "POST"])
