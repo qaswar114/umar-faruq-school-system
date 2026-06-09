@@ -3410,23 +3410,25 @@ def staff():
     if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role", "").lower() != "admin":
-        flash("Only Admin can manage staff.")
+    if session.get("role", "").lower() not in ["admin", "principal"]:
+        flash("Only Admin or Principal can manage staff.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+
     subjects = Subject.query.filter_by(
-    school_id=school_id,
-    status="Active"
-).order_by(
-    Subject.grade,
-    Subject.subject_name
-).all()
+        school_id=school_id,
+        status="Active"
+    ).order_by(
+        Subject.grade,
+        Subject.subject_name
+    ).all()
 
     if request.method == "POST":
         selected_subjects = ",".join(
-    request.form.getlist("assigned_subjects")
-    )
+            request.form.getlist("assigned_subjects")
+        )
+
         role = request.form["role"]
         assigned_grade = request.form.get("assigned_grade", "")
 
@@ -3484,12 +3486,12 @@ def staff():
     ).order_by(Staff.full_name).all()
 
     return render_template(
-       "staff.html",
-       settings=get_settings(),
-       rows=rows,
-       grades=GRADES,
-       subjects=subjects
-)
+        "staff.html",
+        settings=get_settings(),
+        rows=rows,
+        grades=GRADES,
+        subjects=subjects
+    )
     
 @app.route("/audit_logs")
 def audit_logs():
