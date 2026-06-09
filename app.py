@@ -52,6 +52,30 @@ class School(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+class SMSWallet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False,
+        unique=True
+    )
+
+    sms_balance = db.Column(db.Integer, default=0)
+    sms_loaded = db.Column(db.Integer, default=0)
+    sms_used = db.Column(db.Integer, default=0)
+
+    sms_low_alert = db.Column(db.Integer, default=100)
+
+    sms_sender_id = db.Column(db.String(50), default="")
+    sms_enabled = db.Column(db.Boolean, default=True)
+
+    last_loaded = db.Column(db.DateTime)
+    last_loaded_by = db.Column(db.String(100), default="")
+
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -220,9 +244,6 @@ def generate_pdf(html):
 def current_year():
     return datetime.now().year
 
-def current_year():
-    return datetime.now().year
-
 def term_months(term):
     return TERM_MONTHS.get(term, [])
 
@@ -240,8 +261,54 @@ def get_settings():
 
     return s
 
+def get_sms_wallet():
+    school_id = current_school_id()
+
+    wallet = SMSWallet.query.filter_by(
+        school_id=school_id
+    ).first()
+
+    if not wallet:
+        wallet = SMSWallet(
+            school_id=school_id,
+            sms_balance=0,
+            sms_loaded=0,
+            sms_used=0,
+            sms_low_alert=100,
+            sms_enabled=True
+        )
+        db.session.add(wallet)
+        db.session.commit()
+
+    return wallet
+
 def init_database():
     db.create_all()
+
+    # Create SMS wallet for every existing school
+    try:
+        schools = School.query.all()
+
+        for school in schools:
+            existing_wallet = SMSWallet.query.filter_by(
+                school_id=school.id
+            ).first()
+
+            if not existing_wallet:
+                wallet = SMSWallet(
+                    school_id=school.id,
+                    sms_balance=0,
+                    sms_loaded=0,
+                    sms_used=0,
+                    sms_low_alert=100,
+                    sms_enabled=True
+                )
+                db.session.add(wallet)
+
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
 
     if not School.query.first():
         db.session.add(School(
@@ -3431,6 +3498,45 @@ def announcements():
         "announcements.html",
         settings=get_settings(),
         rows=rows
+    )
+
+@app.route("/sms_wallet", methods=["GET", "POST"])
+def sms_wallet():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Only Admin can manage SMS wallet.")
+        return redirect(url_for("dashboard"))
+
+    wallet = get_sms_wallet()
+
+    if request.method == "POST":
+        amount = int(request.form.get("amount") or 0)
+
+        if amount <= 0:
+            flash("Enter a valid SMS amount.")
+            return redirect(url_for("sms_wallet"))
+
+        wallet.sms_balance += amount
+        wallet.sms_loaded += amount
+        wallet.last_loaded = datetime.now()
+        wallet.last_loaded_by = session.get("username", "")
+
+        db.session.commit()
+
+        save_audit(
+            f"Loaded {amount} SMS credits. New balance: {wallet.sms_balance}",
+            "Communication"
+        )
+
+        flash(f"{amount} SMS credits loaded successfully.")
+        return redirect(url_for("sms_wallet"))
+
+    return render_template(
+        "sms_wallet.html",
+        settings=get_settings(),
+        wallet=wallet
     )
     
 @app.route("/staff", methods=["GET", "POST"])
