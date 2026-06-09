@@ -16,17 +16,17 @@
 
         <div class="card">
             <h3>Pending SMS</h3>
-            <div class="number">{{ wallet.sms_loaded }}</div>
+            <div class="number">{{ pending_sms }}</div>
         </div>
 
         <div class="card">
             <h3>Sent SMS</h3>
-            <div class="number">{{ wallet.sms_used }}</div>
+            <div class="number">{{ sent_sms }}</div>
         </div>
 
         <div class="card">
             <h3>Failed SMS</h3>
-            <div class="number">{{ wallet.sms_low_alert }}</div>
+            <div class="number">{{ failed_sms }}</div>
         </div>
 
     </div>
@@ -56,22 +56,32 @@
     <br>
 
     <table>
-        <tr>
-            <th>Last Loaded By</th>
-            <td>{{ wallet.last_loaded_by }}</td>
-        </tr>
+    <tr>
+        <th>SMS Status</th>
+        <td>
+            {% if wallet.sms_enabled %}
+                Active
+            {% else %}
+                Inactive
+            {% endif %}
+        </td>
+    </tr>
 
-        <tr>
-            <th>Last Loaded On</th>
-            <td>{{ wallet.last_loaded }}</td>
-        </tr>
+    <tr>
+        <th>Last SMS Purchase By</th>
+        <td>{{ wallet.last_loaded_by or "-" }}</td>
+    </tr>
 
-        <tr>
-            <th>SMS Enabled</th>
-            <td>{{ wallet.sms_enabled }}</td>
-        </tr>
+    <tr>
+        <th>Last SMS Purchase Date</th>
+        <td>{{ wallet.last_loaded or "-" }}</td>
+    </tr>
 
-    </table>
+    <tr>
+        <th>Platform</th>
+        <td>Umar Faruq SMS Centre</td>
+    </tr>
+</table>
 
 </div>
 
