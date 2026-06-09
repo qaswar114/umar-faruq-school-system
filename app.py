@@ -1247,24 +1247,35 @@ def settings():
 
     return render_template("settings.html", settings=school)
     
-@app.route("/pupils", methods=["GET","POST"])
+@app.route("/pupils", methods=["GET", "POST"])
 def pupils():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("registrar", "receptionist"):
+    current_role = session.get("role", "").lower()
+
+    if current_role not in ["admin", "principal", "registrar", "receptionist"]:
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
+    can_register = current_role in ["admin", "registrar", "receptionist"]
+
     if request.method == "POST":
+        if not can_register:
+            flash("You have view-only access to pupil records.")
+            return redirect(url_for("pupils"))
+
         photo_file = request.files.get("photo")
         photo_filename = ""
 
         if photo_file and photo_file.filename:
             photo_filename = secure_filename(photo_file.filename)
             photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
+
         p = Pupil(
-            school_id=current_school_id(),
+            school_id=school_id,
             admission_no=next_admission_no(),
             full_name=request.form["full_name"],
             gender=request.form["gender"],
@@ -1276,22 +1287,25 @@ def pupils():
             new_admission=request.form["new_admission"],
             uses_bus=request.form["uses_bus"],
             photo=photo_filename
-            
         )
+
         db.session.add(p)
         db.session.commit()
-        
+
         save_audit(
             f"Registered new pupil: {p.full_name} ({p.admission_no})",
             "Students"
         )
-        
+
         flash(f"Pupil registered: {p.admission_no}")
         return redirect(url_for("pupils"))
 
     q = request.args.get("q", "")
     selected_grade = request.args.get("grade", "")
-    query = Pupil.query.filter_by(school_id=current_school_id())
+
+    query = Pupil.query.filter_by(
+        school_id=school_id
+    )
 
     if selected_grade:
         query = query.filter(Pupil.grade == selected_grade)
@@ -1309,7 +1323,8 @@ def pupils():
         grades=GRADES,
         pupils=query.order_by(Pupil.grade, Pupil.full_name).all(),
         q=q,
-        selected_grade=selected_grade
+        selected_grade=selected_grade,
+        can_register=can_register
     )
 
 @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
