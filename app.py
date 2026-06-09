@@ -1663,14 +1663,27 @@ def attendance_report():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("registrar"):
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "teacher"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    current_role = session.get("role", "").lower()
 
     selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
+
+    if current_role == "teacher":
+        current_user = User.query.filter_by(
+            username=session.get("username"),
+            school_id=school_id
+        ).first()
+
+        if current_user and current_user.assigned_grade:
+            selected_grade = current_user.assigned_grade
+        else:
+            flash("You have not been assigned to any grade. Contact Admin.")
+            return redirect(url_for("dashboard"))
 
     records = []
 
@@ -3169,7 +3182,7 @@ def sms_messages():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "teacher", "receptionist", "bursar"):
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -3382,7 +3395,7 @@ def announcements():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "teacher", "receptionist"):
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
