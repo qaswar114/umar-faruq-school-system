@@ -2,27 +2,30 @@
 {% block content %}
 
 <div class="panel">
-    <h2>SMS Wallet</h2>
+    <h2>SMS Centre</h2>
+<p>
+    Manage your school's SMS communication services.
+</p>
 
     <div class="dashboard-grid">
 
         <div class="card">
-            <h3>SMS Balance</h3>
+            <h3>My SMS Balance</h3>
             <div class="number">{{ wallet.sms_balance }}</div>
         </div>
 
         <div class="card">
-            <h3>Total Loaded</h3>
+            <h3>Pending SMS</h3>
             <div class="number">{{ wallet.sms_loaded }}</div>
         </div>
 
         <div class="card">
-            <h3>Total Used</h3>
+            <h3>Sent SMS</h3>
             <div class="number">{{ wallet.sms_used }}</div>
         </div>
 
         <div class="card">
-            <h3>Low Alert</h3>
+            <h3>Failed SMS</h3>
             <div class="number">{{ wallet.sms_low_alert }}</div>
         </div>
 
@@ -30,11 +33,11 @@
 
     <br>
 
-    <h3>Load SMS Credits</h3>
+    <h3>Buy SMS</h3>
 
     <form method="post">
 
-        <label>Number of SMS Credits</label>
+        <label>Number of SMS to Purchase</label>
         <input
             type="number"
             name="amount"
@@ -45,7 +48,7 @@
         <br><br>
 
         <button class="btn green">
-            Load SMS Credits
+           Buy SMS
         </button>
 
     </form>
