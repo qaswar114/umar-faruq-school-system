@@ -67,7 +67,8 @@ class SMSWallet(db.Model):
     sms_used = db.Column(db.Integer, default=0)
 
     sms_low_alert = db.Column(db.Integer, default=100)
-
+    sms_username = db.Column(db.String(100), default="")
+    sms_api_key = db.Column(db.String(255), default="")
     sms_sender_id = db.Column(db.String(50), default="")
     sms_enabled = db.Column(db.Boolean, default=True)
 
@@ -370,6 +371,22 @@ def init_database():
     try:
         db.session.execute(
             db.text('ALTER TABLE "user" ADD COLUMN school_id INTEGER DEFAULT 1')
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        db.session.execute(
+            db.text("ALTER TABLE sms_wallet ADD COLUMN sms_username VARCHAR(100) DEFAULT ''")
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        db.session.execute(
+            db.text("ALTER TABLE sms_wallet ADD COLUMN sms_api_key VARCHAR(255) DEFAULT ''")
         )
         db.session.commit()
     except Exception:
