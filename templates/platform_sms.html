@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>SMS Platform</h2>
+    <p>Super Admin SMS stock monitoring.</p>
+
+    {% if low_balance %}
+    <div class="notice">
+        ⚠ Platform SMS balance is below {{ pool.low_alert_level }} SMS.
+        Please top up Africa's Talking.
+    </div>
+    {% endif %}
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Total Schools</h3>
+            <div class="number">{{ total_schools }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Schools Using SMS</h3>
+            <div class="number">{{ schools_using_sms }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Schools Not Using SMS</h3>
+            <div class="number">{{ schools_not_using_sms }}</div>
+        </div>
+
+        <div class="card">
+            <h3>Platform SMS Balance</h3>
+            <div class="number">{{ pool.sms_balance }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Platform SMS Information</h3>
+
+    <table>
+        <tr>
+            <th>Total SMS Loaded</th>
+            <td>{{ pool.sms_loaded }}</td>
+        </tr>
+
+        <tr>
+            <th>Total SMS Sold</th>
+            <td>{{ pool.sms_sold }}</td>
+        </tr>
+
+        <tr>
+            <th>Low Alert Level</th>
+            <td>{{ pool.low_alert_level }}</td>
+        </tr>
+
+        <tr>
+            <th>Last Loaded By</th>
+            <td>{{ pool.last_loaded_by or "-" }}</td>
+        </tr>
+
+        <tr>
+            <th>Last Loaded Date</th>
+            <td>{{ pool.last_loaded or "-" }}</td>
+        </tr>
+    </table>
+</div>
+
+{% endblock %}
