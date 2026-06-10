@@ -105,12 +105,6 @@ class SMSTransaction(db.Model):
         default="Completed"
     )
 
- try:
-        SMSTransaction.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-except Exception:
-        db.session.rollback()
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
