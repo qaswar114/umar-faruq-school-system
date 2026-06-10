@@ -107,25 +107,17 @@ class SMSTransaction(db.Model):
     
 class SMSPurchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-
     school_id = db.Column(db.Integer, default=1)
-
     package_sms = db.Column(db.Integer, nullable=False)
-
     amount = db.Column(db.Float, nullable=False)
-
     requested_by = db.Column(db.String(100), default="")
+    mpesa_phone = db.Column(db.String(20), default="")
+    request_date = db.Column(db.DateTime, default=datetime.now)
+    status = db.Column(db.String(20), default="Pending")
 
-    request_date = db.Column(
-        db.DateTime,
-        default=datetime.now
-    )
-
-    status = db.Column(
-        db.String(20),
-        default="Pending"
-    )
-
+    mpesa_checkout_request_id = db.Column(db.String(100), default="")
+    mpesa_receipt_no = db.Column(db.String(100), default="")
+    paid_at = db.Column(db.DateTime)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -364,6 +356,21 @@ def init_database():
 
     try:
         SMSPurchase.__table__.create(db.engine, checkfirst=True)
+            sms_purchase_columns = [
+        ("mpesa_phone", "VARCHAR(20) DEFAULT ''"),
+        ("mpesa_checkout_request_id", "VARCHAR(100) DEFAULT ''"),
+        ("mpesa_receipt_no", "VARCHAR(100) DEFAULT ''"),
+        ("paid_at", "TIMESTAMP")
+    ]
+
+    for column_name, column_type in sms_purchase_columns:
+        try:
+            db.session.execute(
+                db.text(f"ALTER TABLE sms_purchase ADD COLUMN {column_name} {column_type}")
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -3613,6 +3620,7 @@ def sms_wallet():
 
     if request.method == "POST":
         package_id = int(request.form.get("package_id") or 0)
+        mpesa_phone = request.form.get("mpesa_phone", "").strip()
 
         package = SMSPackage.query.filter_by(
             id=package_id,
@@ -3623,11 +3631,16 @@ def sms_wallet():
             flash("Select a valid SMS package.")
             return redirect(url_for("sms_wallet"))
 
+        if not mpesa_phone:
+            flash("Enter M-Pesa phone number.")
+            return redirect(url_for("sms_wallet"))
+
         purchase = SMSPurchase(
             school_id=school_id,
             package_sms=package.sms_count,
             amount=package.price,
             requested_by=session.get("username", ""),
+            mpesa_phone=mpesa_phone,
             status="Pending"
         )
 
@@ -3635,11 +3648,11 @@ def sms_wallet():
         db.session.commit()
 
         save_audit(
-            f"Created SMS purchase order: {package.sms_count} SMS for KES {package.price:,.2f}",
+            f"Created SMS purchase request: {package.sms_count} SMS for KES {package.price:,.2f}",
             "Communication"
         )
 
-        flash("SMS purchase order created. Payment confirmation will complete the purchase.")
+        flash("SMS purchase request created. M-Pesa payment integration will complete this purchase.")
         return redirect(url_for("sms_wallet"))
 
     pending_sms = SMSMessage.query.filter_by(
