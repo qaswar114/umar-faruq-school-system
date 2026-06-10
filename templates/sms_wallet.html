@@ -3,12 +3,9 @@
 
 <div class="panel">
     <h2>SMS Centre</h2>
-<p>
-    Manage your school's SMS communication services.
-</p>
+    <p>Manage your school's SMS communication services.</p>
 
     <div class="dashboard-grid">
-
         <div class="card">
             <h3>My SMS Balance</h3>
             <div class="number">{{ wallet.sms_balance }}</div>
@@ -28,61 +25,50 @@
             <h3>Failed SMS</h3>
             <div class="number">{{ failed_sms }}</div>
         </div>
-
     </div>
+</div>
 
-    <br>
-
+<div class="panel">
     <h3>Buy SMS</h3>
 
     <form method="post">
-
         <label>Number of SMS to Purchase</label>
-        <input
-            type="number"
-            name="amount"
-            min="1"
-            required
-        >
+        <input type="number" name="amount" min="1" required>
 
-        <br><br>
-
-        <button class="btn green">
-           Buy SMS
-        </button>
-
+        <button class="btn green">Buy SMS</button>
     </form>
+</div>
 
-    <br>
+<div class="panel">
+    <h3>SMS Information</h3>
 
     <table>
-    <tr>
-        <th>SMS Status</th>
-        <td>
-            {% if wallet.sms_enabled %}
-                Active
-            {% else %}
-                Inactive
-            {% endif %}
-        </td>
-    </tr>
+        <tr>
+            <th>SMS Status</th>
+            <td>
+                {% if wallet.sms_enabled %}
+                    Active
+                {% else %}
+                    Inactive
+                {% endif %}
+            </td>
+        </tr>
 
-    <tr>
-        <th>Last SMS Purchase By</th>
-        <td>{{ wallet.last_loaded_by or "-" }}</td>
-    </tr>
+        <tr>
+            <th>Last SMS Purchase By</th>
+            <td>{{ wallet.last_loaded_by or "-" }}</td>
+        </tr>
 
-    <tr>
-        <th>Last SMS Purchase Date</th>
-        <td>{{ wallet.last_loaded or "-" }}</td>
-    </tr>
+        <tr>
+            <th>Last SMS Purchase Date</th>
+            <td>{{ wallet.last_loaded or "-" }}</td>
+        </tr>
 
-    <tr>
-        <th>Platform</th>
-        <td>Umar Faruq SMS Centre</td>
-    </tr>
-</table>
-
+        <tr>
+            <th>Platform</th>
+            <td>Umar Faruq SMS Centre</td>
+        </tr>
+    </table>
 </div>
 
 {% endblock %}
