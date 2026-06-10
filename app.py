@@ -77,6 +77,13 @@ class SMSWallet(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+class SMSPackage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sms_count = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default="Active")
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -285,6 +292,27 @@ def get_sms_wallet():
 
 def init_database():
     db.create_all()
+
+    try:
+        SMSPackage.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        if SMSPackage.query.count() == 0:
+            packages = [
+                SMSPackage(sms_count=100, price=120),
+                SMSPackage(sms_count=500, price=550),
+                SMSPackage(sms_count=1000, price=1000),
+                SMSPackage(sms_count=5000, price=4500)
+            ]
+
+            db.session.add_all(packages)
+            db.session.commit()
+
+    except Exception:
+        db.session.rollback()
 
     # Create SMS wallet for every existing school
     try:
@@ -3530,25 +3558,30 @@ def sms_wallet():
     wallet = get_sms_wallet()
 
     if request.method == "POST":
-        amount = int(request.form.get("amount") or 0)
+        package_id = int(request.form.get("package_id") or 0)
 
-        if amount <= 0:
-            flash("Enter a valid SMS amount.")
+        package = SMSPackage.query.filter_by(
+            id=package_id,
+            status="Active"
+        ).first()
+
+        if not package:
+            flash("Select a valid SMS package.")
             return redirect(url_for("sms_wallet"))
 
-        wallet.sms_balance += amount
-        wallet.sms_loaded += amount
+        wallet.sms_balance += package.sms_count
+        wallet.sms_loaded += package.sms_count
         wallet.last_loaded = datetime.now()
         wallet.last_loaded_by = session.get("username", "")
 
         db.session.commit()
 
         save_audit(
-            f"Purchased {amount} SMS. New balance: {wallet.sms_balance}",
+            f"Purchased SMS package: {package.sms_count} SMS for KES {package.price:,.2f}",
             "Communication"
         )
 
-        flash(f"{amount} SMS purchased successfully.")
+        flash(f"{package.sms_count} SMS purchased successfully.")
         return redirect(url_for("sms_wallet"))
 
     pending_sms = SMSMessage.query.filter_by(
@@ -3566,13 +3599,18 @@ def sms_wallet():
         status="Failed"
     ).count()
 
+    packages = SMSPackage.query.filter_by(
+        status="Active"
+    ).order_by(SMSPackage.sms_count).all()
+
     return render_template(
         "sms_wallet.html",
         settings=get_settings(),
         wallet=wallet,
         pending_sms=pending_sms,
         sent_sms=sent_sms,
-        failed_sms=failed_sms
+        failed_sms=failed_sms,
+        packages=packages
     )
     
 @app.route("/staff", methods=["GET", "POST"])
