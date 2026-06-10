@@ -104,6 +104,27 @@ class SMSTransaction(db.Model):
         db.String(20),
         default="Completed"
     )
+    
+class SMSPurchase(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, default=1)
+
+    package_sms = db.Column(db.Integer, nullable=False)
+
+    amount = db.Column(db.Float, nullable=False)
+
+    requested_by = db.Column(db.String(100), default="")
+
+    request_date = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+
+    status = db.Column(
+        db.String(20),
+        default="Pending"
+    )
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -332,6 +353,18 @@ def init_database():
             db.session.add_all(packages)
             db.session.commit()
 
+    except Exception:
+        db.session.rollback()
+
+    try:
+        SMSTransaction.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        SMSPurchase.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
     except Exception:
         db.session.rollback()
 
@@ -3590,28 +3623,23 @@ def sms_wallet():
             flash("Select a valid SMS package.")
             return redirect(url_for("sms_wallet"))
 
-        wallet.sms_balance += package.sms_count
-        wallet.sms_loaded += package.sms_count
-        wallet.last_loaded = datetime.now()
-        wallet.last_loaded_by = session.get("username", "")
-
-        transaction = SMSTransaction(
+        purchase = SMSPurchase(
             school_id=school_id,
-            sms_count=package.sms_count,
+            package_sms=package.sms_count,
             amount=package.price,
-            purchased_by=session.get("username", ""),
-            status="Completed"
+            requested_by=session.get("username", ""),
+            status="Pending"
         )
 
-        db.session.add(transaction)
+        db.session.add(purchase)
         db.session.commit()
 
         save_audit(
-            f"Purchased SMS package: {package.sms_count} SMS for KES {package.price:,.2f}",
+            f"Created SMS purchase order: {package.sms_count} SMS for KES {package.price:,.2f}",
             "Communication"
         )
 
-        flash(f"{package.sms_count} SMS purchased successfully.")
+        flash("SMS purchase order created. Payment confirmation will complete the purchase.")
         return redirect(url_for("sms_wallet"))
 
     pending_sms = SMSMessage.query.filter_by(
@@ -3639,6 +3667,12 @@ def sms_wallet():
         SMSTransaction.purchase_date.desc()
     ).limit(10).all()
 
+    purchases = SMSPurchase.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        SMSPurchase.request_date.desc()
+    ).limit(10).all()
+
     return render_template(
         "sms_wallet.html",
         settings=get_settings(),
@@ -3648,6 +3682,7 @@ def sms_wallet():
         failed_sms=failed_sms,
         packages=packages,
         transactions=transactions,
+        purchases=purchases,
         money=money
     )
     
