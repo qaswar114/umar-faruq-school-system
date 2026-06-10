@@ -84,6 +84,33 @@ class SMSPackage(db.Model):
     status = db.Column(db.String(20), default="Active")
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+class SMSTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, default=1)
+
+    sms_count = db.Column(db.Integer, nullable=False)
+
+    amount = db.Column(db.Float, nullable=False)
+
+    purchased_by = db.Column(db.String(100), default="")
+
+    purchase_date = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+
+    status = db.Column(
+        db.String(20),
+        default="Completed"
+    )
+
+ try:
+        SMSTransaction.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+except Exception:
+        db.session.rollback()
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -3574,6 +3601,15 @@ def sms_wallet():
         wallet.last_loaded = datetime.now()
         wallet.last_loaded_by = session.get("username", "")
 
+        transaction = SMSTransaction(
+            school_id=school_id,
+            sms_count=package.sms_count,
+            amount=package.price,
+            purchased_by=session.get("username", ""),
+            status="Completed"
+        )
+
+        db.session.add(transaction)
         db.session.commit()
 
         save_audit(
@@ -3603,6 +3639,12 @@ def sms_wallet():
         status="Active"
     ).order_by(SMSPackage.sms_count).all()
 
+    transactions = SMSTransaction.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        SMSTransaction.purchase_date.desc()
+    ).limit(10).all()
+
     return render_template(
         "sms_wallet.html",
         settings=get_settings(),
@@ -3610,7 +3652,9 @@ def sms_wallet():
         pending_sms=pending_sms,
         sent_sms=sent_sms,
         failed_sms=failed_sms,
-        packages=packages
+        packages=packages,
+        transactions=transactions,
+        money=money
     )
     
 @app.route("/staff", methods=["GET", "POST"])
