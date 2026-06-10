@@ -44,13 +44,40 @@
         </select>
 
         <br><br>
-
-        <button class="btn green">Buy SMS Package</button>
+        <button class="btn green">Create Purchase Order</button>
     </form>
 </div>
 
 <div class="panel">
-    <h3>SMS Purchase History</h3>
+    <h3>Pending SMS Purchase Orders</h3>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>SMS</th>
+            <th>Amount</th>
+            <th>Requested By</th>
+            <th>Status</th>
+        </tr>
+
+        {% for p in purchases %}
+        <tr>
+            <td>{{ p.request_date }}</td>
+            <td>{{ p.package_sms }}</td>
+            <td>{{ money(p.amount) }}</td>
+            <td>{{ p.requested_by }}</td>
+            <td>{{ p.status }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No SMS purchase orders yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="panel">
+    <h3>Completed SMS Purchase History</h3>
 
     <table>
         <tr>
@@ -71,7 +98,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="5">No SMS purchases yet.</td>
+            <td colspan="5">No completed SMS purchases yet.</td>
         </tr>
         {% endfor %}
     </table>
