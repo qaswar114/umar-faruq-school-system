@@ -33,7 +33,6 @@
 
     <form method="post">
         <label>Select SMS Package</label>
-
         <select name="package_id" required>
             <option value="">Choose SMS Package</option>
             {% for p in packages %}
@@ -43,19 +42,23 @@
             {% endfor %}
         </select>
 
+        <label>M-Pesa Phone Number</label>
+        <input name="mpesa_phone" placeholder="07XXXXXXXX" required>
+
         <br><br>
-        <button class="btn green">Create Purchase Order</button>
+        <button class="btn green">Request SMS Purchase</button>
     </form>
 </div>
 
 <div class="panel">
-    <h3>Pending SMS Purchase Orders</h3>
+    <h3>Pending SMS Purchases</h3>
 
     <table>
         <tr>
             <th>Date</th>
             <th>SMS</th>
             <th>Amount</th>
+            <th>M-Pesa Phone</th>
             <th>Requested By</th>
             <th>Status</th>
         </tr>
@@ -65,12 +68,13 @@
             <td>{{ p.request_date }}</td>
             <td>{{ p.package_sms }}</td>
             <td>{{ money(p.amount) }}</td>
+            <td>{{ p.mpesa_phone }}</td>
             <td>{{ p.requested_by }}</td>
             <td>{{ p.status }}</td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="5">No SMS purchase orders yet.</td>
+            <td colspan="6">No SMS purchase requests yet.</td>
         </tr>
         {% endfor %}
     </table>
@@ -110,25 +114,16 @@
     <table>
         <tr>
             <th>SMS Status</th>
-            <td>
-                {% if wallet.sms_enabled %}
-                    Active
-                {% else %}
-                    Inactive
-                {% endif %}
-            </td>
+            <td>{% if wallet.sms_enabled %}Active{% else %}Inactive{% endif %}</td>
         </tr>
-
         <tr>
             <th>Last SMS Purchase By</th>
             <td>{{ wallet.last_loaded_by or "-" }}</td>
         </tr>
-
         <tr>
             <th>Last SMS Purchase Date</th>
             <td>{{ wallet.last_loaded or "-" }}</td>
         </tr>
-
         <tr>
             <th>Platform</th>
             <td>Umar Faruq SMS Centre</td>
