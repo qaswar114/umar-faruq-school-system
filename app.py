@@ -539,7 +539,7 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-        try:
+    try:
         PlatformSMSPool.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
     except Exception:
