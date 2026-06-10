@@ -164,6 +164,7 @@ function updateMonths(termId, monthId){
     
     {% if session.get("role", "").lower() == "super admin" %}
     <a href="{{ url_for('schools') }}">Schools Management</a>
+    <a href="{{ url_for('platform_sms') }}">SMS Platform</a>
     {% endif %}
 
     {% if session.role|lower == 'teacher' %}
