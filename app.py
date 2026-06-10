@@ -354,9 +354,13 @@ def init_database():
     except Exception:
         db.session.rollback()
 
-    try:
+       try:
         SMSPurchase.__table__.create(db.engine, checkfirst=True)
-        sms_purchase_columns = [
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    sms_purchase_columns = [
         ("mpesa_phone", "VARCHAR(20) DEFAULT ''"),
         ("mpesa_checkout_request_id", "VARCHAR(100) DEFAULT ''"),
         ("mpesa_receipt_no", "VARCHAR(100) DEFAULT ''"),
@@ -371,9 +375,6 @@ def init_database():
             db.session.commit()
         except Exception:
             db.session.rollback()
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
 
     # Create SMS wallet for every existing school
     try:
