@@ -356,7 +356,7 @@ def init_database():
 
     try:
         SMSPurchase.__table__.create(db.engine, checkfirst=True)
-            sms_purchase_columns = [
+        sms_purchase_columns = [
         ("mpesa_phone", "VARCHAR(20) DEFAULT ''"),
         ("mpesa_checkout_request_id", "VARCHAR(100) DEFAULT ''"),
         ("mpesa_receipt_no", "VARCHAR(100) DEFAULT ''"),
