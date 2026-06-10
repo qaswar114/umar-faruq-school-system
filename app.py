@@ -6,11 +6,35 @@ from datetime import date, datetime
 from xhtml2pdf import pisa
 from io import BytesIO
 import os
+import base64
+import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
 
 app.config["UPLOAD_FOLDER"] = "static/uploads"
+
+
+# =========================
+# MPESA CONFIGURATION
+# =========================
+
+MPESA_CONSUMER_KEY = ""
+
+MPESA_CONSUMER_SECRET = ""
+
+MPESA_SHORTCODE = ""
+
+MPESA_PASSKEY = ""
+
+MPESA_CALLBACK_URL = ""
+
+MPESA_ENVIRONMENT = "sandbox"
+
+database_url = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///school.db"
+)
 
 database_url = os.environ.get("DATABASE_URL", "sqlite:///school.db")
 if database_url.startswith("postgres://"):
@@ -107,17 +131,71 @@ class SMSTransaction(db.Model):
     
 class SMSPurchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    school_id = db.Column(db.Integer, default=1)
-    package_sms = db.Column(db.Integer, nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-    requested_by = db.Column(db.String(100), default="")
-    mpesa_phone = db.Column(db.String(20), default="")
-    request_date = db.Column(db.DateTime, default=datetime.now)
-    status = db.Column(db.String(20), default="Pending")
 
-    mpesa_checkout_request_id = db.Column(db.String(100), default="")
-    mpesa_receipt_no = db.Column(db.String(100), default="")
-    paid_at = db.Column(db.DateTime)
+    school_id = db.Column(
+        db.Integer,
+        default=1
+    )
+
+    package_sms = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    amount = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    requested_by = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    mpesa_phone = db.Column(
+        db.String(20),
+        default=""
+    )
+
+    mpesa_checkout_request_id = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    mpesa_receipt_no = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    request_date = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+
+    paid_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    status = db.Column(
+        db.String(30),
+        default="Pending"
+    )
+
+class PlatformSMSPool(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    sms_balance = db.Column(db.Integer, default=0)
+    sms_loaded = db.Column(db.Integer, default=0)
+    sms_sold = db.Column(db.Integer, default=0)
+
+    low_alert_level = db.Column(db.Integer, default=2000)
+
+    last_loaded = db.Column(db.DateTime)
+    last_loaded_by = db.Column(db.String(100), default="")
+
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -324,6 +402,107 @@ def get_sms_wallet():
 
     return wallet
 
+def get_platform_sms_pool():
+    pool = PlatformSMSPool.query.first()
+
+    if not pool:
+        pool = PlatformSMSPool(
+            sms_balance=0,
+            sms_loaded=0,
+            sms_sold=0,
+            low_alert_level=2000,
+            last_loaded_by=""
+        )
+
+        db.session.add(pool)
+        db.session.commit()
+
+    return pool
+
+def mpesa_base_url():
+    if MPESA_ENVIRONMENT == "production":
+        return "https://api.safaricom.co.ke"
+    return "https://sandbox.safaricom.co.ke"
+
+
+def get_mpesa_access_token():
+    url = mpesa_base_url() + "/oauth/v1/generate?grant_type=client_credentials"
+
+    response = requests.get(
+        url,
+        auth=(MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET),
+        timeout=30
+    )
+
+    data = response.json()
+    return data.get("access_token")
+
+def generate_mpesa_password(timestamp):
+    data = MPESA_SHORTCODE + MPESA_PASSKEY + timestamp
+    encoded = base64.b64encode(data.encode())
+    return encoded.decode("utf-8")
+
+def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
+    access_token = get_mpesa_access_token()
+
+    if not access_token:
+        return {
+            "success": False,
+            "message": "Unable to get M-Pesa access token."
+        }
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    password = generate_mpesa_password(timestamp)
+
+    url = mpesa_base_url() + "/mpesa/stkpush/v1/processrequest"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "BusinessShortCode": MPESA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": int(amount),
+        "PartyA": phone,
+        "PartyB": MPESA_SHORTCODE,
+        "PhoneNumber": phone,
+        "CallBackURL": MPESA_CALLBACK_URL,
+        "AccountReference": account_reference,
+        "TransactionDesc": transaction_desc
+    }
+
+    try:
+        response = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+
+        data = response.json()
+
+        if data.get("ResponseCode") == "0":
+            return {
+                "success": True,
+                "checkout_request_id": data.get("CheckoutRequestID", ""),
+                "message": data.get("CustomerMessage", "STK Push sent.")
+            }
+
+        return {
+            "success": False,
+            "message": data.get("errorMessage") or data.get("ResponseDescription") or "STK Push failed."
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }
+
 def init_database():
     db.create_all()
 
@@ -357,6 +536,28 @@ def init_database():
     try:
         SMSPurchase.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+        try:
+        PlatformSMSPool.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    try:
+        if PlatformSMSPool.query.count() == 0:
+            pool = PlatformSMSPool(
+                sms_balance=0,
+                sms_loaded=0,
+                sms_sold=0,
+                low_alert_level=2000,
+                last_loaded_by=""
+            )
+
+            db.session.add(pool)
+            db.session.commit()
+
     except Exception:
         db.session.rollback()
 
@@ -3636,6 +3837,9 @@ def sms_wallet():
             flash("Enter M-Pesa phone number.")
             return redirect(url_for("sms_wallet"))
 
+        if mpesa_phone.startswith("0"):
+            mpesa_phone = "254" + mpesa_phone[1:]
+
         purchase = SMSPurchase(
             school_id=school_id,
             package_sms=package.sms_count,
@@ -3648,12 +3852,35 @@ def sms_wallet():
         db.session.add(purchase)
         db.session.commit()
 
-        save_audit(
-            f"Created SMS purchase request: {package.sms_count} SMS for KES {package.price:,.2f}",
-            "Communication"
+        result = send_sms_stk_push(
+            phone=mpesa_phone,
+            amount=package.price,
+            account_reference=f"SMS{purchase.id}",
+            transaction_desc=f"SMS Package {package.sms_count}"
         )
 
-        flash("SMS purchase request created. M-Pesa payment integration will complete this purchase.")
+        if result["success"]:
+            purchase.status = "STK Sent"
+            purchase.mpesa_checkout_request_id = result["checkout_request_id"]
+            db.session.commit()
+
+            save_audit(
+                f"STK Push sent for SMS purchase ID {purchase.id}",
+                "Communication"
+            )
+
+            flash(result["message"])
+        else:
+            purchase.status = "Failed"
+            db.session.commit()
+
+            save_audit(
+                f"STK Push failed for SMS purchase ID {purchase.id}: {result['message']}",
+                "Communication"
+            )
+
+            flash(f"M-Pesa STK Push failed: {result['message']}")
+
         return redirect(url_for("sms_wallet"))
 
     pending_sms = SMSMessage.query.filter_by(
@@ -3698,6 +3925,41 @@ def sms_wallet():
         transactions=transactions,
         purchases=purchases,
         money=money
+    )
+
+@app.route("/platform_sms")
+def platform_sms():
+
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    pool = get_platform_sms_pool()
+
+    total_schools = School.query.count()
+
+    schools_using_sms = SMSWallet.query.filter(
+        SMSWallet.sms_loaded > 0
+    ).count()
+
+    schools_not_using_sms = max(
+        0,
+        total_schools - schools_using_sms
+    )
+
+    low_balance = pool.sms_balance <= pool.low_alert_level
+
+    return render_template(
+        "platform_sms.html",
+        settings=get_settings(),
+        pool=pool,
+        total_schools=total_schools,
+        schools_using_sms=schools_using_sms,
+        schools_not_using_sms=schools_not_using_sms,
+        low_balance=low_balance
     )
     
 @app.route("/staff", methods=["GET", "POST"])
