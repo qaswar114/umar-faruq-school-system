@@ -3971,13 +3971,22 @@ def platform_sms():
         total_schools - schools_using_sms
     )
 
-    low_balance = pool.sms_balance <= pool.low_alert_level
-
     pending_purchases = SMSPurchase.query.filter(
         SMSPurchase.status != "Completed"
     ).order_by(
         SMSPurchase.request_date.desc()
     ).all()
+
+    schools = School.query.order_by(
+        School.school_name.asc()
+    ).all()
+
+    schools_dict = {
+        s.id: s.school_name
+        for s in schools
+    }
+
+    low_balance = pool.sms_balance <= pool.low_alert_level
 
     return render_template(
         "platform_sms.html",
@@ -3988,6 +3997,7 @@ def platform_sms():
         schools_not_using_sms=schools_not_using_sms,
         low_balance=low_balance,
         pending_purchases=pending_purchases,
+        schools_dict=schools_dict,
         money=money
     )
     
@@ -4002,6 +4012,10 @@ def approve_sms_purchase(purchase_id):
 
     purchase = SMSPurchase.query.get_or_404(purchase_id)
     pool = get_platform_sms_pool()
+
+    if purchase.package_sms <= 0:
+        flash("Invalid SMS purchase request.")
+        return redirect(url_for("platform_sms"))
 
     if purchase.status == "Completed":
         flash("This SMS purchase is already completed.")
@@ -4049,7 +4063,9 @@ def approve_sms_purchase(purchase_id):
     db.session.commit()
 
     save_audit(
-        f"Approved SMS purchase ID {purchase.id}: {purchase.package_sms} SMS",
+        f"Approved SMS purchase ID {purchase.id}: "
+        f"{purchase.package_sms} SMS credited to school ID {purchase.school_id}. "
+        f"Platform balance now {pool.sms_balance}.",
         "Communication"
     )
 
