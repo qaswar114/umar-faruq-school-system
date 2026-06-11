@@ -3973,6 +3973,12 @@ def platform_sms():
 
     low_balance = pool.sms_balance <= pool.low_alert_level
 
+    pending_purchases = SMSPurchase.query.filter(
+        SMSPurchase.status != "Completed"
+    ).order_by(
+        SMSPurchase.request_date.desc()
+    ).all()
+
     return render_template(
         "platform_sms.html",
         settings=get_settings(),
@@ -3980,8 +3986,75 @@ def platform_sms():
         total_schools=total_schools,
         schools_using_sms=schools_using_sms,
         schools_not_using_sms=schools_not_using_sms,
-        low_balance=low_balance
+        low_balance=low_balance,
+        pending_purchases=pending_purchases,
+        money=money
     )
+    
+@app.route("/approve_sms_purchase/<int:purchase_id>", methods=["POST"])
+def approve_sms_purchase(purchase_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    purchase = SMSPurchase.query.get_or_404(purchase_id)
+    pool = get_platform_sms_pool()
+
+    if purchase.status == "Completed":
+        flash("This SMS purchase is already completed.")
+        return redirect(url_for("platform_sms"))
+
+    if pool.sms_balance < purchase.package_sms:
+        flash("Not enough SMS in platform pool. Please load more SMS first.")
+        return redirect(url_for("platform_sms"))
+
+    wallet = SMSWallet.query.filter_by(
+        school_id=purchase.school_id
+    ).first()
+
+    if not wallet:
+        wallet = SMSWallet(
+            school_id=purchase.school_id,
+            sms_balance=0,
+            sms_loaded=0,
+            sms_used=0,
+            sms_low_alert=100,
+            sms_enabled=True
+        )
+        db.session.add(wallet)
+
+    pool.sms_balance -= purchase.package_sms
+    pool.sms_sold += purchase.package_sms
+
+    wallet.sms_balance += purchase.package_sms
+    wallet.sms_loaded += purchase.package_sms
+    wallet.last_loaded = datetime.now()
+    wallet.last_loaded_by = session.get("username", "")
+
+    purchase.status = "Completed"
+    purchase.paid_at = datetime.now()
+
+    transaction = SMSTransaction(
+        school_id=purchase.school_id,
+        sms_count=purchase.package_sms,
+        amount=purchase.amount,
+        purchased_by=purchase.requested_by,
+        status="Completed"
+    )
+
+    db.session.add(transaction)
+    db.session.commit()
+
+    save_audit(
+        f"Approved SMS purchase ID {purchase.id}: {purchase.package_sms} SMS",
+        "Communication"
+    )
+
+    flash("SMS purchase approved and credited to school.")
+    return redirect(url_for("platform_sms"))
     
 @app.route("/staff", methods=["GET", "POST"])
 def staff():
