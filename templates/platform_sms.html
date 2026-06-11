@@ -3,7 +3,7 @@
 
 <div class="panel">
     <h2>SMS Platform</h2>
-    <p>Super Admin SMS stock monitoring.</p>
+    <p>Super Admin SMS stock monitoring and school SMS purchase approvals.</p>
 
     {% if low_balance %}
     <div class="notice">
@@ -54,9 +54,10 @@
     <table>
         <tr>
             <th>Date</th>
-            <th>School ID</th>
+            <th>School</th>
             <th>SMS</th>
             <th>Amount</th>
+            <th>M-Pesa Phone</th>
             <th>Requested By</th>
             <th>Status</th>
             <th>Action</th>
@@ -64,22 +65,33 @@
 
         {% for p in pending_purchases %}
         <tr>
-            <td>{{ p.request_date }}</td>
-            <td>{{ p.school_id }}</td>
+            <td>
+                {% if p.request_date %}
+                    {{ p.request_date.strftime("%d-%m-%Y %H:%M") }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>{{ schools_dict.get(p.school_id, "Unknown School") }}</td>
             <td>{{ p.package_sms }}</td>
             <td>{{ money(p.amount) }}</td>
+            <td>{{ p.mpesa_phone or "-" }}</td>
             <td>{{ p.requested_by }}</td>
             <td>{{ p.status }}</td>
+
             <td>
-                <form method="post" action="{{ url_for('approve_sms_purchase', purchase_id=p.id) }}"
-                      onsubmit="return confirm('Approve this SMS purchase and credit the school?');">
+                <form method="post"
+                      action="{{ url_for('approve_sms_purchase', purchase_id=p.id) }}"
+                      onsubmit="return confirm('Approve this SMS purchase and credit the school?');"
+                      style="display:inline;">
                     <button class="btn green">Approve</button>
                 </form>
             </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="7">No pending SMS purchases.</td>
+            <td colspan="8">No pending SMS purchases.</td>
         </tr>
         {% endfor %}
     </table>
@@ -100,6 +112,11 @@
         </tr>
 
         <tr>
+            <th>Platform SMS Balance</th>
+            <td>{{ pool.sms_balance }}</td>
+        </tr>
+
+        <tr>
             <th>Low Alert Level</th>
             <td>{{ pool.low_alert_level }}</td>
         </tr>
@@ -111,7 +128,13 @@
 
         <tr>
             <th>Last Loaded Date</th>
-            <td>{{ pool.last_loaded or "-" }}</td>
+            <td>
+                {% if pool.last_loaded %}
+                    {{ pool.last_loaded.strftime("%d-%m-%Y %H:%M") }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
         </tr>
     </table>
 </div>
