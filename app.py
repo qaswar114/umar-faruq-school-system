@@ -3927,9 +3927,8 @@ def sms_wallet():
         money=money
     )
 
-@app.route("/platform_sms")
+@app.route("/platform_sms", methods=["GET", "POST"])
 def platform_sms():
-
     if not login_required():
         return redirect(url_for("login"))
 
@@ -3938,6 +3937,28 @@ def platform_sms():
         return redirect(url_for("dashboard"))
 
     pool = get_platform_sms_pool()
+
+    if request.method == "POST":
+        amount = int(request.form.get("amount") or 0)
+
+        if amount <= 0:
+            flash("Enter a valid SMS amount.")
+            return redirect(url_for("platform_sms"))
+
+        pool.sms_balance += amount
+        pool.sms_loaded += amount
+        pool.last_loaded = datetime.now()
+        pool.last_loaded_by = session.get("username", "")
+
+        db.session.commit()
+
+        save_audit(
+            f"Loaded {amount} SMS into platform pool. New platform balance: {pool.sms_balance}",
+            "Communication"
+        )
+
+        flash(f"{amount} SMS loaded into platform pool successfully.")
+        return redirect(url_for("platform_sms"))
 
     total_schools = School.query.count()
 
