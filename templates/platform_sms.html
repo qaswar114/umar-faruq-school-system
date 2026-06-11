@@ -49,6 +49,43 @@
 </div>
 
 <div class="panel">
+    <h3>Pending School SMS Purchases</h3>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>School ID</th>
+            <th>SMS</th>
+            <th>Amount</th>
+            <th>Requested By</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+
+        {% for p in pending_purchases %}
+        <tr>
+            <td>{{ p.request_date }}</td>
+            <td>{{ p.school_id }}</td>
+            <td>{{ p.package_sms }}</td>
+            <td>{{ money(p.amount) }}</td>
+            <td>{{ p.requested_by }}</td>
+            <td>{{ p.status }}</td>
+            <td>
+                <form method="post" action="{{ url_for('approve_sms_purchase', purchase_id=p.id) }}"
+                      onsubmit="return confirm('Approve this SMS purchase and credit the school?');">
+                    <button class="btn green">Approve</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No pending SMS purchases.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="panel">
     <h3>Platform SMS Information</h3>
 
     <table>
