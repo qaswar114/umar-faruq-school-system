@@ -506,6 +506,25 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 def init_database():
     db.create_all()
 
+try:
+    SMSPackage.__table__.create(db.engine, checkfirst=True)
+    db.session.commit()
+except Exception:
+    db.session.rollback()
+
+try:
+    if SMSPackage.query.count() == 0:
+        packages = [
+            SMSPackage(sms_count=100, price=120),
+            SMSPackage(sms_count=500, price=550),
+            SMSPackage(sms_count=1000, price=1000),
+            SMSPackage(sms_count=5000, price=4500)
+        ]
+        db.session.add_all(packages)
+        db.session.commit()
+except Exception:
+    db.session.rollback()
+
     try:
         SMSPackage.__table__.create(db.engine, checkfirst=True)
         db.session.commit()
