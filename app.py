@@ -202,6 +202,20 @@ class PlatformSMSPool(db.Model):
     last_loaded_by = db.Column(db.String(100), default="")
 
     created_at = db.Column(db.DateTime, default=datetime.now)
+
+class SMSProcurement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    sms_count = db.Column(db.Integer, nullable=False)
+    amount_paid = db.Column(db.Float, default=0)
+
+    supplier = db.Column(db.String(100), default="Africastalking")
+    reference_no = db.Column(db.String(100), default="")
+
+    purchased_by = db.Column(db.String(100), default="")
+    purchase_date = db.Column(db.DateTime, default=datetime.now)
+
+    status = db.Column(db.String(20), default="Completed")
     
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -571,6 +585,16 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 
 def init_database():
     db.create_all()
+
+        # Create SMS Procurement table
+    try:
+        SMSProcurement.__table__.create(
+            db.engine,
+            checkfirst=True
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     # Default SMS packages
     try:
@@ -4089,25 +4113,41 @@ def platform_sms():
     pool = get_platform_sms_pool()
 
     if request.method == "POST":
-        amount = int(request.form.get("amount") or 0)
+        sms_count = int(request.form.get("sms_count") or 0)
+        amount_paid = float(request.form.get("amount_paid") or 0)
+        supplier = request.form.get("supplier", "Africastalking").strip()
+        reference_no = request.form.get("reference_no", "").strip()
 
-        if amount <= 0:
-            flash("Enter a valid SMS amount.")
+        if sms_count <= 0:
+            flash("Enter a valid SMS quantity.")
             return redirect(url_for("platform_sms"))
 
-        pool.sms_balance += amount
-        pool.sms_loaded += amount
+        procurement = SMSProcurement(
+            sms_count=sms_count,
+            amount_paid=amount_paid,
+            supplier=supplier or "Africastalking",
+            reference_no=reference_no,
+            purchased_by=session.get("username", ""),
+            status="Completed"
+        )
+
+        db.session.add(procurement)
+
+        pool.sms_balance += sms_count
+        pool.sms_loaded += sms_count
         pool.last_loaded = datetime.now()
         pool.last_loaded_by = session.get("username", "")
 
         db.session.commit()
 
         save_audit(
-            f"Loaded {amount} SMS into platform pool. New platform balance: {pool.sms_balance}",
+            f"Procured {sms_count} SMS from {supplier}. "
+            f"Amount paid: KES {amount_paid:,.2f}. "
+            f"Platform balance: {pool.sms_balance}",
             "Communication"
         )
 
-        flash(f"{amount} SMS loaded into platform pool successfully.")
+        flash(f"{sms_count} SMS procured from {supplier} and added to platform pool.")
         return redirect(url_for("platform_sms"))
 
     total_schools = School.query.count()
@@ -4123,6 +4163,13 @@ def platform_sms():
     ).order_by(
         SMSPurchase.request_date.desc()
     ).all()
+
+    procurements = SMSProcurement.query.order_by(
+        SMSProcurement.purchase_date.desc()
+    ).limit(20).all()
+
+    total_procured_sms = sum(p.sms_count for p in SMSProcurement.query.all())
+    total_procurement_cost = sum(p.amount_paid for p in SMSProcurement.query.all())
 
     schools = School.query.order_by(
         School.school_name.asc()
@@ -4145,6 +4192,9 @@ def platform_sms():
         low_balance=low_balance,
         pending_purchases=pending_purchases,
         schools_dict=schools_dict,
+        procurements=procurements,
+        total_procured_sms=total_procured_sms,
+        total_procurement_cost=total_procurement_cost,
         money=money
     )
 
