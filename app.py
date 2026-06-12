@@ -402,6 +402,43 @@ def get_sms_wallet():
 
     return wallet
 
+def charge_sms_wallet(sms_count=1):
+    school_id = current_school_id()
+    wallet = get_sms_wallet()
+
+    if not wallet.sms_enabled:
+        return False, "SMS service is disabled for this school."
+
+    if wallet.sms_balance < sms_count:
+        return False, "Insufficient SMS balance. Please buy SMS first."
+
+    wallet.sms_balance -= sms_count
+    wallet.sms_used += sms_count
+    db.session.commit()
+
+    return True, "SMS charged successfully."
+
+def create_sms(recipient_name, phone, message, category="General"):
+    ok, msg = charge_sms_wallet(1)
+
+    if not ok:
+        return False, msg
+
+    sms = SMSMessage(
+        school_id=current_school_id(),
+        recipient_name=recipient_name,
+        phone=phone,
+        message=message,
+        category=category,
+        status="Pending",
+        created_by=session.get("username", "")
+    )
+
+    db.session.add(sms)
+    db.session.commit()
+
+    return True, "SMS saved successfully."
+
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
 
@@ -1873,6 +1910,7 @@ def attendance():
         ).all()
 
         absent_count = 0
+        sms_failed_count = 0
         attendance_day = datetime.strptime(attendance_date, "%Y-%m-%d").date()
         school_name = get_settings().school_name
 
@@ -1908,32 +1946,47 @@ def attendance():
                 ).first()
 
                 if not duplicate_sms and previous_status != "Absent":
-                    sms = SMSMessage(
-                        school_id=school_id,
-                        recipient_name=pupil.guardian_name,
-                        phone=pupil.guardian_phone,
-                        message=(
-                            f"{school_name}\n\n"
-                            f"Dear Parent, your child {pupil.full_name} has been marked ABSENT "
-                            f"today, {attendance_date}.\n\n"
-                            f"Kindly contact the school if this is incorrect.\n\n"
-                            f"Thank you."
-                        ),
-                        category="Attendance Alert",
-                        created_by=session.get("username", "")
+                    message = (
+                        f"{school_name}\n\n"
+                        f"Dear Parent, your child {pupil.full_name} has been marked ABSENT "
+                        f"today, {attendance_date}.\n\n"
+                        f"Kindly contact the school if this is incorrect.\n\n"
+                        f"Thank you."
                     )
-                    db.session.add(sms)
-                    absent_count += 1
+
+                    ok, sms_msg = create_sms(
+                        pupil.guardian_name,
+                        pupil.guardian_phone,
+                        message,
+                        "Attendance Alert"
+                    )
+
+                    if ok:
+                        absent_count += 1
+                    else:
+                        sms_failed_count += 1
 
         db.session.commit()
 
         save_audit(
-            f"Saved attendance for {selected_grade} on {attendance_date}. Absence alerts: {absent_count}",
+            f"Saved attendance for {selected_grade} on {attendance_date}. "
+            f"Absence alerts: {absent_count}. Failed SMS: {sms_failed_count}",
             "Attendance"
         )
 
-        flash(f"Attendance saved successfully. {absent_count} absence alert(s) saved.")
-        return redirect(url_for("attendance", grade=selected_grade, attendance_date=attendance_date))
+        if sms_failed_count > 0:
+            flash(
+                f"Attendance saved. {absent_count} absence alert(s) saved. "
+                f"{sms_failed_count} SMS failed due to insufficient balance or SMS disabled."
+            )
+        else:
+            flash(f"Attendance saved successfully. {absent_count} absence alert(s) saved.")
+
+        return redirect(url_for(
+            "attendance",
+            grade=selected_grade,
+            attendance_date=attendance_date
+        ))
 
     return render_template(
         "attendance.html",
@@ -2743,6 +2796,8 @@ def payments():
             "Finance"
         )
 
+        sms_status_message = ""
+
         if pupil and pupil.guardian_phone and amount_paid > 0:
             duplicate_sms = SMSMessage.query.filter_by(
                 school_id=school_id,
@@ -2759,34 +2814,36 @@ def payments():
                 else:
                     balance_text = f"Current Balance: KES {balance:,.2f}"
 
-                sms = SMSMessage(
-                    school_id=school_id,
-                    recipient_name=pupil.guardian_name,
-                    phone=pupil.guardian_phone,
-                    message=(
-                        f"{school.school_name}\n\n"
-                        f"PAYMENT RECEIVED\n\n"
-                        f"Learner: {pupil.full_name}\n"
-                        f"Amount Paid: KES {amount_paid:,.2f}\n"
-                        f"Receipt No: {pay.receipt_no}\n"
-                        f"{balance_text}\n\n"
-                        f"Thank you.\n"
-                        f"Accounts Office."
-                    ),
-                    category="Payment Confirmation",
-                    status="Pending",
-                    created_by=session.get("username", "")
+                message = (
+                    f"{school.school_name}\n\n"
+                    f"PAYMENT RECEIVED\n\n"
+                    f"Learner: {pupil.full_name}\n"
+                    f"Amount Paid: KES {amount_paid:,.2f}\n"
+                    f"Receipt No: {pay.receipt_no}\n"
+                    f"{balance_text}\n\n"
+                    f"Thank you.\n"
+                    f"Accounts Office."
                 )
 
-                db.session.add(sms)
-                db.session.commit()
-
-                save_audit(
-                    f"Generated payment confirmation SMS: {pay.receipt_no}",
-                    "Communication"
+                ok, sms_msg = create_sms(
+                    pupil.guardian_name,
+                    pupil.guardian_phone,
+                    message,
+                    "Payment Confirmation"
                 )
 
-        flash("Payment recorded successfully. Payment confirmation SMS prepared if guardian phone exists.")
+                if ok:
+                    sms_status_message = " Payment confirmation SMS prepared and 1 SMS deducted."
+                    save_audit(
+                        f"Generated payment confirmation SMS: {pay.receipt_no}",
+                        "Communication"
+                    )
+                else:
+                    sms_status_message = f" Payment recorded, but SMS not prepared: {sms_msg}"
+            else:
+                sms_status_message = " Payment confirmation SMS already exists for this receipt."
+
+        flash("Payment recorded successfully." + sms_status_message)
         return redirect(url_for("receipt", payment_id=pay.id))
 
     pupils = Pupil.query.filter_by(
@@ -3322,15 +3379,13 @@ def fee_reminders():
             })
 
     if request.method == "POST":
-        count = 0
-        skipped = 0
+        eligible_rows = []
 
         for row in rows:
             p = row["pupil"]
             balance = row["balance"]
 
             if not p.guardian_phone:
-                skipped += 1
                 continue
 
             duplicate_sms = SMSMessage.query.filter(
@@ -3342,9 +3397,51 @@ def fee_reminders():
                 SMSMessage.message.ilike(f"%KES {balance:,.2f}%")
             ).first()
 
-            if duplicate_sms:
-                skipped += 1
-                continue
+            if not duplicate_sms:
+                eligible_rows.append(row)
+
+        required_sms = len(eligible_rows)
+        wallet = get_sms_wallet()
+
+        if required_sms == 0:
+            flash("No new fee reminder SMS to send. All may be duplicates or missing phone numbers.")
+            return redirect(url_for(
+                "fee_reminders",
+                year=year,
+                grade=selected_grade,
+                term=selected_term,
+                month=selected_month
+            ))
+
+        if not wallet.sms_enabled:
+            flash("SMS service is disabled for this school.")
+            return redirect(url_for(
+                "fee_reminders",
+                year=year,
+                grade=selected_grade,
+                term=selected_term,
+                month=selected_month
+            ))
+
+        if wallet.sms_balance < required_sms:
+            flash(
+                f"Insufficient SMS balance. You need {required_sms} SMS, "
+                f"but your balance is {wallet.sms_balance}."
+            )
+            return redirect(url_for(
+                "fee_reminders",
+                year=year,
+                grade=selected_grade,
+                term=selected_term,
+                month=selected_month
+            ))
+
+        count = 0
+        failed = 0
+
+        for row in eligible_rows:
+            p = row["pupil"]
+            balance = row["balance"]
 
             message = (
                 f"{school.school_name}\n\n"
@@ -3355,27 +3452,24 @@ def fee_reminders():
                 f"Thank you."
             )
 
-            sms = SMSMessage(
-                school_id=school_id,
-                recipient_name=p.guardian_name,
-                phone=p.guardian_phone,
-                message=message,
-                category="Fees",
-                status="Pending",
-                created_by=session.get("username", "")
+            ok, sms_msg = create_sms(
+                p.guardian_name,
+                p.guardian_phone,
+                message,
+                "Fees"
             )
 
-            db.session.add(sms)
-            count += 1
-
-        db.session.commit()
+            if ok:
+                count += 1
+            else:
+                failed += 1
 
         save_audit(
-            f"Created fee reminder SMS for {count} parents. Skipped: {skipped}",
+            f"Created fee reminder SMS for {count} parents. Failed: {failed}",
             "Communication"
         )
 
-        flash(f"{count} fee reminder SMS saved as pending. {skipped} skipped.")
+        flash(f"{count} fee reminder SMS saved. {count} SMS deducted. {failed} failed.")
         return redirect(url_for(
             "fee_reminders",
             year=year,
@@ -3383,6 +3477,20 @@ def fee_reminders():
             term=selected_term,
             month=selected_month
         ))
+
+    return render_template(
+        "fee_reminders.html",
+        settings=get_settings(),
+        grades=GRADES,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        rows=rows,
+        year=year,
+        selected_grade=selected_grade,
+        selected_term=selected_term,
+        selected_month=selected_month,
+        money=money
+    )
 
     return render_template(
         "fee_reminders.html",
@@ -3421,8 +3529,12 @@ def bulk_sms():
 
     if request.method == "POST":
         grade = request.form["grade"]
-        message = request.form["message"]
+        message = request.form["message"].strip()
         category = request.form.get("category", "General")
+
+        if not message:
+            flash("Please type the SMS message.")
+            return redirect(url_for("bulk_sms", grade=grade))
 
         pupils = Pupil.query.filter_by(
             school_id=school_id,
@@ -3430,29 +3542,55 @@ def bulk_sms():
             status="Active"
         ).all()
 
+        recipients = [p for p in pupils if p.guardian_phone]
+        required_sms = len(recipients)
+
+        if required_sms == 0:
+            flash("No guardian phone numbers found for this grade.")
+            return redirect(url_for("bulk_sms", grade=grade))
+
+        wallet = get_sms_wallet()
+
+        if not wallet.sms_enabled:
+            flash("SMS service is disabled for this school.")
+            return redirect(url_for("bulk_sms", grade=grade))
+
+        if wallet.sms_balance < required_sms:
+            flash(
+                f"Insufficient SMS balance. You need {required_sms} SMS, "
+                f"but your balance is {wallet.sms_balance}."
+            )
+            return redirect(url_for("bulk_sms", grade=grade))
+
         count = 0
+        failed_count = 0
 
-        for p in pupils:
-            if p.guardian_phone:
-                sms = SMSMessage(
-                    school_id=school_id,
-                    recipient_name=p.guardian_name,
-                    phone=p.guardian_phone,
-                    message=message,
-                    category=category,
-                    created_by=session.get("username", "")
-                )
-                db.session.add(sms)
+        for p in recipients:
+            ok, sms_msg = create_sms(
+                p.guardian_name,
+                p.guardian_phone,
+                message,
+                category
+            )
+
+            if ok:
                 count += 1
-
-        db.session.commit()
+            else:
+                failed_count += 1
 
         save_audit(
-            f"Created bulk SMS for {count} parents in {grade}",
+            f"Created bulk SMS for {count} parents in {grade}. Failed: {failed_count}",
             "Communication"
         )
 
-        flash(f"Bulk SMS saved for {count} parents.")
+        if failed_count > 0:
+            flash(
+                f"Bulk SMS saved for {count} parents. "
+                f"{failed_count} failed due to SMS balance or SMS disabled."
+            )
+        else:
+            flash(f"Bulk SMS saved for {count} parents. {count} SMS deducted.")
+
         return redirect(url_for("bulk_sms", grade=grade))
 
     return render_template(
@@ -3500,28 +3638,27 @@ def sms_messages():
             return redirect(url_for("sms_messages"))
 
         send_to = request.form.get("send_to", "single")
-        message = request.form["message"]
+        message = request.form.get("message", "").strip()
         category = request.form.get("category", "General")
-        count = 0
+
+        if not message:
+            flash("Please type the SMS message.")
+            return redirect(url_for("sms_messages"))
+
+        recipients = []
 
         if send_to == "single":
             phone = request.form.get("phone", "").strip()
+            recipient_name = request.form.get("recipient_name", "").strip()
 
             if not phone:
                 flash("Phone number is required for one-parent SMS.")
                 return redirect(url_for("sms_messages"))
 
-            sms = SMSMessage(
-                school_id=school_id,
-                recipient_name=request.form.get("recipient_name", ""),
-                phone=phone,
-                message=message,
-                category=category,
-                status="Pending",
-                created_by=session.get("username", "")
-            )
-            db.session.add(sms)
-            count = 1
+            recipients.append({
+                "name": recipient_name,
+                "phone": phone
+            })
 
         elif send_to == "grade":
             grade = request.form.get("grade")
@@ -3538,17 +3675,10 @@ def sms_messages():
 
             for p in pupils:
                 if p.guardian_phone:
-                    sms = SMSMessage(
-                        school_id=school_id,
-                        recipient_name=p.guardian_name,
-                        phone=p.guardian_phone,
-                        message=message,
-                        category=category,
-                        status="Pending",
-                        created_by=session.get("username", "")
-                    )
-                    db.session.add(sms)
-                    count += 1
+                    recipients.append({
+                        "name": p.guardian_name,
+                        "phone": p.guardian_phone
+                    })
 
         elif send_to == "all":
             pupils = Pupil.query.filter_by(
@@ -3558,26 +3688,59 @@ def sms_messages():
 
             for p in pupils:
                 if p.guardian_phone:
-                    sms = SMSMessage(
-                        school_id=school_id,
-                        recipient_name=p.guardian_name,
-                        phone=p.guardian_phone,
-                        message=message,
-                        category=category,
-                        status="Pending",
-                        created_by=session.get("username", "")
-                    )
-                    db.session.add(sms)
-                    count += 1
+                    recipients.append({
+                        "name": p.guardian_name,
+                        "phone": p.guardian_phone
+                    })
 
-        db.session.commit()
+        required_sms = len(recipients)
+
+        if required_sms == 0:
+            flash("No valid recipient phone numbers found.")
+            return redirect(url_for("sms_messages"))
+
+        wallet = get_sms_wallet()
+
+        if not wallet.sms_enabled:
+            flash("SMS service is disabled for this school.")
+            return redirect(url_for("sms_messages"))
+
+        if wallet.sms_balance < required_sms:
+            flash(
+                f"Insufficient SMS balance. You need {required_sms} SMS, "
+                f"but your balance is {wallet.sms_balance}."
+            )
+            return redirect(url_for("sms_messages"))
+
+        count = 0
+        failed_count = 0
+
+        for r in recipients:
+            ok, sms_msg = create_sms(
+                r["name"],
+                r["phone"],
+                message,
+                category
+            )
+
+            if ok:
+                count += 1
+            else:
+                failed_count += 1
 
         save_audit(
-            f"Created {count} SMS message(s). Category: {category}",
+            f"Created {count} SMS message(s). Failed: {failed_count}. Category: {category}",
             "Communication"
         )
 
-        flash(f"{count} SMS message(s) saved as pending.")
+        if failed_count > 0:
+            flash(
+                f"{count} SMS message(s) saved as pending. "
+                f"{failed_count} failed due to SMS balance or SMS disabled."
+            )
+        else:
+            flash(f"{count} SMS message(s) saved as pending. {count} SMS deducted.")
+
         return redirect(url_for("sms_messages"))
 
     selected_status = request.args.get("status", "")
@@ -3685,25 +3848,84 @@ def announcements():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    school = get_settings()
 
     if request.method == "POST":
+        title = request.form["title"].strip()
+        message = request.form["message"].strip()
+        audience = request.form["audience"]
+
         ann = Announcement(
             school_id=school_id,
-            title=request.form["title"],
-            message=request.form["message"],
-            audience=request.form["audience"],
+            title=title,
+            message=message,
+            audience=audience,
             created_by=session.get("username", "")
         )
 
         db.session.add(ann)
         db.session.commit()
 
+        sms_count = 0
+        failed_count = 0
+
+        recipients = []
+
+        if audience in ["All", "Parents"]:
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active"
+            ).all()
+
+            for p in pupils:
+                if p.guardian_phone:
+                    recipients.append({
+                        "name": p.guardian_name,
+                        "phone": p.guardian_phone
+                    })
+
+        required_sms = len(recipients)
+
+        if required_sms > 0:
+            wallet = get_sms_wallet()
+
+            if not wallet.sms_enabled:
+                flash("Announcement created, but SMS service is disabled.")
+            elif wallet.sms_balance < required_sms:
+                flash(
+                    f"Announcement created, but SMS not queued. "
+                    f"You need {required_sms} SMS, but balance is {wallet.sms_balance}."
+                )
+            else:
+                sms_message = (
+                    f"{school.school_name}\n\n"
+                    f"ANNOUNCEMENT: {title}\n\n"
+                    f"{message}"
+                )
+
+                for r in recipients:
+                    ok, sms_msg = create_sms(
+                        r["name"],
+                        r["phone"],
+                        sms_message,
+                        "Announcement"
+                    )
+
+                    if ok:
+                        sms_count += 1
+                    else:
+                        failed_count += 1
+
         save_audit(
-            f"Created announcement: {ann.title}",
+            f"Created announcement: {ann.title}. SMS queued: {sms_count}. Failed: {failed_count}",
             "Communication"
         )
 
-        flash("Announcement created successfully.")
+        if sms_count > 0:
+            flash(f"Announcement created successfully. {sms_count} SMS queued and deducted.")
+        else:
+            flash("Announcement created successfully.")
+
         return redirect(url_for("announcements"))
 
     rows = Announcement.query.filter_by(
@@ -3716,109 +3938,6 @@ def announcements():
         "announcements.html",
         settings=get_settings(),
         rows=rows
-    )
-
-@app.route("/sms_wallet", methods=["GET", "POST"])
-def sms_wallet():
-    if not login_required():
-        return redirect(url_for("login"))
-
-    if not role_allowed("admin"):
-        flash("Only Admin can manage SMS Centre.")
-        return redirect(url_for("dashboard"))
-
-    school_id = current_school_id()
-    wallet = get_sms_wallet()
-
-    if request.method == "POST":
-
-        package_id = int(request.form.get("package_id") or 0)
-        mpesa_phone = request.form.get("mpesa_phone", "").strip()
-
-        package = SMSPackage.query.filter_by(
-            id=package_id,
-            status="Active"
-        ).first()
-
-        if not package:
-            flash("Please select a valid SMS package.")
-            return redirect(url_for("sms_wallet"))
-
-        if not mpesa_phone:
-            flash("Please enter M-Pesa phone number.")
-            return redirect(url_for("sms_wallet"))
-
-        if mpesa_phone.startswith("0"):
-            mpesa_phone = "254" + mpesa_phone[1:]
-
-        purchase = SMSPurchase(
-            school_id=school_id,
-            package_sms=package.sms_count,
-            amount=package.price,
-            requested_by=session.get("username", ""),
-            mpesa_phone=mpesa_phone,
-            status="Pending Approval"
-        )
-
-        db.session.add(purchase)
-        db.session.commit()
-
-        save_audit(
-            f"Created SMS purchase request ID {purchase.id}",
-            "Communication"
-        )
-
-        flash(
-            "SMS purchase request submitted successfully. "
-            "Awaiting Super Admin approval."
-        )
-
-        return redirect(url_for("sms_wallet"))
-
-    pending_sms = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).count()
-
-    sent_sms = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Sent"
-    ).count()
-
-    failed_sms = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).count()
-
-    packages = SMSPackage.query.filter_by(
-        status="Active"
-    ).order_by(
-        SMSPackage.sms_count
-    ).all()
-
-    transactions = SMSTransaction.query.filter_by(
-        school_id=school_id
-    ).order_by(
-        SMSTransaction.purchase_date.desc()
-    ).limit(10).all()
-
-    purchases = SMSPurchase.query.filter_by(
-        school_id=school_id
-    ).order_by(
-        SMSPurchase.request_date.desc()
-    ).limit(10).all()
-
-    return render_template(
-        "sms_wallet.html",
-        settings=get_settings(),
-        wallet=wallet,
-        pending_sms=pending_sms,
-        sent_sms=sent_sms,
-        failed_sms=failed_sms,
-        packages=packages,
-        transactions=transactions,
-        purchases=purchases,
-        money=money
     )
 
 @app.route("/platform_sms", methods=["GET", "POST"])
