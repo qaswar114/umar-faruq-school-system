@@ -4116,10 +4116,7 @@ def platform_sms():
         SMSWallet.sms_loaded > 0
     ).count()
 
-    schools_not_using_sms = max(
-        0,
-        total_schools - schools_using_sms
-    )
+    schools_not_using_sms = max(0, total_schools - schools_using_sms)
 
     pending_purchases = SMSPurchase.query.filter(
         SMSPurchase.status != "Completed"
@@ -4150,7 +4147,8 @@ def platform_sms():
         schools_dict=schools_dict,
         money=money
     )
-    
+
+
 @app.route("/approve_sms_purchase/<int:purchase_id>", methods=["POST"])
 def approve_sms_purchase(purchase_id):
     if not login_required():
