@@ -506,31 +506,7 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 def init_database():
     db.create_all()
 
-try:
-    SMSPackage.__table__.create(db.engine, checkfirst=True)
-    db.session.commit()
-except Exception:
-    db.session.rollback()
-
-try:
-    if SMSPackage.query.count() == 0:
-        packages = [
-            SMSPackage(sms_count=100, price=120),
-            SMSPackage(sms_count=500, price=550),
-            SMSPackage(sms_count=1000, price=1000),
-            SMSPackage(sms_count=5000, price=4500)
-        ]
-        db.session.add_all(packages)
-        db.session.commit()
-except Exception:
-    db.session.rollback()
-
-    try:
-        SMSPackage.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
+    # Default SMS packages
     try:
         if SMSPackage.query.count() == 0:
             packages = [
@@ -539,31 +515,12 @@ except Exception:
                 SMSPackage(sms_count=1000, price=1000),
                 SMSPackage(sms_count=5000, price=4500)
             ]
-
             db.session.add_all(packages)
             db.session.commit()
-
     except Exception:
         db.session.rollback()
 
-    try:
-        SMSTransaction.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        SMSPurchase.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        PlatformSMSPool.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
+    # Platform SMS pool
     try:
         if PlatformSMSPool.query.count() == 0:
             pool = PlatformSMSPool(
@@ -573,13 +530,31 @@ except Exception:
                 low_alert_level=2000,
                 last_loaded_by=""
             )
-
             db.session.add(pool)
             db.session.commit()
-
     except Exception:
         db.session.rollback()
 
+    # Default school
+    try:
+        if not School.query.first():
+            db.session.add(School(
+                school_name="Umar Faruq Integrated Academy",
+                motto="",
+                phone="",
+                email="",
+                address="Mandera",
+                logo="logo.png",
+                primary_color="#0b5ed7",
+                secondary_color="#ffffff",
+                subscription_status="active",
+                is_active=True
+            ))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # Add missing SMS purchase columns
     sms_purchase_columns = [
         ("mpesa_phone", "VARCHAR(20) DEFAULT ''"),
         ("mpesa_checkout_request_id", "VARCHAR(100) DEFAULT ''"),
@@ -596,10 +571,70 @@ except Exception:
         except Exception:
             db.session.rollback()
 
-    # Create SMS wallet for every existing school
+    # Add missing SMS wallet columns
+    sms_wallet_columns = [
+        ("sms_username", "VARCHAR(100) DEFAULT ''"),
+        ("sms_api_key", "VARCHAR(255) DEFAULT ''"),
+        ("sms_sender_id", "VARCHAR(50) DEFAULT ''")
+    ]
+
+    for column_name, column_type in sms_wallet_columns:
+        try:
+            db.session.execute(
+                db.text(f"ALTER TABLE sms_wallet ADD COLUMN {column_name} {column_type}")
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    # Add school_id columns
+    school_id_tables = [
+        '"user"',
+        "staff",
+        "audit_log",
+        "announcement",
+        "sms_message",
+        "pupil",
+        "payment",
+        "fee_structure",
+        "expense",
+        "attendance",
+        "discount",
+        "subject",
+        "exam",
+        "mark"
+    ]
+
+    for table in school_id_tables:
+        try:
+            db.session.execute(
+                db.text(f"ALTER TABLE {table} ADD COLUMN school_id INTEGER DEFAULT 1")
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    # Other missing columns
+    extra_columns = [
+        ('"user"', "assigned_grade", "VARCHAR(50) DEFAULT ''"),
+        ('"user"', "assigned_subjects", "VARCHAR(255) DEFAULT ''"),
+        ('"user"', "is_active", "BOOLEAN DEFAULT TRUE"),
+        ("staff", "assigned_subjects", "VARCHAR(255) DEFAULT ''"),
+        ("pupil", "photo", "VARCHAR(255) DEFAULT ''")
+    ]
+
+    for table, column_name, column_type in extra_columns:
+        try:
+            db.session.execute(
+                db.text(f"ALTER TABLE {table} ADD COLUMN {column_name} {column_type}")
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    # Create SMS wallet for every school
     try:
         schools = School.query.all()
-
         for school in schools:
             existing_wallet = SMSWallet.query.filter_by(
                 school_id=school.id
@@ -617,176 +652,21 @@ except Exception:
                 db.session.add(wallet)
 
         db.session.commit()
-
     except Exception:
         db.session.rollback()
 
-    if not School.query.first():
-        db.session.add(School(
-            school_name="Umar Faruq Integrated Academy",
-            motto="",
-            phone="",
-            email="",
-            address="Mandera",
-            logo="logo.png",
-            primary_color="#0b5ed7",
-            secondary_color="#ffffff",
-            subscription_status="active",
-            is_active=True
-        ))
-        db.session.commit()
-
+    # Default settings
     try:
-        Subject.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        Exam.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        Mark.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        Staff.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        AuditLog.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        Announcement.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        SMSMessage.__table__.create(db.engine, checkfirst=True)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE "user" ADD COLUMN school_id INTEGER DEFAULT 1')
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text("ALTER TABLE sms_wallet ADD COLUMN sms_username VARCHAR(100) DEFAULT ''")
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text("ALTER TABLE sms_wallet ADD COLUMN sms_api_key VARCHAR(255) DEFAULT ''")
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text("ALTER TABLE staff ADD COLUMN assigned_subjects VARCHAR(255) DEFAULT ''")
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE pupil ADD COLUMN school_id INTEGER DEFAULT 1')
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE payment ADD COLUMN school_id INTEGER DEFAULT 1')
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    school_specific_tables = [
-        "staff",
-        "audit_log",
-        "announcement",
-        "sms_message",
-        "fee_structure",
-        "expense",
-        "attendance",
-        "discount",
-        "subject",
-        "exam",
-        "mark"
-    ]
-
-    for table in school_specific_tables:
-        try:
-            db.session.execute(
-                db.text(f"ALTER TABLE {table} ADD COLUMN school_id INTEGER DEFAULT 1")
-            )
+        if not Setting.query.first():
+            db.session.add(Setting(
+                school_name=SCHOOL_NAME,
+                address="Umar Faruq Integrated Academy"
+            ))
             db.session.commit()
-        except Exception:
-            db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE "user" ADD COLUMN assigned_grade VARCHAR(50) DEFAULT \'\'')
-        )
-        db.session.commit()
     except Exception:
         db.session.rollback()
 
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE "user" ADD COLUMN assigned_subjects VARCHAR(255) DEFAULT \'\'')
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE "user" ADD COLUMN is_active BOOLEAN DEFAULT TRUE')
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    try:
-        db.session.execute(
-            db.text('ALTER TABLE pupil ADD COLUMN photo VARCHAR(255) DEFAULT \'\'')
-        )
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-    if not Setting.query.first():
-        db.session.add(Setting(
-            school_name=SCHOOL_NAME,
-            address="Umar Faruq Integrated Academy"
-        ))
-
+    # Default users
     default_users = [
         ("superadmin", "super123", "Super Admin"),
         ("admin", "admin123", "Admin"),
@@ -796,33 +676,44 @@ except Exception:
     ]
 
     for username, password, role in default_users:
-        user = User.query.filter_by(username=username).first()
+        try:
+            user = User.query.filter_by(username=username).first()
 
-        if not user:
-            db.session.add(User(
-                school_id=1,
-                username=username,
-                password_hash=generate_password_hash(password),
-                role=role
-            ))
-        else:
-            user.school_id = user.school_id or 1
+            if not user:
+                db.session.add(User(
+                    school_id=1,
+                    username=username,
+                    password_hash=generate_password_hash(password),
+                    role=role,
+                    is_active=True
+                ))
+            else:
+                user.school_id = user.school_id or 1
 
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    # Fix school logos
+    try:
         bustani = School.query.filter(
-        School.school_name.ilike("%Bustani%")
-    ).first()
+            School.school_name.ilike("%Bustani%")
+        ).first()
 
-    if bustani:
-        bustani.logo = "bustani_logo.png"
+        if bustani:
+            bustani.logo = "bustani_logo.png"
 
-    umar = School.query.filter(
-        School.school_name.ilike("%Umar%")
-    ).first()
+        umar = School.query.filter(
+            School.school_name.ilike("%Umar%")
+        ).first()
 
-    if umar:
-        umar.logo = "logo.png"
+        if umar:
+            umar.logo = "logo.png"
 
-    db.session.commit()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        
 def login_required():
     if "username" not in session:
         return False
