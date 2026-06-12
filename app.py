@@ -30,6 +30,13 @@ MPESA_PASSKEY = ""
 MPESA_CALLBACK_URL = ""
 
 MPESA_ENVIRONMENT = "sandbox"
+# =========================
+# AFRICASTALKING CONFIGURATION
+# =========================
+
+AFRICASTALKING_USERNAME = os.environ.get("AT_USERNAME", "sandbox")
+AFRICASTALKING_API_KEY = os.environ.get("AT_API_KEY", "")
+AFRICASTALKING_SENDER_ID = os.environ.get("AT_SENDER_ID", "")
 
 database_url = os.environ.get(
     "DATABASE_URL",
