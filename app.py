@@ -446,6 +446,28 @@ def create_sms(recipient_name, phone, message, category="General"):
 
     return True, "SMS saved successfully."
 
+def send_sms_gateway(phone, message):
+    try:
+        import africastalking
+
+        africastalking.initialize(
+            AFRICASTALKING_USERNAME,
+            AFRICASTALKING_API_KEY
+        )
+
+        sms = africastalking.SMS
+
+        response = sms.send(
+            message,
+            [phone],
+            sender_id=AFRICASTALKING_SENDER_ID
+        )
+
+        return True, response
+
+    except Exception as e:
+        return False, str(e)
+
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
 
@@ -3628,20 +3650,30 @@ def sms_messages():
                 status="Pending"
             ).all()
 
-            count = 0
+            sent_count = 0
+            failed_count = 0
 
             for sms in pending_messages:
-                sms.status = "Sent"
-                count += 1
+                ok, response = send_sms_gateway(
+                    sms.phone,
+                    sms.message
+                )
+
+                if ok:
+                    sms.status = "Sent"
+                    sent_count += 1
+                else:
+                    sms.status = "Failed"
+                    failed_count += 1
 
             db.session.commit()
 
             save_audit(
-                f"Marked {count} pending SMS message(s) as sent",
+                f"Sent pending SMS via Africastalking. Sent: {sent_count}, Failed: {failed_count}",
                 "Communication"
             )
 
-            flash(f"{count} pending SMS message(s) marked as sent.")
+            flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}.")
             return redirect(url_for("sms_messages"))
 
         send_to = request.form.get("send_to", "single")
