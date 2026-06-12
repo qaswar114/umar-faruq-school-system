@@ -3840,6 +3840,7 @@ def sms_wallet():
     wallet = get_sms_wallet()
 
     if request.method == "POST":
+
         package_id = int(request.form.get("package_id") or 0)
         mpesa_phone = request.form.get("mpesa_phone", "").strip()
 
@@ -3849,11 +3850,11 @@ def sms_wallet():
         ).first()
 
         if not package:
-            flash("Select a valid SMS package.")
+            flash("Please select a valid SMS package.")
             return redirect(url_for("sms_wallet"))
 
         if not mpesa_phone:
-            flash("Enter M-Pesa phone number.")
+            flash("Please enter M-Pesa phone number.")
             return redirect(url_for("sms_wallet"))
 
         if mpesa_phone.startswith("0"):
@@ -3865,40 +3866,21 @@ def sms_wallet():
             amount=package.price,
             requested_by=session.get("username", ""),
             mpesa_phone=mpesa_phone,
-            status="Pending"
+            status="Pending Approval"
         )
 
         db.session.add(purchase)
         db.session.commit()
 
-        result = send_sms_stk_push(
-            phone=mpesa_phone,
-            amount=package.price,
-            account_reference=f"SMS{purchase.id}",
-            transaction_desc=f"SMS Package {package.sms_count}"
+        save_audit(
+            f"Created SMS purchase request ID {purchase.id}",
+            "Communication"
         )
 
-        if result["success"]:
-            purchase.status = "STK Sent"
-            purchase.mpesa_checkout_request_id = result["checkout_request_id"]
-            db.session.commit()
-
-            save_audit(
-                f"STK Push sent for SMS purchase ID {purchase.id}",
-                "Communication"
-            )
-
-            flash(result["message"])
-        else:
-            purchase.status = "Failed"
-            db.session.commit()
-
-            save_audit(
-                f"STK Push failed for SMS purchase ID {purchase.id}: {result['message']}",
-                "Communication"
-            )
-
-            flash(f"M-Pesa STK Push failed: {result['message']}")
+        flash(
+            "SMS purchase request submitted successfully. "
+            "Awaiting Super Admin approval."
+        )
 
         return redirect(url_for("sms_wallet"))
 
@@ -3919,7 +3901,9 @@ def sms_wallet():
 
     packages = SMSPackage.query.filter_by(
         status="Active"
-    ).order_by(SMSPackage.sms_count).all()
+    ).order_by(
+        SMSPackage.sms_count
+    ).all()
 
     transactions = SMSTransaction.query.filter_by(
         school_id=school_id
