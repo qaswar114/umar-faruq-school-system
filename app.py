@@ -5,14 +5,20 @@ from werkzeug.utils import secure_filename
 from datetime import date, datetime
 from xhtml2pdf import pisa
 from io import BytesIO
+import africastalking
 import os
 import base64
 import requests
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
+AT_USERNAME = os.getenv("AT_USERNAME")
+AT_API_KEY = os.getenv("AT_API_KEY")
 
-app.config["UPLOAD_FOLDER"] = "static/uploads"
+africastalking.initialize(
+    AT_USERNAME,
+    AT_API_KEY
+)
+
+sms = africastalking.SMS
 
 
 # =========================
