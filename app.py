@@ -450,6 +450,11 @@ def charge_sms_wallet(sms_count=1):
     return True, "SMS charged successfully."
 
 def create_sms(recipient_name, phone, message, category="General"):
+    cleaned_phone = clean_phone_number(phone)
+
+    if not cleaned_phone:
+        return False, f"Invalid phone number: {phone}"
+
     ok, msg = charge_sms_wallet(1)
 
     if not ok:
@@ -458,7 +463,7 @@ def create_sms(recipient_name, phone, message, category="General"):
     sms = SMSMessage(
         school_id=current_school_id(),
         recipient_name=recipient_name,
-        phone=phone,
+        phone=cleaned_phone,
         message=message,
         category=category,
         status="Pending",
