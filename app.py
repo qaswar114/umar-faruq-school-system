@@ -467,20 +467,26 @@ def create_sms(recipient_name, phone, message, category="General"):
     return True, "SMS saved successfully."
 
 def send_sms_gateway(phone, message):
-    try:
-        import africastalking
+    if not AFRICASTALKING_USERNAME:
+        return False, "Africa's Talking username is missing."
 
+    if not AFRICASTALKING_API_KEY:
+        return False, "Africa's Talking API key is missing."
+
+    try:
         africastalking.initialize(
             AFRICASTALKING_USERNAME,
             AFRICASTALKING_API_KEY
         )
 
-        sms = africastalking.SMS
+        sms_service = africastalking.SMS
 
-        response = sms.send(
+        sender_id = AFRICASTALKING_SENDER_ID.strip() if AFRICASTALKING_SENDER_ID else None
+
+        response = sms_service.send(
             message,
             [phone],
-            sender_id=AFRICASTALKING_SENDER_ID
+            sender_id=sender_id
         )
 
         return True, response
@@ -3678,7 +3684,7 @@ def sms_messages():
             pending_messages = SMSMessage.query.filter_by(
                 school_id=school_id,
                 status="Pending"
-            ).all()
+            ).limit(5).all()
 
             sent_count = 0
             failed_count = 0
@@ -3699,11 +3705,14 @@ def sms_messages():
             db.session.commit()
 
             save_audit(
-                f"Sent pending SMS via Africastalking. Sent: {sent_count}, Failed: {failed_count}",
+                f"Test sent pending SMS via Africa's Talking. Sent: {sent_count}, Failed: {failed_count}",
                 "Communication"
             )
 
-            flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}.")
+            flash(
+                f"SMS test sending complete. Sent: {sent_count}, Failed: {failed_count}. "
+                f"Only 5 pending SMS were processed for safety."
+            )
             return redirect(url_for("sms_messages"))
 
         send_to = request.form.get("send_to", "single")
@@ -3820,14 +3829,10 @@ def sms_messages():
     )
 
     if selected_status:
-        query = query.filter(
-            SMSMessage.status == selected_status
-        )
+        query = query.filter(SMSMessage.status == selected_status)
 
     if selected_category:
-        query = query.filter(
-            SMSMessage.category == selected_category
-        )
+        query = query.filter(SMSMessage.category == selected_category)
 
     rows = query.order_by(
         SMSMessage.created_at.desc()
