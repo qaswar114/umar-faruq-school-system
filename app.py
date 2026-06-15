@@ -1792,7 +1792,7 @@ def edit_pupil(pupil_id):
         pupil.dob = request.form.get("dob", "")
         pupil.grade = request.form["grade"]
         pupil.guardian_name = request.form["guardian_name"]
-        pupil.guardian_phone = request.form["guardian_phone"]
+        pupil.guardian_phone = clean_phone_number(request.form.get("guardian_phone", "")) or ""
         pupil.uses_bus = request.form["uses_bus"]
         pupil.status = request.form["status"]
         pupil.home_address = request.form.get("home_address", "")
