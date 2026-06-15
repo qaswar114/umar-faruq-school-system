@@ -487,12 +487,15 @@ def clean_phone_number(phone):
 
 def send_sms_gateway(phone, message):
     try:
+        original_phone = phone
         phone = clean_phone_number(phone)
 
         if not phone:
-            return False, "Invalid phone number"
+            print(f"AFRICASTALKING ERROR: Invalid phone number: {original_phone}", flush=True)
+            return False, f"Invalid phone number: {original_phone}"
 
         if not message:
+            print("AFRICASTALKING ERROR: Message cannot be empty", flush=True)
             return False, "Message cannot be empty"
 
         username = os.environ.get("AT_USERNAME", "sandbox")
@@ -500,14 +503,17 @@ def send_sms_gateway(phone, message):
         sender_id = os.environ.get("AT_SENDER_ID", "").strip()
 
         if not username:
+            print("AFRICASTALKING ERROR: username missing", flush=True)
             return False, "Africa's Talking username missing"
 
         if not api_key:
+            print("AFRICASTALKING ERROR: API key missing", flush=True)
             return False, "Africa's Talking API key missing"
 
         africastalking.initialize(username, api_key)
-
         sms_service = africastalking.SMS
+
+        print(f"AFRICASTALKING SENDING TO: {phone}", flush=True)
 
         if sender_id:
             response = sms_service.send(
@@ -521,12 +527,12 @@ def send_sms_gateway(phone, message):
                 [phone]
             )
 
-        print("AFRICASTALKING RESPONSE:", response)
+        print(f"AFRICASTALKING RESPONSE: {response}", flush=True)
 
         return True, str(response)
 
     except Exception as e:
-        print("AFRICASTALKING ERROR:", str(e))
+        print(f"AFRICASTALKING ERROR: {str(e)}", flush=True)
         return False, str(e)
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
