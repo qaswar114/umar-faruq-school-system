@@ -490,12 +490,21 @@ def send_sms_gateway(phone, message):
         original_phone = phone
         phone = clean_phone_number(phone)
 
+        print("================ SMS DEBUG START ================", flush=True)
+        print("ORIGINAL PHONE:", original_phone, flush=True)
+        print("CLEANED PHONE:", phone, flush=True)
+        print("MESSAGE:", message, flush=True)
+        print("AT_USERNAME:", os.environ.get("AT_USERNAME", ""), flush=True)
+        print("AT_SENDER_ID:", os.environ.get("AT_SENDER_ID", ""), flush=True)
+
         if not phone:
-            print(f"AFRICASTALKING ERROR: Invalid phone number: {original_phone}", flush=True)
+            print("SMS FAILED: Invalid phone number", flush=True)
+            print("================ SMS DEBUG END ==================", flush=True)
             return False, f"Invalid phone number: {original_phone}"
 
         if not message:
-            print("AFRICASTALKING ERROR: Message cannot be empty", flush=True)
+            print("SMS FAILED: Message cannot be empty", flush=True)
+            print("================ SMS DEBUG END ==================", flush=True)
             return False, "Message cannot be empty"
 
         username = os.environ.get("AT_USERNAME", "sandbox")
@@ -503,17 +512,19 @@ def send_sms_gateway(phone, message):
         sender_id = os.environ.get("AT_SENDER_ID", "").strip()
 
         if not username:
-            print("AFRICASTALKING ERROR: username missing", flush=True)
+            print("SMS FAILED: Africa's Talking username missing", flush=True)
+            print("================ SMS DEBUG END ==================", flush=True)
             return False, "Africa's Talking username missing"
 
         if not api_key:
-            print("AFRICASTALKING ERROR: API key missing", flush=True)
+            print("SMS FAILED: Africa's Talking API key missing", flush=True)
+            print("================ SMS DEBUG END ==================", flush=True)
             return False, "Africa's Talking API key missing"
 
         africastalking.initialize(username, api_key)
         sms_service = africastalking.SMS
 
-        print(f"AFRICASTALKING SENDING TO: {phone}", flush=True)
+        print("SENDING TO AFRICA'S TALKING...", flush=True)
 
         if sender_id:
             response = sms_service.send(
@@ -527,12 +538,14 @@ def send_sms_gateway(phone, message):
                 [phone]
             )
 
-        print(f"AFRICASTALKING RESPONSE: {response}", flush=True)
+        print("AFRICASTALKING RESPONSE:", response, flush=True)
+        print("================ SMS DEBUG END ==================", flush=True)
 
         return True, str(response)
 
     except Exception as e:
-        print(f"AFRICASTALKING ERROR: {str(e)}", flush=True)
+        print("AFRICASTALKING EXCEPTION:", str(e), flush=True)
+        print("================ SMS DEBUG END ==================", flush=True)
         return False, str(e)
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
