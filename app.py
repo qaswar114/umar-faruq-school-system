@@ -3752,7 +3752,7 @@ def sms_messages():
                     sms.status = "Sent"
                     sent_count += 1
                 else:
-                    sms.status = "Failed"
+                    sms.status = "Pending"
                     failed_count += 1
 
             db.session.commit()
