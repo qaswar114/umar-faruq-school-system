@@ -3976,6 +3976,44 @@ def sms_messages():
         selected_status=selected_status,
         selected_category=selected_category
     )
+
+@app.route("/cleanup_invalid_sms", methods=["POST"])
+def cleanup_invalid_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    invalid_messages = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).filter(
+        db.or_(
+            SMSMessage.phone == "0",
+            SMSMessage.phone == "00",
+            SMSMessage.phone == "",
+            SMSMessage.phone == None
+        )
+    ).all()
+
+    count = len(invalid_messages)
+
+    for sms in invalid_messages:
+        sms.status = "Invalid"
+
+    db.session.commit()
+
+    save_audit(
+        f"Marked {count} invalid pending SMS message(s) as Invalid",
+        "Communication"
+    )
+
+    flash(f"{count} invalid pending SMS message(s) marked as Invalid.")
+    return redirect(url_for("sms_messages"))
 @app.route("/announcements", methods=["GET", "POST"])
 def announcements():
     if not login_required():
