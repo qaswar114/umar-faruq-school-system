@@ -58,6 +58,13 @@
             <button class="btn green">Send All Pending SMS</button>
         </form>
 
+        <form method="post"
+      action="{{ url_for('cleanup_invalid_sms') }}"
+      style="display:inline;"
+      onsubmit="return confirm('Mark invalid pending SMS as Invalid?');">
+    <button class="btn red">Clean Invalid SMS</button>
+</form>
+
         <a href="{{ url_for('sms_messages', status='Pending') }}" class="btn">View Pending</a>
         <a href="{{ url_for('sms_messages', category='Attendance Alert') }}" class="btn">Attendance Alerts</a>
         <a href="{{ url_for('sms_messages', category='Payment Confirmation') }}" class="btn">Payment Alerts</a>
