@@ -496,23 +496,37 @@ def send_sms_gateway(phone, message):
             return False, "Message cannot be empty"
 
         username = os.environ.get("AT_USERNAME", "sandbox")
-        api_key = os.environ.get("AT_API_KEY")
+        api_key = os.environ.get("AT_API_KEY", "")
+        sender_id = os.environ.get("AT_SENDER_ID", "").strip()
+
+        if not username:
+            return False, "Africa's Talking username missing"
 
         if not api_key:
             return False, "Africa's Talking API key missing"
 
         africastalking.initialize(username, api_key)
 
-        sms = africastalking.SMS
+        sms_service = africastalking.SMS
 
-        response = sms.send(
-            message,
-            [phone]
-        )
+        if sender_id:
+            response = sms_service.send(
+                message,
+                [phone],
+                sender_id=sender_id
+            )
+        else:
+            response = sms_service.send(
+                message,
+                [phone]
+            )
 
-        return True, response
+        print("AFRICASTALKING RESPONSE:", response)
+
+        return True, str(response)
 
     except Exception as e:
+        print("AFRICASTALKING ERROR:", str(e))
         return False, str(e)
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
