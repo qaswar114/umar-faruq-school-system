@@ -470,34 +470,50 @@ def create_sms(recipient_name, phone, message, category="General"):
 
     return True, "SMS saved successfully."
 
+def clean_phone_number(phone):
+    if not phone:
+        return None
+
+    phone = str(phone).strip()
+    phone = phone.replace(" ", "").replace("-", "").replace("+", "")
+
+    if phone.startswith("0") and len(phone) == 10:
+        phone = "254" + phone[1:]
+
+    if phone.startswith("254") and len(phone) == 12:
+        return phone
+
+    return None
+
 def send_sms_gateway(phone, message):
-    if not AFRICASTALKING_USERNAME:
-        return False, "Africa's Talking username is missing."
-
-    if not AFRICASTALKING_API_KEY:
-        return False, "Africa's Talking API key is missing."
-
     try:
-        africastalking.initialize(
-            AFRICASTALKING_USERNAME,
-            AFRICASTALKING_API_KEY
-        )
+        phone = clean_phone_number(phone)
 
-        sms_service = africastalking.SMS
+        if not phone:
+            return False, "Invalid phone number"
 
-        sender_id = AFRICASTALKING_SENDER_ID.strip() if AFRICASTALKING_SENDER_ID else None
+        if not message:
+            return False, "Message cannot be empty"
 
-        response = sms_service.send(
+        username = os.environ.get("AT_USERNAME", "sandbox")
+        api_key = os.environ.get("AT_API_KEY")
+
+        if not api_key:
+            return False, "Africa's Talking API key missing"
+
+        africastalking.initialize(username, api_key)
+
+        sms = africastalking.SMS
+
+        response = sms.send(
             message,
-            [phone],
-            sender_id=sender_id
+            [phone]
         )
 
         return True, response
 
     except Exception as e:
         return False, str(e)
-
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
 
