@@ -3737,34 +3737,37 @@ def sms_messages():
             pending_messages = SMSMessage.query.filter_by(
                 school_id=school_id,
                 status="Pending"
-            ).limit(5).all()
+            ).order_by(SMSMessage.created_at.asc()).limit(5).all()
 
             sent_count = 0
             failed_count = 0
 
             for sms in pending_messages:
-                ok, response = send_sms_gateway(
-                    sms.phone,
-                    sms.message
-                )
+                ok, response = send_sms_gateway(sms.phone, sms.message)
+
+                print("SMS ID:", sms.id, flush=True)
+                print("SMS PHONE:", sms.phone, flush=True)
+                print("SMS RESULT:", ok, flush=True)
+                print("SMS RESPONSE:", response, flush=True)
 
                 if ok:
                     sms.status = "Sent"
                     sent_count += 1
                 else:
+                    # IMPORTANT: keep failed SMS pending while testing
                     sms.status = "Pending"
                     failed_count += 1
 
             db.session.commit()
 
             save_audit(
-                f"Test sent pending SMS via Africa's Talking. Sent: {sent_count}, Failed: {failed_count}",
+                f"SMS test via Africa's Talking. Sent: {sent_count}, Failed: {failed_count}. Failed kept pending.",
                 "Communication"
             )
 
             flash(
-                f"SMS test sending complete. Sent: {sent_count}, Failed: {failed_count}. "
-                f"Only 5 pending SMS were processed for safety."
+                f"SMS test complete. Sent: {sent_count}, Failed: {failed_count}. "
+                f"Failed SMS were kept as pending. Only 5 SMS tested."
             )
             return redirect(url_for("sms_messages"))
 
@@ -3786,9 +3789,15 @@ def sms_messages():
                 flash("Phone number is required for one-parent SMS.")
                 return redirect(url_for("sms_messages"))
 
+            cleaned_phone = clean_phone_number(phone)
+
+            if not cleaned_phone:
+                flash("Invalid phone number. Use Kenyan format like 0712345678 or 254712345678.")
+                return redirect(url_for("sms_messages"))
+
             recipients.append({
                 "name": recipient_name,
-                "phone": phone
+                "phone": cleaned_phone
             })
 
         elif send_to == "grade":
@@ -3805,10 +3814,12 @@ def sms_messages():
             ).all()
 
             for p in pupils:
-                if p.guardian_phone:
+                cleaned_phone = clean_phone_number(p.guardian_phone)
+
+                if cleaned_phone:
                     recipients.append({
                         "name": p.guardian_name,
-                        "phone": p.guardian_phone
+                        "phone": cleaned_phone
                     })
 
         elif send_to == "all":
@@ -3818,10 +3829,12 @@ def sms_messages():
             ).all()
 
             for p in pupils:
-                if p.guardian_phone:
+                cleaned_phone = clean_phone_number(p.guardian_phone)
+
+                if cleaned_phone:
                     recipients.append({
                         "name": p.guardian_name,
-                        "phone": p.guardian_phone
+                        "phone": cleaned_phone
                     })
 
         required_sms = len(recipients)
@@ -3865,10 +3878,7 @@ def sms_messages():
         )
 
         if failed_count > 0:
-            flash(
-                f"{count} SMS message(s) saved as pending. "
-                f"{failed_count} failed due to SMS balance or SMS disabled."
-            )
+            flash(f"{count} SMS message(s) saved as pending. {failed_count} failed.")
         else:
             flash(f"{count} SMS message(s) saved as pending. {count} SMS deducted.")
 
@@ -3877,9 +3887,7 @@ def sms_messages():
     selected_status = request.args.get("status", "")
     selected_category = request.args.get("category", "")
 
-    query = SMSMessage.query.filter_by(
-        school_id=school_id
-    )
+    query = SMSMessage.query.filter_by(school_id=school_id)
 
     if selected_status:
         query = query.filter(SMSMessage.status == selected_status)
@@ -3887,9 +3895,7 @@ def sms_messages():
     if selected_category:
         query = query.filter(SMSMessage.category == selected_category)
 
-    rows = query.order_by(
-        SMSMessage.created_at.desc()
-    ).all()
+    rows = query.order_by(SMSMessage.created_at.desc()).all()
 
     pending_count = SMSMessage.query.filter_by(
         school_id=school_id,
