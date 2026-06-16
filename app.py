@@ -3981,6 +3981,7 @@ def sms_messages():
 
             sent_count = 0
             failed_count = 0
+            last_error = ""
 
             for sms in pending_messages:
                 ok, response = send_sms_gateway(
@@ -3994,6 +3995,7 @@ def sms_messages():
                 else:
                     sms.status = "Failed"
                     failed_count += 1
+                    last_error = f"{sms.phone}: {response}"
 
             db.session.commit()
 
@@ -4002,7 +4004,14 @@ def sms_messages():
                 "Communication"
             )
 
-            flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}.")
+            if last_error:
+                flash(
+                    f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}. "
+                    f"Last error: {last_error}"
+                )
+            else:
+                flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}.")
+
             return redirect(url_for("sms_messages"))
 
         send_to = request.form.get("send_to", "single")
