@@ -53,32 +53,64 @@
     <br>
 
     <div class="action-row">
+
         <form method="post" style="display:inline;">
             <input type="hidden" name="action" value="send_pending">
-            <button class="btn green">Send All Pending SMS</button>
+            <button class="btn green">
+                Send All Pending SMS
+            </button>
         </form>
 
         <form method="post"
-      action="{{ url_for('cleanup_invalid_sms') }}"
-      style="display:inline;"
-      onsubmit="return confirm('Mark invalid pending SMS as Invalid?');">
-    <button class="btn red">Clean Invalid SMS</button>
-</form>
+              action="{{ url_for('cleanup_invalid_sms') }}"
+              style="display:inline;"
+              onsubmit="return confirm('Mark invalid pending SMS as Invalid?');">
+            <button class="btn red">
+                Clean Invalid SMS
+            </button>
+        </form>
 
-        <a href="{{ url_for('sms_messages', status='Pending') }}" class="btn">View Pending</a>
-        <a href="{{ url_for('sms_messages', category='Attendance Alert') }}" class="btn">Attendance Alerts</a>
-        <a href="{{ url_for('sms_messages', category='Payment Confirmation') }}" class="btn">Payment Alerts</a>
-        <a href="{{ url_for('sms_messages', category='Fees') }}" class="btn">Fee Reminders</a>
+        <a class="btn"
+           style="background:#fd7e14;"
+           href="{{ url_for('invalid_guardian_phones') }}">
+            Invalid Guardian Phones
+        </a>
+
+        <a class="btn"
+           href="{{ url_for('sms_messages', status='Pending') }}">
+            View Pending
+        </a>
+
+        <a class="btn"
+           href="{{ url_for('sms_messages', category='Attendance Alert') }}">
+            Attendance Alerts
+        </a>
+
+        <a class="btn"
+           href="{{ url_for('sms_messages', category='Payment Confirmation') }}">
+            Payment Alerts
+        </a>
+
+        <a class="btn"
+           href="{{ url_for('sms_messages', category='Fees') }}">
+            Fee Reminders
+        </a>
+
     </div>
 </div>
 
 <div class="panel">
+
     <h3>Create New SMS</h3>
 
     <form method="post">
-        <input type="hidden" name="action" value="create_sms">
+
+        <input type="hidden"
+               name="action"
+               value="create_sms">
 
         <label>Send To</label>
+
         <select name="send_to">
             <option value="single">One Parent</option>
             <option value="grade">One Grade / Class</option>
@@ -86,28 +118,36 @@
         </select>
 
         <div class="three">
+
             <div>
                 <label>Recipient Name</label>
-                <input name="recipient_name" placeholder="Required for one parent only">
+                <input name="recipient_name"
+                       placeholder="Required for one parent only">
             </div>
 
             <div>
                 <label>Phone Number</label>
-                <input name="phone" placeholder="Required for one parent only">
+                <input name="phone"
+                       placeholder="Required for one parent only">
             </div>
 
             <div>
                 <label>Grade/Class</label>
+
                 <select name="grade">
                     <option value="">Select Grade</option>
+
                     {% for g in grades %}
                     <option>{{ g }}</option>
                     {% endfor %}
                 </select>
+
             </div>
+
         </div>
 
         <label>Category</label>
+
         <select name="category">
             <option>General</option>
             <option>Fees</option>
@@ -118,49 +158,128 @@
         </select>
 
         <label>Message</label>
-        <textarea name="message" rows="5" style="width:100%;" required></textarea>
+
+        <textarea name="message"
+                  rows="5"
+                  style="width:100%;"
+                  required></textarea>
 
         <br><br>
-        <button class="btn">Save SMS as Pending</button>
+
+        <button class="btn">
+            Save SMS as Pending
+        </button>
+
     </form>
+
 </div>
 
 <div class="panel">
+
     <h3>SMS History</h3>
 
     <form method="get">
+
         <div class="two">
+
             <div>
+
                 <label>Status</label>
+
                 <select name="status">
+
                     <option value="">All</option>
-                    <option value="Pending" {% if selected_status == "Pending" %}selected{% endif %}>Pending</option>
-                    <option value="Sent" {% if selected_status == "Sent" %}selected{% endif %}>Sent</option>
-                    <option value="Failed" {% if selected_status == "Failed" %}selected{% endif %}>Failed</option>
+
+                    <option value="Pending"
+                    {% if selected_status=="Pending" %}
+                    selected
+                    {% endif %}>
+                    Pending
+                    </option>
+
+                    <option value="Sent"
+                    {% if selected_status=="Sent" %}
+                    selected
+                    {% endif %}>
+                    Sent
+                    </option>
+
+                    <option value="Failed"
+                    {% if selected_status=="Failed" %}
+                    selected
+                    {% endif %}>
+                    Failed
+                    </option>
+
                 </select>
+
             </div>
 
             <div>
+
                 <label>Category</label>
+
                 <select name="category">
+
                     <option value="">All</option>
-                    <option value="General" {% if selected_category == "General" %}selected{% endif %}>General</option>
-                    <option value="Fees" {% if selected_category == "Fees" %}selected{% endif %}>Fees</option>
-                    <option value="Attendance Alert" {% if selected_category == "Attendance Alert" %}selected{% endif %}>Attendance Alert</option>
-                    <option value="Payment Confirmation" {% if selected_category == "Payment Confirmation" %}selected{% endif %}>Payment Confirmation</option>
-                    <option value="Announcement" {% if selected_category == "Announcement" %}selected{% endif %}>Announcement</option>
-                    <option value="Exam" {% if selected_category == "Exam" %}selected{% endif %}>Exam</option>
+
+                    <option value="General">General</option>
+
+                    <option value="Fees"
+                    {% if selected_category=="Fees" %}
+                    selected
+                    {% endif %}>
+                    Fees
+                    </option>
+
+                    <option value="Attendance Alert"
+                    {% if selected_category=="Attendance Alert" %}
+                    selected
+                    {% endif %}>
+                    Attendance Alert
+                    </option>
+
+                    <option value="Payment Confirmation"
+                    {% if selected_category=="Payment Confirmation" %}
+                    selected
+                    {% endif %}>
+                    Payment Confirmation
+                    </option>
+
+                    <option value="Announcement"
+                    {% if selected_category=="Announcement" %}
+                    selected
+                    {% endif %}>
+                    Announcement
+                    </option>
+
+                    <option value="Exam"
+                    {% if selected_category=="Exam" %}
+                    selected
+                    {% endif %}>
+                    Exam
+                    </option>
+
                 </select>
+
             </div>
+
         </div>
 
         <button class="btn">Filter</button>
-        <a href="{{ url_for('sms_messages') }}" class="btn" style="background:#6c757d;">Reset</a>
+
+        <a href="{{ url_for('sms_messages') }}"
+           class="btn"
+           style="background:#6c757d;">
+            Reset
+        </a>
+
     </form>
 
     <br>
 
     <table>
+
         <tr>
             <th>#</th>
             <th>Date</th>
@@ -172,6 +291,7 @@
         </tr>
 
         {% for s in rows %}
+
         <tr>
             <td>{{ loop.index }}</td>
             <td>{{ s.created_at }}</td>
@@ -181,12 +301,19 @@
             <td>{{ s.message }}</td>
             <td>{{ s.status }}</td>
         </tr>
+
         {% else %}
+
         <tr>
-            <td colspan="7">No SMS messages found.</td>
+            <td colspan="7">
+                No SMS messages found.
+            </td>
         </tr>
+
         {% endfor %}
+
     </table>
+
 </div>
 
 {% endblock %}
