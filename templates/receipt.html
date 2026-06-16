@@ -1,23 +1,13 @@
-{% extends "base.html" %}{% block content %}
+{% extends "base.html" %}
+{% block content %}
+
 <style>
 @media print {
-  @page {
-    size: A6 portrait;
-    margin: 5mm;
-  }
+  @page { size: A6 portrait; margin: 5mm; }
 
-  body {
-    margin: 0;
-    padding: 0;
-  }
+  body * { visibility: hidden; }
 
-  body * {
-    visibility: hidden;
-  }
-
-  .print-area, .print-area * {
-    visibility: visible;
-  }
+  .print-area, .print-area * { visibility: visible; }
 
   .print-area {
     position: absolute;
@@ -28,12 +18,10 @@
     font-size: 11px;
   }
 
-  .no-print {
-    display: none !important;
-  }
+  .no-print { display: none !important; }
 
   .receipt-box {
-    padding: 5px;
+    padding: 6px;
     margin: 0;
   }
 
@@ -59,7 +47,8 @@
 
   .receipt-box th,
   .receipt-box td {
-    padding: 2px;
+    padding: 3px;
+    border: 1px solid #000;
   }
 
   .logo-large {
@@ -68,12 +57,106 @@
   }
 }
 </style>
-<div class="receipt receipt-box print-area"><img src="{{ url_for('static', filename='logo.png') }}" 
-style="width:70px;height:auto;display:block;margin:0 auto 10px;"
-  class="logo-large"><h2>{{settings.school_name}}</h2><h3>OFFICIAL FEE RECEIPT</h3><hr><p><b>Receipt No:</b> {{p.receipt_no}}</p><p><b>Date:</b> 
-    {{p.payment_date}}</p><p><b>Pupil:</b> {{pupil.full_name}}</p><p><b>Admission No:</b> {{pupil.admission_no}}</p><p><b>Academic Year:</b> {{p.academic_year}} 
-      | <b>Term:</b> {{p.term}} | <b>Month:</b> {{p.month}}</p><table><tr><th>Item</th><th>Paid Now</th></tr><tr><td>Tuition</td><td>{{money(p.tuition_paid)}}
-      </td></tr><tr><td>Bus/Transport</td><td>{{money(p.bus_paid)}}</td></tr><tr><td>Exam</td><td>{{money(p.exam_paid)}}</td></tr><tr><td>Admission</td><td>{{money(p.admission_paid)}}
-      </td></tr><tr><th>Total Paid Now</th><th>{{money(p.tuition_paid+p.bus_paid+p.exam_paid+p.admission_paid)}}</th></tr></table><p><b>Opening Arrears B/F:</b> {{money(opening)}}
-      </p><p><b>Discounts/Waivers This Year:</b> {{money(discounts)}}</p><p><b>Closing Balance:</b> {{money(closing)}}</p><p><b>Method:</b> {{p.payment_method}}
-      </p><p><b>Collected By:</b> {{p.collected_by}}</p><hr><p style="text-align:center">{{settings.address}}<br>{{settings.phone}}</p></div><div class="no-print" style="text-align:center;margin-top:10px"><button class="btn green" onclick="window.print()">Print Receipt</button></div>{% endblock %}
+
+<div class="receipt receipt-box print-area">
+
+    <div style="text-align:center;">
+        <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}"
+             class="logo-large"
+             style="width:70px;height:auto;display:block;margin:0 auto 8px;">
+
+        <h2>{{ settings.school_name }}</h2>
+        <p>{{ settings.address }}</p>
+        <p>{{ settings.phone }}</p>
+        <h3>OFFICIAL FEE RECEIPT</h3>
+    </div>
+
+    <hr>
+
+    <p><b>Receipt No:</b> {{ p.receipt_no }}</p>
+    <p><b>Date:</b> {{ p.payment_date }}</p>
+    <p><b>Pupil:</b> {{ pupil.full_name }}</p>
+    <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
+    <p><b>Grade:</b> {{ pupil.grade }}</p>
+    <p>
+        <b>Year:</b> {{ p.academic_year }} |
+        <b>Term:</b> {{ p.term }} |
+        <b>Month:</b> {{ p.month }}
+    </p>
+
+    <h3>Payment Breakdown</h3>
+
+    <table>
+        <tr>
+            <th>Item</th>
+            <th>Paid Now</th>
+        </tr>
+
+        <tr>
+            <td>Tuition</td>
+            <td>{{ money(p.tuition_paid) }}</td>
+        </tr>
+
+        <tr>
+            <td>Bus / Transport</td>
+            <td>{{ money(p.bus_paid) }}</td>
+        </tr>
+
+        <tr>
+            <td>Exam</td>
+            <td>{{ money(p.exam_paid) }}</td>
+        </tr>
+
+        <tr>
+            <td>Admission</td>
+            <td>{{ money(p.admission_paid) }}</td>
+        </tr>
+
+        <tr>
+            <th>Total Paid</th>
+            <th>{{ money(p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) }}</th>
+        </tr>
+    </table>
+
+    <br>
+
+    <h3>Account Position</h3>
+
+    <table>
+        <tr>
+            <th>Opening Arrears B/F</th>
+            <td>{{ money(opening) }}</td>
+        </tr>
+
+        <tr>
+            <th>Discounts / Waivers</th>
+            <td>{{ money(discounts) }}</td>
+        </tr>
+
+        <tr>
+            <th>Closing Balance</th>
+            <td><b>{{ money(closing) }}</b></td>
+        </tr>
+    </table>
+
+    <p><b>Payment Method:</b> {{ p.payment_method }}</p>
+    <p><b>Collected By:</b> {{ p.collected_by }}</p>
+
+    <br>
+
+    <p><b>Parent Signature:</b> __________________</p>
+    <p><b>School Stamp:</b> __________________</p>
+
+    <hr>
+
+    <p style="text-align:center;">
+        Thank you for supporting {{ settings.school_name }}.
+    </p>
+
+</div>
+
+<div class="no-print" style="text-align:center;margin-top:10px">
+    <button class="btn green" onclick="window.print()">Print Receipt</button>
+</div>
+
+{% endblock %}
