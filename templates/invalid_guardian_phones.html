@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Invalid Guardian Phone Numbers</h2>
+
+    <div class="notice">
+        These pupils have guardian phone numbers that cannot receive SMS. Correct them before sending bulk SMS.
+    </div>
+
+    <br>
+
+    {% if pupils %}
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Admission No</th>
+            <th>Pupil</th>
+            <th>Grade</th>
+            <th>Guardian</th>
+            <th>Current Phone</th>
+            <th>Action</th>
+        </tr>
+
+        {% for p in pupils %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.admission_no }}</td>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.grade }}</td>
+            <td>{{ p.guardian_name }}</td>
+            <td><b style="color:red;">{{ p.guardian_phone }}</b></td>
+            <td>
+                <a class="btn" href="{{ url_for('edit_pupil', pupil_id=p.id) }}">
+                    Correct Phone
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="notice">
+        Excellent. All active pupils have valid guardian phone numbers.
+    </div>
+    {% endif %}
+
+    <br>
+
+    <a class="btn" href="{{ url_for('pupils') }}">Back to Pupils</a>
+    <a class="btn green" href="{{ url_for('sms_messages') }}">SMS Centre</a>
+</div>
+
+{% endblock %}
