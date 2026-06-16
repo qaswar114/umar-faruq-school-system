@@ -3661,6 +3661,31 @@ def statements():
         selected_grade=selected_grade,
         year=year
     )
+
+@app.route("/finance_periods", methods=["GET", "POST"])
+def finance_periods():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    year = int(request.args.get("year", current_year()))
+
+    periods = []
+
+    for term in TERMS:
+        for month in term_months(term):
+            period = get_finance_period(year, term, month)
+            periods.append(period)
+
+    return render_template(
+        "finance_periods.html",
+        settings=get_settings(),
+        periods=periods,
+        year=year
+    )
 @app.route("/fee_reminders", methods=["GET", "POST"])
 def fee_reminders():
     if not login_required():
