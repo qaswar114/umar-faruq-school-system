@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="panel">
-    <h1>Smart Dashboard</h1>
+    <h1>CEO Smart Dashboard</h1>
 
     {% if session.get("school_name") %}
     <div class="notice">
@@ -12,94 +12,47 @@
 
     <h3>Finance Overview</h3>
     <div class="dashboard-grid">
-        <div class="card">
-            <h3>Today's Collection</h3>
-            <div class="number">{{ today_collection }}</div>
-        </div>
-
-        <div class="card">
-            <h3>This Month</h3>
-            <div class="number">{{ month_collection }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Total Collected</h3>
-            <div class="number">{{ total_collected }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Outstanding Fees</h3>
-            <div class="number">{{ outstanding }}</div>
-        </div>
+        <div class="card"><h3>Today's Collection</h3><div class="number">{{ today_collection }}</div></div>
+        <div class="card"><h3>This Month</h3><div class="number">{{ month_collection }}</div></div>
+        <div class="card"><h3>Expenses This Month</h3><div class="number">{{ month_expenses }}</div></div>
+        <div class="card"><h3>Net Income</h3><div class="number">{{ net_income }}</div></div>
+        <div class="card"><h3>Total Collected</h3><div class="number">{{ total_collected }}</div></div>
+        <div class="card"><h3>Outstanding Fees</h3><div class="number">{{ outstanding }}</div></div>
+        <div class="card"><h3>Defaulters</h3><div class="number">{{ defaulters }}</div></div>
+        <div class="card"><h3>Receipts</h3><div class="number">{{ receipts }}</div></div>
     </div>
 
-    <h3>School Activity Today</h3>
+    <h3>Student Overview</h3>
     <div class="dashboard-grid">
-        <div class="card">
-            <h3>Total Pupils</h3>
-            <div class="number">{{ total_pupils }}</div>
-        </div>
+        <div class="card"><h3>Total Pupils</h3><div class="number">{{ total_pupils }}</div></div>
+        <div class="card"><h3>Active Pupils</h3><div class="number">{{ active_pupils }}</div></div>
+        <div class="card"><h3>Inactive Pupils</h3><div class="number">{{ inactive_pupils }}</div></div>
+        <div class="card"><h3>New Admissions</h3><div class="number">{{ new_admissions_month }}</div></div>
+        <div class="card"><h3>Bus Pupils</h3><div class="number">{{ bus_pupils }}</div></div>
+    </div>
 
-        <div class="card">
-            <h3>Present Today</h3>
-            <div class="number">{{ present_today }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Absent Today</h3>
-            <div class="number">{{ absent_today }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Late Today</h3>
-            <div class="number">{{ late_today }}</div>
-        </div>
+    <h3>Attendance Today</h3>
+    <div class="dashboard-grid">
+        <div class="card"><h3>Present</h3><div class="number">{{ present_today }}</div></div>
+        <div class="card"><h3>Absent</h3><div class="number">{{ absent_today }}</div></div>
+        <div class="card"><h3>Late</h3><div class="number">{{ late_today }}</div></div>
+        <div class="card"><h3>Attendance Rate</h3><div class="number">{{ attendance_rate }}%</div></div>
     </div>
 
     <h3>Communication Centre</h3>
     <div class="dashboard-grid">
-        <div class="card">
-            <h3>Pending SMS</h3>
-            <div class="number">{{ pending_sms }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Attendance Alerts</h3>
-            <div class="number">{{ pending_attendance_alerts }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Payment Alerts</h3>
-            <div class="number">{{ pending_payment_alerts }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Defaulters</h3>
-            <div class="number">{{ defaulters }}</div>
-        </div>
+        <div class="card"><h3>SMS Balance</h3><div class="number">{{ sms_balance }}</div></div>
+        <div class="card"><h3>Pending SMS</h3><div class="number">{{ pending_sms }}</div></div>
+        <div class="card"><h3>Sent SMS</h3><div class="number">{{ sent_sms }}</div></div>
+        <div class="card"><h3>Failed SMS</h3><div class="number">{{ failed_sms }}</div></div>
+        <div class="card"><h3>Attendance Alerts</h3><div class="number">{{ pending_attendance_alerts }}</div></div>
+        <div class="card"><h3>Payment Alerts</h3><div class="number">{{ pending_payment_alerts }}</div></div>
     </div>
 
-    <h3>Growth & Staff</h3>
+    <h3>Staff & Administration</h3>
     <div class="dashboard-grid">
-        <div class="card">
-            <h3>New Admissions</h3>
-            <div class="number">{{ new_admissions_month }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Bus Pupils</h3>
-            <div class="number">{{ bus_pupils }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Teachers</h3>
-            <div class="number">{{ total_teachers }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Total Staff</h3>
-            <div class="number">{{ total_staff }}</div>
-        </div>
+        <div class="card"><h3>Teachers</h3><div class="number">{{ total_teachers }}</div></div>
+        <div class="card"><h3>Total Staff</h3><div class="number">{{ total_staff }}</div></div>
     </div>
 
     <br>
@@ -113,6 +66,7 @@
         <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
         <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
         <a class="btn" href="{{ url_for('defaulters_report') }}">Defaulters Report</a>
+        <a class="btn" href="{{ url_for('expense_report') }}">Expense Report</a>
         {% endif %}
 
         {% if session.role|lower in ['admin', 'teacher', 'receptionist', 'bursar'] %}
@@ -150,6 +104,32 @@
     </table>
     {% else %}
     <div class="notice">No active exams set.</div>
+    {% endif %}
+
+    <br>
+
+    <h3>Recent Announcements</h3>
+
+    {% if recent_announcements %}
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Title</th>
+            <th>Audience</th>
+            <th>Created By</th>
+        </tr>
+
+        {% for a in recent_announcements %}
+        <tr>
+            <td>{{ a.created_at.strftime("%d-%m-%Y") if a.created_at else "-" }}</td>
+            <td>{{ a.title }}</td>
+            <td>{{ a.audience }}</td>
+            <td>{{ a.created_by }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="notice">No recent announcements.</div>
     {% endif %}
 
 </div>
