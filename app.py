@@ -534,6 +534,21 @@ def clean_phone_number(phone):
         return phone
 
     return None
+
+def send_sms_gateway(phone, message):
+    try:
+        sms = africastalking.SMS
+
+        response = sms.send(
+            message,
+            [phone],
+            AFRICASTALKING_SENDER_ID
+        )
+
+        return True, str(response)
+
+    except Exception as e:
+        return False, str(e)
     
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
