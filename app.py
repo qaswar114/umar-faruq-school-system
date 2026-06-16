@@ -3432,51 +3432,61 @@ def statement(pupil_id, year):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+
     pupil = Pupil.query.filter_by(
         id=pupil_id,
-        school_id=current_school_id()
+        school_id=school_id
     ).first_or_404()
 
     entries = []
-    bal = opening_arrears(pupil, year)
+    balance = opening_arrears(pupil, year)
 
-    if bal > 0:
-        entries.append((
-            f"01/01/{year}",
-            f"Opening Arrears B/F from {year-1}",
-            bal,
-            0,
-            bal
-        ))
+    opening_balance = balance
+    current_charges = 0
+    total_paid = 0
+    total_discounts = 0
+
+    if opening_balance > 0:
+        entries.append({
+            "date": f"01/01/{year}",
+            "description": f"Opening Arrears B/F from {year - 1}",
+            "debit": opening_balance,
+            "credit": 0,
+            "balance": balance
+        })
 
     for term in TERMS:
         for month in term_months(term):
 
             if year == 2026 and month not in [
                 "May", "June", "July",
-                "August", "September", "October",
-                "November", "December"
+                "September", "October", "November"
             ]:
                 continue
 
             d = monthly_due(pupil, year, term, month)
             debit = d["tuition"] + d["bus"] + d["exam"] + d["admission"]
 
-            if debit:
-                bal += debit
-                entries.append((
-                    "",
-                    f"{month} {term} Fees",
-                    debit,
-                    0,
-                    bal
-                ))
+            if debit > 0:
+                balance += debit
+                current_charges += debit
 
-            discounts = Discount.query.filter_by(
-                school_id=current_school_id(),
+                entries.append({
+                    "date": "",
+                    "description": f"{month} {term} Fees",
+                    "debit": debit,
+                    "credit": 0,
+                    "balance": balance
+                })
+
+            payments = Payment.query.filter_by(
+                school_id=school_id,
                 pupil_id=pupil.id,
-                academic_year=year
-           ).all()
+                academic_year=year,
+                term=term,
+                month=month
+            ).order_by(Payment.payment_date.asc()).all()
 
             for pay in payments:
                 credit = (
@@ -3486,30 +3496,45 @@ def statement(pupil_id, year):
                     pay.admission_paid
                 )
 
-                if credit:
-                    bal -= credit
-                    entries.append((
-                        str(pay.payment_date),
-                        f"Payment {pay.receipt_no} ({term}, {month})",
-                        0,
-                        credit,
-                        bal
-                    ))
+                if credit > 0:
+                    balance -= credit
+                    total_paid += credit
+
+                    entries.append({
+                        "date": str(pay.payment_date),
+                        "description": f"Payment {pay.receipt_no} ({pay.payment_method})",
+                        "debit": 0,
+                        "credit": credit,
+                        "balance": balance
+                    })
 
     discounts = Discount.query.filter_by(
+        school_id=school_id,
         pupil_id=pupil.id,
         academic_year=year
-    ).all()
+    ).order_by(Discount.created_at.asc()).all()
 
     for d in discounts:
-        bal -= d.amount
-        entries.append((
-            str(d.created_at),
-            f"Discount/Waiver: {d.reason}",
-            0,
-            d.amount,
-            bal
-        ))
+        if d.amount > 0:
+            balance -= d.amount
+            total_discounts += d.amount
+
+            entries.append({
+                "date": str(d.created_at),
+                "description": f"Discount/Waiver: {d.reason}",
+                "debit": 0,
+                "credit": d.amount,
+                "balance": balance
+            })
+
+    closing_balance = balance
+
+    if closing_balance <= 0:
+        account_status = "CLEARED"
+    elif closing_balance <= 5000:
+        account_status = "SMALL BALANCE"
+    else:
+        account_status = "OUTSTANDING"
 
     return render_template(
         "statement.html",
@@ -3517,9 +3542,18 @@ def statement(pupil_id, year):
         pupil=pupil,
         year=year,
         entries=entries,
-        closing=bal,
-        money=money
+
+        opening_balance=opening_balance,
+        current_charges=current_charges,
+        total_paid=total_paid,
+        total_discounts=total_discounts,
+        closing=closing_balance,
+        account_status=account_status,
+
+        money=money,
+        today=date.today()
     )
+
 
 @app.route("/statements")
 def statements():
@@ -3530,15 +3564,31 @@ def statements():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    school_id = current_school_id()
+    selected_grade = request.args.get("grade", "")
+    year = int(request.args.get("year", current_year()))
+
+    query = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    )
+
+    if selected_grade:
+        query = query.filter_by(grade=selected_grade)
+
+    pupils = query.order_by(
+        Pupil.grade,
+        Pupil.full_name
+    ).all()
+
     return render_template(
         "statements.html",
         settings=get_settings(),
-        pupils=Pupil.query.filter_by(
-        school_id=current_school_id()
-        ).order_by(Pupil.full_name).all(),
-        year=current_year()
-)
-
+        pupils=pupils,
+        grades=GRADES,
+        selected_grade=selected_grade,
+        year=year
+    )
 @app.route("/fee_reminders", methods=["GET", "POST"])
 def fee_reminders():
     if not login_required():
