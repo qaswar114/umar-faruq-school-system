@@ -336,6 +336,51 @@ class Expense(db.Model):
     description = db.Column(db.String(200))
     amount = db.Column(db.Float, nullable=False)
     recorded_by = db.Column(db.String(80))
+
+class FinancePeriod(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
+
+    academic_year = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    term = db.Column(
+        db.String(20),
+        nullable=False
+    )
+
+    month = db.Column(
+        db.String(20),
+        nullable=False
+    )
+
+    is_closed = db.Column(
+        db.Boolean,
+        default=False
+    )
+
+    closed_by = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    closed_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+    
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -656,6 +701,12 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 def init_database():
     db.create_all()
 
+    try:
+       FinancePeriod.__table__.create(db.engine, checkfirst=True)
+       db.session.commit()
+    except Exception:
+    db.session.rollback()
+
         # Create SMS Procurement table
     try:
         SMSProcurement.__table__.create(
@@ -900,6 +951,27 @@ def current_school_id():
 
 def current_school():
     return School.query.get(current_school_id())
+
+def get_finance_period(year, term, month):
+    period = FinancePeriod.query.filter_by(
+        school_id=current_school_id(),
+        academic_year=year,
+        term=term,
+        month=month
+    ).first()
+
+    if not period:
+        period = FinancePeriod(
+            school_id=current_school_id(),
+            academic_year=year,
+            term=term,
+            month=month,
+            is_closed=False
+        )
+        db.session.add(period)
+        db.session.commit()
+
+    return period
     
 def save_audit(action, module="System"):
     log = AuditLog(
