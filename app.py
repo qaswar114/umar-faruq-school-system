@@ -1704,12 +1704,19 @@ def pupils():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
-
     can_register = current_role in ["admin", "registrar", "receptionist"]
 
     if request.method == "POST":
         if not can_register:
             flash("You have view-only access to pupil records.")
+            return redirect(url_for("pupils"))
+
+        guardian_phone = clean_phone_number(
+            request.form.get("guardian_phone", "")
+        )
+
+        if not guardian_phone:
+            flash("Invalid guardian phone number. Use 07XXXXXXXX or 2547XXXXXXXX.")
             return redirect(url_for("pupils"))
 
         photo_file = request.files.get("photo")
@@ -1727,7 +1734,7 @@ def pupils():
             dob=request.form.get("dob", ""),
             grade=request.form["grade"],
             guardian_name=request.form["guardian_name"],
-            guardian_phone=request.form["guardian_phone"],
+            guardian_phone=guardian_phone,
             home_address=request.form.get("home_address", ""),
             new_admission=request.form["new_admission"],
             uses_bus=request.form["uses_bus"],
@@ -1771,7 +1778,6 @@ def pupils():
         selected_grade=selected_grade,
         can_register=can_register
     )
-
 @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
 def edit_pupil(pupil_id):
     if not login_required():
@@ -1787,23 +1793,47 @@ def edit_pupil(pupil_id):
     ).first_or_404()
 
     if request.method == "POST":
+
+        guardian_phone = clean_phone_number(
+            request.form.get("guardian_phone", "")
+        )
+
+        if not guardian_phone:
+            flash(
+                "Invalid guardian phone number. "
+                "Use 07XXXXXXXX or 2547XXXXXXXX."
+            )
+            return redirect(request.url)
+
         pupil.full_name = request.form["full_name"]
         pupil.gender = request.form["gender"]
         pupil.dob = request.form.get("dob", "")
         pupil.grade = request.form["grade"]
         pupil.guardian_name = request.form["guardian_name"]
-        pupil.guardian_phone = clean_phone_number(request.form.get("guardian_phone", "")) or ""
+        pupil.guardian_phone = guardian_phone
         pupil.uses_bus = request.form["uses_bus"]
         pupil.status = request.form["status"]
         pupil.home_address = request.form.get("home_address", "")
 
         photo_file = request.files.get("photo")
+
         if photo_file and photo_file.filename:
             photo_filename = secure_filename(photo_file.filename)
-            photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
+            photo_file.save(
+                os.path.join(
+                    app.config["UPLOAD_FOLDER"],
+                    photo_filename
+                )
+            )
             pupil.photo = photo_filename
 
         db.session.commit()
+
+        save_audit(
+            f"Updated pupil: {pupil.full_name}",
+            "Students"
+        )
+
         flash("Pupil updated successfully.")
         return redirect(url_for("pupils"))
 
