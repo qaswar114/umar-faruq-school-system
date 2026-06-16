@@ -1853,6 +1853,36 @@ def pupils():
         selected_grade=selected_grade,
         can_register=can_register
     )
+
+@app.route("/invalid_guardian_phones")
+def invalid_guardian_phones():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "registrar", "receptionist"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    pupils = Pupil.query.filter_by(
+        school_id=current_school_id(),
+        status="Active"
+    ).order_by(
+        Pupil.grade,
+        Pupil.full_name
+    ).all()
+
+    invalid_pupils = []
+
+    for pupil in pupils:
+        if not clean_phone_number(pupil.guardian_phone):
+            invalid_pupils.append(pupil)
+
+    return render_template(
+        "invalid_guardian_phones.html",
+        settings=get_settings(),
+        pupils=invalid_pupils
+    )
+    
 @app.route("/edit_pupil/<int:pupil_id>", methods=["GET", "POST"])
 def edit_pupil(pupil_id):
     if not login_required():
