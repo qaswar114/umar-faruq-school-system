@@ -1,1 +1,82 @@
-{% extends "base.html" %}{% block content %}<div class="statement print-area"><img src="{{ url_for('static', filename='logo.png') }}" class="logo-large"><h2>{{settings.school_name}}</h2><h3>PARENT STATEMENT</h3><p><b>Pupil:</b> {{pupil.full_name}}<br><b>Admission:</b> {{pupil.admission_no}}<br><b>Academic Year:</b> {{year}}</p><table><tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Running Balance</th></tr>{% for e in entries %}<tr><td>{{e[0]}}</td><td>{{e[1]}}</td><td>{{money(e[2]) if e[2] else "-"}}</td><td>{{money(e[3]) if e[3] else "-"}}</td><td>{{money(e[4])}}</td></tr>{% endfor %}</table><h3>Closing Balance: {{money(closing)}}</h3><p style="text-align:center">{{settings.address}}<br>{{settings.phone}}</p></div><div class="no-print" style="text-align:center;margin-top:10px"><button class="btn green" onclick="window.print()">Print Statement</button></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+
+<div class="statement print-area">
+    <div style="text-align:center;">
+        <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo-large">
+        <h2>{{ settings.school_name }}</h2>
+        <p>{{ settings.address }}</p>
+        <p>{{ settings.phone }}</p>
+        <h3>PARENT FINANCIAL STATEMENT</h3>
+    </div>
+
+    <hr>
+
+    <p>
+        <b>Pupil:</b> {{ pupil.full_name }}<br>
+        <b>Admission No:</b> {{ pupil.admission_no }}<br>
+        <b>Grade:</b> {{ pupil.grade }}<br>
+        <b>Academic Year:</b> {{ year }}<br>
+        <b>Generated:</b> {{ today }}
+    </p>
+
+    <h3>Financial Summary</h3>
+    <table>
+        <tr><th>Opening Balance</th><td>{{ money(opening_balance) }}</td></tr>
+        <tr><th>Current Charges</th><td>{{ money(current_charges) }}</td></tr>
+        <tr><th>Total Payments</th><td>{{ money(total_paid) }}</td></tr>
+        <tr><th>Discounts / Waivers</th><td>{{ money(total_discounts) }}</td></tr>
+        <tr><th>Closing Balance</th><td><b>{{ money(closing) }}</b></td></tr>
+        <tr><th>Account Status</th><td><b>{{ account_status }}</b></td></tr>
+    </table>
+
+    <h3>Transaction History</h3>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Debit</th>
+            <th>Credit</th>
+            <th>Running Balance</th>
+        </tr>
+
+        {% for e in entries %}
+        <tr>
+            <td>{{ e.date }}</td>
+            <td>{{ e.description }}</td>
+            <td>{{ money(e.debit) if e.debit else "-" }}</td>
+            <td>{{ money(e.credit) if e.credit else "-" }}</td>
+            <td>{{ money(e.balance) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No statement entries found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+
+    <p>
+        <b>Note:</b> Kindly clear any outstanding balance through the school accounts office.
+    </p>
+
+    <br><br>
+
+    <table>
+        <tr>
+            <td><b>Bursar Signature:</b> ______________________</td>
+            <td><b>School Stamp:</b> ______________________</td>
+        </tr>
+    </table>
+
+    <p style="text-align:center;">
+        Thank you for supporting {{ settings.school_name }}.
+    </p>
+</div>
+
+<div class="no-print" style="text-align:center;margin-top:10px">
+    <button class="btn green" onclick="window.print()">Print Statement</button>
+</div>
+
+{% endblock %}
