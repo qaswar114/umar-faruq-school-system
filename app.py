@@ -534,8 +534,7 @@ def clean_phone_number(phone):
         return phone
 
     return None
-
-
+    
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
 
