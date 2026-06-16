@@ -534,20 +534,45 @@ def clean_phone_number(phone):
         return phone
 
     return None
-
 def send_sms_gateway(phone, message):
     try:
-        sms = africastalking.SMS
+        phone = clean_phone_number(phone)
 
-        response = sms.send(
-            message,
-            [phone],
-            AFRICASTALKING_SENDER_ID
-        )
+        if not phone:
+            return False, "Invalid phone number"
+
+        if not message:
+            return False, "Message cannot be empty"
+
+        username = os.environ.get("AT_USERNAME", "sandbox")
+        api_key = os.environ.get("AT_API_KEY", "")
+        sender_id = os.environ.get("AT_SENDER_ID", "").strip()
+
+        if not api_key:
+            return False, "Africa's Talking API key missing"
+
+        africastalking.initialize(username, api_key)
+
+        sms_service = africastalking.SMS
+
+        if sender_id:
+            response = sms_service.send(
+                message,
+                [phone],
+                sender_id=sender_id
+            )
+        else:
+            response = sms_service.send(
+                message,
+                [phone]
+            )
+
+        print("AFRICASTALKING RESPONSE:", response, flush=True)
 
         return True, str(response)
 
     except Exception as e:
+        print("AFRICASTALKING ERROR:", str(e), flush=True)
         return False, str(e)
     
 def get_platform_sms_pool():
