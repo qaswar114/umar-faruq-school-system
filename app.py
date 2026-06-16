@@ -702,10 +702,10 @@ def init_database():
     db.create_all()
 
     try:
-       FinancePeriod.__table__.create(db.engine, checkfirst=True)
-       db.session.commit()
+        FinancePeriod.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
     except Exception:
-    db.session.rollback()
+        db.session.rollback()
 
         # Create SMS Procurement table
     try:
