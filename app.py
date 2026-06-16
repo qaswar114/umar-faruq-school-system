@@ -525,13 +525,16 @@ def clean_phone_number(phone):
         return None
 
     phone = str(phone).strip()
-    phone = phone.replace(" ", "").replace("-", "").replace("+", "")
+    phone = phone.replace(" ", "").replace("-", "")
 
-    if phone.startswith("0") and len(phone) == 10:
-        phone = "254" + phone[1:]
+    if phone.startswith("+254"):
+        return phone
 
     if phone.startswith("254") and len(phone) == 12:
-        return phone
+        return "+" + phone
+
+    if phone.startswith("0") and len(phone) == 10:
+        return "+254" + phone[1:]
 
     return None
 def send_sms_gateway(phone, message):
