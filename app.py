@@ -535,68 +535,7 @@ def clean_phone_number(phone):
 
     return None
 
-def send_sms_gateway(phone, message):
-    try:
-        original_phone = phone
-        phone = clean_phone_number(phone)
 
-        print("================ SMS DEBUG START ================", flush=True)
-        print("ORIGINAL PHONE:", original_phone, flush=True)
-        print("CLEANED PHONE:", phone, flush=True)
-        print("MESSAGE:", message, flush=True)
-        print("AT_USERNAME:", os.environ.get("AT_USERNAME", ""), flush=True)
-        print("AT_SENDER_ID:", os.environ.get("AT_SENDER_ID", ""), flush=True)
-
-        if not phone:
-            print("SMS FAILED: Invalid phone number", flush=True)
-            print("================ SMS DEBUG END ==================", flush=True)
-            return False, f"Invalid phone number: {original_phone}"
-
-        if not message:
-            print("SMS FAILED: Message cannot be empty", flush=True)
-            print("================ SMS DEBUG END ==================", flush=True)
-            return False, "Message cannot be empty"
-
-        username = os.environ.get("AT_USERNAME", "sandbox")
-        api_key = os.environ.get("AT_API_KEY", "")
-        sender_id = os.environ.get("AT_SENDER_ID", "").strip()
-
-        if not username:
-            print("SMS FAILED: Africa's Talking username missing", flush=True)
-            print("================ SMS DEBUG END ==================", flush=True)
-            return False, "Africa's Talking username missing"
-
-        if not api_key:
-            print("SMS FAILED: Africa's Talking API key missing", flush=True)
-            print("================ SMS DEBUG END ==================", flush=True)
-            return False, "Africa's Talking API key missing"
-
-        africastalking.initialize(username, api_key)
-        sms_service = africastalking.SMS
-
-        print("SENDING TO AFRICA'S TALKING...", flush=True)
-
-        if sender_id:
-            response = sms_service.send(
-                message,
-                [phone],
-                sender_id=sender_id
-            )
-        else:
-            response = sms_service.send(
-                message,
-                [phone]
-            )
-
-        print("AFRICASTALKING RESPONSE:", response, flush=True)
-        print("================ SMS DEBUG END ==================", flush=True)
-
-        return True, str(response)
-
-    except Exception as e:
-        print("AFRICASTALKING EXCEPTION:", str(e), flush=True)
-        print("================ SMS DEBUG END ==================", flush=True)
-        return False, str(e)
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
 
@@ -1189,7 +1128,7 @@ def dashboard():
 
         recent_schools = School.query.order_by(
             School.created_at.desc()
-        ).limit(5).all()
+        ).all()
 
         return render_template(
             "super_dashboard.html",
@@ -3969,38 +3908,32 @@ def sms_messages():
             pending_messages = SMSMessage.query.filter_by(
                 school_id=school_id,
                 status="Pending"
-            ).order_by(SMSMessage.created_at.asc()).limit(5).all()
+            ).order_by(SMSMessage.created_at.asc()).all()
 
             sent_count = 0
             failed_count = 0
 
             for sms in pending_messages:
-                ok, response = send_sms_gateway(sms.phone, sms.message)
-
-                print("SMS ID:", sms.id, flush=True)
-                print("SMS PHONE:", sms.phone, flush=True)
-                print("SMS RESULT:", ok, flush=True)
-                print("SMS RESPONSE:", response, flush=True)
+                ok, response = send_sms_gateway(
+                    sms.phone,
+                    sms.message
+                )
 
                 if ok:
                     sms.status = "Sent"
                     sent_count += 1
                 else:
-                    # IMPORTANT: keep failed SMS pending while testing
-                    sms.status = "Pending"
+                    sms.status = "Failed"
                     failed_count += 1
 
             db.session.commit()
 
             save_audit(
-                f"SMS test via Africa's Talking. Sent: {sent_count}, Failed: {failed_count}. Failed kept pending.",
+                f"Sent pending SMS via Africa's Talking. Sent: {sent_count}, Failed: {failed_count}",
                 "Communication"
             )
 
-            flash(
-                f"SMS test complete. Sent: {sent_count}, Failed: {failed_count}. "
-                f"Failed SMS were kept as pending. Only 5 SMS tested."
-            )
+            flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}.")
             return redirect(url_for("sms_messages"))
 
         send_to = request.form.get("send_to", "single")
@@ -4119,7 +4052,9 @@ def sms_messages():
     selected_status = request.args.get("status", "")
     selected_category = request.args.get("category", "")
 
-    query = SMSMessage.query.filter_by(school_id=school_id)
+    query = SMSMessage.query.filter_by(
+        school_id=school_id
+    )
 
     if selected_status:
         query = query.filter(SMSMessage.status == selected_status)
@@ -4127,7 +4062,9 @@ def sms_messages():
     if selected_category:
         query = query.filter(SMSMessage.category == selected_category)
 
-    rows = query.order_by(SMSMessage.created_at.desc()).all()
+    rows = query.order_by(
+        SMSMessage.created_at.desc()
+    ).all()
 
     pending_count = SMSMessage.query.filter_by(
         school_id=school_id,
@@ -4203,7 +4140,6 @@ def sms_messages():
         selected_status=selected_status,
         selected_category=selected_category
     )
-
 @app.route("/cleanup_invalid_sms", methods=["POST"])
 def cleanup_invalid_sms():
     if not login_required():
