@@ -555,29 +555,32 @@ def send_sms_gateway(phone, message):
             return False, "Africa's Talking API key missing"
 
         africastalking.initialize(username, api_key)
-
         sms_service = africastalking.SMS
 
         if sender_id:
-            response = sms_service.send(
-                message,
-                [phone],
-                sender_id=sender_id
-            )
+            response = sms_service.send(message, [phone], sender_id=sender_id)
         else:
-            response = sms_service.send(
-                message,
-                [phone]
-            )
+            response = sms_service.send(message, [phone])
 
         print("AFRICASTALKING RESPONSE:", response, flush=True)
 
-        return True, str(response)
+        recipients = response.get("SMSMessageData", {}).get("Recipients", [])
+
+        if not recipients:
+            return False, str(response)
+
+        recipient = recipients[0]
+        status = recipient.get("status", "")
+
+        if status in ["Success", "Sent"]:
+            return True, str(response)
+
+        return False, str(response)
 
     except Exception as e:
         print("AFRICASTALKING ERROR:", str(e), flush=True)
         return False, str(e)
-    
+        
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
 
