@@ -4742,6 +4742,74 @@ def staff():
         grades=GRADES,
         subjects=subjects
     )
+
+@app.route("/payroll", methods=["GET", "POST"])
+def payroll():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        staff_id = int(request.form.get("staff_id"))
+        payroll_month = request.form.get("payroll_month")
+        payroll_year = int(request.form.get("payroll_year"))
+        basic_salary = float(request.form.get("basic_salary") or 0)
+        allowances = float(request.form.get("allowances") or 0)
+        deductions = float(request.form.get("deductions") or 0)
+        payment_method = request.form.get("payment_method")
+        payment_date = request.form.get("payment_date")
+
+        net_salary = basic_salary + allowances - deductions
+
+        payroll_item = StaffPayroll(
+            school_id=school_id,
+            staff_id=staff_id,
+            payroll_month=payroll_month,
+            payroll_year=payroll_year,
+            basic_salary=basic_salary,
+            allowances=allowances,
+            deductions=deductions,
+            net_salary=net_salary,
+            payment_method=payment_method,
+            payment_date=datetime.strptime(payment_date, "%Y-%m-%d").date() if payment_date else date.today(),
+            status="Paid",
+            created_by=session.get("username")
+        )
+
+        db.session.add(payroll_item)
+        db.session.commit()
+
+        flash("Staff payroll recorded successfully.")
+        return redirect(url_for("payroll"))
+
+    staff_members = Staff.query.filter_by(
+        school_id=school_id
+    ).order_by(Staff.full_name).all()
+
+    payrolls = StaffPayroll.query.filter_by(
+        school_id=school_id
+    ).order_by(StaffPayroll.created_at.desc()).all()
+
+    total_net_salary = sum(x.net_salary or 0 for x in payrolls)
+
+    months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+
+    return render_template(
+        "payroll.html",
+        staff_members=staff_members,
+        payrolls=payrolls,
+        months=months,
+        total_net_salary=total_net_salary,
+        money=money
+    )
     
 @app.route("/audit_logs")
 def audit_logs():
