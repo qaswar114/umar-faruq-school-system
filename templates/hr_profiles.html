@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>HR Profiles</h2>
+    <p>View staff HR profiles, employment details, payment details, and salary setup.</p>
+
+    <a class="btn" href="{{ url_for('staff') }}">Back to Staff Management</a>
+</div>
+
+<div class="panel">
+    <h3>Staff HR Directory</h3>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Staff</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Employment</th>
+            <th>Payment Mode</th>
+            <th>Gross Salary</th>
+            <th>Action</th>
+        </tr>
+
+        {% for row in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+
+            <td>
+                <b>{{ row.staff.full_name }}</b><br>
+                <small>{{ row.staff.phone if row.staff.phone else "-" }}</small>
+            </td>
+
+            <td>{{ row.staff.role }}</td>
+
+            <td>
+                {% if row.hr %}
+                    {{ row.hr.department if row.hr.department else "-" }}
+                {% else %}
+                    <span style="color:red;">Not created</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if row.hr %}
+                    {{ row.hr.employment_type }} / {{ row.hr.employment_status }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if row.hr %}
+                    {{ row.hr.payment_mode }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                <b>{{ money(row.gross_salary) }}</b>
+            </td>
+
+            <td>
+                <a class="btn blue" href="{{ url_for('staff_hr', staff_id=row.staff.id) }}">
+                    Open HR Profile
+                </a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8">No staff found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
