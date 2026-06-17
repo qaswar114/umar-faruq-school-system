@@ -236,19 +236,50 @@ class User(db.Model):
     assigned_grade = db.Column(db.String(50), default="")
     assigned_subjects = db.Column(db.String(255), default="")
     is_active = db.Column(db.Boolean, default=True)
+
 class Staff(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+
+    # Basic staff details
     full_name = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(80), default="")
     email = db.Column(db.String(120), default="")
     id_no = db.Column(db.String(80), default="")
+
+    # Work details
     role = db.Column(db.String(50), nullable=False)
+    department = db.Column(db.String(100), default="")
     assigned_subjects = db.Column(db.String(255), default="")
     assigned_grade = db.Column(db.String(50), default="")
     date_joined = db.Column(db.Date, default=date.today)
     status = db.Column(db.String(20), default="Active")
 
+    # Payroll salary details
+    basic_salary = db.Column(db.Float, default=0)
+    house_allowance = db.Column(db.Float, default=0)
+    transport_allowance = db.Column(db.Float, default=0)
+    responsibility_allowance = db.Column(db.Float, default=0)
+    other_allowance = db.Column(db.Float, default=0)
+
+    # Statutory / deductions details
+    kra_pin = db.Column(db.String(50), default="")
+    nhif_number = db.Column(db.String(50), default="")
+    nssf_number = db.Column(db.String(50), default="")
+
+    # Payment details
+    payment_mode = db.Column(db.String(50), default="Cash")
+    bank_name = db.Column(db.String(100), default="")
+    account_number = db.Column(db.String(100), default="")
+    mpesa_number = db.Column(db.String(30), default="")
+
+    # Employment details
+    employment_type = db.Column(db.String(50), default="Permanent")
+    employment_status = db.Column(db.String(20), default="Active")
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
 class StaffPayroll(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -4742,6 +4773,25 @@ def staff():
         grades=GRADES,
         subjects=subjects
     )
+
+@app.route("/update_staff_table")
+def update_staff_table():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin", "admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    try:
+        db.create_all()
+        db.session.commit()
+        flash("Staff table updated successfully.")
+    except Exception as e:
+        db.session.rollback()
+        flash(str(e))
+
+    return redirect(url_for("staff"))
 
 @app.route("/payroll", methods=["GET", "POST"])
 def payroll():
