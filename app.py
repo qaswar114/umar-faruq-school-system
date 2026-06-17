@@ -4810,6 +4810,19 @@ def payroll():
         total_net_salary=total_net_salary,
         money=money
     )
+
+@app.route("/fix_payroll_table")
+def fix_payroll_table():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin", "admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    db.create_all()
+    flash("Payroll table created successfully.")
+    return redirect(url_for("payroll"))
     
 @app.route("/audit_logs")
 def audit_logs():
