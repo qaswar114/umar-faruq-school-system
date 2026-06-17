@@ -4857,6 +4857,58 @@ def staff_attendance():
         rows=rows,
         selected_date=selected_date
     )
+
+@app.route("/staff_attendance_report")
+def staff_attendance_report():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    selected_date_raw = request.args.get("date")
+    selected_staff_id = request.args.get("staff_id")
+
+    query = StaffAttendance.query.filter_by(school_id=school_id)
+
+    selected_date = None
+    if selected_date_raw:
+        selected_date = datetime.strptime(selected_date_raw, "%Y-%m-%d").date()
+        query = query.filter_by(attendance_date=selected_date)
+
+    if selected_staff_id:
+        query = query.filter_by(staff_id=int(selected_staff_id))
+
+    records = query.order_by(
+        StaffAttendance.attendance_date.desc(),
+        StaffAttendance.id.desc()
+    ).all()
+
+    staff_members = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Staff.full_name).all()
+
+    total_present = sum(1 for r in records if r.status == "Present")
+    total_late = sum(1 for r in records if r.status == "Late")
+    total_absent = sum(1 for r in records if r.status == "Absent")
+    total_official = sum(1 for r in records if r.status == "Official Duty")
+
+    return render_template(
+        "staff_attendance_report.html",
+        settings=get_settings(),
+        records=records,
+        staff_members=staff_members,
+        selected_date=selected_date_raw or "",
+        selected_staff_id=selected_staff_id or "",
+        total_present=total_present,
+        total_late=total_late,
+        total_absent=total_absent,
+        total_official=total_official
+    )
     
 @app.route("/create_hr_tables")
 def create_hr_tables():
