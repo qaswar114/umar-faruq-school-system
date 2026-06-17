@@ -18,6 +18,9 @@
         {% if session.get("role") == "admin" %}
     <a class="btn" href="{{ url_for('staff_attendance') }}">Staff Attendance</a>
         {% endif %}
+        {% if session.get("role") == "admin" %}
+    <a class="btn blue" href="{{ url_for('staff_attendance_report') }}">Attendance Report</a>
+        {% endif %}
         {% endif %}
     </div>
 </div>
