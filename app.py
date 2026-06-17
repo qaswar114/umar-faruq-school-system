@@ -249,6 +249,34 @@ class Staff(db.Model):
     assigned_grade = db.Column(db.String(50), default="")
     date_joined = db.Column(db.Date, default=date.today)
     status = db.Column(db.String(20), default="Active")
+
+class StaffHR(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+    staff_id = db.Column(db.Integer, db.ForeignKey("staff.id"), nullable=False, unique=True)
+
+    department = db.Column(db.String(100), default="")
+    employment_type = db.Column(db.String(50), default="Permanent")
+    employment_status = db.Column(db.String(30), default="Active")
+
+    basic_salary = db.Column(db.Float, default=0)
+    house_allowance = db.Column(db.Float, default=0)
+    transport_allowance = db.Column(db.Float, default=0)
+    other_allowance = db.Column(db.Float, default=0)
+
+    kra_pin = db.Column(db.String(50), default="")
+    nhif_number = db.Column(db.String(50), default="")
+    nssf_number = db.Column(db.String(50), default="")
+
+    payment_mode = db.Column(db.String(50), default="Cash")
+    bank_name = db.Column(db.String(100), default="")
+    account_number = db.Column(db.String(100), default="")
+    mpesa_number = db.Column(db.String(30), default="")
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    staff = db.relationship("Staff", backref=db.backref("hr_profile", uselist=False))
     
 class StaffPayroll(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -4743,7 +4771,20 @@ def staff():
         grades=GRADES,
         subjects=subjects
     )
+    
+@app.route("/create_hr_tables")
+def create_hr_tables():
+    if not login_required():
+        return redirect(url_for("login"))
 
+    if not role_allowed("admin", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    db.create_all()
+    flash("HR tables created successfully.")
+    return redirect(url_for("staff"))
+    
 @app.route("/update_staff_table")
 def update_staff_table():
     if not login_required():
