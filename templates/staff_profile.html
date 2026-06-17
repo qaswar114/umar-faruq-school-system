@@ -1,111 +1,216 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Staff Profile</h2>
+<style>
+.profile-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+}
 
-    <a class="btn" href="{{ url_for('staff') }}">Back to Staff Directory</a>
-    <a class="btn blue" href="{{ url_for('edit_staff', staff_id=staff.id) }}">Edit Staff</a>
-    <a class="btn green" href="{{ url_for('staff_hr', staff_id=staff.id) }}">HR Profile</a>
-</div>
+.profile-header {
+    background: linear-gradient(135deg, #0b5ed7, #0a3d91);
+    color: white;
+    padding: 25px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
 
-<div class="panel">
-    <h3>{{ staff.full_name }}</h3>
+.profile-header h2 {
+    margin: 0;
+}
 
-    <div class="three">
-        <div>
-            <p><b>Role:</b> {{ staff.role }}</p>
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+}
+
+.profile-card, .info-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+.staff-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #0b5ed7;
+    display: block;
+    margin: 0 auto 15px;
+}
+
+.profile-name {
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.profile-role {
+    text-align: center;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-row b {
+    color: #333;
+}
+
+.action-bar {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    background: #0b5ed7;
+    color: white;
+    border: none;
+}
+
+.btn.secondary {
+    background: #6c757d;
+}
+
+.btn.danger {
+    background: #dc3545;
+}
+
+@media(max-width: 800px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="profile-wrap">
+
+    <div class="profile-header">
+        <h2>Staff Profile</h2>
+        <p>Detailed staff information and HR record</p>
+    </div>
+
+    <div class="profile-grid">
+
+        <div class="profile-card">
+
+            {% if staff.photo %}
+                <img src="{{ url_for('static', filename=staff.photo) }}" class="staff-photo">
+            {% else %}
+                <img src="{{ url_for('static', filename='default_staff.png') }}" class="staff-photo">
+            {% endif %}
+
+            <div class="profile-name">{{ staff.full_name }}</div>
+            <div class="profile-role">{{ staff.position }}</div>
+
+            <hr>
+
             <p><b>Status:</b> {{ staff.status }}</p>
-            <p><b>ID No:</b> {{ staff.id_no if staff.id_no else "-" }}</p>
+            <p><b>Staff No:</b> {{ staff.staff_no }}</p>
+            <p><b>Department:</b> {{ staff.department }}</p>
+
+            <div class="action-bar">
+                <a class="btn" href="{{ url_for('edit_staff', staff_id=staff.id) }}">Edit Staff</a>
+                <a class="btn secondary" href="{{ url_for('staff') }}">Back</a>
+            </div>
+
         </div>
 
-        <div>
-            <p><b>Phone:</b> {{ staff.phone if staff.phone else "-" }}</p>
-            <p><b>Email:</b> {{ staff.email if staff.email else "-" }}</p>
-            <p><b>Date Joined:</b> {{ staff.date_joined }}</p>
+        <div class="info-card">
+
+            <h3>Personal Information</h3>
+
+            <div class="info-row">
+                <b>Full Name</b>
+                <span>{{ staff.full_name }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Gender</b>
+                <span>{{ staff.gender }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Phone</b>
+                <span>{{ staff.phone }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Email</b>
+                <span>{{ staff.email }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>ID Number</b>
+                <span>{{ staff.id_number }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Address</b>
+                <span>{{ staff.address }}</span>
+            </div>
+
+            <br>
+
+            <h3>Employment Information</h3>
+
+            <div class="info-row">
+                <b>Position</b>
+                <span>{{ staff.position }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Department</b>
+                <span>{{ staff.department }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Assigned Grade</b>
+                <span>{{ staff.assigned_grade }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Employment Type</b>
+                <span>{{ staff.employment_type }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Date Employed</b>
+                <span>{{ staff.date_employed }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Salary</b>
+                <span>{{ staff.salary }}</span>
+            </div>
+
+            <div class="info-row">
+                <b>Status</b>
+                <span>{{ staff.status }}</span>
+            </div>
+
         </div>
 
-        <div>
-            <p><b>Assigned Grade:</b> {{ staff.assigned_grade if staff.assigned_grade else "-" }}</p>
-            <p><b>Assigned Subjects:</b> {{ staff.assigned_subjects if staff.assigned_subjects else "-" }}</p>
-        </div>
     </div>
-</div>
 
-<div class="panel">
-    <h3>HR Summary</h3>
-
-    {% if hr %}
-        <div class="three">
-            <div>
-                <p><b>Department:</b> {{ hr.department if hr.department else "-" }}</p>
-                <p><b>Employment Type:</b> {{ hr.employment_type }}</p>
-                <p><b>Employment Status:</b> {{ hr.employment_status }}</p>
-            </div>
-
-            <div>
-                <p><b>Gross Salary:</b> {{ money(gross_salary) }}</p>
-                <p><b>Payment Mode:</b> {{ hr.payment_mode }}</p>
-                <p><b>M-Pesa:</b> {{ hr.mpesa_number if hr.mpesa_number else "-" }}</p>
-            </div>
-
-            <div>
-                <p><b>KRA PIN:</b> {{ hr.kra_pin if hr.kra_pin else "-" }}</p>
-                <p><b>NHIF:</b> {{ hr.nhif_number if hr.nhif_number else "-" }}</p>
-                <p><b>NSSF:</b> {{ hr.nssf_number if hr.nssf_number else "-" }}</p>
-            </div>
-        </div>
-    {% else %}
-        <p style="color:red;">No HR profile created for this staff member.</p>
-        <a class="btn green" href="{{ url_for('staff_hr', staff_id=staff.id) }}">Create HR Profile</a>
-    {% endif %}
-</div>
-
-<div class="panel">
-    <h3>Attendance Summary</h3>
-
-    <div class="three">
-        <div class="card">
-            <h3>{{ total_present }}</h3>
-            <p>Present</p>
-        </div>
-
-        <div class="card">
-            <h3>{{ total_late }}</h3>
-            <p>Late</p>
-        </div>
-
-        <div class="card">
-            <h3>{{ total_absent }}</h3>
-            <p>Absent</p>
-        </div>
-    </div>
-
-    <br>
-
-    <h3>Recent Attendance</h3>
-
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Remarks</th>
-            <th>Marked By</th>
-        </tr>
-
-        {% for a in attendance_records %}
-        <tr>
-            <td>{{ a.attendance_date }}</td>
-            <td>{{ a.status }}</td>
-            <td>{{ a.remarks if a.remarks else "-" }}</td>
-            <td>{{ a.marked_by }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="4">No attendance records yet.</td>
-        </tr>
-        {% endfor %}
-    </table>
 </div>
 
 {% endblock %}
