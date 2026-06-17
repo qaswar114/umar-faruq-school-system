@@ -4864,6 +4864,47 @@ def staff_hr(staff_id):
         money=money
     )
 
+@app.route("/hr_profiles")
+def hr_profiles():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    staff_list = Staff.query.filter_by(
+        school_id=school_id
+    ).order_by(Staff.full_name).all()
+
+    rows = []
+
+    for s in staff_list:
+        hr = StaffHR.query.filter_by(
+            staff_id=s.id,
+            school_id=school_id
+        ).first()
+
+        rows.append({
+            "staff": s,
+            "hr": hr,
+            "gross_salary": (
+                (hr.basic_salary or 0) +
+                (hr.house_allowance or 0) +
+                (hr.transport_allowance or 0) +
+                (hr.other_allowance or 0)
+            ) if hr else 0
+        })
+
+    return render_template(
+        "hr_profiles.html",
+        settings=get_settings(),
+        rows=rows,
+        money=money
+    )
+    
 @app.route("/update_staff_columns")
 def update_staff_columns():
     if not login_required():
