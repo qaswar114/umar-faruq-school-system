@@ -4745,123 +4745,40 @@ def staff():
 
 @app.route("/payroll", methods=["GET", "POST"])
 def payroll():
-    if not login_required():
-        return redirect(url_for("login"))
+    try:
+        if not login_required():
+            return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar", "principal", "super admin"):
-        flash("Access denied.")
-        return redirect(url_for("dashboard"))
+        if not role_allowed("admin", "bursar", "principal", "super admin"):
+            flash("Access denied.")
+            return redirect(url_for("dashboard"))
 
-    db.create_all()
+        db.create_all()
 
-    school_id = current_school_id()
+        school_id = current_school_id()
 
-    if request.method == "POST":
-        staff_id = int(request.form.get("staff_id") or 0)
-        payroll_month = request.form.get("payroll_month")
-        payroll_year = int(request.form.get("payroll_year") or 2026)
+        staff_members = Staff.query.filter_by(
+            school_id=school_id
+        ).all()
 
-        basic_salary = float(request.form.get("basic_salary") or 0)
-        allowances = float(request.form.get("allowances") or 0)
-        deductions = float(request.form.get("deductions") or 0)
+        months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
 
-        net_salary = basic_salary + allowances - deductions
-
-        payment_method = request.form.get("payment_method") or "Cash"
-        payment_date_raw = request.form.get("payment_date")
-
-        if payment_date_raw:
-            payment_date = datetime.strptime(payment_date_raw, "%Y-%m-%d").date()
-        else:
-            payment_date = date.today()
-
-        payroll_item = StaffPayroll(
-            school_id=school_id,
-            staff_id=staff_id,
-            payroll_month=payroll_month,
-            payroll_year=payroll_year,
-            basic_salary=basic_salary,
-            allowances=allowances,
-            deductions=deductions,
-            net_salary=net_salary,
-            payment_method=payment_method,
-            payment_date=payment_date,
-            status="Paid",
-            created_by=session.get("username")
+        return render_template(
+            "payroll.html",
+            staff_options=[],
+            payroll_rows=[],
+            months=months,
+            total_net_salary=0,
+            money=money
         )
 
-        db.session.add(payroll_item)
-        db.session.commit()
-
-        flash("Payroll recorded successfully.")
-        return redirect(url_for("payroll"))
-
-    staff_members = Staff.query.filter_by(
-        school_id=school_id
-    ).order_by(Staff.id.desc()).all()
-
-    staff_options = []
-    staff_map = {}
-
-    for s in staff_members:
-        staff_name = (
-            getattr(s, "full_name", None)
-            or getattr(s, "name", None)
-            or getattr(s, "staff_name", None)
-            or getattr(s, "username", None)
-            or f"Staff {s.id}"
-        )
-
-        staff_role = (
-            getattr(s, "role", None)
-            or getattr(s, "position", None)
-            or getattr(s, "designation", None)
-            or ""
-        )
-
-        staff_options.append({
-            "id": s.id,
-            "name": staff_name,
-            "role": staff_role
-        })
-
-        staff_map[s.id] = staff_name
-
-    payrolls = StaffPayroll.query.filter_by(
-        school_id=school_id
-    ).order_by(StaffPayroll.id.desc()).all()
-
-    payroll_rows = []
-    total_net_salary = 0
-
-    for x in payrolls:
-        total_net_salary += x.net_salary or 0
-
-        payroll_rows.append({
-            "payment_date": x.payment_date,
-            "staff_name": staff_map.get(x.staff_id, f"Staff {x.staff_id}"),
-            "month_year": f"{x.payroll_month} {x.payroll_year}",
-            "basic_salary": x.basic_salary or 0,
-            "allowances": x.allowances or 0,
-            "deductions": x.deductions or 0,
-            "net_salary": x.net_salary or 0,
-            "payment_method": x.payment_method,
-            "created_by": x.created_by
-        })
-
-    months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ]
-
-    return render_template(
-        "payroll.html",
-        staff_options=staff_options,
-        payroll_rows=payroll_rows,
-        months=months,
-        total_net_salary=total_net_salary,
-        money=money
-    )
+    except Exception as e:
+        import traceback
+        error_text = traceback.format_exc()
+        return f"<pre>{error_text}</pre>"
 @app.route("/fix_payroll_table")
 def fix_payroll_table():
     if not login_required():
