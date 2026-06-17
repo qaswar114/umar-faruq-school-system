@@ -4699,6 +4699,46 @@ def approve_sms_purchase(purchase_id):
 
     flash("SMS purchase approved and credited to school.")
     return redirect(url_for("platform_sms"))
+
+@app.route("/staff_dashboard")
+def staff_dashboard():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    total_staff = Staff.query.filter_by(school_id=school_id).count()
+    active_staff = Staff.query.filter_by(school_id=school_id, status="Active").count()
+    teachers = Staff.query.filter_by(school_id=school_id, role="Teacher").count()
+    admins = Staff.query.filter_by(school_id=school_id, role="Admin").count()
+
+    today = date.today()
+
+    today_attendance = StaffAttendance.query.filter_by(
+        school_id=school_id,
+        attendance_date=today
+    ).all()
+
+    present_today = sum(1 for x in today_attendance if x.status == "Present")
+    late_today = sum(1 for x in today_attendance if x.status == "Late")
+    absent_today = sum(1 for x in today_attendance if x.status == "Absent")
+
+    return render_template(
+        "staff_dashboard.html",
+        settings=get_settings(),
+        total_staff=total_staff,
+        active_staff=active_staff,
+        teachers=teachers,
+        admins=admins,
+        present_today=present_today,
+        late_today=late_today,
+        absent_today=absent_today,
+        today=today
+    )
     
 @app.route("/staff", methods=["GET", "POST"])
 def staff():
