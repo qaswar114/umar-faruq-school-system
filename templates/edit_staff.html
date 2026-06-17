@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Edit Staff Profile</h2>
+
+    <a class="btn" href="{{ url_for('staff') }}">Back to Staff Directory</a>
+</div>
+
+<div class="panel">
+    <form method="POST">
+
+        <h3>Basic Staff Details</h3>
+
+        <div class="three">
+            <div>
+                <label>Full Name</label>
+                <input name="full_name" value="{{ staff.full_name }}" required>
+            </div>
+
+            <div>
+                <label>Phone</label>
+                <input name="phone" value="{{ staff.phone }}">
+            </div>
+
+            <div>
+                <label>Email</label>
+                <input type="email" name="email" value="{{ staff.email }}">
+            </div>
+        </div>
+
+        <div class="three">
+            <div>
+                <label>ID Number</label>
+                <input name="id_no" value="{{ staff.id_no }}">
+            </div>
+
+            <div>
+                <label>Role</label>
+                <select name="role" required>
+                    {% for r in ["Admin", "Principal", "Bursar", "Registrar", "Teacher", "Receptionist"] %}
+                        <option value="{{ r }}" {% if staff.role == r %}selected{% endif %}>{{ r }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Status</label>
+                <select name="status">
+                    <option {% if staff.status == "Active" %}selected{% endif %}>Active</option>
+                    <option {% if staff.status == "Inactive" %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Teaching Assignment</h3>
+
+        <div class="two">
+            <div>
+                <label>Assigned Grade</label>
+                <select name="assigned_grade">
+                    <option value="">None</option>
+                    {% for g in grades %}
+                        <option value="{{ g }}" {% if staff.assigned_grade == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Assigned Subjects</label>
+                <select name="assigned_subjects" multiple size="8">
+                    {% for s in subjects %}
+                        <option value="{{ s.subject_name }}"
+                            {% if s.subject_name in selected_subjects %}selected{% endif %}>
+                            {{ s.grade }} - {{ s.subject_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small>Hold CTRL to select more than one subject.</small>
+            </div>
+        </div>
+
+        <br>
+
+        <button class="btn green" type="submit">Save Changes</button>
+    </form>
+</div>
+
+{% endblock %}
