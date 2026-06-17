@@ -4793,6 +4793,44 @@ def update_staff_table():
 
     return redirect(url_for("staff"))
 
+@app.route("/update_staff_columns")
+def update_staff_columns():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin", "admin"):
+        return "Access denied"
+
+    try:
+        sql_commands = [
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS department VARCHAR(100) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS basic_salary FLOAT DEFAULT 0;",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS house_allowance FLOAT DEFAULT 0;",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS transport_allowance FLOAT DEFAULT 0;",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS responsibility_allowance FLOAT DEFAULT 0;",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS other_allowance FLOAT DEFAULT 0;",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS kra_pin VARCHAR(50) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS nhif_number VARCHAR(50) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS nssf_number VARCHAR(50) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(50) DEFAULT 'Cash';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS account_number VARCHAR(100) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS mpesa_number VARCHAR(30) DEFAULT '';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS employment_type VARCHAR(50) DEFAULT 'Permanent';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS employment_status VARCHAR(20) DEFAULT 'Active';",
+            "ALTER TABLE staff ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+        ]
+
+        for cmd in sql_commands:
+            db.session.execute(db.text(cmd))
+
+        db.session.commit()
+        return "Staff columns updated successfully. Now open /staff"
+
+    except Exception as e:
+        db.session.rollback()
+        return f"<pre>{str(e)}</pre>"
+
 @app.route("/payroll", methods=["GET", "POST"])
 def payroll():
     if not login_required():
