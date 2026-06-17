@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Staff HR Profile</h2>
+
+    <p><b>Staff:</b> {{ staff.full_name }}</p>
+    <p><b>Role:</b> {{ staff.role }}</p>
+    <p><b>Phone:</b> {{ staff.phone }}</p>
+
+    <hr>
+
+    <form method="POST">
+
+        <h3>Employment Details</h3>
+
+        <div class="three">
+            <div>
+                <label>Department</label>
+                <input name="department" value="{{ hr.department }}">
+            </div>
+
+            <div>
+                <label>Employment Type</label>
+                <select name="employment_type">
+                    <option {% if hr.employment_type == "Permanent" %}selected{% endif %}>Permanent</option>
+                    <option {% if hr.employment_type == "Contract" %}selected{% endif %}>Contract</option>
+                    <option {% if hr.employment_type == "Part Time" %}selected{% endif %}>Part Time</option>
+                    <option {% if hr.employment_type == "Casual" %}selected{% endif %}>Casual</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Employment Status</label>
+                <select name="employment_status">
+                    <option {% if hr.employment_status == "Active" %}selected{% endif %}>Active</option>
+                    <option {% if hr.employment_status == "Suspended" %}selected{% endif %}>Suspended</option>
+                    <option {% if hr.employment_status == "Left" %}selected{% endif %}>Left</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Salary Details</h3>
+
+        <div class="three">
+            <div>
+                <label>Basic Salary</label>
+                <input type="number" step="0.01" name="basic_salary" value="{{ hr.basic_salary or 0 }}">
+            </div>
+
+            <div>
+                <label>House Allowance</label>
+                <input type="number" step="0.01" name="house_allowance" value="{{ hr.house_allowance or 0 }}">
+            </div>
+
+            <div>
+                <label>Transport Allowance</label>
+                <input type="number" step="0.01" name="transport_allowance" value="{{ hr.transport_allowance or 0 }}">
+            </div>
+        </div>
+
+        <div class="three">
+            <div>
+                <label>Other Allowance</label>
+                <input type="number" step="0.01" name="other_allowance" value="{{ hr.other_allowance or 0 }}">
+            </div>
+
+            <div>
+                <label>Gross Salary</label>
+                <input readonly value="{{ money((hr.basic_salary or 0) + (hr.house_allowance or 0) + (hr.transport_allowance or 0) + (hr.other_allowance or 0)) }}">
+            </div>
+
+            <div></div>
+        </div>
+
+        <h3>Statutory Details</h3>
+
+        <div class="three">
+            <div>
+                <label>KRA PIN</label>
+                <input name="kra_pin" value="{{ hr.kra_pin }}">
+            </div>
+
+            <div>
+                <label>NHIF Number</label>
+                <input name="nhif_number" value="{{ hr.nhif_number }}">
+            </div>
+
+            <div>
+                <label>NSSF Number</label>
+                <input name="nssf_number" value="{{ hr.nssf_number }}">
+            </div>
+        </div>
+
+        <h3>Payment Details</h3>
+
+        <div class="three">
+            <div>
+                <label>Payment Mode</label>
+                <select name="payment_mode">
+                    <option {% if hr.payment_mode == "Cash" %}selected{% endif %}>Cash</option>
+                    <option {% if hr.payment_mode == "M-Pesa" %}selected{% endif %}>M-Pesa</option>
+                    <option {% if hr.payment_mode == "Bank" %}selected{% endif %}>Bank</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Bank Name</label>
+                <input name="bank_name" value="{{ hr.bank_name }}">
+            </div>
+
+            <div>
+                <label>Account Number</label>
+                <input name="account_number" value="{{ hr.account_number }}">
+            </div>
+        </div>
+
+        <div class="three">
+            <div>
+                <label>M-Pesa Number</label>
+                <input name="mpesa_number" value="{{ hr.mpesa_number }}">
+            </div>
+
+            <div></div>
+
+            <div style="padding-top:22px;">
+                <button class="btn green" type="submit">Save HR Profile</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}
