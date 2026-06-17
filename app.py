@@ -277,6 +277,22 @@ class StaffHR(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     staff = db.relationship("Staff", backref=db.backref("hr_profile", uselist=False))
+
+class StaffAttendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+    staff_id = db.Column(db.Integer, db.ForeignKey("staff.id"), nullable=False)
+
+    attendance_date = db.Column(db.Date, default=date.today)
+    status = db.Column(db.String(30), default="Present")  # Present, Late, Absent, Official Duty
+    remarks = db.Column(db.String(255), default="")
+
+    marked_by = db.Column(db.String(100), default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    staff = db.relationship("Staff", backref="staff_attendance_records")
+    
     
 class StaffPayroll(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -4770,6 +4786,76 @@ def staff():
         rows=rows,
         grades=GRADES,
         subjects=subjects
+    )
+
+@app.route("/staff_attendance", methods=["GET", "POST"])
+def staff_attendance():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    selected_date_raw = request.args.get("date") or request.form.get("attendance_date")
+    if selected_date_raw:
+        selected_date = datetime.strptime(selected_date_raw, "%Y-%m-%d").date()
+    else:
+        selected_date = date.today()
+
+    staff_members = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Staff.full_name).all()
+
+    if request.method == "POST":
+        for s in staff_members:
+            status = request.form.get(f"status_{s.id}", "Present")
+            remarks = request.form.get(f"remarks_{s.id}", "")
+
+            record = StaffAttendance.query.filter_by(
+                school_id=school_id,
+                staff_id=s.id,
+                attendance_date=selected_date
+            ).first()
+
+            if not record:
+                record = StaffAttendance(
+                    school_id=school_id,
+                    staff_id=s.id,
+                    attendance_date=selected_date
+                )
+                db.session.add(record)
+
+            record.status = status
+            record.remarks = remarks
+            record.marked_by = session.get("username", "")
+
+        db.session.commit()
+        flash("Staff attendance saved successfully.")
+        return redirect(url_for("staff_attendance", date=selected_date.strftime("%Y-%m-%d")))
+
+    existing_records = StaffAttendance.query.filter_by(
+        school_id=school_id,
+        attendance_date=selected_date
+    ).all()
+
+    record_map = {r.staff_id: r for r in existing_records}
+
+    rows = []
+    for s in staff_members:
+        rows.append({
+            "staff": s,
+            "record": record_map.get(s.id)
+        })
+
+    return render_template(
+        "staff_attendance.html",
+        settings=get_settings(),
+        rows=rows,
+        selected_date=selected_date
     )
     
 @app.route("/create_hr_tables")
