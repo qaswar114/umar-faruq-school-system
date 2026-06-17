@@ -4768,12 +4768,12 @@ def payroll():
 
         return render_template(
             "payroll.html",
-            staff_options=[],
-            payroll_rows=[],
+            staff_options=staff_options,
+            payroll_rows=payroll_rows,
             months=months,
-            total_net_salary=0,
+            total_net_salary=total_net_salary,
             money=money
-        )
+      )
 
     except Exception as e:
         import traceback
