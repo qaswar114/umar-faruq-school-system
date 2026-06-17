@@ -4766,15 +4766,15 @@ def payroll():
             "July", "August", "September", "October", "November", "December"
         ]
 
-        return render_template(
-            "payroll.html",
+       return render_template(
+           "payroll.html",
+            settings=get_settings(),
             staff_options=staff_options,
             payroll_rows=payroll_rows,
             months=months,
             total_net_salary=total_net_salary,
             money=money
-      )
-
+       )
     except Exception as e:
         import traceback
         error_text = traceback.format_exc()
