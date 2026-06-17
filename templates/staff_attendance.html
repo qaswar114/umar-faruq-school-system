@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Staff Attendance</h2>
+
+    <form method="GET">
+        <div class="three">
+            <div>
+                <label>Select Date</label>
+                <input type="date" name="date" value="{{ selected_date }}">
+            </div>
+
+            <div style="padding-top:22px;">
+                <button class="btn" type="submit">Load Attendance</button>
+            </div>
+
+            <div style="padding-top:22px;">
+                <a class="btn" href="{{ url_for('staff') }}">Back to Staff Management</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Mark Staff Attendance</h3>
+
+    <form method="POST">
+        <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Staff</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Remarks</th>
+            </tr>
+
+            {% for row in rows %}
+            <tr>
+                <td>{{ loop.index }}</td>
+
+                <td>
+                    <b>{{ row.staff.full_name }}</b><br>
+                    <small>{{ row.staff.phone }}</small>
+                </td>
+
+                <td>{{ row.staff.role }}</td>
+
+                <td>
+                    <select name="status_{{ row.staff.id }}">
+                        {% set current = row.record.status if row.record else "Present" %}
+                        <option {% if current == "Present" %}selected{% endif %}>Present</option>
+                        <option {% if current == "Late" %}selected{% endif %}>Late</option>
+                        <option {% if current == "Absent" %}selected{% endif %}>Absent</option>
+                        <option {% if current == "Official Duty" %}selected{% endif %}>Official Duty</option>
+                    </select>
+                </td>
+
+                <td>
+                    <input name="remarks_{{ row.staff.id }}" value="{{ row.record.remarks if row.record else '' }}">
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No active staff found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <br>
+
+        <button class="btn green" type="submit">Save Staff Attendance</button>
+    </form>
+</div>
+
+{% endblock %}
