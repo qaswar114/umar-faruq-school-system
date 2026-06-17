@@ -1,31 +1,118 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Staff Dashboard / School HR</h2>
-    <p>Manage staff records, HR profiles, attendance, payroll, payslips, and HR reports.</p>
+<style>
+.hr-hero {
+    background: linear-gradient(135deg, #0b5ed7, #198754);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.hr-hero h2 {
+    margin: 0;
+    font-size: 26px;
+}
+
+.hr-hero p {
+    margin: 8px 0 0;
+    font-size: 15px;
+}
+
+.hr-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.hr-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 5px solid #0b5ed7;
+}
+
+.hr-card h3 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.hr-card p {
+    margin: 5px 0 0;
+    color: #555;
+}
+
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.module-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-top: 5px solid #198754;
+    min-height: 170px;
+}
+
+.module-card h3 {
+    margin-top: 0;
+}
+
+.module-card p {
+    min-height: 45px;
+    color: #555;
+}
+
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.quick-actions a {
+    text-decoration: none;
+}
+
+@media(max-width: 900px) {
+    .hr-grid,
+    .module-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="hr-hero">
+    <h2>Staff Management Command Center</h2>
+    <p>
+        Manage staff records, HR profiles, staff attendance, reports, payroll, and payslips from one central dashboard.
+    </p>
 </div>
 
 <div class="panel">
-    <h3>Staff Summary</h3>
+    <h3>HR Summary</h3>
 
-    <div class="four">
-        <div class="card">
+    <div class="hr-grid">
+        <div class="hr-card">
             <h3>{{ total_staff }}</h3>
             <p>Total Staff</p>
         </div>
 
-        <div class="card">
+        <div class="hr-card">
             <h3>{{ active_staff }}</h3>
             <p>Active Staff</p>
         </div>
 
-        <div class="card">
+        <div class="hr-card">
             <h3>{{ teachers }}</h3>
             <p>Teachers</p>
         </div>
 
-        <div class="card">
+        <div class="hr-card">
             <h3>{{ admins }}</h3>
             <p>Admins</p>
         </div>
@@ -33,69 +120,102 @@
 </div>
 
 <div class="panel">
-    <h3>Today's Staff Attendance - {{ today }}</h3>
+    <h3>Today’s Staff Attendance - {{ today }}</h3>
 
-    <div class="three">
-        <div class="card">
+    <div class="hr-grid">
+        <div class="hr-card" style="border-left-color:#198754;">
             <h3>{{ present_today }}</h3>
-            <p>Present</p>
+            <p>Present Today</p>
         </div>
 
-        <div class="card">
+        <div class="hr-card" style="border-left-color:#ffc107;">
             <h3>{{ late_today }}</h3>
-            <p>Late</p>
+            <p>Late Today</p>
         </div>
 
-        <div class="card">
+        <div class="hr-card" style="border-left-color:#dc3545;">
             <h3>{{ absent_today }}</h3>
-            <p>Absent</p>
+            <p>Absent Today</p>
+        </div>
+
+        <div class="hr-card" style="border-left-color:#6f42c1;">
+            <h3>{{ total_staff - present_today - late_today - absent_today }}</h3>
+            <p>Not Marked</p>
         </div>
     </div>
 </div>
 
 <div class="panel">
-    <h3>Staff Management Modules</h3>
+    <h3>Quick Actions</h3>
 
-    <div class="three">
-        <div class="card">
+    <div class="quick-actions">
+        <a class="btn green" href="{{ url_for('staff') }}">Add / View Staff</a>
+        <a class="btn blue" href="{{ url_for('hr_profiles') }}">HR Profiles</a>
+        <a class="btn" href="{{ url_for('staff_attendance') }}">Mark Attendance</a>
+        <a class="btn blue" href="{{ url_for('staff_attendance_report') }}">Attendance Report</a>
+        <a class="btn" href="{{ url_for('payroll') }}">Payroll</a>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>HR Modules</h3>
+
+    <div class="module-grid">
+
+        <div class="module-card">
             <h3>👥 Staff Directory</h3>
-            <p>Add staff, view staff records, and manage teaching assignments.</p>
-            <a class="btn" href="{{ url_for('staff') }}">Open Staff Directory</a>
+            <p>Add staff members, assign roles, assign grades, assign subjects, and create login accounts.</p>
+            <a class="btn green" href="{{ url_for('staff') }}">Open Staff Directory</a>
         </div>
 
-        <div class="card">
+        <div class="module-card">
             <h3>📋 HR Profiles</h3>
-            <p>Manage employment details, salary setup, statutory details, and payment information.</p>
+            <p>Manage employment details, salary setup, statutory details, bank details, and M-Pesa information.</p>
             <a class="btn blue" href="{{ url_for('hr_profiles') }}">Open HR Profiles</a>
         </div>
 
-        <div class="card">
+        <div class="module-card">
             <h3>⏰ Staff Attendance</h3>
-            <p>Mark daily staff attendance for teachers and non-teaching staff.</p>
+            <p>Mark daily attendance for teaching and non-teaching staff.</p>
             <a class="btn green" href="{{ url_for('staff_attendance') }}">Mark Attendance</a>
         </div>
-    </div>
 
-    <br>
-
-    <div class="three">
-        <div class="card">
-            <h3>📊 Attendance Report</h3>
-            <p>Filter attendance by date or staff member and print reports.</p>
-            <a class="btn blue" href="{{ url_for('staff_attendance_report') }}">Open Report</a>
+        <div class="module-card">
+            <h3>📊 Attendance Reports</h3>
+            <p>View and print staff attendance reports by date or by individual staff member.</p>
+            <a class="btn blue" href="{{ url_for('staff_attendance_report') }}">Open Reports</a>
         </div>
 
-        <div class="card">
+        <div class="module-card">
             <h3>💰 Payroll</h3>
-            <p>Generate and manage monthly staff salaries.</p>
+            <p>Prepare monthly salaries, allowances, deductions, and payment records.</p>
             <a class="btn" href="{{ url_for('payroll') }}">Open Payroll</a>
         </div>
 
-        <div class="card">
+        <div class="module-card">
             <h3>📄 Payslips</h3>
-            <p>Generate staff payslips after payroll processing.</p>
+            <p>Generate and print individual staff payslips after payroll processing.</p>
             <button class="btn" disabled>Coming Soon</button>
         </div>
+
+        <div class="module-card">
+            <h3>📂 Staff Documents</h3>
+            <p>Upload contracts, certificates, ID copies, appointment letters, and other staff documents.</p>
+            <button class="btn" disabled>Coming Soon</button>
+        </div>
+
+        <div class="module-card">
+            <h3>📈 Performance</h3>
+            <p>Record staff appraisals, conduct reviews, and professional performance notes.</p>
+            <button class="btn" disabled>Coming Soon</button>
+        </div>
+
+        <div class="module-card">
+            <h3>⚙️ HR Settings</h3>
+            <p>Configure departments, employment types, salary categories, and HR rules.</p>
+            <button class="btn" disabled>Coming Soon</button>
+        </div>
+
     </div>
 </div>
 
