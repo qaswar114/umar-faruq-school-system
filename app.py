@@ -4804,6 +4804,66 @@ def update_staff_table():
 
     return redirect(url_for("staff"))
 
+@app.route("/staff_hr/<int:staff_id>", methods=["GET", "POST"])
+def staff_hr(staff_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    staff = Staff.query.filter_by(
+        id=staff_id,
+        school_id=school_id
+    ).first_or_404()
+
+    hr = StaffHR.query.filter_by(
+        staff_id=staff.id,
+        school_id=school_id
+    ).first()
+
+    if not hr:
+        hr = StaffHR(
+            staff_id=staff.id,
+            school_id=school_id
+        )
+        db.session.add(hr)
+        db.session.commit()
+
+    if request.method == "POST":
+        hr.department = request.form.get("department", "")
+        hr.employment_type = request.form.get("employment_type", "")
+        hr.employment_status = request.form.get("employment_status", "")
+
+        hr.basic_salary = float(request.form.get("basic_salary") or 0)
+        hr.house_allowance = float(request.form.get("house_allowance") or 0)
+        hr.transport_allowance = float(request.form.get("transport_allowance") or 0)
+        hr.other_allowance = float(request.form.get("other_allowance") or 0)
+
+        hr.kra_pin = request.form.get("kra_pin", "")
+        hr.nhif_number = request.form.get("nhif_number", "")
+        hr.nssf_number = request.form.get("nssf_number", "")
+
+        hr.payment_mode = request.form.get("payment_mode", "")
+        hr.bank_name = request.form.get("bank_name", "")
+        hr.account_number = request.form.get("account_number", "")
+        hr.mpesa_number = request.form.get("mpesa_number", "")
+
+        db.session.commit()
+        flash("HR profile updated successfully.")
+        return redirect(url_for("staff_hr", staff_id=staff.id))
+
+    return render_template(
+        "staff_hr.html",
+        settings=get_settings(),
+        staff=staff,
+        hr=hr,
+        money=money
+    )
+
 @app.route("/update_staff_columns")
 def update_staff_columns():
     if not login_required():
