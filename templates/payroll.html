@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Staff Payroll</h2>
+
+    <form method="POST">
+        <div class="three">
+            <div>
+                <label>Staff Member</label>
+                <select name="staff_id" required>
+                    <option value="">Select Staff</option>
+                    {% for s in staff_members %}
+                        <option value="{{ s.id }}">{{ s.full_name }} - {{ s.role }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Month</label>
+                <select name="payroll_month" required>
+                    {% for m in months %}
+                        <option value="{{ m }}">{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Year</label>
+                <input type="number" name="payroll_year" value="2026" required>
+            </div>
+        </div>
+
+        <div class="three">
+            <div>
+                <label>Basic Salary</label>
+                <input type="number" step="0.01" name="basic_salary" value="0">
+            </div>
+
+            <div>
+                <label>Allowances</label>
+                <input type="number" step="0.01" name="allowances" value="0">
+            </div>
+
+            <div>
+                <label>Deductions</label>
+                <input type="number" step="0.01" name="deductions" value="0">
+            </div>
+        </div>
+
+        <div class="three">
+            <div>
+                <label>Payment Method</label>
+                <select name="payment_method">
+                    <option>Cash</option>
+                    <option>M-Pesa</option>
+                    <option>Bank</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Payment Date</label>
+                <input type="date" name="payment_date">
+            </div>
+
+            <div style="padding-top:22px;">
+                <button class="btn green" type="submit">Record Payroll</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Payroll Records</h3>
+
+    <p><b>Total Net Salary Recorded:</b> {{ money(total_net_salary) }}</p>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Staff</th>
+            <th>Month</th>
+            <th>Basic</th>
+            <th>Allowances</th>
+            <th>Deductions</th>
+            <th>Net Salary</th>
+            <th>Method</th>
+            <th>By</th>
+        </tr>
+
+        {% for x in payrolls %}
+        <tr>
+            <td>{{ x.payment_date }}</td>
+            <td>{{ x.staff.full_name }}</td>
+            <td>{{ x.payroll_month }} {{ x.payroll_year }}</td>
+            <td>{{ money(x.basic_salary) }}</td>
+            <td>{{ money(x.allowances) }}</td>
+            <td>{{ money(x.deductions) }}</td>
+            <td><b>{{ money(x.net_salary) }}</b></td>
+            <td>{{ x.payment_method }}</td>
+            <td>{{ x.created_by }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="9">No payroll records yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
