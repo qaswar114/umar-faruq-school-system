@@ -181,7 +181,7 @@ function updateMonths(termId, monthId){
 <div class="dropdown">
     <a href="#">Staff ▼</a>
     <div class="dropdown-content">
-        <a href="/staff">Staff Management</a>
+        <a href="{{ url_for('staff_dashboard') }}">Staff Management</a>
 
         {% if session.role|lower == 'admin' %}
         <a href="/users">User Accounts</a>
