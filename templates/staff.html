@@ -2,11 +2,26 @@
 {% block content %}
 
 <div class="panel">
-    <h2>Staff Management</h2>
+    <h2>Staff Management / School HR</h2>
+    <p>
+        Manage staff profiles, teaching assignments, login accounts, HR profiles, and future payroll records.
+    </p>
+
+    <div style="margin-top:10px;">
+        <a class="btn" href="#add-staff">Add Staff</a>
+
+        {% if session.get("role") == "admin" %}
+            <a class="btn green" href="{{ url_for('payroll') }}">Payroll</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel" id="add-staff">
+    <h3>Add Staff Member</h3>
 
     <form method="post">
 
-        <h3>Staff Profile</h3>
+        <h3>Basic Staff Profile</h3>
 
         <div class="three">
             <div>
@@ -23,7 +38,9 @@
                 <label>Email</label>
                 <input type="email" name="email" placeholder="teacher@email.com">
             </div>
+        </div>
 
+        <div class="three">
             <div>
                 <label>ID Number</label>
                 <input name="id_no" placeholder="National ID / Passport">
@@ -46,19 +63,30 @@
                 <select name="assigned_grade">
                     <option value="">None</option>
                     {% for g in grades %}
-                    <option>{{ g }}</option>
+                        <option>{{ g }}</option>
                     {% endfor %}
                 </select>
             </div>
+        </div>
+
+        <div class="two">
             <div>
-    <label>Assigned Subjects</label>
-    <select name="assigned_subjects" multiple size="6">
-        {% for s in subjects %}
-        <option value="{{ s.subject_name }}">{{ s.grade }} - {{ s.subject_name }}</option>
-        {% endfor %}
-    </select>
-    <small>Hold CTRL to select more than one subject.</small>
-</div>
+                <label>Assigned Subjects</label>
+                <select name="assigned_subjects" multiple size="6">
+                    {% for s in subjects %}
+                        <option value="{{ s.subject_name }}">{{ s.grade }} - {{ s.subject_name }}</option>
+                    {% endfor %}
+                </select>
+                <small>Hold CTRL to select more than one subject.</small>
+            </div>
+
+            <div>
+                <label>Status</label>
+                <select name="status">
+                    <option>Active</option>
+                    <option>Inactive</option>
+                </select>
+            </div>
         </div>
 
         <hr>
@@ -89,41 +117,56 @@
 
         <br><br>
 
-        <button class="btn">Add Staff</button>
+        <button class="btn green" type="submit">Add Staff</button>
     </form>
 </div>
 
 <div class="panel">
-    <h3>Staff List</h3>
+    <h3>Staff Directory</h3>
 
     <table>
         <tr>
             <th>#</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>ID No</th>
+            <th>Staff Name</th>
+            <th>Contact</th>
             <th>Role</th>
             <th>Grade</th>
             <th>Subjects</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
 
         {% for s in rows %}
         <tr>
             <td>{{ loop.index }}</td>
-            <td>{{ s.full_name }}</td>
-            <td>{{ s.phone }}</td>
-            <td>{{ s.email }}</td>
-            <td>{{ s.id_no }}</td>
+
+            <td>
+                <b>{{ s.full_name }}</b><br>
+                <small>ID: {{ s.id_no if s.id_no else "-" }}</small>
+            </td>
+
+            <td>
+                {{ s.phone if s.phone else "-" }}<br>
+                <small>{{ s.email if s.email else "-" }}</small>
+            </td>
+
             <td>{{ s.role }}</td>
-            <td>{{ s.assigned_grade }}</td>
+
+            <td>{{ s.assigned_grade if s.assigned_grade else "-" }}</td>
+
             <td>{{ s.assigned_subjects if s.assigned_subjects else "-" }}</td>
+
             <td>{{ s.status }}</td>
+
+            <td>
+                {% if session.get("role") == "admin" %}
+                    <a class="btn blue" href="{{ url_for('staff_hr', staff_id=s.id) }}">HR Profile</a>
+                {% endif %}
+            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="9">No staff profiles added yet.</td>
+            <td colspan="8">No staff profiles added yet.</td>
         </tr>
         {% endfor %}
     </table>
