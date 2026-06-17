@@ -248,6 +248,31 @@ class Staff(db.Model):
     assigned_grade = db.Column(db.String(50), default="")
     date_joined = db.Column(db.Date, default=date.today)
     status = db.Column(db.String(20), default="Active")
+
+class StaffPayroll(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+    staff_id = db.Column(db.Integer, db.ForeignKey("staff.id"), nullable=False)
+
+    payroll_month = db.Column(db.String(20), nullable=False)
+    payroll_year = db.Column(db.Integer, nullable=False)
+
+    basic_salary = db.Column(db.Float, default=0)
+    allowances = db.Column(db.Float, default=0)
+    deductions = db.Column(db.Float, default=0)
+
+    net_salary = db.Column(db.Float, default=0)
+
+    payment_method = db.Column(db.String(50), default="Cash")
+    payment_date = db.Column(db.Date, default=date.today)
+    status = db.Column(db.String(20), default="Paid")
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    staff = db.relationship("Staff", backref="payrolls")
+    
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
