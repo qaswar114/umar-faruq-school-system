@@ -10,8 +10,8 @@
                 <label>Staff Member</label>
                 <select name="staff_id" required>
                     <option value="">Select Staff</option>
-                    {% for s in staff_members %}
-                        <option value="{{ s.id }}">{{ s.full_name }} - {{ s.role }}</option>
+                    {% for s in staff_options %}
+                        <option value="{{ s.id }}">{{ s.name }}{% if s.role %} - {{ s.role }}{% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -88,11 +88,11 @@
             <th>By</th>
         </tr>
 
-        {% for x in payrolls %}
+        {% for x in payroll_rows %}
         <tr>
             <td>{{ x.payment_date }}</td>
-            <td>{{ x.staff.full_name }}</td>
-            <td>{{ x.payroll_month }} {{ x.payroll_year }}</td>
+            <td>{{ x.staff_name }}</td>
+            <td>{{ x.month_year }}</td>
             <td>{{ money(x.basic_salary) }}</td>
             <td>{{ money(x.allowances) }}</td>
             <td>{{ money(x.deductions) }}</td>
