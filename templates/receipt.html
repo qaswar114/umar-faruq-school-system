@@ -1,45 +1,52 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Receipt</title>
 
 <style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #f2f4f8;
+    font-family: Arial, sans-serif;
+}
+
 .receipt-box {
     width: 76mm;
-    max-width: 76mm;
     margin: 10px auto;
-    padding: 4mm;
+    padding: 3mm;
     background: white;
-    font-family: Arial, sans-serif;
     font-size: 11px;
     color: #000;
 }
 
-.receipt-box h2,
-.receipt-box h3,
-.receipt-box p {
+.logo-large {
+    width: 40px;
+    display: block;
+    margin: 0 auto 4px;
+}
+
+h2 {
+    text-align: center;
+    font-size: 13px;
     margin: 3px 0;
 }
 
-.receipt-box h2 {
-    text-align: center;
-    font-size: 13px;
-}
-
-.receipt-box h3 {
+h3 {
     text-align: center;
     font-size: 11px;
+    margin: 3px 0;
 }
 
-.logo-large {
-    width: 45px;
-    height: auto;
-    display: block;
-    margin: 0 auto 5px;
+p {
+    margin: 3px 0;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 10.5px;
+    margin-top: 5px;
 }
 
 th, td {
@@ -53,88 +60,66 @@ th, td {
     margin-top: 10px;
 }
 
+button {
+    padding: 10px 25px;
+    background: green;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
 @media print {
     @page {
-        size: 80mm auto;
+        size: 80mm 115mm;
         margin: 0;
     }
 
     html, body {
         width: 80mm;
+        height: 115mm;
         margin: 0 !important;
         padding: 0 !important;
         background: white !important;
+        overflow: hidden !important;
     }
 
-    body * {
-        visibility: hidden;
-    }
-
-    .print-area,
-    .print-area * {
-        visibility: visible;
-    }
-
-    .print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
+    .receipt-box {
         width: 76mm !important;
-        max-width: 76mm !important;
         margin: 0 !important;
         padding: 2mm !important;
-        page-break-after: avoid !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
+        box-shadow: none !important;
     }
 
-    .no-print,
-    button {
+    .no-print {
         display: none !important;
     }
 }
 </style>
+</head>
 
-<div class="receipt-box print-area">
+<body>
+
+<div class="receipt-box">
 
     <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo-large">
 
     <h2>{{ settings.school_name }}</h2>
     <h3>OFFICIAL FEE RECEIPT</h3>
-
     <hr>
 
     <p><b>Receipt No:</b> {{ p.receipt_no }}</p>
     <p><b>Date:</b> {{ p.payment_date }}</p>
     <p><b>Pupil:</b> {{ pupil.full_name }}</p>
     <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
-    <p>
-        <b>Year:</b> {{ p.academic_year }} |
-        <b>Term:</b> {{ p.term }} |
-        <b>Month:</b> {{ p.month }}
-    </p>
+    <p><b>Year:</b> {{ p.academic_year }} | <b>Term:</b> {{ p.term }} | <b>Month:</b> {{ p.month }}</p>
 
     <table>
-        <tr>
-            <th>Item</th>
-            <th>Paid Now</th>
-        </tr>
-        <tr>
-            <td>Tuition</td>
-            <td>{{ money(p.tuition_paid or 0) }}</td>
-        </tr>
-        <tr>
-            <td>Bus</td>
-            <td>{{ money(p.bus_paid or 0) }}</td>
-        </tr>
-        <tr>
-            <td>Exam</td>
-            <td>{{ money(p.exam_paid or 0) }}</td>
-        </tr>
-        <tr>
-            <td>Admission</td>
-            <td>{{ money(p.admission_paid or 0) }}</td>
-        </tr>
+        <tr><th>Item</th><th>Paid Now</th></tr>
+        <tr><td>Tuition</td><td>{{ money(p.tuition_paid or 0) }}</td></tr>
+        <tr><td>Bus</td><td>{{ money(p.bus_paid or 0) }}</td></tr>
+        <tr><td>Exam</td><td>{{ money(p.exam_paid or 0) }}</td></tr>
+        <tr><td>Admission</td><td>{{ money(p.admission_paid or 0) }}</td></tr>
         <tr>
             <th>Total Paid</th>
             <th>{{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}</th>
@@ -157,7 +142,8 @@ th, td {
 </div>
 
 <div class="no-print">
-    <button class="btn green" onclick="window.print()">Print Receipt</button>
+    <button onclick="window.print()">Print Receipt</button>
 </div>
 
-{% endblock %}
+</body>
+</html>
