@@ -4828,6 +4828,55 @@ def staff():
         subjects=subjects
     )
 
+@app.route("/edit_staff/<int:staff_id>", methods=["GET", "POST"])
+def edit_staff(staff_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    staff = Staff.query.filter_by(
+        id=staff_id,
+        school_id=school_id
+    ).first_or_404()
+
+    if request.method == "POST":
+        staff.full_name = request.form.get("full_name", "")
+        staff.phone = request.form.get("phone", "")
+        staff.email = request.form.get("email", "")
+        staff.id_no = request.form.get("id_no", "")
+        staff.role = request.form.get("role", "")
+        staff.assigned_grade = request.form.get("assigned_grade", "")
+        staff.assigned_subjects = ", ".join(request.form.getlist("assigned_subjects"))
+        staff.status = request.form.get("status", "Active")
+
+        db.session.commit()
+        flash("Staff profile updated successfully.")
+        return redirect(url_for("staff"))
+
+    subjects = Subject.query.filter_by(
+        school_id=school_id
+    ).order_by(Subject.grade, Subject.subject_name).all()
+
+    grades = GRADES
+
+    selected_subjects = []
+    if staff.assigned_subjects:
+        selected_subjects = [x.strip() for x in staff.assigned_subjects.split(",")]
+
+    return render_template(
+        "edit_staff.html",
+        settings=get_settings(),
+        staff=staff,
+        subjects=subjects,
+        grades=grades,
+        selected_subjects=selected_subjects
+    )
+
 @app.route("/staff_attendance", methods=["GET", "POST"])
 def staff_attendance():
     if not login_required():
