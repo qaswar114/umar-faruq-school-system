@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+    }
+
+    .panel {
+        box-shadow: none !important;
+        border: none !important;
+    }
+}
+</style>
+
+<div class="panel no-print">
+    <h2>Staff Attendance Report</h2>
+
+    <form method="GET">
+        <div class="three">
+            <div>
+                <label>Date</label>
+                <input type="date" name="date" value="{{ selected_date }}">
+            </div>
+
+            <div>
+                <label>Staff Member</label>
+                <select name="staff_id">
+                    <option value="">All Staff</option>
+                    {% for s in staff_members %}
+                        <option value="{{ s.id }}" {% if selected_staff_id|string == s.id|string %}selected{% endif %}>
+                            {{ s.full_name }} - {{ s.role }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="padding-top:22px;">
+                <button class="btn" type="submit">Filter</button>
+                <a class="btn" href="{{ url_for('staff_attendance_report') }}">Reset</a>
+                <button class="btn green" type="button" onclick="window.print()">Print</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>{{ settings.school_name }}</h2>
+    <h3>Staff Attendance Report</h3>
+
+    <p>
+        <b>Date:</b>
+        {% if selected_date %}
+            {{ selected_date }}
+        {% else %}
+            All Dates
+        {% endif %}
+    </p>
+
+    <p>
+        <b>Present:</b> {{ total_present }} |
+        <b>Late:</b> {{ total_late }} |
+        <b>Absent:</b> {{ total_absent }} |
+        <b>Official Duty:</b> {{ total_official }}
+    </p>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Staff</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Remarks</th>
+            <th>Marked By</th>
+        </tr>
+
+        {% for r in records %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.attendance_date }}</td>
+            <td>{{ r.staff.full_name }}</td>
+            <td>{{ r.staff.role }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.remarks if r.remarks else "-" }}</td>
+            <td>{{ r.marked_by }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
