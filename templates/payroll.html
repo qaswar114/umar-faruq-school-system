@@ -2,32 +2,99 @@
 {% block content %}
 
 <div class="panel">
-    <h2>Staff Payroll</h2>
+    <h2>Payroll</h2>
+    <p>Generate and manage staff salaries.</p>
 
-    <form method="POST">
+    <a class="btn" href="{{ url_for('staff_dashboard') }}">Back to Staff Dashboard</a>
+</div>
+
+<div class="panel">
+    <h3>Payroll Period</h3>
+
+    <form method="get">
         <div class="three">
             <div>
-                <label>Staff Member</label>
-                <select name="staff_id" required>
-                    <option value="">Select Staff</option>
-                    {% for s in staff_options %}
-                        <option value="{{ s.id }}">{{ s.name }}{% if s.role %} - {{ s.role }}{% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
                 <label>Month</label>
-                <select name="payroll_month" required>
+                <select name="month">
                     {% for m in months %}
-                        <option value="{{ m }}">{{ m }}</option>
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div>
                 <label>Year</label>
-                <input type="number" name="payroll_year" value="2026" required>
+                <input type="number" name="year" value="{{ selected_year }}">
+            </div>
+
+            <div>
+                <label>&nbsp;</label>
+                <button class="btn blue" type="submit">View Payroll</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Generate Payroll</h3>
+
+    <form method="post">
+        <input type="hidden" name="action" value="generate_payroll">
+
+        <div class="three">
+            <div>
+                <label>Payroll Month</label>
+                <select name="payroll_month">
+                    {% for m in months %}
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Payroll Year</label>
+                <input type="number" name="payroll_year" value="{{ selected_year }}">
+            </div>
+
+            <div>
+                <label>&nbsp;</label>
+                <button class="btn green" type="submit">
+                    Generate Payroll
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Manual Payroll Entry</h3>
+
+    <form method="post">
+        <input type="hidden" name="action" value="manual_payroll">
+
+        <div class="three">
+            <div>
+                <label>Staff</label>
+                <select name="staff_id" required>
+                    <option value="">Select Staff</option>
+                    {% for s in staff_options %}
+                        <option value="{{ s.id }}">{{ s.name }} - {{ s.role }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Month</label>
+                <select name="payroll_month">
+                    {% for m in months %}
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Year</label>
+                <input type="number" name="payroll_year" value="{{ selected_year }}">
             </div>
         </div>
 
@@ -53,8 +120,9 @@
                 <label>Payment Method</label>
                 <select name="payment_method">
                     <option>Cash</option>
-                    <option>M-Pesa</option>
+                    <option>Mpesa</option>
                     <option>Bank</option>
+                    <option>Cheque</option>
                 </select>
             </div>
 
@@ -63,46 +131,69 @@
                 <input type="date" name="payment_date">
             </div>
 
-            <div style="padding-top:22px;">
-                <button class="btn green" type="submit">Record Payroll</button>
+            <div>
+                <label>&nbsp;</label>
+                <button class="btn blue" type="submit">Save Manual Payroll</button>
             </div>
         </div>
     </form>
 </div>
 
+<div class="four">
+    <div class="panel">
+        <h3>Staff</h3>
+        <h2>{{ staff_options|length }}</h2>
+    </div>
+
+    <div class="panel">
+        <h3>Payroll Records</h3>
+        <h2>{{ payroll_rows|length }}</h2>
+    </div>
+
+    <div class="panel">
+        <h3>Total Net Salary</h3>
+        <h2>{{ money(total_net_salary) }}</h2>
+    </div>
+
+    <div class="panel">
+        <h3>Period</h3>
+        <h2>{{ selected_month }} {{ selected_year }}</h2>
+    </div>
+</div>
+
 <div class="panel">
     <h3>Payroll Records</h3>
 
-    <p><b>Total Net Salary Recorded:</b> {{ money(total_net_salary) }}</p>
-
     <table>
         <tr>
-            <th>Date</th>
+            <th>#</th>
             <th>Staff</th>
             <th>Month</th>
             <th>Basic</th>
             <th>Allowances</th>
             <th>Deductions</th>
             <th>Net Salary</th>
+            <th>Status</th>
             <th>Method</th>
-            <th>By</th>
+            <th>Created By</th>
         </tr>
 
-        {% for x in payroll_rows %}
+        {% for p in payroll_rows %}
         <tr>
-            <td>{{ x.payment_date }}</td>
-            <td>{{ x.staff_name }}</td>
-            <td>{{ x.month_year }}</td>
-            <td>{{ money(x.basic_salary) }}</td>
-            <td>{{ money(x.allowances) }}</td>
-            <td>{{ money(x.deductions) }}</td>
-            <td><b>{{ money(x.net_salary) }}</b></td>
-            <td>{{ x.payment_method }}</td>
-            <td>{{ x.created_by }}</td>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.staff_name }}</td>
+            <td>{{ p.month_year }}</td>
+            <td>{{ money(p.basic_salary) }}</td>
+            <td>{{ money(p.allowances) }}</td>
+            <td>{{ money(p.deductions) }}</td>
+            <td><b>{{ money(p.net_salary) }}</b></td>
+            <td>{{ p.status }}</td>
+            <td>{{ p.payment_method }}</td>
+            <td>{{ p.created_by }}</td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="9">No payroll records yet.</td>
+            <td colspan="10">No payroll records for this period.</td>
         </tr>
         {% endfor %}
     </table>
