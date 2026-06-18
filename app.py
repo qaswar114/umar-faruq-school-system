@@ -1264,6 +1264,33 @@ def dashboard():
     current_month = today.month
     current_year_num = today.year
 
+    month_names = {
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December"
+    }
+
+    current_month_name = month_names.get(current_month, "May")
+
+    if current_month_name in ["January", "February", "March"]:
+        current_term = "Term 1"
+    elif current_month_name in ["May", "June", "July"]:
+        current_term = "Term 2"
+    elif current_month_name in ["September", "October", "November"]:
+        current_term = "Term 3"
+    else:
+        current_term = "Term 2"
+        current_month_name = "May"
+
     if role == "teacher":
         assigned_grade = session.get("assigned_grade", "")
 
@@ -1357,7 +1384,12 @@ def dashboard():
 
     for pupil in active_pupils:
         bal = (
-            year_due(pupil, current_year_num)
+            due_until_month(
+                pupil,
+                current_year_num,
+                current_term,
+                current_month_name
+            )
             - paid_year(pupil.id, current_year_num)
             - discount_year(pupil.id, current_year_num)
         )
