@@ -3507,11 +3507,14 @@ def termly_collections():
     selected_year = int(request.args.get("year", current_year()))
     selected_term = request.args.get("term", "Term 1")
 
-    payments = Payment.query.filter_by(
-        school_id=current_school_id(),
-        academic_year=selected_year,
-        term=selected_term
-    ).order_by(Payment.id.desc()).all()
+    payments = Payment.query.filter(
+        Payment.school_id == current_school_id(),
+        Payment.academic_year == selected_year,
+        Payment.term == selected_term
+    ).order_by(
+        Payment.month,
+        Payment.id.desc()
+    ).all()
 
     tuition_total = sum(p.tuition_paid for p in payments)
     bus_total = sum(p.bus_paid for p in payments)
@@ -3527,6 +3530,7 @@ def termly_collections():
         selected_year=selected_year,
         selected_term=selected_term,
         terms=TERMS,
+        term_months=TERM_MONTHS,
         tuition_total=tuition_total,
         bus_total=bus_total,
         exam_total=exam_total,
@@ -3534,6 +3538,7 @@ def termly_collections():
         total=total,
         money=money
     )
+    
 @app.route("/yearly_collections")
 def yearly_collections():
     if not login_required():
