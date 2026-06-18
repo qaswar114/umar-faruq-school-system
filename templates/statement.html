@@ -1,9 +1,49 @@
 {% extends "base.html" %}
 {% block content %}
 
+<style>
+.statement-logo-box{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.statement-logo{
+    width:90px;
+    height:90px;
+    object-fit:contain;
+    display:block;
+    margin:0 auto;
+}
+
+@media print{
+    .statement-logo{
+        width:75px;
+        height:75px;
+    }
+
+    .no-print{
+        display:none;
+    }
+
+    nav,
+    header,
+    .navbar,
+    .topbar,
+    .sidebar{
+        display:none !important;
+    }
+}
+</style>
+
+<div class="statement print-area">
+
 <div class="statement print-area">
     <div style="text-align:center;">
-        <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo-large">
+        <div class="statement-logo-box">
+    {% if settings.logo %}
+        <img src="{{ url_for('static', filename=settings.logo) }}" class="statement-logo">
+    {% endif %}
+     </div>
         <h2>{{ settings.school_name }}</h2>
         <p>{{ settings.address }}</p>
         <p>{{ settings.phone }}</p>
