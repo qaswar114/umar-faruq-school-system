@@ -5606,23 +5606,77 @@ def payroll():
         "July", "August", "September", "October", "November", "December"
     ]
 
-    staff_options = []
-    payroll_rows = []
-    total_net_salary = 0
-
-    staff_members = Staff.query.filter_by(school_id=school_id).all()
-
-    for s in staff_members:
-        staff_options.append({
-            "id": s.id,
-            "name": getattr(s, "full_name", None) or getattr(s, "name", None) or f"Staff {s.id}",
-            "role": getattr(s, "role", None) or getattr(s, "position", None) or ""
-        })
-
     if request.method == "POST":
+        action = request.form.get("action", "manual_payroll")
+
+        if action == "generate_payroll":
+            payroll_month = request.form.get("payroll_month")
+            payroll_year = int(request.form.get("payroll_year") or date.today().year)
+
+            staff_members = Staff.query.filter_by(
+                school_id=school_id,
+                status="Active"
+            ).all()
+
+            created = 0
+            skipped = 0
+
+            for staff in staff_members:
+                existing = StaffPayroll.query.filter_by(
+                    school_id=school_id,
+                    staff_id=staff.id,
+                    payroll_month=payroll_month,
+                    payroll_year=payroll_year
+                ).first()
+
+                if existing:
+                    skipped += 1
+                    continue
+
+                hr = StaffHR.query.filter_by(
+                    school_id=school_id,
+                    staff_id=staff.id
+                ).first()
+
+                basic_salary = hr.basic_salary if hr else 0
+                allowances = 0
+
+                if hr:
+                    allowances = (
+                        (hr.house_allowance or 0) +
+                        (hr.transport_allowance or 0) +
+                        (hr.other_allowance or 0)
+                    )
+
+                deductions = 0
+                net_salary = basic_salary + allowances - deductions
+
+                payroll_item = StaffPayroll(
+                    school_id=school_id,
+                    staff_id=staff.id,
+                    payroll_month=payroll_month,
+                    payroll_year=payroll_year,
+                    basic_salary=basic_salary,
+                    allowances=allowances,
+                    deductions=deductions,
+                    net_salary=net_salary,
+                    payment_method=hr.payment_mode if hr else "Cash",
+                    payment_date=date.today(),
+                    status="Pending",
+                    created_by=session.get("username")
+                )
+
+                db.session.add(payroll_item)
+                created += 1
+
+            db.session.commit()
+
+            flash(f"Payroll generated. Created: {created}, Skipped existing: {skipped}.")
+            return redirect(url_for("payroll"))
+
         staff_id = int(request.form.get("staff_id") or 0)
         payroll_month = request.form.get("payroll_month")
-        payroll_year = int(request.form.get("payroll_year") or 2026)
+        payroll_year = int(request.form.get("payroll_year") or date.today().year)
 
         basic_salary = float(request.form.get("basic_salary") or 0)
         allowances = float(request.form.get("allowances") or 0)
@@ -5659,16 +5713,39 @@ def payroll():
         flash("Payroll recorded successfully.")
         return redirect(url_for("payroll"))
 
+    selected_month = request.args.get("month", date.today().strftime("%B"))
+    selected_year = int(request.args.get("year", date.today().year))
+
+    staff_members = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Staff.full_name).all()
+
+    staff_options = []
+
+    for s in staff_members:
+        staff_options.append({
+            "id": s.id,
+            "name": s.full_name,
+            "role": s.role
+        })
+
     payrolls = StaffPayroll.query.filter_by(
-        school_id=school_id
+        school_id=school_id,
+        payroll_month=selected_month,
+        payroll_year=selected_year
     ).order_by(StaffPayroll.id.desc()).all()
 
     staff_name_map = {s["id"]: s["name"] for s in staff_options}
+
+    payroll_rows = []
+    total_net_salary = 0
 
     for x in payrolls:
         total_net_salary += x.net_salary or 0
 
         payroll_rows.append({
+            "id": x.id,
             "payment_date": x.payment_date,
             "staff_name": staff_name_map.get(x.staff_id, f"Staff {x.staff_id}"),
             "month_year": f"{x.payroll_month} {x.payroll_year}",
@@ -5677,6 +5754,7 @@ def payroll():
             "deductions": x.deductions or 0,
             "net_salary": x.net_salary or 0,
             "payment_method": x.payment_method,
+            "status": x.status,
             "created_by": x.created_by
         })
 
@@ -5686,6 +5764,8 @@ def payroll():
         staff_options=staff_options,
         payroll_rows=payroll_rows,
         months=months,
+        selected_month=selected_month,
+        selected_year=selected_year,
         total_net_salary=total_net_salary,
         money=money
     )
