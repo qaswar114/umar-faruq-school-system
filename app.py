@@ -1524,6 +1524,33 @@ def business_dashboard():
     year = today.year
     month = today.month
 
+    month_names = {
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December"
+    }
+
+    current_month_name = month_names.get(month, "May")
+
+    if current_month_name in ["January", "February", "March"]:
+        current_term = "Term 1"
+    elif current_month_name in ["May", "June", "July"]:
+        current_term = "Term 2"
+    elif current_month_name in ["September", "October", "November"]:
+        current_term = "Term 3"
+    else:
+        current_term = "Term 2"
+        current_month_name = "May"
+
     active_pupils = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
@@ -1540,7 +1567,13 @@ def business_dashboard():
     grade_balances = {}
 
     for pupil in active_pupils:
-        due = year_due(pupil, year)
+        due = due_until_month(
+            pupil,
+            year,
+            current_term,
+            current_month_name
+        )
+
         paid = paid_year(pupil.id, year)
         discount = discount_year(pupil.id, year)
         balance = due - paid - discount
