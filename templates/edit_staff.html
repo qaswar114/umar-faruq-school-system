@@ -38,10 +38,22 @@
             <div>
                 <label>Role</label>
                 <select name="role" required>
-                    {% for r in ["Admin", "Principal", "Bursar", "Registrar", "Teacher", "Receptionist"] %}
-                        <option value="{{ r }}" {% if staff.role == r %}selected{% endif %}>{{ r }}</option>
-                    {% endfor %}
-                </select>
+                          {% for r in [
+                          "Admin",
+                          "Principal",
+                          "Headteacher",
+                          "Deputy Headteacher",
+                          "Bursar",
+                          "Registrar",
+                          "Teacher",
+                          "Receptionist"
+                          ] %}
+        <option value="{{ r }}"
+            {% if staff.role == r %}selected{% endif %}>
+            {{ r }}
+        </option>
+    {% endfor %}
+</select>
             </div>
 
             <div>
