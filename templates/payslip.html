@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.payslip {
+    max-width: 760px;
+    margin: 20px auto;
+    background: white;
+    padding: 25px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+}
+
+.payslip-header {
+    text-align: center;
+    border-bottom: 2px solid #222;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+}
+
+.payslip-logo {
+    width: 75px;
+    height: 75px;
+    object-fit: contain;
+}
+
+.payslip-title {
+    margin-top: 10px;
+    letter-spacing: 1px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+    margin-bottom: 15px;
+}
+
+.section-title {
+    background: #f2f2f2;
+    padding: 8px;
+    font-weight: bold;
+    margin-top: 15px;
+    border-left: 4px solid #222;
+}
+
+.payslip table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.payslip th,
+.payslip td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+.amount {
+    text-align: right;
+}
+
+.net-pay {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.signature {
+    margin-top: 35px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+}
+
+.print-btn {
+    text-align: center;
+    margin-top: 12px;
+}
+
+@media print {
+    nav, header, .navbar, .topbar, .sidebar, .menu, .no-print {
+        display: none !important;
+    }
+
+    .payslip {
+        margin: 0;
+        max-width: 100%;
+        border: none;
+        border-radius: 0;
+        padding: 10px;
+    }
+}
+</style>
+
+<div class="payslip print-area">
+
+    <div class="payslip-header">
+        {% if settings.logo %}
+            <img src="{{ url_for('static', filename=settings.logo) }}" class="payslip-logo">
+        {% endif %}
+
+        <h2>{{ settings.school_name }}</h2>
+        <p>{{ settings.address }}</p>
+        <p>{{ settings.phone }}</p>
+        <h3 class="payslip-title">EMPLOYEE PAYSLIP</h3>
+    </div>
+
+    <div class="info-grid">
+        <div><b>Employee:</b> {{ staff.full_name }}</div>
+        <div><b>Role:</b> {{ staff.role }}</div>
+        <div><b>Payroll Month:</b> {{ payroll.payroll_month }} {{ payroll.payroll_year }}</div>
+        <div><b>Payment Date:</b> {{ payroll.payment_date }}</div>
+        <div><b>Payment Method:</b> {{ payroll.payment_method }}</div>
+        <div><b>Status:</b> {{ payroll.status }}</div>
+    </div>
+
+    <div class="section-title">Earnings</div>
+
+    <table>
+        <tr>
+            <th>Description</th>
+            <th class="amount">Amount</th>
+        </tr>
+        <tr>
+            <td>Basic Salary</td>
+            <td class="amount">{{ money(payroll.basic_salary) }}</td>
+        </tr>
+        <tr>
+            <td>Allowances</td>
+            <td class="amount">{{ money(payroll.allowances) }}</td>
+        </tr>
+        <tr>
+            <td><b>Gross Salary</b></td>
+            <td class="amount"><b>{{ money(gross_salary) }}</b></td>
+        </tr>
+    </table>
+
+    <div class="section-title">Deductions</div>
+
+    <table>
+        <tr>
+            <th>Description</th>
+            <th class="amount">Amount</th>
+        </tr>
+        <tr>
+            <td>Total Deductions</td>
+            <td class="amount">{{ money(total_deductions) }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Net Pay</div>
+
+    <table>
+        <tr>
+            <td class="net-pay">Net Salary Payable</td>
+            <td class="amount net-pay">{{ money(payroll.net_salary) }}</td>
+        </tr>
+    </table>
+
+    <div class="signature">
+        <div><b>Prepared By:</b> ______________________</div>
+        <div><b>Employee Signature:</b> ______________________</div>
+    </div>
+
+    <div class="footer">
+        Generated on {{ today }}<br>
+        Powered by EduManage
+    </div>
+
+</div>
+
+<div class="no-print print-btn">
+    <button class="btn green" onclick="window.print()">Print Payslip</button>
+    <a class="btn" href="{{ url_for('payroll') }}">Back to Payroll</a>
+</div>
+
+{% endblock %}
