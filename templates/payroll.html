@@ -8,7 +8,7 @@
 }
 
 .payroll-head {
-    background: #ffffff;
+    background: #fff;
     border: 1px solid #ddd;
     border-left: 6px solid #0b5ed7;
     border-radius: 12px;
@@ -18,7 +18,6 @@
 
 .payroll-head h2 {
     margin: 0;
-    color: #222;
 }
 
 .payroll-head p {
@@ -40,7 +39,7 @@
     margin-bottom: 14px;
 }
 
-.stat-box {
+.stat-box, .payroll-card {
     background: #fff;
     border: 1px solid #e1e1e1;
     border-radius: 12px;
@@ -58,21 +57,10 @@
 }
 
 .payroll-card {
-    background: #fff;
-    border: 1px solid #e1e1e1;
-    border-radius: 12px;
-    padding: 16px;
     margin-bottom: 14px;
 }
 
-.inline-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 10px;
-    align-items: end;
-}
-
-.generate-row {
+.form-row {
     display: grid;
     grid-template-columns: 1fr 1fr auto;
     gap: 10px;
@@ -88,7 +76,7 @@
 .badge {
     padding: 5px 10px;
     border-radius: 20px;
-    background: #eee;
+    background: #fff3cd;
     font-size: 12px;
     font-weight: bold;
 }
@@ -97,18 +85,22 @@
     background: #d1e7dd;
 }
 
-.badge.pending {
-    background: #fff3cd;
-}
-
 .table-wrap {
     overflow-x: auto;
 }
 
+.action-btn {
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: #0b5ed7;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+}
+
 @media(max-width: 900px) {
     .compact-stats,
-    .inline-form,
-    .generate-row,
+    .form-row,
     .manual-grid {
         grid-template-columns: 1fr;
     }
@@ -119,7 +111,7 @@
 
     <div class="payroll-head">
         <h2>Payroll Management</h2>
-        <p>{{ settings.school_name }} — Generate, review, and manage staff salaries.</p>
+        <p>{{ settings.school_name }} — Generate, review, and print staff payslips.</p>
 
         <div class="quick-actions">
             <a class="btn" href="{{ url_for('staff_dashboard') }}">Back to Staff Dashboard</a>
@@ -139,7 +131,7 @@
         </div>
 
         <div class="stat-box">
-            <small>Total Net Salary</small>
+            <small>Total Net Payroll</small>
             <h3>{{ money(total_net_salary) }}</h3>
         </div>
 
@@ -152,14 +144,12 @@
     <div class="payroll-card">
         <h3>Payroll Period</h3>
 
-        <form method="get" class="inline-form">
+        <form method="get" class="form-row">
             <div>
                 <label>Month</label>
                 <select name="month">
                     {% for m in months %}
-                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>
-                            {{ m }}
-                        </option>
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -176,16 +166,14 @@
     <div class="payroll-card">
         <h3>Generate Payroll</h3>
 
-        <form method="post" class="generate-row">
+        <form method="post" class="form-row">
             <input type="hidden" name="action" value="generate_payroll">
 
             <div>
                 <label>Month</label>
                 <select name="payroll_month">
                     {% for m in months %}
-                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>
-                            {{ m }}
-                        </option>
+                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -213,8 +201,7 @@
                     <th>Deductions</th>
                     <th>Net Salary</th>
                     <th>Status</th>
-                    <th>Method</th>
-                    <th>Created By</th>
+                    <th>Action</th>
                 </tr>
 
                 {% for p in payroll_rows %}
@@ -227,16 +214,19 @@
                     <td>{{ money(p.deductions) }}</td>
                     <td><b>{{ money(p.net_salary) }}</b></td>
                     <td>
-                        <span class="badge {% if p.status == 'Paid' %}paid{% else %}pending{% endif %}">
+                        <span class="badge {% if p.status == 'Paid' %}paid{% endif %}">
                             {{ p.status }}
                         </span>
                     </td>
-                    <td>{{ p.payment_method }}</td>
-                    <td>{{ p.created_by }}</td>
+                    <td>
+                        <a class="action-btn" href="{{ url_for('payslip', payroll_id=p.id) }}">
+                            Payslip
+                        </a>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="10">No payroll records for this period.</td>
+                    <td colspan="9">No payroll records for this period.</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -264,9 +254,7 @@
                     <label>Month</label>
                     <select name="payroll_month">
                         {% for m in months %}
-                            <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>
-                                {{ m }}
-                            </option>
+                            <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
                         {% endfor %}
                     </select>
                 </div>
