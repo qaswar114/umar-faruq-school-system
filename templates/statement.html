@@ -2,91 +2,209 @@
 {% block content %}
 
 <style>
-.statement-logo-box{
-    text-align:center;
-    margin-bottom:10px;
+.statement {
+    max-width: 900px;
+    margin: 20px auto;
+    background: #fff;
+    padding: 28px;
+    border: 1px solid #ddd;
+    font-size: 14px;
 }
 
-.statement-logo{
-    width:90px;
-    height:90px;
-    object-fit:contain;
-    display:block;
-    margin:0 auto;
+.statement-header {
+    text-align: center;
+    border-bottom: 2px solid #222;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
 }
 
-@media print{
-    .statement-logo{
-        width:75px;
-        height:75px;
+.statement-logo {
+    width: 85px;
+    height: 85px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 8px auto;
+}
+
+.statement-header h2 {
+    margin: 4px 0;
+    font-size: 22px;
+    text-transform: uppercase;
+}
+
+.statement-header p {
+    margin: 2px 0;
+}
+
+.statement-title {
+    margin-top: 10px;
+    font-size: 17px;
+    letter-spacing: 1px;
+}
+
+.info-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 25px;
+    margin-bottom: 18px;
+}
+
+.section-title {
+    background: #f2f2f2;
+    padding: 8px;
+    font-weight: bold;
+    margin-top: 16px;
+    border-left: 4px solid #222;
+}
+
+.statement table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.statement th,
+.statement td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+.statement th {
+    background: #f5f5f5;
+}
+
+.amount {
+    text-align: right;
+}
+
+.closing {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.note {
+    margin-top: 18px;
+    padding: 10px;
+    background: #fafafa;
+    border-left: 4px solid #777;
+}
+
+.signature-table td {
+    height: 55px;
+    vertical-align: bottom;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+}
+
+.print-btn {
+    text-align: center;
+    margin: 15px 0;
+}
+
+@media print {
+    body {
+        background: white !important;
     }
 
-    .no-print{
-        display:none;
+    .statement {
+        margin: 0;
+        max-width: 100%;
+        border: none;
+        padding: 10px;
+        font-size: 12px;
     }
 
+    .statement-logo {
+        width: 70px;
+        height: 70px;
+    }
+
+    .no-print,
     nav,
     header,
     .navbar,
     .topbar,
-    .sidebar{
-        display:none !important;
+    .sidebar,
+    .menu {
+        display: none !important;
     }
 }
 </style>
 
 <div class="statement print-area">
 
-<div class="statement print-area">
-    <div style="text-align:center;">
-        <div class="statement-logo-box">
-    {% if settings.logo %}
-        <img src="{{ url_for('static', filename=settings.logo) }}" class="statement-logo">
-    {% endif %}
-     </div>
+    <div class="statement-header">
+        {% if settings.logo %}
+            <img src="{{ url_for('static', filename=settings.logo) }}" class="statement-logo">
+        {% endif %}
+
         <h2>{{ settings.school_name }}</h2>
         <p>{{ settings.address }}</p>
         <p>{{ settings.phone }}</p>
-        <h3>PARENT FINANCIAL STATEMENT</h3>
+        <h3 class="statement-title">PARENT FINANCIAL STATEMENT</h3>
     </div>
 
-    <hr>
+    <div class="info-box">
+        <div><b>Pupil:</b> {{ pupil.full_name }}</div>
+        <div><b>Admission No:</b> {{ pupil.admission_no }}</div>
+        <div><b>Grade:</b> {{ pupil.grade }}</div>
+        <div><b>Academic Year:</b> {{ year }}</div>
+        <div><b>Generated:</b> {{ today }}</div>
+        <div><b>Account Status:</b> {{ account_status }}</div>
+    </div>
 
-    <p>
-        <b>Pupil:</b> {{ pupil.full_name }}<br>
-        <b>Admission No:</b> {{ pupil.admission_no }}<br>
-        <b>Grade:</b> {{ pupil.grade }}<br>
-        <b>Academic Year:</b> {{ year }}<br>
-        <b>Generated:</b> {{ today }}
-    </p>
+    <div class="section-title">Financial Summary</div>
 
-    <h3>Financial Summary</h3>
     <table>
-        <tr><th>Opening Balance</th><td>{{ money(opening_balance) }}</td></tr>
-        <tr><th>Current Charges</th><td>{{ money(current_charges) }}</td></tr>
-        <tr><th>Total Payments</th><td>{{ money(total_paid) }}</td></tr>
-        <tr><th>Discounts / Waivers</th><td>{{ money(total_discounts) }}</td></tr>
-        <tr><th>Closing Balance</th><td><b>{{ money(closing) }}</b></td></tr>
-        <tr><th>Account Status</th><td><b>{{ account_status }}</b></td></tr>
+        <tr>
+            <th>Item</th>
+            <th class="amount">Amount</th>
+        </tr>
+        <tr>
+            <td>Opening Balance</td>
+            <td class="amount">{{ money(opening_balance) }}</td>
+        </tr>
+        <tr>
+            <td>Current Charges</td>
+            <td class="amount">{{ money(current_charges) }}</td>
+        </tr>
+        <tr>
+            <td>Total Payments</td>
+            <td class="amount">{{ money(total_paid) }}</td>
+        </tr>
+        <tr>
+            <td>Discounts / Waivers</td>
+            <td class="amount">{{ money(total_discounts) }}</td>
+        </tr>
+        <tr>
+            <td class="closing">Closing Balance</td>
+            <td class="amount closing">{{ money(closing) }}</td>
+        </tr>
     </table>
 
-    <h3>Transaction History</h3>
+    <div class="section-title">Transaction History</div>
+
     <table>
         <tr>
             <th>Date</th>
             <th>Description</th>
-            <th>Debit</th>
-            <th>Credit</th>
-            <th>Running Balance</th>
+            <th class="amount">Debit</th>
+            <th class="amount">Credit</th>
+            <th class="amount">Running Balance</th>
         </tr>
 
         {% for e in entries %}
         <tr>
             <td>{{ e.date }}</td>
             <td>{{ e.description }}</td>
-            <td>{{ money(e.debit) if e.debit else "-" }}</td>
-            <td>{{ money(e.credit) if e.credit else "-" }}</td>
-            <td>{{ money(e.balance) }}</td>
+            <td class="amount">{{ money(e.debit) if e.debit else "-" }}</td>
+            <td class="amount">{{ money(e.credit) if e.credit else "-" }}</td>
+            <td class="amount">{{ money(e.balance) }}</td>
         </tr>
         {% else %}
         <tr>
@@ -95,27 +213,25 @@
         {% endfor %}
     </table>
 
-    <br>
-
-    <p>
+    <div class="note">
         <b>Note:</b> Kindly clear any outstanding balance through the school accounts office.
-    </p>
+    </div>
 
-    <br><br>
-
-    <table>
+    <table class="signature-table">
         <tr>
             <td><b>Bursar Signature:</b> ______________________</td>
             <td><b>School Stamp:</b> ______________________</td>
         </tr>
     </table>
 
-    <p style="text-align:center;">
-        Thank you for supporting {{ settings.school_name }}.
-    </p>
+    <div class="footer">
+        Thank you for supporting {{ settings.school_name }}.<br>
+        Powered by EduManage
+    </div>
+
 </div>
 
-<div class="no-print" style="text-align:center;margin-top:10px">
+<div class="no-print print-btn">
     <button class="btn green" onclick="window.print()">Print Statement</button>
 </div>
 
