@@ -3585,12 +3585,16 @@ def defaulters_report():
 
     year = int(request.args.get("year", current_year()))
     selected_grade = request.args.get("grade", "")
-    selected_term = request.args.get("term", "Term 1")
+
+    selected_term = request.args.get("term", "Term 2")
     selected_month = request.args.get("month", "May")
 
+    if selected_month not in term_months(selected_term):
+        selected_month = term_months(selected_term)[0] if term_months(selected_term) else "May"
+
     query = Pupil.query.filter_by(
-         school_id=current_school_id(),
-         status="Active"
+        school_id=current_school_id(),
+        status="Active"
     )
 
     if selected_grade:
@@ -3598,8 +3602,14 @@ def defaulters_report():
 
     rows = []
 
-    for p in query.all():
-        total_due = due_until_month(p, year, selected_term, selected_month)
+    for p in query.order_by(Pupil.grade, Pupil.full_name).all():
+        total_due = due_until_month(
+            p,
+            year,
+            selected_term,
+            selected_month
+        )
+
         total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
         balance = total_due - total_paid - discounts
@@ -3617,20 +3627,21 @@ def defaulters_report():
     total_balance = sum(row["balance"] for row in rows)
 
     return render_template(
-    "defaulters_report.html",
-    settings=get_settings(),
-    grades=GRADES,
-    selected_grade=selected_grade,
-    selected_term=selected_term,
-    selected_month=selected_month,
-    terms=TERMS,
-    term_months=TERM_MONTHS,
-    total_defaulters=total_defaulters,
-    total_balance=total_balance,
-    rows=rows,
-    year=year,
-    money=money
-)
+        "defaulters_report.html",
+        settings=get_settings(),
+        grades=GRADES,
+        selected_grade=selected_grade,
+        selected_term=selected_term,
+        selected_month=selected_month,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        total_defaulters=total_defaulters,
+        total_balance=total_balance,
+        rows=rows,
+        year=year,
+        money=money
+    )
+    
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
     if not login_required(): return redirect(url_for("login"))
@@ -3750,25 +3761,21 @@ def statement(pupil_id, year):
         school_id=school_id
     ).first_or_404()
 
-    entries = []
-    balance = opening_arrears(pupil, year)
-
-    opening_balance = balance
-    current_charges = 0
-    total_paid = 0
-    total_discounts = 0
+    transactions = []
+    opening_balance = opening_arrears(pupil, year)
 
     if opening_balance > 0:
-        entries.append({
-            "date": f"01/01/{year}",
+        transactions.append({
+            "date": date(year, 1, 1),
             "description": f"Opening Arrears B/F from {year - 1}",
             "debit": opening_balance,
-            "credit": 0,
-            "balance": balance
+            "credit": 0
         })
 
     for term in TERMS:
-        for month in term_months(term):
+        months = term_months(term)
+
+        for month in months:
 
             if year == 2026 and month not in [
                 "May", "June", "July",
@@ -3776,19 +3783,28 @@ def statement(pupil_id, year):
             ]:
                 continue
 
-            d = monthly_due(pupil, year, term, month)
-            debit = d["tuition"] + d["bus"] + d["exam"] + d["admission"]
+            fee = get_fee(year, pupil.grade, term, month)
+
+            tuition = fee.tuition_fee or 0
+            bus = fee.bus_fee if pupil.uses_bus == "Yes" else 0
+
+            exam = 0
+            admission = 0
+
+            if month == months[0]:
+                exam = fee.exam_fee or 0
+
+                if pupil.new_admission == "Yes":
+                    admission = fee.admission_fee or 0
+
+            debit = tuition + bus + exam + admission
 
             if debit > 0:
-                balance += debit
-                current_charges += debit
-
-                entries.append({
-                    "date": "",
+                transactions.append({
+                    "date": date(year, 1, 1),
                     "description": f"{month} {term} Fees",
                     "debit": debit,
-                    "credit": 0,
-                    "balance": balance
+                    "credit": 0
                 })
 
             payments = Payment.query.filter_by(
@@ -3808,15 +3824,11 @@ def statement(pupil_id, year):
                 )
 
                 if credit > 0:
-                    balance -= credit
-                    total_paid += credit
-
-                    entries.append({
-                        "date": str(pay.payment_date),
+                    transactions.append({
+                        "date": pay.payment_date,
                         "description": f"Payment {pay.receipt_no} ({pay.payment_method})",
                         "debit": 0,
-                        "credit": credit,
-                        "balance": balance
+                        "credit": credit
                     })
 
     discounts = Discount.query.filter_by(
@@ -3827,16 +3839,48 @@ def statement(pupil_id, year):
 
     for d in discounts:
         if d.amount > 0:
-            balance -= d.amount
-            total_discounts += d.amount
-
-            entries.append({
-                "date": str(d.created_at),
+            transactions.append({
+                "date": d.created_at,
                 "description": f"Discount/Waiver: {d.reason}",
                 "debit": 0,
-                "credit": d.amount,
-                "balance": balance
+                "credit": d.amount
             })
+
+    transactions = sorted(
+        transactions,
+        key=lambda x: x["date"]
+    )
+
+    entries = []
+    balance = 0
+    current_charges = 0
+    total_paid = 0
+    total_discounts = 0
+
+    for t in transactions:
+        debit = t["debit"]
+        credit = t["credit"]
+
+        balance += debit
+        balance -= credit
+
+        if "Fees" in t["description"] or "Opening Arrears" in t["description"]:
+            if "Opening Arrears" not in t["description"]:
+                current_charges += debit
+
+        if "Payment" in t["description"]:
+            total_paid += credit
+
+        if "Discount/Waiver" in t["description"]:
+            total_discounts += credit
+
+        entries.append({
+            "date": t["date"],
+            "description": t["description"],
+            "debit": debit,
+            "credit": credit,
+            "balance": balance
+        })
 
     closing_balance = balance
 
@@ -3853,18 +3897,15 @@ def statement(pupil_id, year):
         pupil=pupil,
         year=year,
         entries=entries,
-
         opening_balance=opening_balance,
         current_charges=current_charges,
         total_paid=total_paid,
         total_discounts=total_discounts,
         closing=closing_balance,
         account_status=account_status,
-
         money=money,
         today=date.today()
     )
-
 
 @app.route("/statements")
 def statements():
