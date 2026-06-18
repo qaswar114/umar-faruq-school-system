@@ -3355,21 +3355,56 @@ def monthly_collections():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    selected_month = request.args.get("month", str(date.today())[:7])
+    selected_month = request.args.get(
+        "month",
+        date.today().strftime("%Y-%m")
+    )
+
     export_pdf = request.args.get("pdf")
 
-    start_date = datetime.strptime(selected_month + "-01", "%Y-%m-%d").date()
+    month_date = datetime.strptime(
+        selected_month + "-01",
+        "%Y-%m-%d"
+    ).date()
 
-    if start_date.month == 12:
-        end_date = date(start_date.year + 1, 1, 1)
+    selected_year = month_date.year
+
+    month_names = {
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December"
+    }
+
+    selected_month_name = month_names[month_date.month]
+
+    if selected_month_name in ["January", "February", "March"]:
+        selected_term = "Term 1"
+    elif selected_month_name in ["May", "June", "July"]:
+        selected_term = "Term 2"
+    elif selected_month_name in ["September", "October", "November"]:
+        selected_term = "Term 3"
     else:
-        end_date = date(start_date.year, start_date.month + 1, 1)
+        selected_term = ""
 
     payments = Payment.query.filter(
         Payment.school_id == current_school_id(),
-        Payment.payment_date >= start_date,
-        Payment.payment_date < end_date
-    ).order_by(Payment.id.desc()).all()
+        Payment.academic_year == selected_year,
+        Payment.month == selected_month_name
+    )
+
+    if selected_term:
+        payments = payments.filter(Payment.term == selected_term)
+
+    payments = payments.order_by(Payment.id.desc()).all()
 
     tuition_total = sum(p.tuition_paid for p in payments)
     bus_total = sum(p.bus_paid for p in payments)
@@ -3384,6 +3419,8 @@ def monthly_collections():
             settings=get_settings(),
             payments=payments,
             selected_month=selected_month,
+            selected_month_name=selected_month_name,
+            selected_term=selected_term,
             tuition_total=tuition_total,
             bus_total=bus_total,
             exam_total=exam_total,
@@ -3395,7 +3432,9 @@ def monthly_collections():
         pdf = generate_pdf(html)
         response = make_response(pdf.read())
         response.headers["Content-Type"] = "application/pdf"
-        response.headers["Content-Disposition"] = "attachment; filename=monthly_collections.pdf"
+        response.headers["Content-Disposition"] = (
+            "attachment; filename=monthly_collections.pdf"
+        )
         return response
 
     return render_template(
@@ -3403,6 +3442,8 @@ def monthly_collections():
         settings=get_settings(),
         payments=payments,
         selected_month=selected_month,
+        selected_month_name=selected_month_name,
+        selected_term=selected_term,
         tuition_total=tuition_total,
         bus_total=bus_total,
         exam_total=exam_total,
