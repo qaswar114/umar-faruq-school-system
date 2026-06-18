@@ -5769,6 +5769,43 @@ def payroll():
         total_net_salary=total_net_salary,
         money=money
     )
+
+@app.route("/payslip/<int:payroll_id>")
+def payslip(payroll_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    payroll = StaffPayroll.query.filter_by(
+        id=payroll_id,
+        school_id=current_school_id()
+    ).first_or_404()
+
+    staff = Staff.query.filter_by(
+        id=payroll.staff_id,
+        school_id=current_school_id()
+    ).first_or_404()
+
+    gross_salary = (
+        (payroll.basic_salary or 0) +
+        (payroll.allowances or 0)
+    )
+
+    total_deductions = payroll.deductions or 0
+
+    return render_template(
+        "payslip.html",
+        settings=get_settings(),
+        payroll=payroll,
+        staff=staff,
+        gross_salary=gross_salary,
+        total_deductions=total_deductions,
+        money=money,
+        today=date.today()
+    )
 @app.route("/fix_payroll_table")
 def fix_payroll_table():
     if not login_required():
