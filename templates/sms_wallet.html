@@ -2,132 +2,122 @@
 {% block content %}
 
 <div class="panel">
-    <h2>SMS Centre</h2>
-    <p>Manage your school's SMS communication services.</p>
+    <h2>SMS Wallet</h2>
+    <p>Load and manage SMS balance for {{ settings.school_name }}.</p>
 
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>My SMS Balance</h3>
-            <div class="number">{{ wallet.sms_balance }}</div>
-        </div>
+    <a class="btn" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+    <a class="btn blue" href="{{ url_for('sms_messages') }}">SMS Messages</a>
+    <a class="btn green" href="{{ url_for('bulk_sms') }}">Bulk SMS</a>
+</div>
 
-        <div class="card">
-            <h3>Pending SMS</h3>
-            <div class="number">{{ pending_sms }}</div>
-        </div>
+<div class="three">
+    <div class="panel">
+        <h3>SMS Balance</h3>
+        <h2>{{ wallet.sms_balance }}</h2>
+        <p>Available SMS</p>
+    </div>
 
-        <div class="card">
-            <h3>Sent SMS</h3>
-            <div class="number">{{ sent_sms }}</div>
-        </div>
+    <div class="panel">
+        <h3>SMS Used</h3>
+        <h2>{{ wallet.sms_used }}</h2>
+        <p>Total SMS sent/charged</p>
+    </div>
 
-        <div class="card">
-            <h3>Failed SMS</h3>
-            <div class="number">{{ failed_sms }}</div>
-        </div>
+    <div class="panel">
+        <h3>SMS Loaded</h3>
+        <h2>{{ wallet.sms_loaded }}</h2>
+        <p>Total SMS loaded</p>
+    </div>
+</div>
+
+<div class="three">
+    <div class="panel">
+        <h3>Pending SMS</h3>
+        <h2>{{ pending_sms }}</h2>
+    </div>
+
+    <div class="panel">
+        <h3>Sent SMS</h3>
+        <h2>{{ sent_sms }}</h2>
+    </div>
+
+    <div class="panel">
+        <h3>Failed SMS</h3>
+        <h2>{{ failed_sms }}</h2>
     </div>
 </div>
 
 <div class="panel">
-    <h3>Buy SMS Package</h3>
+    <h3>Load SMS</h3>
 
     <form method="post">
-        <label>Select SMS Package</label>
-        <select name="package_id" required>
-            <option value="">Choose SMS Package</option>
-            {% for p in packages %}
-            <option value="{{ p.id }}">
-                {{ p.sms_count }} SMS - {{ money(p.price) }}
-            </option>
-            {% endfor %}
-        </select>
+        <div class="three">
+            <div>
+                <label>Provider</label>
+                <select name="provider" required>
+                    <option>Africa's Talking</option>
+                    <option>Safaricom Bulk SMS</option>
+                    <option>Advanta Africa</option>
+                    <option>HostPinnacle</option>
+                    <option>Mobitelea</option>
+                    <option>Other</option>
+                </select>
+            </div>
 
-        <label>M-Pesa Phone Number</label>
-        <input name="mpesa_phone" placeholder="07XXXXXXXX" required>
+            <div>
+                <label>SMS Purchased</label>
+                <input type="number" name="sms_count" min="1" required placeholder="e.g. 5000">
+            </div>
 
-        <br><br>
-        <button class="btn green">Request SMS Purchase</button>
+            <div>
+                <label>Amount Paid</label>
+                <input type="number" name="amount_paid" step="0.01" placeholder="e.g. 5000">
+            </div>
+        </div>
+
+        <div class="two">
+            <div>
+                <label>Reference Number</label>
+                <input name="reference_no" placeholder="Receipt / Transaction / Invoice No.">
+            </div>
+
+            <div>
+                <label>Purchase Date</label>
+                <input type="date" name="purchase_date" value="{{ today }}">
+            </div>
+        </div>
+
+        <button class="btn green" type="submit">Load SMS</button>
     </form>
 </div>
 
 <div class="panel">
-    <h3>Pending SMS Purchases</h3>
+    <h3>SMS Loading History</h3>
 
     <table>
         <tr>
             <th>Date</th>
+            <th>Provider</th>
             <th>SMS</th>
             <th>Amount</th>
-            <th>M-Pesa Phone</th>
-            <th>Requested By</th>
-            <th>Status</th>
+            <th>Reference</th>
+            <th>Loaded By</th>
         </tr>
 
-        {% for p in purchases %}
+        {% for r in sms_loads %}
         <tr>
-            <td>{{ p.request_date }}</td>
-            <td>{{ p.package_sms }}</td>
-            <td>{{ money(p.amount) }}</td>
-            <td>{{ p.mpesa_phone }}</td>
-            <td>{{ p.requested_by }}</td>
-            <td>{{ p.status }}</td>
+            <td>{{ r.purchase_date }}</td>
+            <td>{{ r.provider }}</td>
+            <td>{{ r.sms_count }}</td>
+            <td>{{ money(r.amount_paid) }}</td>
+            <td>{{ r.reference_no if r.reference_no else "-" }}</td>
+            <td>{{ r.loaded_by }}</td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="6">No SMS purchase requests yet.</td>
+            <td colspan="6">No SMS loading history yet.</td>
         </tr>
         {% endfor %}
-    </table>
-</div>
-
-<div class="panel">
-    <h3>Completed SMS Purchase History</h3>
-
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>SMS</th>
-            <th>Amount</th>
-            <th>Purchased By</th>
-            <th>Status</th>
-        </tr>
-
-        {% for t in transactions %}
-        <tr>
-            <td>{{ t.purchase_date }}</td>
-            <td>{{ t.sms_count }}</td>
-            <td>{{ money(t.amount) }}</td>
-            <td>{{ t.purchased_by }}</td>
-            <td>{{ t.status }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="5">No completed SMS purchases yet.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
-
-<div class="panel">
-    <h3>SMS Information</h3>
-
-    <table>
-        <tr>
-            <th>SMS Status</th>
-            <td>{% if wallet.sms_enabled %}Active{% else %}Inactive{% endif %}</td>
-        </tr>
-        <tr>
-            <th>Last SMS Purchase By</th>
-            <td>{{ wallet.last_loaded_by or "-" }}</td>
-        </tr>
-        <tr>
-            <th>Last SMS Purchase Date</th>
-            <td>{{ wallet.last_loaded or "-" }}</td>
-        </tr>
-        <tr>
-            <th>Platform</th>
-            <td>Umar Faruq SMS Centre</td>
-        </tr>
     </table>
 </div>
 
