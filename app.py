@@ -118,6 +118,50 @@ class SMSWallet(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+class SMSLoad(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
+
+    provider = db.Column(
+        db.String(100),
+        default="Other"
+    )
+
+    sms_count = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    amount_paid = db.Column(
+        db.Float,
+        default=0
+    )
+
+    reference_no = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    purchase_date = db.Column(
+        db.Date,
+        default=date.today
+    )
+
+    loaded_by = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
 class SMSPackage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sms_count = db.Column(db.Integer, nullable=False)
@@ -4545,50 +4589,57 @@ def sms_wallet():
         return redirect(url_for("login"))
 
     if not role_allowed("admin"):
-        flash("Only Admin can manage SMS Centre.")
+        flash("Only Admin can manage SMS Wallet.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
     wallet = get_sms_wallet()
 
     if request.method == "POST":
-        package_id = int(request.form.get("package_id") or 0)
-        mpesa_phone = request.form.get("mpesa_phone", "").strip()
+        provider = request.form.get("provider", "Other").strip()
+        sms_count = int(request.form.get("sms_count") or 0)
+        amount_paid = float(request.form.get("amount_paid") or 0)
+        reference_no = request.form.get("reference_no", "").strip()
+        purchase_date_raw = request.form.get("purchase_date", "")
 
-        package = SMSPackage.query.filter_by(
-            id=package_id,
-            status="Active"
-        ).first()
-
-        if not package:
-            flash("Please select a valid SMS package.")
+        if sms_count <= 0:
+            flash("Enter a valid SMS quantity.")
             return redirect(url_for("sms_wallet"))
 
-        if not mpesa_phone:
-            flash("Please enter M-Pesa phone number.")
-            return redirect(url_for("sms_wallet"))
+        purchase_date = date.today()
+        if purchase_date_raw:
+            purchase_date = datetime.strptime(
+                purchase_date_raw,
+                "%Y-%m-%d"
+            ).date()
 
-        if mpesa_phone.startswith("0"):
-            mpesa_phone = "254" + mpesa_phone[1:]
-
-        purchase = SMSPurchase(
+        load = SMSLoad(
             school_id=school_id,
-            package_sms=package.sms_count,
-            amount=package.price,
-            requested_by=session.get("username", ""),
-            mpesa_phone=mpesa_phone,
-            status="Pending Approval"
+            provider=provider or "Other",
+            sms_count=sms_count,
+            amount_paid=amount_paid,
+            reference_no=reference_no,
+            purchase_date=purchase_date,
+            loaded_by=session.get("username", "")
         )
 
-        db.session.add(purchase)
+        db.session.add(load)
+
+        wallet.sms_balance += sms_count
+        wallet.sms_loaded += sms_count
+        wallet.last_loaded = datetime.now()
+        wallet.last_loaded_by = session.get("username", "")
+
         db.session.commit()
 
         save_audit(
-            f"Created SMS purchase request ID {purchase.id}",
+            f"Loaded {sms_count} SMS from {provider}. "
+            f"Amount: KES {amount_paid:,.2f}. "
+            f"Reference: {reference_no}.",
             "Communication"
         )
 
-        flash("SMS purchase request submitted successfully. Awaiting Super Admin approval.")
+        flash(f"{sms_count} SMS loaded successfully.")
         return redirect(url_for("sms_wallet"))
 
     pending_sms = SMSMessage.query.filter_by(
@@ -4606,23 +4657,12 @@ def sms_wallet():
         status="Failed"
     ).count()
 
-    packages = SMSPackage.query.filter_by(
-        status="Active"
-    ).order_by(
-        SMSPackage.sms_count
-    ).all()
-
-    transactions = SMSTransaction.query.filter_by(
+    sms_loads = SMSLoad.query.filter_by(
         school_id=school_id
     ).order_by(
-        SMSTransaction.purchase_date.desc()
-    ).limit(10).all()
-
-    purchases = SMSPurchase.query.filter_by(
-        school_id=school_id
-    ).order_by(
-        SMSPurchase.request_date.desc()
-    ).limit(10).all()
+        SMSLoad.purchase_date.desc(),
+        SMSLoad.id.desc()
+    ).limit(20).all()
 
     return render_template(
         "sms_wallet.html",
@@ -4631,12 +4671,10 @@ def sms_wallet():
         pending_sms=pending_sms,
         sent_sms=sent_sms,
         failed_sms=failed_sms,
-        packages=packages,
-        transactions=transactions,
-        purchases=purchases,
+        sms_loads=sms_loads,
+        today=date.today(),
         money=money
     )
-
 @app.route("/platform_sms", methods=["GET", "POST"])
 def platform_sms():
     if not login_required():
