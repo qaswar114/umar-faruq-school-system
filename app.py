@@ -3216,57 +3216,80 @@ def payments():
     if request.method == "POST":
         year = int(request.form["academic_year"])
         term = request.form["term"]
+        month = request.form["month"]
+
+        pupil_id = int(request.form["pupil_id"])
+
+        pupil = Pupil.query.filter_by(
+            id=pupil_id,
+            school_id=school_id,
+            status="Active"
+        ).first()
+
+        if not pupil:
+            flash("Invalid pupil selected.")
+            return redirect(url_for("payments"))
+
+        if month not in term_months(term):
+            flash("Selected month does not belong to the selected term.")
+            return redirect(url_for("payments"))
+
+        tuition_paid = float(request.form.get("tuition_paid") or 0)
+        bus_paid = float(request.form.get("bus_paid") or 0)
+        exam_paid = float(request.form.get("exam_paid") or 0)
+        admission_paid = float(request.form.get("admission_paid") or 0)
+
+        amount_paid = (
+            tuition_paid +
+            bus_paid +
+            exam_paid +
+            admission_paid
+        )
+
+        if amount_paid <= 0:
+            flash("Enter at least one payment amount.")
+            return redirect(url_for("payments"))
+
+        payment_date = datetime.strptime(
+            request.form["payment_date"],
+            "%Y-%m-%d"
+        ).date()
 
         pay = Payment(
             school_id=school_id,
             receipt_no=receipt_no(year, term),
-            pupil_id=int(request.form["pupil_id"]),
+            pupil_id=pupil.id,
             academic_year=year,
             term=term,
-            month=request.form["month"],
-            tuition_paid=float(request.form.get("tuition_paid") or 0),
-            bus_paid=float(request.form.get("bus_paid") or 0),
-            exam_paid=float(request.form.get("exam_paid") or 0),
-            admission_paid=float(request.form.get("admission_paid") or 0),
+            month=month,
+            tuition_paid=tuition_paid,
+            bus_paid=bus_paid,
+            exam_paid=exam_paid,
+            admission_paid=admission_paid,
             payment_method=request.form["payment_method"],
-            payment_date=datetime.strptime(request.form["payment_date"], "%Y-%m-%d").date(),
+            payment_date=payment_date,
             collected_by=session["username"]
         )
 
         db.session.add(pay)
         db.session.commit()
 
-        pupil = Pupil.query.filter_by(
-            id=pay.pupil_id,
-            school_id=school_id
-        ).first()
-
-        school = get_settings()
-
-        amount_paid = (
-            pay.tuition_paid +
-            pay.bus_paid +
-            pay.exam_paid +
-            pay.admission_paid
-        )
-
-        balance = 0
-
-        if pupil:
-            balance = (
-                due_until_month(pupil, pay.academic_year, pay.term, pay.month)
-                - paid_year(pupil.id, pay.academic_year)
-                - discount_year(pupil.id, pay.academic_year)
-            )
-
         save_audit(
-            f"Recorded payment: {pay.receipt_no}",
+            f"Recorded payment: {pay.receipt_no} - KES {amount_paid:,.2f}",
             "Finance"
         )
 
         sms_status_message = ""
 
-        if pupil and pupil.guardian_phone and amount_paid > 0:
+        if pupil.guardian_phone and amount_paid > 0:
+            school = get_settings()
+
+            balance = (
+                due_until_month(pupil, year, term, month)
+                - paid_year(pupil.id, year)
+                - discount_year(pupil.id, year)
+            )
+
             duplicate_sms = SMSMessage.query.filter_by(
                 school_id=school_id,
                 category="Payment Confirmation"
@@ -3277,7 +3300,8 @@ def payments():
             if not duplicate_sms:
                 if balance <= 0:
                     balance_text = (
-                        "Your account is fully cleared. Thank you for supporting the school."
+                        "Your account is fully cleared. "
+                        "Thank you for supporting the school."
                     )
                 else:
                     balance_text = f"Current Balance: KES {balance:,.2f}"
@@ -3288,6 +3312,7 @@ def payments():
                     f"Learner: {pupil.full_name}\n"
                     f"Amount Paid: KES {amount_paid:,.2f}\n"
                     f"Receipt No: {pay.receipt_no}\n"
+                    f"Fee Month: {month} {year}\n"
                     f"{balance_text}\n\n"
                     f"Thank you.\n"
                     f"Accounts Office."
@@ -3301,15 +3326,21 @@ def payments():
                 )
 
                 if ok:
-                    sms_status_message = " Payment confirmation SMS prepared and 1 SMS deducted."
+                    sms_status_message = (
+                        " Payment confirmation SMS prepared and 1 SMS deducted."
+                    )
                     save_audit(
                         f"Generated payment confirmation SMS: {pay.receipt_no}",
                         "Communication"
                     )
                 else:
-                    sms_status_message = f" Payment recorded, but SMS not prepared: {sms_msg}"
+                    sms_status_message = (
+                        f" Payment recorded, but SMS not prepared: {sms_msg}"
+                    )
             else:
-                sms_status_message = " Payment confirmation SMS already exists for this receipt."
+                sms_status_message = (
+                    " Payment confirmation SMS already exists for this receipt."
+                )
 
         flash("Payment recorded successfully." + sms_status_message)
         return redirect(url_for("receipt", payment_id=pay.id))
@@ -3319,6 +3350,12 @@ def payments():
         status="Active"
     ).order_by(Pupil.full_name.asc()).all()
 
+    recent_payments = Payment.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        Payment.id.desc()
+    ).limit(50).all()
+
     return render_template(
         "payments.html",
         settings=get_settings(),
@@ -3327,9 +3364,7 @@ def payments():
         term_months=TERM_MONTHS,
         year=current_year(),
         today=date.today(),
-        payments=Payment.query.filter_by(
-            school_id=school_id
-        ).order_by(Payment.id.desc()).all(),
+        payments=recent_payments,
         money=money
     )
  
@@ -3644,16 +3679,58 @@ def defaulters_report():
     
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
-    if not login_required(): return redirect(url_for("login"))
+    if not login_required():
+        return redirect(url_for("login"))
+
+    school_id = current_school_id()
+
     p = Payment.query.filter_by(
         id=payment_id,
-        school_id=current_school_id()
-   ).first_or_404()
-    pupil = p.pupil
+        school_id=school_id
+    ).first_or_404()
+
+    pupil = Pupil.query.filter_by(
+        id=p.pupil_id,
+        school_id=school_id
+    ).first_or_404()
+
+    amount_paid = (
+        p.tuition_paid +
+        p.bus_paid +
+        p.exam_paid +
+        p.admission_paid
+    )
+
     opening = opening_arrears(pupil, p.academic_year)
-    closing = due_until_month(pupil, p.academic_year, p.term, p.month) - paid_year(pupil.id, p.academic_year) - discount_year(pupil.id, p.academic_year)
-    return render_template("receipt.html", settings=get_settings(), p=p, pupil=pupil, opening=opening,
-                           closing=closing, discounts=discount_year(pupil.id, p.academic_year), money=money)
+
+    discounts = discount_year(
+        pupil.id,
+        p.academic_year
+    )
+
+    closing = (
+        due_until_month(
+            pupil,
+            p.academic_year,
+            p.term,
+            p.month
+        )
+        - paid_year(pupil.id, p.academic_year)
+        - discounts
+    )
+
+    return render_template(
+        "receipt.html",
+        settings=get_settings(),
+        p=p,
+        pupil=pupil,
+        amount_paid=amount_paid,
+        opening=opening,
+        closing=closing,
+        discounts=discounts,
+        money=money
+    )
+    
 @app.route("/balances")
 def balances():
     if not login_required():
