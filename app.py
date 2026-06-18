@@ -5179,52 +5179,7 @@ def staff():
         grades=GRADES,
         subjects=subjects
     )
-@app.route("/payroll")
-def payroll():
-    if not login_required():
-        return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar"):
-        flash("Access denied.")
-        return redirect(url_for("dashboard"))
-
-    school_id = current_school_id()
-
-    month = request.args.get("month", date.today().strftime("%B"))
-    year = int(request.args.get("year", date.today().year))
-
-    staff = Staff.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).order_by(
-        Staff.full_name.asc()
-    ).all()
-
-    payroll_rows = Payroll.query.filter_by(
-        school_id=school_id,
-        payroll_month=month,
-        payroll_year=year
-    ).all()
-
-    total_gross = sum(p.gross_salary for p in payroll_rows)
-    total_net = sum(p.net_salary for p in payroll_rows)
-
-    pending = len([p for p in payroll_rows if p.payment_status == "Pending"])
-    paid = len([p for p in payroll_rows if p.payment_status == "Paid"])
-
-    return render_template(
-        "payroll.html",
-        settings=get_settings(),
-        month=month,
-        year=year,
-        staff=staff,
-        payroll_rows=payroll_rows,
-        total_gross=total_gross,
-        total_net=total_net,
-        pending=pending,
-        paid=paid,
-        money=money
-    )
 @app.route("/staff_profile/<int:staff_id>")
 def staff_profile(staff_id):
     if not login_required():
