@@ -5598,7 +5598,6 @@ def payroll():
         return redirect(url_for("dashboard"))
 
     db.create_all()
-
     school_id = current_school_id()
 
     months = [
@@ -5606,17 +5605,20 @@ def payroll():
         "July", "August", "September", "October", "November", "December"
     ]
 
+    selected_month = request.args.get("month", date.today().strftime("%B"))
+    selected_year = int(request.args.get("year") or date.today().year)
+
     if request.method == "POST":
-        action = request.form.get("action", "manual_payroll")
+        action = request.form.get("action")
+
+        payroll_month = request.form.get("payroll_month") or selected_month
+        payroll_year = int(request.form.get("payroll_year") or selected_year)
 
         if action == "generate_payroll":
-            payroll_month = request.form.get("payroll_month")
-            payroll_year = int(request.form.get("payroll_year") or date.today().year)
-
             staff_members = Staff.query.filter_by(
                 school_id=school_id,
                 status="Active"
-            ).all()
+            ).order_by(Staff.full_name).all()
 
             created = 0
             skipped = 0
@@ -5638,11 +5640,11 @@ def payroll():
                     staff_id=staff.id
                 ).first()
 
-                basic_salary = hr.basic_salary if hr else 0
+                basic_salary = float(hr.basic_salary or 0) if hr else 0
                 allowances = 0
 
                 if hr:
-                    allowances = (
+                    allowances = float(
                         (hr.house_allowance or 0) +
                         (hr.transport_allowance or 0) +
                         (hr.other_allowance or 0)
@@ -5660,7 +5662,7 @@ def payroll():
                     allowances=allowances,
                     deductions=deductions,
                     net_salary=net_salary,
-                    payment_method=hr.payment_mode if hr else "Cash",
+                    payment_method=hr.payment_mode if hr and hr.payment_mode else "Cash",
                     payment_date=date.today(),
                     status="Pending",
                     created_by=session.get("username")
@@ -5670,51 +5672,60 @@ def payroll():
                 created += 1
 
             db.session.commit()
+            flash(f"Payroll generated successfully. Created: {created}, Skipped existing: {skipped}.")
+            return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
 
-            flash(f"Payroll generated. Created: {created}, Skipped existing: {skipped}.")
-            return redirect(url_for("payroll"))
+        if action == "manual_payroll":
+            staff_id = int(request.form.get("staff_id") or 0)
 
-        staff_id = int(request.form.get("staff_id") or 0)
-        payroll_month = request.form.get("payroll_month")
-        payroll_year = int(request.form.get("payroll_year") or date.today().year)
+            if staff_id <= 0:
+                flash("Please select staff.")
+                return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
 
-        basic_salary = float(request.form.get("basic_salary") or 0)
-        allowances = float(request.form.get("allowances") or 0)
-        deductions = float(request.form.get("deductions") or 0)
+            existing = StaffPayroll.query.filter_by(
+                school_id=school_id,
+                staff_id=staff_id,
+                payroll_month=payroll_month,
+                payroll_year=payroll_year
+            ).first()
 
-        net_salary = basic_salary + allowances - deductions
+            if existing:
+                flash("Payroll for this staff already exists for this period.")
+                return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
 
-        payment_method = request.form.get("payment_method") or "Cash"
-        payment_date_raw = request.form.get("payment_date")
+            basic_salary = float(request.form.get("basic_salary") or 0)
+            allowances = float(request.form.get("allowances") or 0)
+            deductions = float(request.form.get("deductions") or 0)
+            net_salary = basic_salary + allowances - deductions
 
-        if payment_date_raw:
-            payment_date = datetime.strptime(payment_date_raw, "%Y-%m-%d").date()
-        else:
-            payment_date = date.today()
+            payment_method = request.form.get("payment_method") or "Cash"
+            payment_date_raw = request.form.get("payment_date")
 
-        payroll_item = StaffPayroll(
-            school_id=school_id,
-            staff_id=staff_id,
-            payroll_month=payroll_month,
-            payroll_year=payroll_year,
-            basic_salary=basic_salary,
-            allowances=allowances,
-            deductions=deductions,
-            net_salary=net_salary,
-            payment_method=payment_method,
-            payment_date=payment_date,
-            status="Paid",
-            created_by=session.get("username")
-        )
+            if payment_date_raw:
+                payment_date = datetime.strptime(payment_date_raw, "%Y-%m-%d").date()
+            else:
+                payment_date = date.today()
 
-        db.session.add(payroll_item)
-        db.session.commit()
+            payroll_item = StaffPayroll(
+                school_id=school_id,
+                staff_id=staff_id,
+                payroll_month=payroll_month,
+                payroll_year=payroll_year,
+                basic_salary=basic_salary,
+                allowances=allowances,
+                deductions=deductions,
+                net_salary=net_salary,
+                payment_method=payment_method,
+                payment_date=payment_date,
+                status="Paid",
+                created_by=session.get("username")
+            )
 
-        flash("Payroll recorded successfully.")
-        return redirect(url_for("payroll"))
+            db.session.add(payroll_item)
+            db.session.commit()
 
-    selected_month = request.args.get("month", date.today().strftime("%B"))
-    selected_year = int(request.args.get("year", date.today().year))
+            flash("Manual payroll recorded successfully.")
+            return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
 
     staff_members = Staff.query.filter_by(
         school_id=school_id,
@@ -5722,6 +5733,7 @@ def payroll():
     ).order_by(Staff.full_name).all()
 
     staff_options = []
+    staff_name_map = {}
 
     for s in staff_members:
         staff_options.append({
@@ -5729,14 +5741,13 @@ def payroll():
             "name": s.full_name,
             "role": s.role
         })
+        staff_name_map[s.id] = s.full_name
 
     payrolls = StaffPayroll.query.filter_by(
         school_id=school_id,
         payroll_month=selected_month,
         payroll_year=selected_year
     ).order_by(StaffPayroll.id.desc()).all()
-
-    staff_name_map = {s["id"]: s["name"] for s in staff_options}
 
     payroll_rows = []
     total_net_salary = 0
@@ -5747,8 +5758,11 @@ def payroll():
         payroll_rows.append({
             "id": x.id,
             "payment_date": x.payment_date,
+            "staff_id": x.staff_id,
             "staff_name": staff_name_map.get(x.staff_id, f"Staff {x.staff_id}"),
             "month_year": f"{x.payroll_month} {x.payroll_year}",
+            "payroll_month": x.payroll_month,
+            "payroll_year": x.payroll_year,
             "basic_salary": x.basic_salary or 0,
             "allowances": x.allowances or 0,
             "deductions": x.deductions or 0,
@@ -5767,9 +5781,11 @@ def payroll():
         selected_month=selected_month,
         selected_year=selected_year,
         total_net_salary=total_net_salary,
+        active_staff_count=len(staff_options),
+        payroll_count=len(payroll_rows),
         money=money
     )
-
+    
 @app.route("/payslip/<int:payroll_id>")
 def payslip(payroll_id):
     if not login_required():
