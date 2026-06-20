@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from datetime import date, datetime
 from xhtml2pdf import pisa
 from io import BytesIO
+from sqlalchemy import text
 import africastalking
 import os
 import base64
@@ -3355,6 +3356,30 @@ def discounts():
         year=current_year(),
         money=money
     )
+
+@app.route("/fix_discount_table")
+def fix_discount_table():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS discount_type VARCHAR(50) DEFAULT 'Fixed Amount'"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS month VARCHAR(50)"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS apply_tuition BOOLEAN DEFAULT TRUE"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS apply_bus BOOLEAN DEFAULT TRUE"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS apply_exam BOOLEAN DEFAULT TRUE"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS apply_admission BOOLEAN DEFAULT TRUE"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active'"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS created_by VARCHAR(100)"))
+    db.session.execute(text("ALTER TABLE discount ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+
+    db.session.commit()
+
+    flash("Discount table fixed successfully.")
+    return redirect(url_for("discounts"))
     
 @app.route("/payments", methods=["GET", "POST"])
 def payments():
