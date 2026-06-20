@@ -3479,7 +3479,7 @@ def payments():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar"):
+    if not role_allowed("bursar", "admin", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -3489,7 +3489,6 @@ def payments():
         year = int(request.form["academic_year"])
         term = request.form["term"]
         month = request.form["month"]
-
         pupil_id = int(request.form["pupil_id"])
 
         pupil = Pupil.query.filter_by(
@@ -3511,12 +3510,7 @@ def payments():
         exam_paid = float(request.form.get("exam_paid") or 0)
         admission_paid = float(request.form.get("admission_paid") or 0)
 
-        amount_paid = (
-            tuition_paid +
-            bus_paid +
-            exam_paid +
-            admission_paid
-        )
+        amount_paid = tuition_paid + bus_paid + exam_paid + admission_paid
 
         if amount_paid <= 0:
             flash("Enter at least one payment amount.")
@@ -3551,7 +3545,7 @@ def payments():
             "Finance"
         )
 
-        sms_status_message = ""
+        status_message = ""
 
         if pupil.guardian_phone and amount_paid > 0:
             school = get_settings()
@@ -3562,6 +3556,26 @@ def payments():
                 - discount_year(pupil.id, year)
             )
 
+            if balance <= 0:
+                balance_text = (
+                    "Your account is fully cleared. "
+                    "Thank you for supporting the school."
+                )
+            else:
+                balance_text = f"Current Balance: KES {balance:,.2f}"
+
+            message = (
+                f"{school.school_name}\n\n"
+                f"PAYMENT RECEIVED\n\n"
+                f"Learner: {pupil.full_name}\n"
+                f"Amount Paid: KES {amount_paid:,.2f}\n"
+                f"Receipt No: {pay.receipt_no}\n"
+                f"Fee Month: {month} {year}\n"
+                f"{balance_text}\n\n"
+                f"Thank you.\n"
+                f"Accounts Office."
+            )
+
             duplicate_sms = SMSMessage.query.filter_by(
                 school_id=school_id,
                 category="Payment Confirmation"
@@ -3570,26 +3584,6 @@ def payments():
             ).first()
 
             if not duplicate_sms:
-                if balance <= 0:
-                    balance_text = (
-                        "Your account is fully cleared. "
-                        "Thank you for supporting the school."
-                    )
-                else:
-                    balance_text = f"Current Balance: KES {balance:,.2f}"
-
-                message = (
-                    f"{school.school_name}\n\n"
-                    f"PAYMENT RECEIVED\n\n"
-                    f"Learner: {pupil.full_name}\n"
-                    f"Amount Paid: KES {amount_paid:,.2f}\n"
-                    f"Receipt No: {pay.receipt_no}\n"
-                    f"Fee Month: {month} {year}\n"
-                    f"{balance_text}\n\n"
-                    f"Thank you.\n"
-                    f"Accounts Office."
-                )
-
                 ok, sms_msg = create_sms(
                     pupil.guardian_name,
                     pupil.guardian_phone,
@@ -3598,23 +3592,45 @@ def payments():
                 )
 
                 if ok:
-                    sms_status_message = (
-                        " Payment confirmation SMS prepared and 1 SMS deducted."
-                    )
+                    status_message += " Payment confirmation SMS prepared."
                     save_audit(
                         f"Generated payment confirmation SMS: {pay.receipt_no}",
                         "Communication"
                     )
                 else:
-                    sms_status_message = (
-                        f" Payment recorded, but SMS not prepared: {sms_msg}"
-                    )
-            else:
-                sms_status_message = (
-                    " Payment confirmation SMS already exists for this receipt."
+                    status_message += f" SMS not prepared: {sms_msg}"
+
+            duplicate_whatsapp = WhatsAppMessage.query.filter_by(
+                school_id=school_id,
+                category="Payment Confirmation"
+            ).filter(
+                WhatsAppMessage.message.ilike(f"%{pay.receipt_no}%")
+            ).first()
+
+            if not duplicate_whatsapp:
+                wa = WhatsAppMessage(
+                    school_id=school_id,
+                    recipient_name=pupil.guardian_name or pupil.full_name,
+                    phone=pupil.guardian_phone,
+                    message=message,
+                    category="Payment Confirmation",
+                    status="Pending",
+                    created_by=session.get("username", "")
                 )
 
-        flash("Payment recorded successfully." + sms_status_message)
+                db.session.add(wa)
+                db.session.commit()
+
+                status_message += " WhatsApp payment confirmation queued."
+
+                save_audit(
+                    f"Queued payment confirmation WhatsApp: {pay.receipt_no}",
+                    "Communication"
+                )
+            else:
+                status_message += " WhatsApp confirmation already exists."
+
+        flash("Payment recorded successfully." + status_message)
         return redirect(url_for("receipt", payment_id=pay.id))
 
     pupils = Pupil.query.filter_by(
