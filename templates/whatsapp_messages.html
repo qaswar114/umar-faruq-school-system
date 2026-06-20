@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Send WhatsApp Message</h2>
+
+    <form method="post">
+
+        <label>Send To</label>
+        <select name="send_to" id="sendTo" onchange="toggleTargets()" required>
+            <option value="single">Single Parent</option>
+            <option value="grade">Grade / Class</option>
+            <option value="all">All Parents</option>
+        </select>
+
+        <div id="singleBox">
+            <label>Pupil</label>
+            <select name="pupil_id">
+                {% for p in pupils %}
+                <option value="{{ p.id }}">
+                    {{ p.admission_no }} - {{ p.full_name }} - {{ p.guardian_phone }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div id="gradeBox" style="display:none;">
+            <label>Grade</label>
+            <select name="grade">
+                {% for g in grades %}
+                <option value="{{ g }}">{{ g }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <label>Category</label>
+        <select name="category">
+            <option>General</option>
+            <option>Fee Reminder</option>
+            <option>Payment Confirmation</option>
+            <option>Attendance Alert</option>
+            <option>Exam Results</option>
+            <option>Announcement</option>
+        </select>
+
+        <label>Message</label>
+        <textarea name="message" rows="6" required placeholder="Type WhatsApp message here..."></textarea>
+
+        <br><br>
+
+        <button class="btn green" type="submit">Queue WhatsApp Message</button>
+        <a class="btn" href="{{ url_for('whatsapp_outbox') }}">View Outbox</a>
+
+    </form>
+</div>
+
+<script>
+function toggleTargets(){
+    let sendTo = document.getElementById("sendTo").value;
+    document.getElementById("singleBox").style.display = sendTo === "single" ? "block" : "none";
+    document.getElementById("gradeBox").style.display = sendTo === "grade" ? "block" : "none";
+}
+</script>
+
+{% endblock %}
