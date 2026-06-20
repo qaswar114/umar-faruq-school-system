@@ -6302,6 +6302,88 @@ def whatsapp_outbox():
         messages=messages
     )
 
+@app.route("/whatsapp_messages", methods=["GET", "POST"])
+def whatsapp_messages():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Pupil.grade, Pupil.full_name).all()
+
+    if request.method == "POST":
+        send_to = request.form.get("send_to")
+        pupil_id = request.form.get("pupil_id")
+        grade = request.form.get("grade")
+        category = request.form.get("category", "General")
+        message = request.form.get("message", "").strip()
+
+        if not message:
+            flash("Message is required.")
+            return redirect(url_for("whatsapp_messages"))
+
+        recipients = []
+
+        if send_to == "single":
+            pupil = Pupil.query.filter_by(
+                id=pupil_id,
+                school_id=school_id,
+                status="Active"
+            ).first()
+
+            if pupil and pupil.guardian_phone:
+                recipients.append(pupil)
+
+        elif send_to == "grade":
+            recipients = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active",
+                grade=grade
+            ).all()
+
+        elif send_to == "all":
+            recipients = pupils
+
+        count = 0
+
+        for p in recipients:
+            if not p.guardian_phone:
+                continue
+
+            wa = WhatsAppMessage(
+                school_id=school_id,
+                recipient_name=p.guardian_name or p.full_name,
+                phone=p.guardian_phone,
+                message=message,
+                category=category,
+                status="Pending",
+                created_by=session.get("username", "")
+            )
+
+            db.session.add(wa)
+            count += 1
+
+        db.session.commit()
+
+        flash(f"{count} WhatsApp message(s) queued successfully.")
+        return redirect(url_for("whatsapp_outbox"))
+
+    grades = sorted(list(set([p.grade for p in pupils if p.grade])))
+
+    return render_template(
+        "whatsapp_messages.html",
+        settings=get_settings(),
+        pupils=pupils,
+        grades=grades
+    )
+
 
 if __name__ == "__main__":
     with app.app_context():
