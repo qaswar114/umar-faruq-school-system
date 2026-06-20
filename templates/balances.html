@@ -8,20 +8,23 @@
     gap:15px;
     margin-bottom:20px;
 }
+
 .card{
     background:#fff;
     padding:15px;
     border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.08);
 }
+
 .card h4{
     margin:0;
     color:#666;
     font-size:14px;
 }
+
 .card h2{
     margin:8px 0 0;
-    color:#0d6efd;
+    color:#198754;
 }
 
 .filter-box{
@@ -38,9 +41,17 @@
     gap:15px;
 }
 
+.search{
+    margin:15px 0;
+    padding:10px;
+    width:300px;
+    max-width:100%;
+}
+
 table{
     width:100%;
     border-collapse:collapse;
+    background:white;
 }
 
 th{
@@ -75,21 +86,36 @@ tr:hover{
 
 .btn{
     text-decoration:none;
-    padding:5px 10px;
+    padding:6px 10px;
     border-radius:5px;
     color:white;
     background:#0d6efd;
+    display:inline-block;
 }
 
 .print-btn{
     background:#198754;
 }
 
-.search{
-    margin:15px 0;
-    padding:10px;
-    width:300px;
-    max-width:100%;
+@media print{
+    nav,
+    header,
+    .navbar,
+    .topbar,
+    .sidebar,
+    .menu,
+    .no-print{
+        display:none !important;
+    }
+
+    body{
+        background:white !important;
+    }
+
+    .panel{
+        box-shadow:none !important;
+        border:none !important;
+    }
 }
 </style>
 
@@ -97,7 +123,7 @@ tr:hover{
 
 <h2>Fee Balances</h2>
 
-<div class="filter-box">
+<div class="filter-box no-print">
 
 <form method="get">
 
@@ -105,15 +131,15 @@ tr:hover{
 
 <div>
 <label>Academic Year</label>
-<input type="number" name="year" value="{{year}}">
+<input type="number" name="year" value="{{ year }}">
 </div>
 
 <div>
 <label>Term</label>
 <select name="term" id="termSelect">
 {% for t in terms %}
-<option value="{{t}}" {% if t==term %}selected{% endif %}>
-{{t}}
+<option value="{{ t }}" {% if t == term %}selected{% endif %}>
+{{ t }}
 </option>
 {% endfor %}
 </select>
@@ -122,13 +148,11 @@ tr:hover{
 <div>
 <label>Month</label>
 <select name="month" id="monthSelect">
-
 {% for m in term_months[term] %}
-<option value="{{m}}" {% if m==month %}selected{% endif %}>
-{{m}}
+<option value="{{ m }}" {% if m == month %}selected{% endif %}>
+{{ m }}
 </option>
 {% endfor %}
-
 </select>
 </div>
 
@@ -136,9 +160,7 @@ tr:hover{
 
 <br>
 
-<button class="btn">
-Filter
-</button>
+<button class="btn">Filter</button>
 
 <a href="#" onclick="window.print()" class="btn print-btn">
 Print
@@ -173,10 +195,10 @@ Print
 </div>
 
 <input
-class="search"
+class="search no-print"
 type="text"
 id="searchInput"
-placeholder="Search pupil..."
+placeholder="Search by admission no, name or grade..."
 onkeyup="searchTable()"
 >
 
@@ -190,7 +212,7 @@ onkeyup="searchTable()"
 <th>Paid</th>
 <th>Discount</th>
 <th>Balance</th>
-<th>Action</th>
+<th class="no-print">Action</th>
 </tr>
 
 {% for r in rows %}
@@ -210,35 +232,28 @@ onkeyup="searchTable()"
 <td>{{ money(r.discounts) }}</td>
 
 <td>
-
-{% if r.closing <=0 %}
-<span class="good">
-{{ money(r.closing) }}
-</span>
-
+{% if r.closing <= 0 %}
+<span class="good">{{ money(r.closing) }}</span>
 {% elif r.closing < 5000 %}
-<span class="warning">
-{{ money(r.closing) }}
-</span>
-
+<span class="warning">{{ money(r.closing) }}</span>
 {% else %}
-<span class="bad">
-{{ money(r.closing) }}
-</span>
-
+<span class="bad">{{ money(r.closing) }}</span>
 {% endif %}
-
 </td>
 
-<td>
-
+<td class="no-print">
 <a class="btn"
-href="{{ url_for('statement', pupil_id=r.pupil.id) }}">
+href="{{ url_for('statement', pupil_id=r.pupil.id, year=year) }}">
 Statement
 </a>
-
 </td>
 
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="8">No active pupils found.</td>
 </tr>
 
 {% endfor %}
@@ -248,51 +263,33 @@ Statement
 </div>
 
 <script>
+const termMonths = {{ term_months|tojson }};
 
-const termMonths={{ term_months|tojson }};
+document.getElementById("termSelect").onchange = function(){
+    let term = this.value;
+    let monthSelect = document.getElementById("monthSelect");
 
-document.getElementById("termSelect").onchange=function(){
+    monthSelect.innerHTML = "";
 
-let term=this.value;
-
-let month=document.getElementById("monthSelect");
-
-month.innerHTML="";
-
-termMonths[term].forEach(function(m){
-
-let option=document.createElement("option");
-
-option.value=m;
-
-option.text=m;
-
-month.appendChild(option);
-
-});
-
+    termMonths[term].forEach(function(m){
+        let option = document.createElement("option");
+        option.value = m;
+        option.text = m;
+        monthSelect.appendChild(option);
+    });
 };
 
 function searchTable(){
+    let input = document.getElementById("searchInput");
+    let filter = input.value.toUpperCase();
+    let table = document.getElementById("balanceTable");
+    let tr = table.getElementsByTagName("tr");
 
-let input=document.getElementById("searchInput");
-
-let filter=input.value.toUpperCase();
-
-let table=document.getElementById("balanceTable");
-
-let tr=table.getElementsByTagName("tr");
-
-for(let i=1;i<tr.length;i++){
-
-let txt=tr[i].textContent||tr[i].innerText;
-
-tr[i].style.display=txt.toUpperCase().indexOf(filter)>-1?"":"none";
-
+    for(let i = 1; i < tr.length; i++){
+        let txt = tr[i].textContent || tr[i].innerText;
+        tr[i].style.display = txt.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+    }
 }
-
-}
-
 </script>
 
 {% endblock %}
