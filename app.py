@@ -3890,7 +3890,7 @@ def balances():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar"):
+    if not role_allowed("bursar", "admin", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -3902,10 +3902,12 @@ def balances():
 
     rows = []
 
-    for p in Pupil.query.filter_by(
+    pupils = Pupil.query.filter_by(
         school_id=current_school_id(),
         status="Active"
-    ).all():
+    ).order_by(Pupil.grade, Pupil.full_name).all()
+
+    for p in pupils:
         if month:
             md = monthly_due(p, year, term, month)
             month_due = sum(md.values())
@@ -3914,10 +3916,11 @@ def balances():
             month_due = 0
             month_paid = 0
 
-        year_total_due = due_until_month(p, year, term, month)
-        year_total_paid = paid_year(p.id, year)
+        total_due = due_until_month(p, year, term, month)
+        total_paid = paid_year(p.id, year)
         discounts = discount_year(p.id, year)
-        closing = year_total_due - year_total_paid - discounts
+
+        closing = total_due - total_paid - discounts
 
         rows.append({
             "pupil": p,
