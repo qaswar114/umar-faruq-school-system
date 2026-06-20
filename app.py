@@ -587,17 +587,68 @@ class Attendance(db.Model):
     attendance_date = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), nullable=False)   # Present / Absent / Late
     pupil = db.relationship("Pupil")
+    
 class Discount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+
     academic_year = db.Column(db.Integer, nullable=False)
-    term = db.Column(db.String(30), default="All Year")
+
+    discount_type = db.Column(db.String(30), default="Monthly")
+    # Monthly OR Free
+
+    month = db.Column(db.String(20), nullable=True)
+
     amount = db.Column(db.Float, default=0)
-    reason = db.Column(db.String(255), default="")
-    created_at = db.Column(db.Date, default=date.today)
-    created_by = db.Column(db.String(80), default="")
-    pupil = db.relationship("Pupil")
+
+    apply_tuition = db.Column(db.Boolean, default=True)
+    apply_bus = db.Column(db.Boolean, default=False)
+    apply_exam = db.Column(db.Boolean, default=False)
+    apply_admission = db.Column(db.Boolean, default=False)
+
+    reason = db.Column(db.String(255))
+    status = db.Column(db.String(20), default="Active")
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+def get_pupil_discount(pupil_id, academic_year, month):
+    school_id = current_school_id()
+
+    discounts = Discount.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil_id,
+        academic_year=academic_year,
+        status="Active"
+    ).all()
+
+    result = {
+        "monthly_amount": 0,
+        "free_tuition": False,
+        "free_bus": False,
+        "free_exam": False,
+        "free_admission": False
+    }
+
+    for d in discounts:
+        if d.discount_type == "Monthly":
+            if d.month == month or d.month == "Every Month":
+                result["monthly_amount"] += d.amount or 0
+
+        if d.discount_type == "Free":
+            if d.apply_tuition:
+                result["free_tuition"] = True
+            if d.apply_bus:
+                result["free_bus"] = True
+            if d.apply_exam:
+                result["free_exam"] = True
+            if d.apply_admission:
+                result["free_admission"] = True
+
+    return result
+    
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -3241,32 +3292,43 @@ def discounts():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar"):
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
     if request.method == "POST":
+        discount_type = request.form.get("discount_type") or "Monthly"
+
         d = Discount(
             school_id=school_id,
             pupil_id=int(request.form["pupil_id"]),
             academic_year=int(request.form["academic_year"]),
-            term=request.form["term"],
+            discount_type=discount_type,
+            month=request.form.get("month") or "Every Month",
             amount=float(request.form.get("amount") or 0),
+            apply_tuition=True if request.form.get("apply_tuition") else False,
+            apply_bus=True if request.form.get("apply_bus") else False,
+            apply_exam=True if request.form.get("apply_exam") else False,
+            apply_admission=True if request.form.get("apply_admission") else False,
             reason=request.form.get("reason", ""),
-            created_by=session["username"]
+            status=request.form.get("status") or "Active",
+            created_by=session.get("username")
         )
+
+        if d.discount_type == "Free":
+            d.amount = 0
 
         db.session.add(d)
         db.session.commit()
 
         save_audit(
-            f"Added discount for pupil ID {d.pupil_id}: KES {d.amount:,.2f}",
+            f"Added {d.discount_type} discount for pupil ID {d.pupil_id}",
             "Finance"
         )
 
-        flash("Discount/waiver added.")
+        flash("Discount/waiver added successfully.")
         return redirect(url_for("discounts"))
 
     pupils = Pupil.query.filter_by(
@@ -3278,11 +3340,18 @@ def discounts():
         school_id=school_id
     ).order_by(Discount.id.desc()).all()
 
+    months = [
+        "Every Month",
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+
     return render_template(
         "discounts.html",
         settings=get_settings(),
         pupils=pupils,
         discounts=discounts,
+        months=months,
         year=current_year(),
         money=money
     )
