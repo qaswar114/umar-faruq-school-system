@@ -3984,7 +3984,7 @@ def statement(pupil_id, year):
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar"):
+    if not role_allowed("bursar", "admin", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -4019,6 +4019,9 @@ def statement(pupil_id, year):
 
             fee = get_fee(year, pupil.grade, term, month)
 
+            if not fee:
+                continue
+
             tuition = fee.tuition_fee or 0
             bus = fee.bus_fee if pupil.uses_bus == "Yes" else 0
 
@@ -4051,10 +4054,10 @@ def statement(pupil_id, year):
 
             for pay in payments:
                 credit = (
-                    pay.tuition_paid +
-                    pay.bus_paid +
-                    pay.exam_paid +
-                    pay.admission_paid
+                    (pay.tuition_paid or 0) +
+                    (pay.bus_paid or 0) +
+                    (pay.exam_paid or 0) +
+                    (pay.admission_paid or 0)
                 )
 
                 if credit > 0:
@@ -4072,18 +4075,15 @@ def statement(pupil_id, year):
     ).order_by(Discount.created_at.asc()).all()
 
     for d in discounts:
-        if d.amount > 0:
+        if (d.amount or 0) > 0:
             transactions.append({
                 "date": d.created_at,
                 "description": f"Discount/Waiver: {d.reason}",
                 "debit": 0,
-                "credit": d.amount
+                "credit": d.amount or 0
             })
 
-    transactions = sorted(
-        transactions,
-        key=lambda x: x["date"]
-    )
+    transactions = sorted(transactions, key=lambda x: x["date"])
 
     entries = []
     balance = 0
@@ -4092,15 +4092,14 @@ def statement(pupil_id, year):
     total_discounts = 0
 
     for t in transactions:
-        debit = t["debit"]
-        credit = t["credit"]
+        debit = t["debit"] or 0
+        credit = t["credit"] or 0
 
         balance += debit
         balance -= credit
 
-        if "Fees" in t["description"] or "Opening Arrears" in t["description"]:
-            if "Opening Arrears" not in t["description"]:
-                current_charges += debit
+        if "Fees" in t["description"]:
+            current_charges += debit
 
         if "Payment" in t["description"]:
             total_paid += credit
@@ -4140,7 +4139,6 @@ def statement(pupil_id, year):
         money=money,
         today=date.today()
     )
-
 @app.route("/statements")
 def statements():
     if not login_required():
