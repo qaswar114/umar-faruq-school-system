@@ -3360,6 +3360,28 @@ def discounts():
         money=money
     )
 
+@app.route("/delete_discount/<int:discount_id>", methods=["POST"])
+def delete_discount(discount_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("discounts"))
+
+    discount = Discount.query.get_or_404(discount_id)
+
+    if discount.school_id != current_school_id() and session.get("role") != "super admin":
+        flash("Access denied.")
+        return redirect(url_for("discounts"))
+
+    db.session.delete(discount)
+    db.session.commit()
+
+    flash("Discount removed successfully.")
+
+    return redirect(url_for("discounts"))
+
 @app.route("/fix_discount_table")
 def fix_discount_table():
     if not login_required():
