@@ -271,6 +271,24 @@ class SMSProcurement(db.Model):
     purchase_date = db.Column(db.DateTime, default=datetime.now)
 
     status = db.Column(db.String(20), default="Completed")
+
+class WhatsAppMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"))
+    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=True)
+
+    recipient_name = db.Column(db.String(150))
+    phone = db.Column(db.String(30))
+    message = db.Column(db.Text)
+
+    category = db.Column(db.String(50), default="General")
+    status = db.Column(db.String(50), default="Pending")
+    response = db.Column(db.Text)
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    sent_at = db.Column(db.DateTime)
     
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -477,6 +495,59 @@ class SMSMessage(db.Model):
     status = db.Column(db.String(30), default="Pending")
     created_by = db.Column(db.String(80), default="")
     created_at = db.Column(db.DateTime, default=datetime.now)
+
+class WhatsAppMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        default=1
+    )
+
+    recipient_name = db.Column(
+        db.String(200),
+        default=""
+    )
+
+    phone = db.Column(
+        db.String(80),
+        nullable=False
+    )
+
+    message = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    category = db.Column(
+        db.String(50),
+        default="General"
+    )
+
+    status = db.Column(
+        db.String(30),
+        default="Pending"
+    )
+
+    response = db.Column(
+        db.Text,
+        default=""
+    )
+
+    created_by = db.Column(
+        db.String(80),
+        default=""
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+
+    sent_at = db.Column(
+        db.DateTime
+    )
 
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -6198,6 +6269,20 @@ def reset_fee_structure_may2026():
 
     flash("Old fee structures cleared. You can now enter clean fees from May 2026.")
     return redirect(url_for("fees"))
+
+@app.route("/fix_whatsapp_table")
+def fix_whatsapp_table():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    db.create_all()
+
+    flash("WhatsApp table created successfully.")
+    return redirect(url_for("dashboard"))
 
 
 if __name__ == "__main__":
