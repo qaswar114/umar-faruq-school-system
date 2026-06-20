@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>WhatsApp Outbox</h2>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Recipient</th>
+            <th>Phone</th>
+            <th>Category</th>
+            <th>Message</th>
+            <th>Status</th>
+            <th>Created By</th>
+        </tr>
+
+        {% for m in messages %}
+        <tr>
+            <td>{{ m.created_at.strftime('%d/%m/%Y %H:%M') if m.created_at else "-" }}</td>
+            <td>{{ m.recipient_name }}</td>
+            <td>{{ m.phone }}</td>
+            <td>{{ m.category }}</td>
+            <td>{{ m.message }}</td>
+            <td>{{ m.status }}</td>
+            <td>{{ m.created_by }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No WhatsApp messages found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
