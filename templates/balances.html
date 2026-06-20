@@ -1,8 +1,298 @@
-{% extends "base.html" %}{% block content %}<div class="panel"><h2>Year-Aware Balances</h2><form><div class="three"><div><label>Year</label><input name="year" type="number" value="{{year}}"></div>
-  <div><label>Term</label><select name="term" id="balTerm" onchange="updateMonths('balTerm','balMonth')">{% for t in terms %}<option {% if t==term %}selected{% endif %}>{{t}}</option>{% endfor %}</select></div><div><label>Month</label><select name="month" id="balMonth"><option>{{month}}</option></select></div></div>
-  <button class="btn">View</button></form><table><tr><th>Admission</th><th>Pupil</th><th>Grade</th><th>Opening Arrears</th><th>Month Due</th><th>Month Paid</th><th>Discounts</th><th>Closing Balance</th></tr>{% for r in rows %}<tr><td>{{r.pupil.admission_no}}</td>
-  <td>
-    <a href="{{ url_for('statement', pupil_id=r.pupil.id, year=year) }}">
-        {{ r.pupil.full_name }}
-    </a>
-</td><td>{{r.pupil.grade}}</td><td>{{money(r.opening)}}</td><td>{{money(r.month_due)}}</td><td>{{money(r.month_paid)}}</td><td>{{money(r.discounts)}}</td><td><b>{{money(r.closing)}}</b></td></tr>{% endfor %}</table></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.summary-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+.card{
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.card h4{
+    margin:0;
+    color:#666;
+    font-size:14px;
+}
+.card h2{
+    margin:8px 0 0;
+    color:#0d6efd;
+}
+
+.filter-box{
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+.three{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#198754;
+    color:white;
+    padding:10px;
+}
+
+td{
+    padding:8px;
+    border-bottom:1px solid #ddd;
+}
+
+tr:hover{
+    background:#f8f9fa;
+}
+
+.good{
+    color:green;
+    font-weight:bold;
+}
+
+.warning{
+    color:orange;
+    font-weight:bold;
+}
+
+.bad{
+    color:red;
+    font-weight:bold;
+}
+
+.btn{
+    text-decoration:none;
+    padding:5px 10px;
+    border-radius:5px;
+    color:white;
+    background:#0d6efd;
+}
+
+.print-btn{
+    background:#198754;
+}
+
+.search{
+    margin:15px 0;
+    padding:10px;
+    width:300px;
+    max-width:100%;
+}
+</style>
+
+<div class="panel">
+
+<h2>Fee Balances</h2>
+
+<div class="filter-box">
+
+<form method="get">
+
+<div class="three">
+
+<div>
+<label>Academic Year</label>
+<input type="number" name="year" value="{{year}}">
+</div>
+
+<div>
+<label>Term</label>
+<select name="term" id="termSelect">
+{% for t in terms %}
+<option value="{{t}}" {% if t==term %}selected{% endif %}>
+{{t}}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div>
+<label>Month</label>
+<select name="month" id="monthSelect">
+
+{% for m in term_months[term] %}
+<option value="{{m}}" {% if m==month %}selected{% endif %}>
+{{m}}
+</option>
+{% endfor %}
+
+</select>
+</div>
+
+</div>
+
+<br>
+
+<button class="btn">
+Filter
+</button>
+
+<a href="#" onclick="window.print()" class="btn print-btn">
+Print
+</a>
+
+</form>
+
+</div>
+
+<div class="summary-cards">
+
+<div class="card">
+<h4>Total Pupils</h4>
+<h2>{{ rows|length }}</h2>
+</div>
+
+<div class="card">
+<h4>Academic Year</h4>
+<h2>{{ year }}</h2>
+</div>
+
+<div class="card">
+<h4>Term</h4>
+<h2>{{ term }}</h2>
+</div>
+
+<div class="card">
+<h4>Month</h4>
+<h2>{{ month }}</h2>
+</div>
+
+</div>
+
+<input
+class="search"
+type="text"
+id="searchInput"
+placeholder="Search pupil..."
+onkeyup="searchTable()"
+>
+
+<table id="balanceTable">
+
+<tr>
+<th>Adm No</th>
+<th>Pupil</th>
+<th>Grade</th>
+<th>Month Due</th>
+<th>Paid</th>
+<th>Discount</th>
+<th>Balance</th>
+<th>Action</th>
+</tr>
+
+{% for r in rows %}
+
+<tr>
+
+<td>{{ r.pupil.admission_no }}</td>
+
+<td>{{ r.pupil.full_name }}</td>
+
+<td>{{ r.pupil.grade }}</td>
+
+<td>{{ money(r.month_due) }}</td>
+
+<td>{{ money(r.month_paid) }}</td>
+
+<td>{{ money(r.discounts) }}</td>
+
+<td>
+
+{% if r.closing <=0 %}
+<span class="good">
+{{ money(r.closing) }}
+</span>
+
+{% elif r.closing < 5000 %}
+<span class="warning">
+{{ money(r.closing) }}
+</span>
+
+{% else %}
+<span class="bad">
+{{ money(r.closing) }}
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+<a class="btn"
+href="{{ url_for('statement', pupil_id=r.pupil.id) }}">
+Statement
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+<script>
+
+const termMonths={{ term_months|tojson }};
+
+document.getElementById("termSelect").onchange=function(){
+
+let term=this.value;
+
+let month=document.getElementById("monthSelect");
+
+month.innerHTML="";
+
+termMonths[term].forEach(function(m){
+
+let option=document.createElement("option");
+
+option.value=m;
+
+option.text=m;
+
+month.appendChild(option);
+
+});
+
+};
+
+function searchTable(){
+
+let input=document.getElementById("searchInput");
+
+let filter=input.value.toUpperCase();
+
+let table=document.getElementById("balanceTable");
+
+let tr=table.getElementsByTagName("tr");
+
+for(let i=1;i<tr.length;i++){
+
+let txt=tr[i].textContent||tr[i].innerText;
+
+tr[i].style.display=txt.toUpperCase().indexOf(filter)>-1?"":"none";
+
+}
+
+}
+
+</script>
+
+{% endblock %}
