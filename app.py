@@ -272,24 +272,6 @@ class SMSProcurement(db.Model):
 
     status = db.Column(db.String(20), default="Completed")
 
-class WhatsAppMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-
-    school_id = db.Column(db.Integer, db.ForeignKey("school.id"))
-    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=True)
-
-    recipient_name = db.Column(db.String(150))
-    phone = db.Column(db.String(30))
-    message = db.Column(db.Text)
-
-    category = db.Column(db.String(50), default="General")
-    status = db.Column(db.String(50), default="Pending")
-    response = db.Column(db.Text)
-
-    created_by = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    sent_at = db.Column(db.DateTime)
-    
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
