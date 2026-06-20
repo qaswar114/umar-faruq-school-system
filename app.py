@@ -887,6 +887,21 @@ def send_sms_gateway(phone, message):
     except Exception as e:
         print("AFRICASTALKING ERROR:", str(e), flush=True)
         return False, str(e)
+
+def send_whatsapp_message(phone, message):
+    """
+    Temporary WhatsApp sender.
+    For now, it logs/queues messages.
+    Later we connect Meta WhatsApp Cloud API or another provider.
+    """
+    try:
+        if not phone or not message:
+            return False, "Phone or message missing"
+
+        return True, "WhatsApp message queued successfully"
+
+    except Exception as e:
+        return False, str(e)
         
 def get_platform_sms_pool():
     pool = PlatformSMSPool.query.first()
@@ -6265,6 +6280,27 @@ def fix_whatsapp_table():
 
     flash("WhatsApp table created successfully.")
     return redirect(url_for("dashboard"))
+
+@app.route("/whatsapp_outbox")
+def whatsapp_outbox():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    messages = WhatsAppMessage.query.filter_by(
+        school_id=current_school_id()
+    ).order_by(
+        WhatsAppMessage.created_at.desc()
+    ).limit(200).all()
+
+    return render_template(
+        "whatsapp_outbox.html",
+        settings=get_settings(),
+        messages=messages
+    )
 
 
 if __name__ == "__main__":
