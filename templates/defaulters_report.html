@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="panel">
+
+<style>
+@media print {
+    .no-print,
+    nav,
+    header,
+    .navbar,
+    .topbar,
+    .sidebar,
+    .menu {
+        display: none !important;
+    }
+}
+</style>
+
+<div class="panel no-print">
     <h2>Defaulters Report</h2>
 
     <form method="get" class="three">
@@ -73,6 +88,7 @@
             <th>Paid</th>
             <th>Discount</th>
             <th>Balance</th>
+            <th class="no-print">WhatsApp</th>
         </tr>
 
         {% for row in rows %}
@@ -87,14 +103,35 @@
             <td>{{ money(row.total_paid) }}</td>
             <td>{{ money(row.discounts) }}</td>
             <td><b>{{ money(row.balance) }}</b></td>
+
+            <td class="no-print">
+                {% if row.pupil.guardian_phone %}
+                <form method="post"
+                      action="{{ url_for('send_whatsapp_fee_reminder',
+                                         pupil_id=row.pupil.id,
+                                         year=year,
+                                         term=selected_term,
+                                         month=selected_month) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Queue WhatsApp fee reminder for this parent?');">
+
+                    <button class="btn green" type="submit">
+                        WhatsApp
+                    </button>
+                </form>
+                {% else %}
+                    <span style="color:red;">No phone</span>
+                {% endif %}
+            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="10" style="text-align:center; padding:20px;">
+            <td colspan="11" style="text-align:center; padding:20px;">
                 No fee defaulters found.
             </td>
         </tr>
         {% endfor %}
     </table>
 </div>
+
 {% endblock %}
