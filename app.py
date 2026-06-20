@@ -3964,6 +3964,115 @@ def defaulters_report():
         year=year,
         money=money
     )
+
+@app.route("/send_whatsapp_fee_reminder/<int:pupil_id>/<int:year>/<term>/<month>", methods=["POST"])
+def send_whatsapp_fee_reminder(pupil_id, year, term, month):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar", "admin", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first_or_404()
+
+    if month not in term_months(term):
+        flash("Invalid term/month selected.")
+        return redirect(url_for("defaulters_report"))
+
+    total_due = due_until_month(pupil, year, term, month)
+    total_paid = paid_year(pupil.id, year)
+    discounts = discount_year(pupil.id, year)
+    balance = total_due - total_paid - discounts
+
+    if balance <= 0:
+        flash("This pupil has no outstanding balance.")
+        return redirect(url_for(
+            "defaulters_report",
+            year=year,
+            term=term,
+            month=month,
+            grade=pupil.grade
+        ))
+
+    if not pupil.guardian_phone:
+        flash("Guardian phone number is missing.")
+        return redirect(url_for(
+            "defaulters_report",
+            year=year,
+            term=term,
+            month=month,
+            grade=pupil.grade
+        ))
+
+    school = get_settings()
+
+    message = (
+        f"{school.school_name}\n\n"
+        f"FEE REMINDER\n\n"
+        f"Dear Parent,\n\n"
+        f"Our records show that {pupil.full_name} has an outstanding "
+        f"school fee balance of KES {balance:,.2f}.\n\n"
+        f"Academic Year: {year}\n"
+        f"Term: {term}\n"
+        f"Month: {month}\n\n"
+        f"Kindly clear the balance at your earliest convenience.\n\n"
+        f"Thank you.\n"
+        f"Accounts Office."
+    )
+
+    duplicate = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        phone=pupil.guardian_phone,
+        category="Fee Reminder",
+        status="Pending"
+    ).filter(
+        WhatsAppMessage.message.ilike(f"%{pupil.full_name}%"),
+        WhatsAppMessage.message.ilike(f"%KES {balance:,.2f}%")
+    ).first()
+
+    if duplicate:
+        flash("A pending WhatsApp fee reminder already exists for this pupil.")
+        return redirect(url_for(
+            "defaulters_report",
+            year=year,
+            term=term,
+            month=month,
+            grade=pupil.grade
+        ))
+
+    wa = WhatsAppMessage(
+        school_id=school_id,
+        recipient_name=pupil.guardian_name or pupil.full_name,
+        phone=pupil.guardian_phone,
+        message=message,
+        category="Fee Reminder",
+        status="Pending",
+        created_by=session.get("username", "")
+    )
+
+    db.session.add(wa)
+    db.session.commit()
+
+    save_audit(
+        f"Queued WhatsApp fee reminder for {pupil.full_name} - KES {balance:,.2f}",
+        "Communication"
+    )
+
+    flash("WhatsApp fee reminder queued successfully.")
+    return redirect(url_for(
+        "defaulters_report",
+        year=year,
+        term=term,
+        month=month,
+        grade=pupil.grade
+    ))
     
 @app.route("/receipt/<int:payment_id>")
 def receipt(payment_id):
