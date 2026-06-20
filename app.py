@@ -614,6 +614,9 @@ class Discount(db.Model):
 
     created_by = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    pupil = db.relationship("Pupil", backref="discounts")
+
+
 
 def get_pupil_discount(pupil_id, academic_year, month):
     school_id = current_school_id()
