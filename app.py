@@ -889,16 +889,63 @@ def send_sms_gateway(phone, message):
         return False, str(e)
 
 def send_whatsapp_message(phone, message):
-    """
-    Temporary WhatsApp sender.
-    For now, it logs/queues messages.
-    Later we connect Meta WhatsApp Cloud API or another provider.
-    """
     try:
-        if not phone or not message:
-            return False, "Phone or message missing"
+        import os
+        import requests
 
-        return True, "WhatsApp message queued successfully"
+        access_token = os.environ.get("WHATSAPP_ACCESS_TOKEN", "")
+        phone_number_id = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "")
+        api_version = os.environ.get("WHATSAPP_API_VERSION", "v25.0")
+
+        if not access_token:
+            return False, "WHATSAPP_ACCESS_TOKEN missing"
+
+        if not phone_number_id:
+            return False, "WHATSAPP_PHONE_NUMBER_ID missing"
+
+        if not phone:
+            return False, "Phone number missing"
+
+        if not message:
+            return False, "Message missing"
+
+        clean_phone = str(phone).strip()
+        clean_phone = clean_phone.replace("+", "")
+        clean_phone = clean_phone.replace(" ", "")
+        clean_phone = clean_phone.replace("-", "")
+
+        if clean_phone.startswith("0"):
+            clean_phone = "254" + clean_phone[1:]
+
+        url = f"https://graph.facebook.com/{api_version}/{phone_number_id}/messages"
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": clean_phone,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": message
+            }
+        }
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
+
+        if response.status_code in [200, 201]:
+            return True, response.text
+
+        return False, response.text
 
     except Exception as e:
         return False, str(e)
