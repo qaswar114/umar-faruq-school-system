@@ -6591,20 +6591,38 @@ def whatsapp_messages():
         grades=grades
     )
 
-@app.route("/whatsapp_settings")
+@app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
+    if not login_required():
+        return redirect(url_for("login"))
 
-    try:
-        school = School.query.get(current_school_id())
+    if not role_allowed("admin", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
 
-        return f"""
-        School: {school.school_name}<br>
-        WhatsApp Enabled: {school.whatsapp_enabled}<br>
-        Phone ID: {school.whatsapp_phone_number_id}
-        """
+    school = School.query.get(current_school_id())
 
-    except Exception as e:
-        return f"ERROR: {str(e)}"
+    if not school:
+        flash("School not found.")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        school.whatsapp_enabled = request.form.get("whatsapp_enabled") == "on"
+        school.whatsapp_sender_name = request.form.get("whatsapp_sender_name", "")
+        school.whatsapp_access_token = request.form.get("whatsapp_access_token", "")
+        school.whatsapp_phone_number_id = request.form.get("whatsapp_phone_number_id", "")
+        school.whatsapp_business_account_id = request.form.get("whatsapp_business_account_id", "")
+
+        db.session.commit()
+
+        flash("WhatsApp settings saved successfully.")
+        return redirect(url_for("whatsapp_settings"))
+
+    return render_template(
+        "whatsapp_settings.html",
+        settings=get_settings(),
+        school=school
+    )
 
 @app.route("/test_whatsapp")
 def test_whatsapp():
