@@ -6591,6 +6591,33 @@ def whatsapp_messages():
         grades=grades
     )
 
+@app.route("/send_pending_whatsapp")
+def send_pending_whatsapp():
+
+    pending = WhatsAppMessage.query.filter_by(
+        status="Pending"
+    ).all()
+
+    sent = 0
+
+    for msg in pending:
+
+        success, result = send_school_whatsapp_message(
+            msg.school_id,
+            msg.phone,
+            msg.message
+        )
+
+        if success:
+            msg.status = "Sent"
+            sent += 1
+        else:
+            msg.status = "Failed"
+
+    db.session.commit()
+
+    return f"{sent} WhatsApp messages sent."
+
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
     if not login_required():
