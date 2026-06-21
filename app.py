@@ -74,7 +74,7 @@ TERM_MONTHS = {
 
 class School(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    
+
     school_name = db.Column(db.String(200), nullable=False)
     motto = db.Column(db.String(200), default="")
 
@@ -92,8 +92,14 @@ class School(db.Model):
     subscription_status = db.Column(db.String(20), default="active")
     is_active = db.Column(db.Boolean, default=True)
 
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    # WhatsApp Settings
+    whatsapp_enabled = db.Column(db.Boolean, default=False)
+    whatsapp_access_token = db.Column(db.Text, default="")
+    whatsapp_phone_number_id = db.Column(db.String(100), default="")
+    whatsapp_business_account_id = db.Column(db.String(100), default="")
+    whatsapp_sender_name = db.Column(db.String(150), default="")
 
+    created_at = db.Column(db.DateTime, default=datetime.now)
 class SMSWallet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -6600,6 +6606,26 @@ def test_whatsapp():
 
     except Exception as e:
         return "ERROR: " + str(e)
+
+@app.route("/fix_school_whatsapp_columns")
+def fix_school_whatsapp_columns():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    db.session.execute(text("ALTER TABLE school ADD COLUMN IF NOT EXISTS whatsapp_enabled BOOLEAN DEFAULT FALSE"))
+    db.session.execute(text("ALTER TABLE school ADD COLUMN IF NOT EXISTS whatsapp_access_token TEXT DEFAULT ''"))
+    db.session.execute(text("ALTER TABLE school ADD COLUMN IF NOT EXISTS whatsapp_phone_number_id VARCHAR(100) DEFAULT ''"))
+    db.session.execute(text("ALTER TABLE school ADD COLUMN IF NOT EXISTS whatsapp_business_account_id VARCHAR(100) DEFAULT ''"))
+    db.session.execute(text("ALTER TABLE school ADD COLUMN IF NOT EXISTS whatsapp_sender_name VARCHAR(150) DEFAULT ''"))
+
+    db.session.commit()
+
+    flash("School WhatsApp columns added successfully.")
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     with app.app_context():
