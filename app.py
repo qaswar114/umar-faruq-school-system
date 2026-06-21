@@ -6585,6 +6585,19 @@ def whatsapp_messages():
         grades=grades
     )
 
+@app.route("/test_whatsapp")
+def test_whatsapp():
+
+    success, result = send_whatsapp_message(
+        "254724857219",   # replace with your number
+        "Hello Harun. WhatsApp integration from EduManage Africa is working successfully."
+    )
+
+    if success:
+        return f"SUCCESS:<br><pre>{result}</pre>"
+
+    return f"FAILED:<br><pre>{result}</pre>"
+
 
 if __name__ == "__main__":
     with app.app_context():
