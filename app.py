@@ -6587,17 +6587,19 @@ def whatsapp_messages():
 
 @app.route("/test_whatsapp")
 def test_whatsapp():
+    try:
+        success, result = send_whatsapp_message(
+            "254724857219",
+            "Hello Harun. WhatsApp integration from EduManage Africa is working successfully."
+        )
 
-    success, result = send_whatsapp_message(
-        "254724857219",   # replace with your number
-        "Hello Harun. WhatsApp integration from EduManage Africa is working successfully."
-    )
+        if success:
+            return "SUCCESS: WhatsApp message sent."
 
-    if success:
-        return f"SUCCESS:<br><pre>{result}</pre>"
+        return "FAILED: " + str(result)
 
-    return f"FAILED:<br><pre>{result}</pre>"
-
+    except Exception as e:
+        return "ERROR: " + str(e)
 
 if __name__ == "__main__":
     with app.app_context():
