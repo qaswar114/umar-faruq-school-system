@@ -6882,23 +6882,36 @@ def send_pending_whatsapp():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "super admin"):
+    if not role_allowed("admin", "principal", "bursar", "registrar", "receptionist", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    import threading
-
     school_id = current_school_id()
 
-    thread = threading.Thread(
-        target=process_pending_whatsapp_for_school,
-        args=(school_id,)
-    )
-    thread.daemon = True
-    thread.start()
+    pending = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).limit(10).all()
 
-    flash("WhatsApp sending started in the background. Refresh this page after a few minutes.")
-    return redirect(url_for("whatsapp_outbox"))
+    sent_count = 0
+
+    for msg in pending:
+        ok, response = send_whatsapp_message(msg.phone, msg.message)
+
+        msg.response = str(response)
+        msg.sent_at = datetime.utcnow()
+
+        if ok:
+            msg.status = "Sent"
+            sent_count += 1
+        else:
+            msg.status = "Failed"
+
+    db.session.commit()
+
+    flash(f"{sent_count} WhatsApp message(s) sent.")
+    return redirect(url_for("whatsapp_messages"))
+    
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
     if not login_required():
