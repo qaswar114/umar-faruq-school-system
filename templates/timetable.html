@@ -1,7 +1,93 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
+<style>
+.timetable-wrapper {
+    overflow-x: auto;
+}
+
+.timetable-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 14px;
+}
+
+.timetable-table th {
+    background: #f1f5f9;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    text-align: center;
+}
+
+.timetable-table td {
+    border: 1px solid #d1d5db;
+    padding: 8px;
+    vertical-align: top;
+    min-width: 150px;
+    height: 80px;
+}
+
+.time-col {
+    width: 120px;
+    background: #f8fafc;
+    font-weight: bold;
+    text-align: center;
+}
+
+.lesson-box {
+    background: #eef6ff;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.lesson-subject {
+    font-weight: bold;
+    color: #0f172a;
+}
+
+.lesson-teacher {
+    font-size: 12px;
+    color: #475569;
+    margin-top: 4px;
+}
+
+.lesson-room {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.empty-slot {
+    color: #94a3b8;
+    text-align: center;
+    padding-top: 20px;
+}
+
+@media print {
+    header, nav, .navbar, .topbar, .sidebar, .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+    }
+
+    .panel {
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .timetable-table {
+        font-size: 11px;
+    }
+
+    .timetable-table td {
+        height: 65px;
+    }
+}
+</style>
+
+<div class="panel no-print">
     <h2>Class Timetable</h2>
 
     <form method="get">
@@ -14,8 +100,8 @@
     </form>
 </div>
 
-<div class="panel">
-    <h3>Add Lesson</h3>
+<div class="panel no-print">
+    <h3>Add / Update Lesson</h3>
 
     <form method="post">
         <div class="three">
@@ -41,7 +127,7 @@
                 <label>Period</label>
                 <select name="period" required>
                     {% for p in periods %}
-                    <option>{{ p }}</option>
+                    <option>{{ p.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -49,32 +135,17 @@
 
         <div class="three">
             <div>
-                <label>Start Time</label>
-                <input name="start_time" placeholder="08:00">
-            </div>
-
-            <div>
-                <label>End Time</label>
-                <input name="end_time" placeholder="08:40">
-            </div>
-
-            <div>
-                <label>Room</label>
-                <input name="room" placeholder="Classroom / Lab">
-            </div>
-        </div>
-
-        <div class="two">
-            <div>
                 <label>Subject</label>
                 <select name="subject_name" required>
+                    <option value="">-- Select Subject --</option>
                     {% for s in subjects %}
                     <option>{{ s.subject_name }}</option>
                     {% endfor %}
+                    <option>Assembly</option>
                     <option>Break</option>
                     <option>Lunch</option>
                     <option>Games</option>
-                    <option>Assembly</option>
+                    <option>Clubs</option>
                 </select>
             </div>
 
@@ -87,40 +158,64 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div>
+                <label>Room</label>
+                <input name="room" placeholder="Classroom / Lab">
+            </div>
         </div>
 
-        <button class="btn green">Add Lesson</button>
+        <button class="btn green">Save Lesson</button>
     </form>
 </div>
 
 <div class="panel">
-    <h3>{{ selected_grade }} Timetable</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;" class="no-print">
+        <h3>{{ selected_grade }} Weekly Timetable</h3>
+        <button onclick="window.print()" class="btn">Print Timetable</button>
+    </div>
 
-    <table>
-        <tr>
-            <th>Day</th>
-            <th>Period</th>
-            <th>Time</th>
-            <th>Subject</th>
-            <th>Teacher</th>
-            <th>Room</th>
-        </tr>
+    <div style="text-align:center;">
+        <h2>{{ settings.school_name }}</h2>
+        <h3>{{ selected_grade }} Weekly Timetable</h3>
+    </div>
 
-        {% for r in rows %}
-        <tr>
-            <td>{{ r.day }}</td>
-            <td>{{ r.period }}</td>
-            <td>{{ r.start_time }} - {{ r.end_time }}</td>
-            <td><b>{{ r.subject_name }}</b></td>
-            <td>{{ r.teacher_name }}</td>
-            <td>{{ r.room }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6">No timetable lessons added yet.</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="timetable-wrapper">
+        <table class="timetable-table">
+            <tr>
+                <th>Time</th>
+                {% for d in days %}
+                <th>{{ d }}</th>
+                {% endfor %}
+            </tr>
+
+            {% for p in periods %}
+            <tr>
+                <td class="time-col">
+                    {{ p.start }}<br>
+                    {{ p.end }}<br>
+                    <small>{{ p.name }}</small>
+                </td>
+
+                {% for d in days %}
+                <td>
+                    {% set lesson = timetable_grid.get((d, p.name)) %}
+
+                    {% if lesson %}
+                    <div class="lesson-box">
+                        <div class="lesson-subject">{{ lesson.subject_name }}</div>
+                        <div class="lesson-teacher">{{ lesson.teacher_name }}</div>
+                        <div class="lesson-room">{{ lesson.room }}</div>
+                    </div>
+                    {% else %}
+                    <div class="empty-slot">Empty</div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 
 {% endblock %}
