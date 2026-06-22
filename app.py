@@ -749,6 +749,27 @@ class Mark(db.Model):
     exam = db.relationship("Exam")
     subject = db.relationship("Subject")
 
+class Timetable(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+
+    grade = db.Column(db.String(50), nullable=False)
+    day = db.Column(db.String(20), nullable=False)
+    period = db.Column(db.String(30), nullable=False)
+
+    start_time = db.Column(db.String(20), default="")
+    end_time = db.Column(db.String(20), default="")
+
+    subject_name = db.Column(db.String(100), nullable=False)
+    teacher_name = db.Column(db.String(150), default="")
+
+    room = db.Column(db.String(50), default="")
+    status = db.Column(db.String(20), default="Active")
+
+    created_by = db.Column(db.String(100), default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
 
@@ -1118,6 +1139,12 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 
 def init_database():
     db.create_all()
+
+    try:
+        Timetable.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     try:
         FinancePeriod.__table__.create(db.engine, checkfirst=True)
@@ -3529,6 +3556,80 @@ def subjects():
         grades=GRADES,
         rows=rows
     )
+
+@app.route("/timetable", methods=["GET", "POST"])
+def timetable():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    periods = [
+        "Period 1", "Period 2", "Period 3", "Break",
+        "Period 4", "Period 5", "Lunch",
+        "Period 6", "Period 7"
+    ]
+
+    if request.method == "POST":
+        row = Timetable(
+            school_id=school_id,
+            grade=request.form["grade"],
+            day=request.form["day"],
+            period=request.form["period"],
+            start_time=request.form.get("start_time", ""),
+            end_time=request.form.get("end_time", ""),
+            subject_name=request.form["subject_name"],
+            teacher_name=request.form.get("teacher_name", ""),
+            room=request.form.get("room", ""),
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(row)
+        db.session.commit()
+
+        flash("Timetable lesson added successfully.")
+        return redirect(url_for("timetable"))
+
+    selected_grade = request.args.get("grade", GRADES[0])
+
+    rows = Timetable.query.filter_by(
+        school_id=school_id,
+        grade=selected_grade,
+        status="Active"
+    ).order_by(
+        Timetable.day,
+        Timetable.period
+    ).all()
+
+    subjects = Subject.query.filter_by(
+        school_id=school_id,
+        grade=selected_grade,
+        status="Active"
+    ).order_by(Subject.subject_name).all()
+
+    teachers = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Staff.full_name).all()
+
+    return render_template(
+        "timetable.html",
+        settings=get_settings(),
+        grades=GRADES,
+        days=days,
+        periods=periods,
+        rows=rows,
+        subjects=subjects,
+        teachers=teachers,
+        selected_grade=selected_grade
+    )
+
+
 @app.route("/edit_subject/<int:subject_id>", methods=["GET", "POST"])
 def edit_subject(subject_id):
     if not login_required():
