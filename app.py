@@ -954,7 +954,7 @@ def send_whatsapp_message(phone, message):
         return False, response.text
 
     except Exception as e:
-        return False, str(e
+        return False, str(e)
 
 def send_school_whatsapp_message(school_id, phone, message):
     school = School.query.get(school_id)
