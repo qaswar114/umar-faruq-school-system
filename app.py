@@ -3569,31 +3569,65 @@ def timetable():
     school_id = current_school_id()
 
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
     periods = [
-        "Period 1", "Period 2", "Period 3", "Break",
-        "Period 4", "Period 5", "Lunch",
-        "Period 6", "Period 7"
+        {"name": "Assembly", "start": "07:30", "end": "08:00"},
+        {"name": "Period 1", "start": "08:00", "end": "08:40"},
+        {"name": "Period 2", "start": "08:40", "end": "09:20"},
+        {"name": "Period 3", "start": "09:20", "end": "10:00"},
+        {"name": "Break", "start": "10:00", "end": "10:30"},
+        {"name": "Period 4", "start": "10:30", "end": "11:10"},
+        {"name": "Period 5", "start": "11:10", "end": "11:50"},
+        {"name": "Lunch", "start": "11:50", "end": "12:40"},
+        {"name": "Period 6", "start": "12:40", "end": "13:20"},
+        {"name": "Period 7", "start": "13:20", "end": "14:00"},
+        {"name": "Games/Clubs", "start": "14:00", "end": "15:00"},
     ]
 
     if request.method == "POST":
-        row = Timetable(
+        period_name = request.form["period"]
+
+        selected_period = next(
+            (p for p in periods if p["name"] == period_name),
+            None
+        )
+
+        start_time = selected_period["start"] if selected_period else ""
+        end_time = selected_period["end"] if selected_period else ""
+
+        existing = Timetable.query.filter_by(
             school_id=school_id,
             grade=request.form["grade"],
             day=request.form["day"],
-            period=request.form["period"],
-            start_time=request.form.get("start_time", ""),
-            end_time=request.form.get("end_time", ""),
-            subject_name=request.form["subject_name"],
-            teacher_name=request.form.get("teacher_name", ""),
-            room=request.form.get("room", ""),
-            created_by=session.get("username", "")
-        )
+            period=period_name,
+            status="Active"
+        ).first()
 
-        db.session.add(row)
+        if existing:
+            existing.subject_name = request.form["subject_name"]
+            existing.teacher_name = request.form.get("teacher_name", "")
+            existing.room = request.form.get("room", "")
+            existing.start_time = start_time
+            existing.end_time = end_time
+        else:
+            row = Timetable(
+                school_id=school_id,
+                grade=request.form["grade"],
+                day=request.form["day"],
+                period=period_name,
+                start_time=start_time,
+                end_time=end_time,
+                subject_name=request.form["subject_name"],
+                teacher_name=request.form.get("teacher_name", ""),
+                room=request.form.get("room", ""),
+                created_by=session.get("username", "")
+            )
+            db.session.add(row)
+
         db.session.commit()
 
-        flash("Timetable lesson added successfully.")
-        return redirect(url_for("timetable"))
+        flash("Timetable updated successfully.")
+        return redirect(url_for("timetable", grade=request.form["grade"]))
 
     selected_grade = request.args.get("grade", GRADES[0])
 
@@ -3601,10 +3635,12 @@ def timetable():
         school_id=school_id,
         grade=selected_grade,
         status="Active"
-    ).order_by(
-        Timetable.day,
-        Timetable.period
     ).all()
+
+    timetable_grid = {}
+
+    for r in rows:
+        timetable_grid[(r.day, r.period)] = r
 
     subjects = Subject.query.filter_by(
         school_id=school_id,
@@ -3623,12 +3659,11 @@ def timetable():
         grades=GRADES,
         days=days,
         periods=periods,
-        rows=rows,
+        timetable_grid=timetable_grid,
         subjects=subjects,
         teachers=teachers,
         selected_grade=selected_grade
     )
-
 
 @app.route("/edit_subject/<int:subject_id>", methods=["GET", "POST"])
 def edit_subject(subject_id):
