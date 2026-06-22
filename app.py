@@ -2960,16 +2960,25 @@ def send_exam_whatsapp_alerts():
             skipped += 1
             continue
 
-        total = sum(float(m.marks or 0) for m in marks)
+        total = sum(float(m.marks_obtained or 0) for m in marks)
         count = len(marks)
         average = total / count if count > 0 else 0
+
+        if average >= 80:
+            cbc_level = "EE - Exceeding Expectations"
+        elif average >= 60:
+            cbc_level = "ME - Meeting Expectations"
+        elif average >= 40:
+            cbc_level = "AE - Approaching Expectations"
+        else:
+            cbc_level = "BE - Below Expectations"
 
         duplicate = WhatsAppMessage.query.filter(
             WhatsAppMessage.school_id == school_id,
             WhatsAppMessage.phone == pupil.guardian_phone,
             WhatsAppMessage.category == "Exam Results",
             WhatsAppMessage.message.ilike(f"%{pupil.full_name}%"),
-            WhatsAppMessage.message.ilike(f"%{exam.name}%")
+            WhatsAppMessage.message.ilike(f"%{exam.exam_name}%")
         ).first()
 
         if duplicate:
@@ -2981,9 +2990,11 @@ def send_exam_whatsapp_alerts():
             f"EXAM RESULTS ALERT\n\n"
             f"Dear Parent,\n\n"
             f"The results for {pupil.full_name} are ready.\n\n"
-            f"Exam: {exam.name}\n"
+            f"Exam: {exam.exam_name}\n"
             f"Grade: {pupil.grade}\n"
-            f"Average Score: {average:.1f}%\n\n"
+            f"Total Marks: {total:.1f}\n"
+            f"Average Score: {average:.1f}%\n"
+            f"CBC Level: {cbc_level}\n\n"
             f"Please login or visit the school to view the full report card.\n\n"
             f"Thank you.\n"
             f"Academic Office."
@@ -2991,7 +3002,7 @@ def send_exam_whatsapp_alerts():
 
         wa = WhatsAppMessage(
             school_id=school_id,
-            recipient_name=pupil.guardian_name,
+            recipient_name=pupil.guardian_name or pupil.full_name,
             phone=pupil.guardian_phone,
             message=message,
             category="Exam Results",
@@ -3006,6 +3017,8 @@ def send_exam_whatsapp_alerts():
 
     flash(f"Exam WhatsApp alerts queued: {queued}. Skipped: {skipped}.")
     return redirect(url_for("whatsapp_outbox"))
+
+
 @app.route("/report_card/<int:pupil_id>/<int:exam_id>")
 def report_card(pupil_id, exam_id):
     if not login_required():
