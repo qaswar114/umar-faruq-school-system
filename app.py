@@ -2907,6 +2907,105 @@ def report_cards():
         selected_exam=selected_exam,
         selected_grade=selected_grade
     )
+
+@app.route("/send_exam_whatsapp_alerts")
+def send_exam_whatsapp_alerts():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    school = get_settings()
+
+    exam_id = request.args.get("exam_id", "")
+    grade = request.args.get("grade", "")
+
+    if not exam_id or not grade:
+        flash("Select exam and grade first.")
+        return redirect(url_for("report_cards"))
+
+    exam = Exam.query.filter_by(
+        id=int(exam_id),
+        school_id=school_id
+    ).first()
+
+    if not exam:
+        flash("Exam not found.")
+        return redirect(url_for("report_cards"))
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        grade=grade,
+        status="Active"
+    ).order_by(Pupil.full_name).all()
+
+    queued = 0
+    skipped = 0
+
+    for pupil in pupils:
+        if not pupil.guardian_phone:
+            skipped += 1
+            continue
+
+        marks = Mark.query.filter_by(
+            school_id=school_id,
+            pupil_id=pupil.id,
+            exam_id=exam.id
+        ).all()
+
+        if not marks:
+            skipped += 1
+            continue
+
+        total = sum(float(m.marks or 0) for m in marks)
+        count = len(marks)
+        average = total / count if count > 0 else 0
+
+        duplicate = WhatsAppMessage.query.filter(
+            WhatsAppMessage.school_id == school_id,
+            WhatsAppMessage.phone == pupil.guardian_phone,
+            WhatsAppMessage.category == "Exam Results",
+            WhatsAppMessage.message.ilike(f"%{pupil.full_name}%"),
+            WhatsAppMessage.message.ilike(f"%{exam.name}%")
+        ).first()
+
+        if duplicate:
+            skipped += 1
+            continue
+
+        message = (
+            f"{school.school_name}\n\n"
+            f"EXAM RESULTS ALERT\n\n"
+            f"Dear Parent,\n\n"
+            f"The results for {pupil.full_name} are ready.\n\n"
+            f"Exam: {exam.name}\n"
+            f"Grade: {pupil.grade}\n"
+            f"Average Score: {average:.1f}%\n\n"
+            f"Please login or visit the school to view the full report card.\n\n"
+            f"Thank you.\n"
+            f"Academic Office."
+        )
+
+        wa = WhatsAppMessage(
+            school_id=school_id,
+            recipient_name=pupil.guardian_name,
+            phone=pupil.guardian_phone,
+            message=message,
+            category="Exam Results",
+            status="Pending",
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(wa)
+        queued += 1
+
+    db.session.commit()
+
+    flash(f"Exam WhatsApp alerts queued: {queued}. Skipped: {skipped}.")
+    return redirect(url_for("whatsapp_outbox"))
 @app.route("/report_card/<int:pupil_id>/<int:exam_id>")
 def report_card(pupil_id, exam_id):
     if not login_required():
