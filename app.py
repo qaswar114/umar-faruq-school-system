@@ -6746,7 +6746,7 @@ def send_pending_whatsapp():
         status="Pending"
     ).order_by(
         WhatsAppMessage.id.asc()
-    ).limit(10).all()
+    ).all()
 
     sent = 0
     failed = 0
@@ -6772,7 +6772,6 @@ def send_pending_whatsapp():
 
     flash(f"WhatsApp sending complete. Sent: {sent}, Failed: {failed}")
     return redirect(url_for("whatsapp_outbox"))
-
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
     if not login_required():
