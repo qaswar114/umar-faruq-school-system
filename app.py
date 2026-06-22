@@ -6656,6 +6656,8 @@ def send_pending_whatsapp():
     pending = WhatsAppMessage.query.filter_by(
         school_id=school_id,
         status="Pending"
+    ).order_by(
+        WhatsAppMessage.id.asc()
     ).limit(10).all()
 
     sent = 0
@@ -6680,7 +6682,9 @@ def send_pending_whatsapp():
 
     db.session.commit()
 
-    return f"Sent: {sent}, Failed: {failed}"
+    flash(f"WhatsApp sending complete. Sent: {sent}, Failed: {failed}")
+    return redirect(url_for("whatsapp_outbox"))
+
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
     if not login_required():
