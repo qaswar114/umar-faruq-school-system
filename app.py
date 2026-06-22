@@ -56,6 +56,14 @@ if database_url.startswith("postgres://"):
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "umar-faruq-secret-key-2026")
+import os
+
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
