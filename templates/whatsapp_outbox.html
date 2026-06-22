@@ -2,7 +2,58 @@
 {% block content %}
 
 <div class="panel">
-    <h2>WhatsApp Outbox</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+            <h2>WhatsApp Outbox</h2>
+            <p>Manage queued and sent WhatsApp messages.</p>
+        </div>
+
+        <div>
+            <a href="{{ url_for('send_pending_whatsapp') }}"
+               class="btn green"
+               onclick="return confirm('Send all pending WhatsApp messages now?');">
+                Send Pending WhatsApp
+            </a>
+
+            <a href="{{ url_for('whatsapp_messages') }}"
+               class="btn">
+                New Message
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-bottom:20px;">
+
+        <div style="background:#eef8ff;padding:18px;border-radius:12px;">
+            <small>Total Messages</small>
+            <h2>{{ messages|length }}</h2>
+        </div>
+
+        <div style="background:#eafaf1;padding:18px;border-radius:12px;">
+            <small>Sent</small>
+            <h2>
+                {{ messages|selectattr('status','equalto','Sent')|list|length }}
+            </h2>
+        </div>
+
+        <div style="background:#fff8e6;padding:18px;border-radius:12px;">
+            <small>Pending</small>
+            <h2>
+                {{ messages|selectattr('status','equalto','Pending')|list|length }}
+            </h2>
+        </div>
+
+        <div style="background:#ffecec;padding:18px;border-radius:12px;">
+            <small>Failed</small>
+            <h2>
+                {{ messages|selectattr('status','equalto','Failed')|list|length }}
+            </h2>
+        </div>
+
+    </div>
 
     <table>
         <tr>
@@ -12,25 +63,52 @@
             <th>Category</th>
             <th>Message</th>
             <th>Status</th>
-            <th>Created By</th>
         </tr>
 
-        {% for m in messages %}
+        {% for msg in messages %}
         <tr>
-            <td>{{ m.created_at.strftime('%d/%m/%Y %H:%M') if m.created_at else "-" }}</td>
-            <td>{{ m.recipient_name }}</td>
-            <td>{{ m.phone }}</td>
-            <td>{{ m.category }}</td>
-            <td>{{ m.message }}</td>
-            <td>{{ m.status }}</td>
-            <td>{{ m.created_by }}</td>
+            <td>
+                {{ msg.created_at.strftime('%d-%m-%Y %H:%M') if msg.created_at else '' }}
+            </td>
+
+            <td>{{ msg.recipient_name }}</td>
+
+            <td>{{ msg.phone }}</td>
+
+            <td>{{ msg.category }}</td>
+
+            <td style="max-width:350px;">
+                {{ msg.message[:120] }}
+                {% if msg.message|length > 120 %}...{% endif %}
+            </td>
+
+            <td>
+                {% if msg.status == "Sent" %}
+                    <span style="color:green;font-weight:bold;">
+                        ✓ Sent
+                    </span>
+
+                {% elif msg.status == "Failed" %}
+                    <span style="color:red;font-weight:bold;">
+                        ✗ Failed
+                    </span>
+
+                {% else %}
+                    <span style="color:orange;font-weight:bold;">
+                        Pending
+                    </span>
+                {% endif %}
+            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="7">No WhatsApp messages found.</td>
+            <td colspan="6" style="text-align:center;padding:20px;">
+                No WhatsApp messages found.
+            </td>
         </tr>
         {% endfor %}
     </table>
+
 </div>
 
 {% endblock %}
