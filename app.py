@@ -4098,6 +4098,94 @@ def defaulters_report():
         money=money
     )
 
+@app.route("/send_defaulter_whatsapp_reminders")
+def send_defaulter_whatsapp_reminders():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("bursar", "admin", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    school = get_settings()
+
+    year = int(request.args.get("year", current_year()))
+    selected_grade = request.args.get("grade", "")
+    selected_term = request.args.get("term", "Term 2")
+    selected_month = request.args.get("month", "May")
+
+    if selected_month not in term_months(selected_term):
+        selected_month = term_months(selected_term)[0]
+
+    query = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    )
+
+    if selected_grade:
+        query = query.filter_by(grade=selected_grade)
+
+    queued = 0
+    skipped = 0
+
+    for p in query.order_by(Pupil.grade, Pupil.full_name).all():
+        total_due = due_until_month(p, year, selected_term, selected_month)
+        total_paid = paid_year(p.id, year)
+        discounts = discount_year(p.id, year)
+        balance = total_due - total_paid - discounts
+
+        if balance <= 0:
+            continue
+
+        if not p.guardian_phone:
+            skipped += 1
+            continue
+
+        duplicate = WhatsAppMessage.query.filter(
+            WhatsAppMessage.school_id == school_id,
+            WhatsAppMessage.phone == p.guardian_phone,
+            WhatsAppMessage.category == "Fee Reminder",
+            WhatsAppMessage.message.ilike(f"%{p.full_name}%"),
+            WhatsAppMessage.message.ilike(f"%{selected_month} {year}%")
+        ).first()
+
+        if duplicate:
+            skipped += 1
+            continue
+
+        message = (
+            f"{school.school_name}\n\n"
+            f"FEE REMINDER\n\n"
+            f"Dear Parent,\n\n"
+            f"Our records show that {p.full_name} has an outstanding school fee balance of "
+            f"KES {balance:,.2f}.\n\n"
+            f"Academic Year: {year}\n"
+            f"Term: {selected_term}\n"
+            f"Month: {selected_month}\n\n"
+            f"Kindly clear the balance at your earliest convenience.\n\n"
+            f"Thank you.\n"
+            f"Accounts Office."
+        )
+
+        wa = WhatsAppMessage(
+            school_id=school_id,
+            recipient_name=p.guardian_name,
+            phone=p.guardian_phone,
+            message=message,
+            category="Fee Reminder",
+            status="Pending",
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(wa)
+        queued += 1
+
+    db.session.commit()
+
+    flash(f"Fee reminder WhatsApp messages queued: {queued}. Skipped: {skipped}.")
+    return redirect(url_for("whatsapp_outbox"))
+    
 @app.route("/send_whatsapp_fee_reminder/<int:pupil_id>/<int:year>/<term>/<month>", methods=["POST"])
 def send_whatsapp_fee_reminder(pupil_id, year, term, month):
     if not login_required():
