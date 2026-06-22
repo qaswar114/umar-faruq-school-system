@@ -59,6 +59,23 @@
             <button type="button" class="btn green" onclick="window.print()">Print</button>
         </div>
     </form>
+
+    <br>
+
+    <a class="btn green"
+       href="{{ url_for('send_defaulter_whatsapp_reminders',
+                        year=year,
+                        term=selected_term,
+                        month=selected_month,
+                        grade=selected_grade) }}"
+       onclick="return confirm('Queue WhatsApp reminders for all defaulters in this report?');">
+        Send WhatsApp Reminders to All
+    </a>
+
+    <a class="btn"
+       href="{{ url_for('whatsapp_outbox') }}">
+        View WhatsApp Outbox
+    </a>
 </div>
 
 <div class="panel">
@@ -88,7 +105,6 @@
             <th>Paid</th>
             <th>Discount</th>
             <th>Balance</th>
-            <th class="no-print">WhatsApp</th>
         </tr>
 
         {% for row in rows %}
@@ -103,30 +119,10 @@
             <td>{{ money(row.total_paid) }}</td>
             <td>{{ money(row.discounts) }}</td>
             <td><b>{{ money(row.balance) }}</b></td>
-
-            <td class="no-print">
-                {% if row.pupil.guardian_phone %}
-                <form method="post"
-                      action="{{ url_for('send_whatsapp_fee_reminder',
-                                         pupil_id=row.pupil.id,
-                                         year=year,
-                                         term=selected_term,
-                                         month=selected_month) }}"
-                      style="display:inline;"
-                      onsubmit="return confirm('Queue WhatsApp fee reminder for this parent?');">
-
-                    <button class="btn green" type="submit">
-                        WhatsApp
-                    </button>
-                </form>
-                {% else %}
-                    <span style="color:red;">No phone</span>
-                {% endif %}
-            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="11" style="text-align:center; padding:20px;">
+            <td colspan="10" style="text-align:center; padding:20px;">
                 No fee defaulters found.
             </td>
         </tr>
