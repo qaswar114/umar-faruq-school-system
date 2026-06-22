@@ -94,7 +94,9 @@
         <label>Select Grade</label>
         <select name="grade" onchange="this.form.submit()">
             {% for g in grades %}
-            <option value="{{ g }}" {% if g == selected_grade %}selected{% endif %}>{{ g }}</option>
+            <option value="{{ g }}" {% if g == selected_grade %}selected{% endif %}>
+                {{ g }}
+            </option>
             {% endfor %}
         </select>
     </form>
@@ -109,7 +111,9 @@
                 <label>Grade</label>
                 <select name="grade">
                     {% for g in grades %}
-                    <option value="{{ g }}" {% if g == selected_grade %}selected{% endif %}>{{ g }}</option>
+                    <option value="{{ g }}" {% if g == selected_grade %}selected{% endif %}>
+                        {{ g }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
@@ -118,7 +122,7 @@
                 <label>Day</label>
                 <select name="day" required>
                     {% for d in days %}
-                    <option>{{ d }}</option>
+                    <option value="{{ d }}">{{ d }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -127,7 +131,9 @@
                 <label>Period</label>
                 <select name="period" required>
                     {% for p in periods %}
-                    <option>{{ p.name }}</option>
+                    <option value="{{ p.name }}">
+                        {{ p.name }} ({{ p.start }} - {{ p.end }})
+                    </option>
                     {% endfor %}
                 </select>
             </div>
@@ -139,13 +145,13 @@
                 <select name="subject_name" required>
                     <option value="">-- Select Subject --</option>
                     {% for s in subjects %}
-                    <option>{{ s.subject_name }}</option>
+                    <option value="{{ s.subject_name }}">{{ s.subject_name }}</option>
                     {% endfor %}
-                    <option>Assembly</option>
-                    <option>Break</option>
-                    <option>Lunch</option>
-                    <option>Games</option>
-                    <option>Clubs</option>
+                    <option value="Assembly">Assembly</option>
+                    <option value="Break">Break</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Games">Games</option>
+                    <option value="Clubs">Clubs</option>
                 </select>
             </div>
 
@@ -154,7 +160,7 @@
                 <select name="teacher_name">
                     <option value="">-- Select Teacher --</option>
                     {% for t in teachers %}
-                    <option>{{ t.full_name }}</option>
+                    <option value="{{ t.full_name }}">{{ t.full_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -171,13 +177,13 @@
 
 <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;" class="no-print">
-        <h3>{{ selected_grade }} Weekly Timetable</h3>
+        <h3>{{ selected_grade }} Class Timetable</h3>
         <button onclick="window.print()" class="btn">Print Timetable</button>
     </div>
 
     <div style="text-align:center;">
         <h2>{{ settings.school_name }}</h2>
-        <h3>{{ selected_grade }} Weekly Timetable</h3>
+        <h3>{{ selected_grade }} Class Timetable</h3>
     </div>
 
     <div class="timetable-wrapper">
