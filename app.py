@@ -954,6 +954,57 @@ def send_whatsapp_message(phone, message):
         return False, response.text
 
     except Exception as e:
+        return False, str(e
+
+def send_school_whatsapp_message(school_id, phone, message):
+    school = School.query.get(school_id)
+
+    if not school:
+        return False, "School not found"
+
+    if not school.whatsapp_enabled:
+        return False, "WhatsApp not enabled for this school"
+
+    if not school.whatsapp_access_token:
+        return False, "School WhatsApp access token missing"
+
+    if not school.whatsapp_phone_number_id:
+        return False, "School WhatsApp phone number ID missing"
+
+    try:
+        import requests
+
+        clean_phone = str(phone).strip().replace("+", "").replace(" ", "").replace("-", "")
+
+        if clean_phone.startswith("0"):
+            clean_phone = "254" + clean_phone[1:]
+
+        url = f"https://graph.facebook.com/v25.0/{school.whatsapp_phone_number_id}/messages"
+
+        headers = {
+            "Authorization": f"Bearer {school.whatsapp_access_token}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": clean_phone,
+            "type": "text",
+            "text": {
+                "preview_url": False,
+                "body": message
+            }
+        }
+
+        response = requests.post(url, headers=headers, json=payload, timeout=20)
+
+        if response.status_code in [200, 201]:
+            return True, response.text
+
+        return False, response.text
+
+    except Exception as e:
         return False, str(e)
         
 def get_platform_sms_pool():
@@ -6593,15 +6644,24 @@ def whatsapp_messages():
 
 @app.route("/send_pending_whatsapp")
 def send_pending_whatsapp():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
 
     pending = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
         status="Pending"
-    ).all()
+    ).limit(10).all()
 
     sent = 0
+    failed = 0
 
     for msg in pending:
-
         success, result = send_school_whatsapp_message(
             msg.school_id,
             msg.phone,
@@ -6610,14 +6670,17 @@ def send_pending_whatsapp():
 
         if success:
             msg.status = "Sent"
+            msg.response = result
+            msg.sent_at = datetime.now()
             sent += 1
         else:
             msg.status = "Failed"
+            msg.response = result
+            failed += 1
 
     db.session.commit()
 
-    return f"{sent} WhatsApp messages sent."
-
+    return f"Sent: {sent}, Failed: {failed}"
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
     if not login_required():
