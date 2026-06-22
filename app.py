@@ -6730,6 +6730,33 @@ def whatsapp_messages():
         grades=grades
     )
 
+def process_pending_whatsapp_for_school(school_id):
+    with app.app_context():
+        pending = WhatsAppMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending"
+        ).order_by(
+            WhatsAppMessage.id.asc()
+        ).all()
+
+        for msg in pending:
+            success, result = send_school_whatsapp_message(
+                msg.school_id,
+                msg.phone,
+                msg.message
+            )
+
+            if success:
+                msg.status = "Sent"
+                msg.response = result
+                msg.sent_at = datetime.now()
+            else:
+                msg.status = "Failed"
+                msg.response = result
+
+            db.session.commit()
+
+
 @app.route("/send_pending_whatsapp")
 def send_pending_whatsapp():
     if not login_required():
@@ -6739,38 +6766,18 @@ def send_pending_whatsapp():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    import threading
+
     school_id = current_school_id()
 
-    pending = WhatsAppMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).order_by(
-        WhatsAppMessage.id.asc()
-    ).all()
+    thread = threading.Thread(
+        target=process_pending_whatsapp_for_school,
+        args=(school_id,)
+    )
+    thread.daemon = True
+    thread.start()
 
-    sent = 0
-    failed = 0
-
-    for msg in pending:
-        success, result = send_school_whatsapp_message(
-            msg.school_id,
-            msg.phone,
-            msg.message
-        )
-
-        if success:
-            msg.status = "Sent"
-            msg.response = result
-            msg.sent_at = datetime.now()
-            sent += 1
-        else:
-            msg.status = "Failed"
-            msg.response = result
-            failed += 1
-
-    db.session.commit()
-
-    flash(f"WhatsApp sending complete. Sent: {sent}, Failed: {failed}")
+    flash("WhatsApp sending started in the background. Refresh this page after a few minutes.")
     return redirect(url_for("whatsapp_outbox"))
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
