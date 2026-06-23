@@ -1,54 +1,176 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Transport Routes</h2>
+<style>
+.route-hero{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+
+.route-icon{
+    width:80px;
+    height:80px;
+    border-radius:20px;
+    background:#ecfdf5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+}
+
+.panel-box{
+    background:white;
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+
+.section-title{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+.route-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.route-table th{
+    background:#f8fafc;
+    padding:12px;
+    text-align:left;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.route-table td{
+    padding:12px;
+    border-bottom:1px solid #f1f5f9;
+}
+
+.fee-badge{
+    background:#eff6ff;
+    color:#2563eb;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.delete-link{
+    color:#dc2626;
+    text-decoration:none;
+    font-weight:bold;
+}
+</style>
+
+<div class="route-hero">
+    <div class="route-icon">📍</div>
+
+    <div>
+        <h2>Transport Routes</h2>
+        <p>Manage transport routes, pickup points and monthly fees.</p>
+    </div>
+</div>
+
+<div class="panel-box">
+
+    <div class="section-title">
+        Add New Route
+    </div>
 
     <form method="post">
+
         <div class="three">
+
             <div>
                 <label>Route Name</label>
-                <input name="route_name" required placeholder="Town Route">
+                <input name="route_name" required>
             </div>
 
             <div>
                 <label>Monthly Fee</label>
-                <input name="monthly_fee" type="number" placeholder="2000">
+                <input name="monthly_fee" type="number">
             </div>
 
             <div>
                 <label>Pickup Points</label>
-                <input name="pickup_points" placeholder="CBD, Mosque, Estate">
+                <input name="pickup_points">
             </div>
+
         </div>
 
-        <button class="btn green">Add Route</button>
-        <a class="btn" href="{{ url_for('transport') }}">Back</a>
+        <br>
+
+        <button class="btn green">
+            Save Route
+        </button>
+
+        <a class="btn" href="{{ url_for('transport') }}">
+            Back
+        </a>
+
     </form>
+
 </div>
 
-<div class="panel">
-    <h3>Active Routes</h3>
+<div class="panel-box">
 
-    <table>
+    <div class="section-title">
+        Active Routes
+    </div>
+
+    <table class="route-table">
+
         <tr>
             <th>Route</th>
             <th>Pickup Points</th>
             <th>Monthly Fee</th>
+            <th>Action</th>
         </tr>
 
         {% for r in routes %}
         <tr>
+
             <td>{{ r.route_name }}</td>
+
             <td>{{ r.pickup_points }}</td>
-            <td>{{ money(r.monthly_fee) }}</td>
+
+            <td>
+                <span class="fee-badge">
+                    {{ money(r.monthly_fee) }}
+                </span>
+            </td>
+
+            <td>
+                <a class="delete-link"
+                   href="{{ url_for('delete_transport_route', route_id=r.id) }}"
+                   onclick="return confirm('Delete this route?')">
+                    Delete
+                </a>
+            </td>
+
         </tr>
+
         {% else %}
+
         <tr>
-            <td colspan="3">No routes added yet.</td>
+            <td colspan="4">
+                No routes added yet.
+            </td>
         </tr>
+
         {% endfor %}
+
     </table>
+
 </div>
 
 {% endblock %}
