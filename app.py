@@ -3587,6 +3587,31 @@ def timetable():
     if request.method == "POST":
         period_name = request.form["period"]
 
+        teacher_name = request.form.get("teacher_name", "")
+
+if teacher_name:
+
+    clash = Timetable.query.filter_by(
+        school_id=school_id,
+        day=request.form["day"],
+        period=period_name,
+        teacher_name=teacher_name,
+        status="Active"
+    ).first()
+
+    if clash and clash.grade != request.form["grade"]:
+        flash(
+            f"{teacher_name} is already assigned to "
+            f"{clash.grade} during {period_name} on "
+            f"{request.form['day']}."
+        )
+        return redirect(
+            url_for(
+                "timetable",
+                grade=request.form["grade"]
+            )
+        )
+
         selected_period = next(
             (p for p in periods if p["name"] == period_name),
             None
