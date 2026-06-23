@@ -1,8 +1,79 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Assign Pupils to Transport</h2>
+<style>
+.assign-hero{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+.assign-icon{
+    width:80px;
+    height:80px;
+    border-radius:20px;
+    background:#fff7ed;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+}
+.panel-box{
+    background:white;
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+.section-title{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+.assign-table{
+    width:100%;
+    border-collapse:collapse;
+}
+.assign-table th{
+    background:#f8fafc;
+    padding:12px;
+    text-align:left;
+    border-bottom:1px solid #e5e7eb;
+}
+.assign-table td{
+    padding:12px;
+    border-bottom:1px solid #f1f5f9;
+}
+.grade-badge{
+    background:#eef2ff;
+    color:#4338ca;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+}
+.delete-link{
+    color:#dc2626;
+    text-decoration:none;
+    font-weight:bold;
+}
+</style>
+
+<div class="assign-hero">
+    <div class="assign-icon">👦</div>
+
+    <div>
+        <h2>Assign Pupils to Transport</h2>
+        <p>Connect learners to buses, routes and pickup points.</p>
+    </div>
+</div>
+
+<div class="panel-box">
+    <div class="section-title">New Transport Assignment</div>
 
     <form method="post">
         <div class="two">
@@ -47,34 +118,51 @@
             </div>
         </div>
 
+        <br>
+
         <button class="btn green">Save Assignment</button>
         <a class="btn" href="{{ url_for('transport') }}">Back</a>
     </form>
 </div>
 
-<div class="panel">
-    <h3>Current Assignments</h3>
+<div class="panel-box">
+    <div class="section-title">Current Transport Assignments</div>
 
-    <table>
+    <table class="assign-table">
         <tr>
             <th>Pupil</th>
             <th>Grade</th>
             <th>Bus</th>
             <th>Route</th>
             <th>Pickup Point</th>
+            <th>Action</th>
         </tr>
 
         {% for a in assignments %}
         <tr>
             <td>{{ a.pupil.full_name if a.pupil else '' }}</td>
-            <td>{{ a.pupil.grade if a.pupil else '' }}</td>
+
+            <td>
+                <span class="grade-badge">
+                    {{ a.pupil.grade if a.pupil else '' }}
+                </span>
+            </td>
+
             <td>{{ a.bus.bus_name if a.bus else '' }}</td>
             <td>{{ a.route.route_name if a.route else '' }}</td>
             <td>{{ a.pickup_point }}</td>
+
+            <td>
+                <a class="delete-link"
+                   href="{{ url_for('delete_transport_assignment', assignment_id=a.id) }}"
+                   onclick="return confirm('Remove this transport assignment?')">
+                    Delete
+                </a>
+            </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="5">No pupils assigned yet.</td>
+            <td colspan="6">No pupils assigned yet.</td>
         </tr>
         {% endfor %}
     </table>
