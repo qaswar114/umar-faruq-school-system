@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.teacher-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:20px;
+}
+.teacher-wrapper{
+    overflow-x:auto;
+}
+.teacher-table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+.teacher-table th{
+    background:#0f766e;
+    color:white;
+    padding:10px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+.teacher-table td{
+    border:1px solid #ddd;
+    padding:8px;
+    vertical-align:top;
+    min-width:150px;
+    height:80px;
+}
+.time-col{
+    background:#f8fafc;
+    font-weight:bold;
+    text-align:center;
+    width:120px;
+}
+.lesson-box{
+    background:#eef6ff;
+    border-radius:8px;
+    padding:8px;
+}
+.lesson-subject{
+    font-weight:bold;
+}
+.lesson-grade{
+    font-size:12px;
+    color:#475569;
+}
+.lesson-room{
+    font-size:12px;
+    color:#64748b;
+}
+.empty-slot{
+    color:#94a3b8;
+    text-align:center;
+    padding-top:20px;
+}
+@media print{
+    .no-print, nav, header, .navbar, .sidebar, .topbar{
+        display:none !important;
+    }
+    .panel{
+        box-shadow:none !important;
+        border:none !important;
+    }
+}
+</style>
+
+<div class="panel no-print">
+    <h2>Teacher Timetable</h2>
+
+    <form method="get">
+        <label>Select Teacher</label>
+        <select name="teacher" onchange="this.form.submit()">
+            <option value="">-- Select Teacher --</option>
+
+            {% for t in teachers %}
+            <option value="{{ t.full_name }}"
+                {% if t.full_name == selected_teacher %}selected{% endif %}>
+                {{ t.full_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="panel">
+    <div class="teacher-header">
+        <div>
+            <h2>{{ settings.school_name }}</h2>
+            <h3>
+                {% if selected_teacher %}
+                    {{ selected_teacher }} Timetable
+                {% else %}
+                    Teacher Timetable
+                {% endif %}
+            </h3>
+        </div>
+
+        <div class="no-print">
+            <button onclick="window.print()" class="btn">Print Teacher Timetable</button>
+            <a href="{{ url_for('timetable_dashboard') }}" class="btn">Timetable Dashboard</a>
+        </div>
+    </div>
+
+    {% if selected_teacher %}
+
+    <div class="teacher-wrapper">
+        <table class="teacher-table">
+            <tr>
+                <th>Time</th>
+                {% for d in days %}
+                <th>{{ d }}</th>
+                {% endfor %}
+            </tr>
+
+            {% for p in periods %}
+            <tr>
+                <td class="time-col">
+                    {{ p.start }}<br>
+                    {{ p.end }}<br>
+                    <small>{{ p.name }}</small>
+                </td>
+
+                {% for d in days %}
+                <td>
+                    {% set lesson = timetable_grid.get((d, p.name)) %}
+
+                    {% if lesson %}
+                    <div class="lesson-box">
+                        <div class="lesson-subject">{{ lesson.subject_name }}</div>
+                        <div class="lesson-grade">{{ lesson.grade }}</div>
+                        <div class="lesson-room">{{ lesson.room }}</div>
+                    </div>
+                    {% else %}
+                    <div class="empty-slot">Free</div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    {% else %}
+    <p>Please select a teacher to view timetable.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
