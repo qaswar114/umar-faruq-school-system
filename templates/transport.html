@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.transport-hero{
+    background:white;
+    border-radius:18px;
+    padding:32px;
+    display:flex;
+    align-items:center;
+    gap:22px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+.transport-icon{
+    width:78px;
+    height:78px;
+    border-radius:22px;
+    background:#eaf2ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:40px;
+}
+.transport-hero h2{
+    margin:0;
+    font-size:32px;
+}
+.transport-hero p{
+    margin:8px 0 0;
+    color:#475569;
+}
+.transport-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+.transport-card{
+    background:white;
+    border-radius:16px;
+    padding:25px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+}
+.transport-card h3{
+    margin:0;
+    color:#475569;
+}
+.transport-card .num{
+    font-size:40px;
+    font-weight:bold;
+    margin-top:15px;
+}
+.quick-panel{
+    background:white;
+    border-radius:18px;
+    padding:28px;
+    margin-top:25px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+}
+.quick-links{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+}
+</style>
+
+<div class="transport-hero">
+    <div class="transport-icon">🚌</div>
+    <div>
+        <h2>Transport Management</h2>
+        <p>Manage school buses, transport routes and learner assignments.</p>
+    </div>
+</div>
+
+<div class="transport-grid">
+    <div class="transport-card">
+        <h3>Total Buses</h3>
+        <div class="num">{{ total_buses }}</div>
+    </div>
+
+    <div class="transport-card">
+        <h3>Total Routes</h3>
+        <div class="num">{{ total_routes }}</div>
+    </div>
+
+    <div class="transport-card">
+        <h3>Assigned Pupils</h3>
+        <div class="num">{{ assigned_pupils }}</div>
+    </div>
+
+    <div class="transport-card">
+        <h3>Unassigned Bus Pupils</h3>
+        <div class="num">{{ unassigned_pupils }}</div>
+    </div>
+</div>
+
+<div class="quick-panel">
+    <h3>Quick Actions</h3>
+
+    <div class="quick-links">
+        <a class="btn green" href="{{ url_for('transport_buses') }}">Manage Buses</a>
+        <a class="btn" href="{{ url_for('transport_routes') }}">Transport Routes</a>
+        <a class="btn" href="{{ url_for('assign_transport') }}">Assign Pupils</a>
+    </div>
+</div>
+
+{% endblock %}
