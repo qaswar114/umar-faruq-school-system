@@ -770,6 +770,50 @@ class Timetable(db.Model):
     created_by = db.Column(db.String(100), default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class SchoolBus(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+
+    bus_name = db.Column(db.String(100), nullable=False)
+    registration_no = db.Column(db.String(50), nullable=False)
+    capacity = db.Column(db.Integer, default=0)
+
+    driver_name = db.Column(db.String(150), default="")
+    driver_phone = db.Column(db.String(30), default="")
+
+    status = db.Column(db.String(20), default="Active")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class TransportRoute(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+
+    route_name = db.Column(db.String(150), nullable=False)
+    pickup_points = db.Column(db.Text, default="")
+    monthly_fee = db.Column(db.Float, default=0)
+
+    status = db.Column(db.String(20), default="Active")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class PupilTransport(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
+
+    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+    bus_id = db.Column(db.Integer, db.ForeignKey("school_bus.id"), nullable=True)
+    route_id = db.Column(db.Integer, db.ForeignKey("transport_route.id"), nullable=True)
+
+    pickup_point = db.Column(db.String(150), default="")
+    status = db.Column(db.String(20), default="Active")
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    pupil = db.relationship("Pupil")
+    bus = db.relationship("SchoolBus")
+    route = db.relationship("TransportRoute")
+
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
 
@@ -1139,6 +1183,14 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 
 def init_database():
     db.create_all()
+    
+    try:
+        SchoolBus.__table__.create(db.engine, checkfirst=True)
+        TransportRoute.__table__.create(db.engine, checkfirst=True)
+        PupilTransport.__table__.create(db.engine, checkfirst=True)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     try:
         Timetable.__table__.create(db.engine, checkfirst=True)
@@ -7096,6 +7148,51 @@ def reset_fee_structure_may2026():
 
     flash("Old fee structures cleared. You can now enter clean fees from May 2026.")
     return redirect(url_for("fees"))
+
+@app.route("/transport")
+def transport():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    total_buses = SchoolBus.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    total_routes = TransportRoute.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    assigned_pupils = PupilTransport.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    bus_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        uses_bus="Yes",
+        status="Active"
+    ).count()
+
+    unassigned_pupils = bus_pupils - assigned_pupils
+    if unassigned_pupils < 0:
+        unassigned_pupils = 0
+
+    return render_template(
+        "transport.html",
+        settings=get_settings(),
+        total_buses=total_buses,
+        total_routes=total_routes,
+        assigned_pupils=assigned_pupils,
+        unassigned_pupils=unassigned_pupils
+    )
 
 @app.route("/fix_whatsapp_table")
 def fix_whatsapp_table():
