@@ -6,10 +6,11 @@
 
     <style>
         *{box-sizing:border-box}
+
         body{
             margin:0;
             font-family:Arial, sans-serif;
-            background:#f4f7fb;
+            background:#f5f8fc;
             color:#0f172a;
         }
 
@@ -18,10 +19,10 @@
             left:0;
             top:0;
             bottom:0;
-            width:270px;
-            background:linear-gradient(180deg,#061b44,#052d66);
+            width:245px;
+            background:linear-gradient(180deg,#061b44,#052b61);
             color:white;
-            padding:22px 16px;
+            padding:18px 14px;
             overflow-y:auto;
             z-index:1000;
         }
@@ -29,42 +30,42 @@
         .brand{
             display:flex;
             align-items:center;
-            gap:12px;
-            margin-bottom:28px;
+            gap:10px;
+            margin-bottom:22px;
         }
 
         .brand img{
-            width:65px;
-            height:65px;
+            width:58px;
+            height:58px;
             border-radius:50%;
             background:white;
             object-fit:cover;
+            flex-shrink:0;
         }
 
         .brand h2{
-            font-size:16px;
             margin:0;
+            font-size:15px;
             line-height:1.2;
+            text-transform:uppercase;
         }
 
         .brand small{
             color:#dbeafe;
-        }
-
-        .nav-section{
-            margin-top:12px;
+            font-size:12px;
         }
 
         .nav a{
             display:flex;
             align-items:center;
-            gap:12px;
+            gap:10px;
             color:white;
             text-decoration:none;
-            padding:13px 14px;
-            border-radius:10px;
-            margin-bottom:6px;
+            padding:10px 12px;
+            border-radius:9px;
+            margin-bottom:4px;
             font-weight:600;
+            font-size:15px;
         }
 
         .nav a:hover,
@@ -74,43 +75,59 @@
 
         .nav-divider{
             border-top:1px solid rgba(255,255,255,.18);
-            margin:18px 0;
+            margin:12px 0;
         }
 
         .year-card{
-            margin-top:22px;
+            margin-top:16px;
             background:rgba(255,255,255,.08);
             border:1px solid rgba(255,255,255,.18);
-            border-radius:16px;
-            padding:18px;
+            border-radius:14px;
+            padding:14px;
+        }
+
+        .year-card small{
+            color:#dbeafe;
         }
 
         .year-card h3{
-            margin:0;
-            font-size:26px;
+            margin:5px 0 10px;
+            font-size:22px;
         }
 
         .main{
-            margin-left:270px;
+            margin-left:245px;
             min-height:100vh;
         }
 
         .topbar{
-            height:82px;
+            height:72px;
             background:white;
+            border-bottom:1px solid #e5e7eb;
             display:flex;
             align-items:center;
             justify-content:space-between;
-            padding:0 28px;
-            border-bottom:1px solid #e5e7eb;
+            padding:0 24px;
             position:sticky;
             top:0;
             z-index:500;
         }
 
+        .top-left{
+            display:flex;
+            align-items:center;
+            gap:18px;
+        }
+
+        .menu-icon{
+            font-size:24px;
+            color:#0f172a;
+        }
+
         .top-title h1{
             margin:0;
-            font-size:25px;
+            font-size:24px;
+            color:#07142f;
         }
 
         .top-title small{
@@ -120,67 +137,68 @@
         .top-user{
             display:flex;
             align-items:center;
-            gap:18px;
+            gap:14px;
         }
 
         .date-pill{
             background:#f8fafc;
             border:1px solid #e5e7eb;
-            padding:12px 16px;
+            padding:10px 14px;
             border-radius:12px;
             font-weight:bold;
+            white-space:nowrap;
         }
 
         .user-pill{
             display:flex;
             align-items:center;
-            gap:10px;
+            gap:9px;
             font-weight:bold;
         }
 
         .avatar{
-            width:45px;
-            height:45px;
+            width:42px;
+            height:42px;
             border-radius:50%;
             background:#dbeafe;
             display:flex;
             align-items:center;
             justify-content:center;
-            font-size:24px;
+            font-size:22px;
         }
 
         .content{
-            padding:22px;
+            padding:18px;
         }
 
         .panel{
             background:white;
-            padding:24px;
-            border-radius:16px;
-            box-shadow:0 8px 25px rgba(15,23,42,.08);
-            margin-bottom:20px;
+            padding:20px;
+            border-radius:14px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            margin-bottom:18px;
         }
 
         input,select,textarea{
             width:100%;
-            padding:12px;
+            padding:10px;
             border:1px solid #cbd5e1;
             border-radius:8px;
-            margin-bottom:12px;
+            margin-bottom:10px;
             font-size:15px;
         }
 
         label{
             font-weight:bold;
             display:block;
-            margin-bottom:6px;
+            margin-bottom:5px;
         }
 
         .btn,button{
             display:inline-block;
             background:#0b5ed7;
             color:white;
-            padding:11px 18px;
+            padding:10px 15px;
             border-radius:8px;
             text-decoration:none;
             border:none;
@@ -198,7 +216,7 @@
         }
 
         th,td{
-            padding:11px;
+            padding:10px;
             border-bottom:1px solid #e5e7eb;
             text-align:left;
         }
@@ -210,20 +228,20 @@
         .two{
             display:grid;
             grid-template-columns:1fr 1fr;
-            gap:18px;
+            gap:14px;
         }
 
         .three{
             display:grid;
             grid-template-columns:1fr 1fr 1fr;
-            gap:18px;
+            gap:14px;
         }
 
         .flash{
             background:#fff7d6;
-            padding:12px 16px;
+            padding:10px 14px;
             border-radius:10px;
-            margin-bottom:15px;
+            margin-bottom:12px;
         }
 
         @media(max-width:900px){
@@ -242,7 +260,11 @@
                 flex-direction:column;
                 align-items:flex-start;
                 gap:10px;
-                padding:18px;
+                padding:15px;
+            }
+
+            .top-user{
+                flex-wrap:wrap;
             }
 
             .two,.three{
@@ -252,15 +274,15 @@
 
         @media print{
             .sidebar,.topbar,.no-print{
-                display:none !important;
+                display:none!important;
             }
 
             .main{
-                margin-left:0 !important;
+                margin-left:0!important;
             }
 
             body{
-                background:white !important;
+                background:white!important;
             }
         }
     </style>
@@ -279,7 +301,6 @@
     </div>
 
     <div class="nav">
-
         <a class="active" href="/dashboard">🏠 Dashboard</a>
         <a href="/business_dashboard">🖥️ CEO Dashboard</a>
 
@@ -287,17 +308,11 @@
 
         <a href="/staff_dashboard">👥 Staff</a>
         <a href="/pupils">🎓 Admissions</a>
-
-        <a href="/subjects">📚 Subjects</a>
+        <a href="/subjects">📚 Academics</a>
         <a href="/timetable_dashboard">📅 Timetable</a>
-        <a href="/exams">📝 Exams</a>
-        <a href="/report_cards">📄 Report Cards</a>
-
         <a href="/attendance">✅ Attendance</a>
-
         <a href="/payments">💰 Finance</a>
         <a href="/defaulters_report">📊 Reports</a>
-
         <a href="/whatsapp_messages">💬 Communication</a>
         <a href="/settings">🎨 Branding</a>
 
@@ -306,7 +321,6 @@
         <a href="/transport">🚌 Transport</a>
         <a href="/change_password">🔐 Change Password</a>
         <a href="/logout">🚪 Logout</a>
-
     </div>
 
     <div class="year-card">
@@ -322,9 +336,13 @@
 <div class="main">
 
     <div class="topbar">
-        <div class="top-title">
-            <h1>CEO Smart Dashboard</h1>
-            <small>Welcome back, {{ session.get('username') }} ({{ session.get('role') }})</small>
+        <div class="top-left">
+            <div class="menu-icon">☰</div>
+
+            <div class="top-title">
+                <h1>CEO Smart Dashboard</h1>
+                <small>Welcome back, {{ session.get('username') }} ({{ session.get('role') }})</small>
+            </div>
         </div>
 
         <div class="top-user">
