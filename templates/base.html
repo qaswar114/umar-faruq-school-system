@@ -222,6 +222,7 @@ function updateMonths(termId, monthId){
 
     {% if session.role|lower == 'admin' %}
     <a href="{{ url_for('settings') }}">Branding</a>
+    <a href="{{ url_for('transport') }}">Transport</a>
     {% endif %}
 
     <a href="{{ url_for('change_password') }}">Change Password</a>
