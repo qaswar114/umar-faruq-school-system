@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Manage Buses</h2>
+
+    <form method="post">
+        <div class="three">
+            <div>
+                <label>Bus Name</label>
+                <input name="bus_name" required placeholder="Bus 1">
+            </div>
+
+            <div>
+                <label>Registration No</label>
+                <input name="registration_no" required placeholder="KDA 123A">
+            </div>
+
+            <div>
+                <label>Capacity</label>
+                <input name="capacity" type="number" placeholder="30">
+            </div>
+        </div>
+
+        <div class="two">
+            <div>
+                <label>Driver Name</label>
+                <input name="driver_name">
+            </div>
+
+            <div>
+                <label>Driver Phone</label>
+                <input name="driver_phone">
+            </div>
+        </div>
+
+        <button class="btn green">Add Bus</button>
+        <a class="btn" href="{{ url_for('transport') }}">Back</a>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>School Buses</h3>
+
+    <table>
+        <tr>
+            <th>Bus</th>
+            <th>Registration</th>
+            <th>Capacity</th>
+            <th>Driver</th>
+            <th>Phone</th>
+        </tr>
+
+        {% for b in buses %}
+        <tr>
+            <td>{{ b.bus_name }}</td>
+            <td>{{ b.registration_no }}</td>
+            <td>{{ b.capacity }}</td>
+            <td>{{ b.driver_name }}</td>
+            <td>{{ b.driver_phone }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No buses added yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
