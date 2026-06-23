@@ -7194,6 +7194,44 @@ def transport():
         unassigned_pupils=unassigned_pupils
     )
 
+@app.route("/transport_buses", methods=["GET", "POST"])
+def transport_buses():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        bus = SchoolBus(
+            school_id=school_id,
+            bus_name=request.form["bus_name"],
+            registration_no=request.form["registration_no"],
+            capacity=int(request.form.get("capacity") or 0),
+            driver_name=request.form.get("driver_name", ""),
+            driver_phone=request.form.get("driver_phone", "")
+        )
+
+        db.session.add(bus)
+        db.session.commit()
+
+        flash("Bus added successfully.")
+        return redirect(url_for("transport_buses"))
+
+    buses = SchoolBus.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(SchoolBus.bus_name).all()
+
+    return render_template(
+        "transport_buses.html",
+        settings=get_settings(),
+        buses=buses
+    )
+
 @app.route("/fix_whatsapp_table")
 def fix_whatsapp_table():
     if not login_required():
