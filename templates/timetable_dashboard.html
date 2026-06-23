@@ -2,77 +2,242 @@
 {% block content %}
 
 <style>
-.td-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:18px;
+.td-page{
+    padding:10px;
 }
-.td-card{
+
+.td-hero{
     background:white;
-    border-radius:14px;
-    padding:22px;
-    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+    border-radius:18px;
+    padding:32px;
+    display:flex;
+    align-items:center;
+    gap:25px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:28px;
 }
-.td-card h3{
+
+.td-hero-icon{
+    width:78px;
+    height:78px;
+    border-radius:22px;
+    background:#eaf2ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:40px;
+}
+
+.td-hero h2{
     margin:0;
-    color:#475569;
-    font-size:15px;
-}
-.td-card .num{
-    font-size:30px;
-    font-weight:bold;
-    margin-top:10px;
+    font-size:32px;
     color:#0f172a;
 }
-.quick-links{
+
+.td-hero p{
+    margin:8px 0 0;
+    color:#475569;
+    font-size:17px;
+}
+
+.td-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:22px;
+    margin-bottom:28px;
+}
+
+.td-card{
+    background:white;
+    border-radius:16px;
+    padding:26px;
+    min-height:170px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    border:1px solid #e5e7eb;
+}
+
+.td-card-icon{
+    width:64px;
+    height:64px;
+    border-radius:50%;
     display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    margin-bottom:18px;
+}
+
+.icon-blue{background:#eaf2ff;}
+.icon-green{background:#e8f8ee;}
+.icon-purple{background:#f1eaff;}
+.icon-orange{background:#fff1df;}
+.icon-red{background:#ffe8e8;}
+
+.td-card h3{
+    margin:0;
+    color:#0f172a;
+    font-size:18px;
+}
+
+.td-card .num{
+    margin-top:18px;
+    font-size:42px;
+    font-weight:bold;
+    line-height:1;
+}
+
+.num-blue{color:#0b5ed7;}
+.num-green{color:#059669;}
+.num-purple{color:#7c3aed;}
+.num-orange{color:#f97316;}
+.num-red{color:#dc2626;}
+
+.quick-panel{
+    background:white;
+    border-radius:18px;
+    padding:28px 32px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    border:1px solid #e5e7eb;
+}
+
+.quick-title{
+    display:flex;
+    align-items:center;
     gap:12px;
-    flex-wrap:wrap;
+    font-size:24px;
+    font-weight:bold;
+    color:#0f172a;
+    margin-bottom:18px;
+    border-bottom:1px solid #e5e7eb;
+    padding-bottom:18px;
+}
+
+.quick-links{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:18px;
+}
+
+.quick-card{
+    color:white;
+    text-decoration:none;
+    border-radius:12px;
+    padding:22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:21px;
+    font-weight:bold;
+    min-height:70px;
+}
+
+.quick-card span{
+    font-size:30px;
+}
+
+.q-green{background:linear-gradient(135deg,#16a34a,#047857);}
+.q-blue{background:linear-gradient(135deg,#2563eb,#0b5ed7);}
+.q-purple{background:linear-gradient(135deg,#7c3aed,#5b21b6);}
+.q-orange{background:linear-gradient(135deg,#f97316,#ea580c);}
+
+.tip-box{
+    margin-top:25px;
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    border-radius:14px;
+    padding:18px 22px;
+    color:#1e3a8a;
+    font-size:16px;
+}
+
+@media(max-width:700px){
+    .td-hero{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .td-hero h2{
+        font-size:26px;
+    }
 }
 </style>
 
-<div class="panel">
-    <h2>Timetable Dashboard</h2>
-    <p>Overview of class timetable coverage and planning status.</p>
-</div>
+<div class="td-page">
 
-<div class="td-grid">
-    <div class="td-card">
-        <h3>Total Slots</h3>
-        <div class="num">{{ total_slots }}</div>
+    <div class="td-hero">
+        <div class="td-hero-icon">📅</div>
+        <div>
+            <h2>Timetable Dashboard</h2>
+            <p>Overview of class timetable coverage and planning status.</p>
+        </div>
     </div>
 
-    <div class="td-card">
-        <h3>Lessons Created</h3>
-        <div class="num">{{ total_lessons }}</div>
+    <div class="td-grid">
+
+        <div class="td-card">
+            <div class="td-card-icon icon-blue">📅</div>
+            <h3>Total Slots</h3>
+            <div class="num num-blue">{{ total_slots }}</div>
+        </div>
+
+        <div class="td-card">
+            <div class="td-card-icon icon-green">📖</div>
+            <h3>Lessons Created</h3>
+            <div class="num num-green">{{ total_lessons }}</div>
+        </div>
+
+        <div class="td-card">
+            <div class="td-card-icon icon-purple">👥</div>
+            <h3>Classes With Timetable</h3>
+            <div class="num num-purple">{{ classes_with_timetable }}</div>
+        </div>
+
+        <div class="td-card">
+            <div class="td-card-icon icon-orange">👨‍🏫</div>
+            <h3>Teachers Assigned</h3>
+            <div class="num num-orange">{{ teachers_assigned }}</div>
+        </div>
+
+        <div class="td-card">
+            <div class="td-card-icon icon-red">🪑</div>
+            <h3>Empty Slots</h3>
+            <div class="num num-red">{{ empty_slots }}</div>
+        </div>
+
     </div>
 
-    <div class="td-card">
-        <h3>Classes With Timetable</h3>
-        <div class="num">{{ classes_with_timetable }}</div>
+    <div class="quick-panel">
+        <div class="quick-title">
+            ⚡ Quick Actions
+        </div>
+
+        <div class="quick-links">
+            <a class="quick-card q-green" href="{{ url_for('timetable') }}">
+                <div>Class Timetable</div>
+                <span>›</span>
+            </a>
+
+            <a class="quick-card q-blue" href="{{ url_for('master_timetable') }}">
+                <div>Master Timetable</div>
+                <span>›</span>
+            </a>
+
+            <a class="quick-card q-purple" href="{{ url_for('teacher_timetable') }}">
+                <div>Teacher Timetable</div>
+                <span>›</span>
+            </a>
+
+            <a class="quick-card q-orange" href="{{ url_for('auto_generate_timetable') }}">
+                <div>Auto Generator</div>
+                <span>›</span>
+            </a>
+        </div>
     </div>
 
-    <div class="td-card">
-        <h3>Teachers Assigned</h3>
-        <div class="num">{{ teachers_assigned }}</div>
+    <div class="tip-box">
+        💡 Tip: Use Auto Generator to quickly fill empty timetable slots. You can still edit the timetable manually after generation.
     </div>
 
-    <div class="td-card">
-        <h3>Empty Slots</h3>
-        <div class="num">{{ empty_slots }}</div>
-    </div>
-</div>
-
-<br>
-
-<div class="panel">
-    <h3>Quick Actions</h3>
-
-    <div class="quick-links">
-        <a class="btn green" href="{{ url_for('timetable') }}">Class Timetable</a>
-        <a class="btn" href="{{ url_for('master_timetable') }}">Master Timetable</a>
-        <a class="btn" href="{{ url_for('teacher_timetable') }}">Teacher Timetable</a>
-    </div>
 </div>
 
 {% endblock %}
