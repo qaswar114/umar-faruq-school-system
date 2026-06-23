@@ -2,122 +2,409 @@
 {% block content %}
 
 <style>
-.dash-wrap{padding:18px}
-.dash-hero,.dash-card,.dash-panel{background:#fff;border-radius:18px;box-shadow:0 8px 25px rgba(15,23,42,.08);border:1px solid #e5e7eb}
-.dash-hero{display:flex;justify-content:space-between;align-items:center;padding:24px;margin-bottom:20px}
-.dash-hero h1{margin:0;font-size:30px;color:#0f172a}
-.dash-hero p{margin:6px 0;color:#64748b}
-.top-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:18px}
-.dash-card{padding:18px}
-.card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:10px}
-.dash-card h3{margin:0;color:#334155;font-size:14px}
-.dash-card .value{font-size:24px;font-weight:800;margin-top:8px;color:#0f172a}
-.bg-green{background:#e8f8ee}.bg-blue{background:#eaf2ff}.bg-purple{background:#f1eaff}.bg-orange{background:#fff1df}.bg-red{background:#ffe8e8}
-.main-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
-.dash-panel{padding:20px;margin-bottom:18px}
-.dash-panel h2{font-size:20px;margin:0 0 15px;color:#0f172a}
-.finance-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:15px}
-.mini{background:#f8fafc;border-radius:14px;padding:14px}
-.mini b{font-size:13px;color:#64748b}
-.mini div{font-size:18px;font-weight:800;margin-top:5px}
-.chart-box{height:180px;border-radius:15px;background:linear-gradient(180deg,#eff6ff,#fff);display:flex;align-items:center;justify-content:center;color:#64748b}
-.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:12px}
-.quick{background:#f8fafc;border-radius:14px;padding:12px;text-align:center;text-decoration:none;color:#0f172a;font-weight:600}
-.quick span{display:block;font-size:25px;margin-bottom:5px}
-.info-list{display:grid;gap:10px}
-.info{background:#f8fafc;border-radius:14px;padding:13px;display:flex;justify-content:space-between}
-.notice{background:#fff7d6;border-radius:12px;padding:12px;margin-bottom:10px}
-.comm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.comm{background:#f8fafc;border-radius:14px;padding:13px}
-.comm b{font-size:12px;color:#2563eb}
-.comm div{font-size:22px;font-weight:800}
-@media(max-width:950px){.main-grid,.finance-mini{grid-template-columns:1fr}}
+.dash-wrap{
+    padding:0;
+}
+
+.kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:14px;
+    margin-bottom:16px;
+}
+
+.kpi-card{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 4px 14px rgba(15,23,42,.06);
+    display:flex;
+    gap:12px;
+    align-items:center;
+    min-height:92px;
+}
+
+.kpi-icon{
+    width:48px;
+    height:48px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    flex-shrink:0;
+}
+
+.kpi-title{
+    font-size:13px;
+    font-weight:700;
+    color:#0b5ed7;
+    margin-bottom:5px;
+}
+
+.kpi-value{
+    font-size:20px;
+    font-weight:800;
+    color:#07142f;
+    line-height:1.2;
+}
+
+.kpi-small{
+    font-size:12px;
+    color:#64748b;
+    margin-top:3px;
+}
+
+.bg-green{background:#e8f8ee;}
+.bg-blue{background:#eaf2ff;}
+.bg-purple{background:#f1eaff;}
+.bg-orange{background:#fff1df;}
+.bg-red{background:#ffe8e8;}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:1.25fr .95fr;
+    gap:16px;
+}
+
+.bottom-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:16px;
+    margin-top:16px;
+}
+
+.dash-panel{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 4px 14px rgba(15,23,42,.06);
+}
+
+.panel-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
+
+.panel-title h2{
+    margin:0;
+    font-size:18px;
+    color:#07142f;
+}
+
+.panel-link{
+    font-size:13px;
+    color:#0b5ed7;
+    text-decoration:none;
+    font-weight:700;
+}
+
+.finance-mini{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.finance-box{
+    background:#f8fafc;
+    border-radius:12px;
+    padding:12px;
+    border:1px solid #eef2f7;
+}
+
+.finance-box small{
+    display:block;
+    font-weight:700;
+    color:#64748b;
+    margin-bottom:5px;
+}
+
+.finance-box b{
+    font-size:16px;
+}
+
+.chart-box{
+    height:230px;
+    border-radius:14px;
+    background:
+        linear-gradient(to top, rgba(34,197,94,.10), rgba(255,255,255,.1)),
+        repeating-linear-gradient(to right,#eef2f7 0,#eef2f7 1px,transparent 1px,transparent 95px),
+        repeating-linear-gradient(to top,#eef2f7 0,#eef2f7 1px,transparent 1px,transparent 45px);
+    position:relative;
+    overflow:hidden;
+}
+
+.chart-line-green{
+    position:absolute;
+    left:45px;
+    right:35px;
+    top:55px;
+    height:120px;
+    border-bottom:4px solid #16a34a;
+    transform:skewY(-9deg);
+    opacity:.9;
+}
+
+.chart-line-red{
+    position:absolute;
+    left:45px;
+    right:35px;
+    top:95px;
+    height:95px;
+    border-bottom:4px solid #ef4444;
+    transform:skewY(-7deg);
+    opacity:.85;
+}
+
+.chart-label{
+    position:absolute;
+    bottom:12px;
+    left:0;
+    right:0;
+    text-align:center;
+    color:#64748b;
+    font-size:13px;
+}
+
+.student-list{
+    display:grid;
+    gap:9px;
+}
+
+.student-row{
+    display:flex;
+    justify-content:space-between;
+    background:#f8fafc;
+    border:1px solid #eef2f7;
+    border-radius:11px;
+    padding:11px 13px;
+    font-weight:700;
+}
+
+.quick-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+}
+
+.quick{
+    background:#f8fafc;
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:12px 8px;
+    text-align:center;
+    text-decoration:none;
+    color:#07142f;
+    font-weight:700;
+    font-size:13px;
+}
+
+.quick span{
+    display:block;
+    font-size:24px;
+    margin-bottom:5px;
+}
+
+.notice{
+    background:#fff7d6;
+    border-radius:11px;
+    padding:11px;
+    font-size:14px;
+    margin-bottom:10px;
+}
+
+.comm-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.comm{
+    background:#f8fafc;
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:12px;
+}
+
+.comm small{
+    color:#0b5ed7;
+    font-weight:800;
+}
+
+.comm b{
+    display:block;
+    font-size:20px;
+    margin-top:4px;
+}
+
+@media(max-width:1200px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .dashboard-grid,.bottom-grid{grid-template-columns:1fr;}
+}
+
+@media(max-width:700px){
+    .kpi-grid,.finance-mini,.quick-grid,.comm-grid{
+        grid-template-columns:1fr;
+    }
+}
 </style>
 
 <div class="dash-wrap">
 
-    <div class="dash-hero">
-        <div>
-            <h1>CEO Smart Dashboard</h1>
-            <p>Welcome back, {{ session.get('username') }} ({{ session.get('role') }})</p>
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-green">💰</div>
+            <div>
+                <div class="kpi-title">Today's Collection</div>
+                <div class="kpi-value">{{ today_collection }}</div>
+            </div>
         </div>
-        <div style="text-align:right">
-            <b>{{ settings.school_name }}</b><br>
-            <small>{{ settings.address }}</small>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-blue">📊</div>
+            <div>
+                <div class="kpi-title">This Month Collection</div>
+                <div class="kpi-value">{{ month_collection }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-purple">📄</div>
+            <div>
+                <div class="kpi-title">Outstanding Fees</div>
+                <div class="kpi-value">{{ outstanding }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-orange">👥</div>
+            <div>
+                <div class="kpi-title">Total Pupils</div>
+                <div class="kpi-value">{{ total_pupils }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-red">📌</div>
+            <div>
+                <div class="kpi-title">Attendance Today</div>
+                <div class="kpi-value">{{ present_today }} / {{ total_pupils }}</div>
+                <div class="kpi-small">{{ attendance_rate }}% Attendance</div>
+            </div>
         </div>
     </div>
 
-    <div class="top-cards">
-        <div class="dash-card"><div class="card-icon bg-green">💰</div><h3>Today's Collection</h3><div class="value">{{ today_collection }}</div></div>
-        <div class="dash-card"><div class="card-icon bg-blue">📈</div><h3>This Month Collection</h3><div class="value">{{ month_collection }}</div></div>
-        <div class="dash-card"><div class="card-icon bg-purple">📄</div><h3>Outstanding Fees</h3><div class="value">{{ outstanding }}</div></div>
-        <div class="dash-card"><div class="card-icon bg-orange">👥</div><h3>Total Pupils</h3><div class="value">{{ total_pupils }}</div></div>
-        <div class="dash-card"><div class="card-icon bg-red">📌</div><h3>Attendance Today</h3><div class="value">{{ present_today }} / {{ total_pupils }}</div><small>{{ attendance_rate }}% Attendance</small></div>
-    </div>
+    <div class="dashboard-grid">
 
-    <div class="main-grid">
-
-        <div>
-            <div class="dash-panel">
+        <div class="dash-panel">
+            <div class="panel-title">
                 <h2>📊 Finance Overview</h2>
-                <div class="finance-mini">
-                    <div class="mini"><b>Total Collected</b><div>{{ total_collected }}</div></div>
-                    <div class="mini"><b>Expenses This Month</b><div>{{ month_expenses }}</div></div>
-                    <div class="mini"><b>Net Income</b><div>{{ net_income }}</div></div>
-                </div>
-                <div class="chart-box">Finance summary chart area</div>
+                <a class="panel-link" href="/monthly_collections">This Month</a>
             </div>
 
-            <div class="dash-panel">
-                <h2>⚡ Quick Actions</h2>
-                <div class="quick-grid">
-                    <a class="quick" href="/pupils"><span>👨‍🎓</span>Register Pupil</a>
-                    <a class="quick" href="/payments"><span>💵</span>Collect Fees</a>
-                    <a class="quick" href="/statement"><span>📄</span>Statement</a>
-                    <a class="quick" href="/defaulters_report"><span>👥</span>Defaulters</a>
-                    <a class="quick" href="/expense_report"><span>📊</span>Expense</a>
-                    <a class="quick" href="/attendance"><span>📅</span>Attendance</a>
-                    <a class="quick" href="/transport"><span>🚌</span>Transport</a>
+            <div class="finance-mini">
+                <div class="finance-box">
+                    <small>Total Collected</small>
+                    <b style="color:#059669">{{ total_collected }}</b>
                 </div>
+
+                <div class="finance-box">
+                    <small>Expenses This Month</small>
+                    <b style="color:#dc2626">{{ month_expenses }}</b>
+                </div>
+
+                <div class="finance-box">
+                    <small>Net Income</small>
+                    <b style="color:#0b5ed7">{{ net_income }}</b>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <div class="chart-line-green"></div>
+                <div class="chart-line-red"></div>
+                <div class="chart-label">Collection / Expenses overview</div>
             </div>
         </div>
 
-        <div>
-            <div class="dash-panel">
+        <div class="dash-panel">
+            <div class="panel-title">
                 <h2>👥 Student Overview</h2>
-                <div class="info-list">
-                    <div class="info"><b>Active Pupils</b><span>{{ active_pupils }}</span></div>
-                    <div class="info"><b>Inactive Pupils</b><span>{{ inactive_pupils }}</span></div>
-                    <div class="info"><b>New Admissions</b><span>{{ new_admissions_month }}</span></div>
-                    <div class="info"><b>Bus Pupils</b><span>{{ bus_pupils }}</span></div>
-                    <div class="info"><b>Defaulters</b><span>{{ defaulters }}</span></div>
-                    <div class="info"><b>Receipts</b><span>{{ receipts }}</span></div>
-                </div>
+                <a class="panel-link" href="/pupils">View all pupils →</a>
             </div>
 
-            <div class="dash-panel">
-                <h2>📢 Recent Announcements</h2>
-                {% for a in recent_announcements %}
-                <div class="notice"><b>{{ a.title }}</b><br>{{ a.message[:90] }}...</div>
-                {% else %}
-                <div class="notice">No recent announcements.</div>
-                {% endfor %}
-            </div>
-
-            <div class="dash-panel">
-                <h2>💬 Communication Centre</h2>
-                <div class="comm-grid">
-                    <div class="comm"><b>SMS Balance</b><div>{{ sms_balance }}</div></div>
-                    <div class="comm"><b>Pending SMS</b><div>{{ pending_sms }}</div></div>
-                    <div class="comm"><b>Sent SMS</b><div>{{ sent_sms }}</div></div>
-                    <div class="comm"><b>Failed SMS</b><div>{{ failed_sms }}</div></div>
-                    <div class="comm"><b>Attendance Alerts</b><div>{{ pending_attendance_alerts }}</div></div>
-                    <div class="comm"><b>Payment Alerts</b><div>{{ pending_payment_alerts }}</div></div>
-                </div>
+            <div class="student-list">
+                <div class="student-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
+                <div class="student-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
+                <div class="student-row"><span>New Admissions This Month</span><span>{{ new_admissions_month }}</span></div>
+                <div class="student-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
+                <div class="student-row"><span>Defaulters</span><span>{{ defaulters }}</span></div>
+                <div class="student-row"><span>Receipts</span><span>{{ receipts }}</span></div>
             </div>
         </div>
 
     </div>
+
+    <div class="bottom-grid">
+
+        <div class="dash-panel">
+            <div class="panel-title">
+                <h2>⚡ Quick Actions</h2>
+            </div>
+
+            <div class="quick-grid">
+                <a class="quick" href="/pupils"><span>🎓</span>Register Pupil</a>
+                <a class="quick" href="/payments"><span>💵</span>Collect Fees</a>
+                <a class="quick" href="/statement"><span>📄</span>Statement</a>
+                <a class="quick" href="/defaulters_report"><span>👥</span>Defaulters</a>
+                <a class="quick" href="/expense_report"><span>📊</span>Expense Report</a>
+                <a class="quick" href="/attendance"><span>📅</span>Attendance</a>
+                <a class="quick" href="/transport"><span>🚌</span>Transport</a>
+            </div>
+        </div>
+
+        <div class="dash-panel">
+            <div class="panel-title">
+                <h2>📢 Recent Announcements</h2>
+                <a class="panel-link" href="/announcements">View all →</a>
+            </div>
+
+            {% for a in recent_announcements %}
+                <div class="notice">
+                    <b>{{ a.title }}</b><br>
+                    {{ a.message[:90] }}...
+                </div>
+            {% else %}
+                <div class="notice">No recent announcements.</div>
+            {% endfor %}
+        </div>
+
+        <div class="dash-panel">
+            <div class="panel-title">
+                <h2>💬 Communication Centre</h2>
+                <a class="panel-link" href="/whatsapp_messages">View all →</a>
+            </div>
+
+            <div class="comm-grid">
+                <div class="comm"><small>SMS Balance</small><b>{{ sms_balance }}</b></div>
+                <div class="comm"><small>Pending SMS</small><b>{{ pending_sms }}</b></div>
+                <div class="comm"><small>Sent SMS</small><b>{{ sent_sms }}</b></div>
+                <div class="comm"><small>Failed SMS</small><b>{{ failed_sms }}</b></div>
+                <div class="comm"><small>Attendance Alerts</small><b>{{ pending_attendance_alerts }}</b></div>
+                <div class="comm"><small>Payment Alerts</small><b>{{ pending_payment_alerts }}</b></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="text-align:center;color:#64748b;font-size:13px;margin-top:18px;">
+        © 2026 {{ settings.school_name }}. All rights reserved.
+    </div>
+
 </div>
 
 {% endblock %}
