@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.report-hero{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+
+.report-icon{
+    width:80px;
+    height:80px;
+    border-radius:20px;
+    background:#eef2ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+}
+
+.report-panel{
+    background:white;
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+
+.report-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.report-table th{
+    background:#f8fafc;
+    padding:12px;
+    text-align:left;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.report-table td{
+    padding:12px;
+    border-bottom:1px solid #f1f5f9;
+}
+
+.badge{
+    background:#ecfdf5;
+    color:#059669;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+}
+
+@media print{
+    .no-print, nav, header, .navbar, .sidebar, .topbar{
+        display:none !important;
+    }
+
+    .report-panel, .report-hero{
+        box-shadow:none !important;
+        border:none !important;
+    }
+}
+</style>
+
+<div class="report-hero">
+    <div class="report-icon">📋</div>
+    <div>
+        <h2>Transport Reports</h2>
+        <p>Print bus passenger lists and route transport reports.</p>
+    </div>
+</div>
+
+<div class="report-panel no-print">
+    <form method="get">
+        <div class="three">
+            <div>
+                <label>Filter by Bus</label>
+                <select name="bus_id">
+                    <option value="">All Buses</option>
+                    {% for b in buses %}
+                    <option value="{{ b.id }}" {% if selected_bus|string == b.id|string %}selected{% endif %}>
+                        {{ b.bus_name }} - {{ b.registration_no }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Filter by Route</label>
+                <select name="route_id">
+                    <option value="">All Routes</option>
+                    {% for r in routes %}
+                    <option value="{{ r.id }}" {% if selected_route|string == r.id|string %}selected{% endif %}>
+                        {{ r.route_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="padding-top:25px;">
+                <button class="btn green">Apply Filter</button>
+                <button type="button" onclick="window.print()" class="btn">Print</button>
+                <a href="{{ url_for('transport') }}" class="btn">Back</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="report-panel">
+    <div style="text-align:center;">
+        <h2>{{ settings.school_name }}</h2>
+        <h3>Transport Passenger Report</h3>
+        <p><b>Total Pupils:</b> {{ assignments|length }}</p>
+    </div>
+
+    <table class="report-table">
+        <tr>
+            <th>#</th>
+            <th>Pupil</th>
+            <th>Grade</th>
+            <th>Guardian Phone</th>
+            <th>Bus</th>
+            <th>Route</th>
+            <th>Pickup Point</th>
+        </tr>
+
+        {% for a in assignments %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ a.pupil.full_name if a.pupil else '' }}</td>
+            <td>
+                <span class="badge">{{ a.pupil.grade if a.pupil else '' }}</span>
+            </td>
+            <td>{{ a.pupil.guardian_phone if a.pupil else '' }}</td>
+            <td>{{ a.bus.bus_name if a.bus else '' }}</td>
+            <td>{{ a.route.route_name if a.route else '' }}</td>
+            <td>{{ a.pickup_point }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No transport assignments found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
