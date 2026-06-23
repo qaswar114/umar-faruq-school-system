@@ -7383,6 +7383,53 @@ def fix_whatsapp_table():
     flash("WhatsApp table created successfully.")
     return redirect(url_for("dashboard"))
 
+@app.route("/transport_reports")
+def transport_reports():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    selected_bus = request.args.get("bus_id", "")
+    selected_route = request.args.get("route_id", "")
+
+    query = PupilTransport.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    )
+
+    if selected_bus:
+        query = query.filter(PupilTransport.bus_id == int(selected_bus))
+
+    if selected_route:
+        query = query.filter(PupilTransport.route_id == int(selected_route))
+
+    assignments = query.all()
+
+    buses = SchoolBus.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(SchoolBus.bus_name).all()
+
+    routes = TransportRoute.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(TransportRoute.route_name).all()
+
+    return render_template(
+        "transport_reports.html",
+        settings=get_settings(),
+        assignments=assignments,
+        buses=buses,
+        routes=routes,
+        selected_bus=selected_bus,
+        selected_route=selected_route
+    )
+
 @app.route("/whatsapp_outbox")
 def whatsapp_outbox():
     if not login_required():
