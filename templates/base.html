@@ -22,7 +22,7 @@
             width:245px;
             background:linear-gradient(180deg,#061b44,#052b61);
             color:white;
-            padding:18px 14px;
+            padding:16px 13px;
             overflow-y:auto;
             z-index:1000;
         }
@@ -31,12 +31,12 @@
             display:flex;
             align-items:center;
             gap:10px;
-            margin-bottom:22px;
+            margin-bottom:18px;
         }
 
         .brand img{
-            width:58px;
-            height:58px;
+            width:55px;
+            height:55px;
             border-radius:50%;
             background:white;
             object-fit:cover;
@@ -45,7 +45,7 @@
 
         .brand h2{
             margin:0;
-            font-size:15px;
+            font-size:14px;
             line-height:1.2;
             text-transform:uppercase;
         }
@@ -55,44 +55,30 @@
             font-size:12px;
         }
 
+        .nav-label{
+            font-size:10.5px;
+            color:#93c5fd;
+            font-weight:bold;
+            letter-spacing:1px;
+            margin:13px 0 6px 8px;
+        }
+
         .nav a{
             display:flex;
             align-items:center;
-            gap:10px;
+            gap:9px;
             color:white;
             text-decoration:none;
-            padding:10px 12px;
+            padding:9px 11px;
             border-radius:9px;
-            margin-bottom:4px;
+            margin-bottom:3px;
             font-weight:600;
-            font-size:15px;
+            font-size:14px;
         }
 
         .nav a:hover,
         .nav a.active{
             background:#0b5ed7;
-        }
-
-        .nav-divider{
-            border-top:1px solid rgba(255,255,255,.18);
-            margin:12px 0;
-        }
-
-        .year-card{
-            margin-top:16px;
-            background:rgba(255,255,255,.08);
-            border:1px solid rgba(255,255,255,.18);
-            border-radius:14px;
-            padding:14px;
-        }
-
-        .year-card small{
-            color:#dbeafe;
-        }
-
-        .year-card h3{
-            margin:5px 0 10px;
-            font-size:22px;
         }
 
         .main{
@@ -101,13 +87,13 @@
         }
 
         .topbar{
-            height:72px;
+            height:70px;
             background:white;
             border-bottom:1px solid #e5e7eb;
             display:flex;
             align-items:center;
             justify-content:space-between;
-            padding:0 24px;
+            padding:0 22px;
             position:sticky;
             top:0;
             z-index:500;
@@ -116,17 +102,17 @@
         .top-left{
             display:flex;
             align-items:center;
-            gap:18px;
+            gap:15px;
         }
 
         .menu-icon{
-            font-size:24px;
+            font-size:22px;
             color:#0f172a;
         }
 
         .top-title h1{
             margin:0;
-            font-size:24px;
+            font-size:23px;
             color:#07142f;
         }
 
@@ -137,13 +123,13 @@
         .top-user{
             display:flex;
             align-items:center;
-            gap:14px;
+            gap:12px;
         }
 
         .date-pill{
             background:#f8fafc;
             border:1px solid #e5e7eb;
-            padding:10px 14px;
+            padding:9px 13px;
             border-radius:12px;
             font-weight:bold;
             white-space:nowrap;
@@ -152,23 +138,23 @@
         .user-pill{
             display:flex;
             align-items:center;
-            gap:9px;
+            gap:8px;
             font-weight:bold;
         }
 
         .avatar{
-            width:42px;
-            height:42px;
+            width:40px;
+            height:40px;
             border-radius:50%;
             background:#dbeafe;
             display:flex;
             align-items:center;
             justify-content:center;
-            font-size:22px;
+            font-size:21px;
         }
 
         .content{
-            padding:18px;
+            padding:16px;
         }
 
         .panel{
@@ -301,34 +287,42 @@
     </div>
 
     <div class="nav">
+
+        <div class="nav-label">OVERVIEW</div>
         <a class="active" href="/dashboard">🏠 Dashboard</a>
         <a href="/business_dashboard">🖥️ CEO Dashboard</a>
 
-        <div class="nav-divider"></div>
-
-        <a href="/staff_dashboard">👥 Staff</a>
+        <div class="nav-label">STUDENTS</div>
         <a href="/pupils">🎓 Admissions</a>
-        <a href="/subjects">📚 Academics</a>
-        <a href="/timetable_dashboard">📅 Timetable</a>
         <a href="/attendance">✅ Attendance</a>
-        <a href="/payments">💰 Finance</a>
-        <a href="/defaulters_report">📊 Reports</a>
-        <a href="/whatsapp_messages">💬 Communication</a>
-        <a href="/settings">🎨 Branding</a>
-
-        <div class="nav-divider"></div>
-
         <a href="/transport">🚌 Transport</a>
+
+        <div class="nav-label">ACADEMICS</div>
+        <a href="/subjects">📚 Subjects</a>
+        <a href="/timetable_dashboard">📅 Timetable</a>
+        <a href="/exams">📝 Exams</a>
+        <a href="/report_cards">📄 Report Cards</a>
+
+        <div class="nav-label">FINANCE</div>
+        <a href="/payments">💰 Payments</a>
+        <a href="/statement">📄 Statements</a>
+        <a href="/defaulters_report">📊 Defaulters</a>
+        <a href="/expenses">🧾 Expenses</a>
+
+        <div class="nav-label">HUMAN RESOURCE</div>
+        <a href="/staff_dashboard">👥 Staff Dashboard</a>
+        <a href="/payroll">💼 Payroll</a>
+
+        <div class="nav-label">COMMUNICATION</div>
+        <a href="/whatsapp_messages">💬 WhatsApp</a>
+        <a href="/sms_messages">📱 SMS</a>
+        <a href="/announcements">📢 Announcements</a>
+
+        <div class="nav-label">SETTINGS</div>
+        <a href="/settings">🎨 Branding</a>
         <a href="/change_password">🔐 Change Password</a>
         <a href="/logout">🚪 Logout</a>
-    </div>
 
-    <div class="year-card">
-        <small>Academic Year</small>
-        <h3>2026</h3>
-        <hr style="border-color:rgba(255,255,255,.2)">
-        <small>Current Term</small>
-        <h3>Term 2</h3>
     </div>
 
 </div>
@@ -346,7 +340,7 @@
         </div>
 
         <div class="top-user">
-            <div class="date-pill">📅 23 June 2026</div>
+            <div class="date-pill">📅 2026</div>
 
             <div class="user-pill">
                 <div class="avatar">👤</div>
