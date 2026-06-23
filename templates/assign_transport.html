@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Assign Pupils to Transport</h2>
+
+    <form method="post">
+        <div class="two">
+            <div>
+                <label>Pupil</label>
+                <select name="pupil_id" required>
+                    {% for p in pupils %}
+                    <option value="{{ p.id }}">
+                        {{ p.admission_no }} - {{ p.full_name }} ({{ p.grade }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Bus</label>
+                <select name="bus_id" required>
+                    {% for b in buses %}
+                    <option value="{{ b.id }}">
+                        {{ b.bus_name }} - {{ b.registration_no }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="two">
+            <div>
+                <label>Route</label>
+                <select name="route_id" required>
+                    {% for r in routes %}
+                    <option value="{{ r.id }}">
+                        {{ r.route_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Pickup Point</label>
+                <input name="pickup_point" placeholder="e.g. Mosque, Estate, Town">
+            </div>
+        </div>
+
+        <button class="btn green">Save Assignment</button>
+        <a class="btn" href="{{ url_for('transport') }}">Back</a>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Current Assignments</h3>
+
+    <table>
+        <tr>
+            <th>Pupil</th>
+            <th>Grade</th>
+            <th>Bus</th>
+            <th>Route</th>
+            <th>Pickup Point</th>
+        </tr>
+
+        {% for a in assignments %}
+        <tr>
+            <td>{{ a.pupil.full_name if a.pupil else '' }}</td>
+            <td>{{ a.pupil.grade if a.pupil else '' }}</td>
+            <td>{{ a.bus.bus_name if a.bus else '' }}</td>
+            <td>{{ a.route.route_name if a.route else '' }}</td>
+            <td>{{ a.pickup_point }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No pupils assigned yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
