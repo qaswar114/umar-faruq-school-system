@@ -3556,7 +3556,51 @@ def subjects():
         grades=GRADES,
         rows=rows
     )
+@app.route("/timetable_dashboard")
+def timetable_dashboard():
+    if not login_required():
+        return redirect(url_for("login"))
 
+    if not role_allowed("admin", "principal", "teacher", "registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+    periods = [
+        "Assembly", "Period 1", "Period 2", "Period 3", "Break",
+        "Period 4", "Period 5", "Lunch", "Period 6", "Period 7", "Games/Clubs"
+    ]
+
+    total_slots = len(GRADES) * len(days) * len(periods)
+
+    lessons = Timetable.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).all()
+
+    total_lessons = len(lessons)
+
+    classes_with_timetable = len(set([l.grade for l in lessons]))
+
+    teachers_assigned = len(set([
+        l.teacher_name for l in lessons if l.teacher_name
+    ]))
+
+    empty_slots = total_slots - total_lessons
+
+    return render_template(
+        "timetable_dashboard.html",
+        settings=get_settings(),
+        total_slots=total_slots,
+        total_lessons=total_lessons,
+        classes_with_timetable=classes_with_timetable,
+        teachers_assigned=teachers_assigned,
+        empty_slots=empty_slots
+    )
+    
 @app.route("/timetable", methods=["GET", "POST"])
 def timetable():
     if not login_required():
