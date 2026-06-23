@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Transport Routes</h2>
+
+    <form method="post">
+        <div class="three">
+            <div>
+                <label>Route Name</label>
+                <input name="route_name" required placeholder="Town Route">
+            </div>
+
+            <div>
+                <label>Monthly Fee</label>
+                <input name="monthly_fee" type="number" placeholder="2000">
+            </div>
+
+            <div>
+                <label>Pickup Points</label>
+                <input name="pickup_points" placeholder="CBD, Mosque, Estate">
+            </div>
+        </div>
+
+        <button class="btn green">Add Route</button>
+        <a class="btn" href="{{ url_for('transport') }}">Back</a>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Active Routes</h3>
+
+    <table>
+        <tr>
+            <th>Route</th>
+            <th>Pickup Points</th>
+            <th>Monthly Fee</th>
+        </tr>
+
+        {% for r in routes %}
+        <tr>
+            <td>{{ r.route_name }}</td>
+            <td>{{ r.pickup_points }}</td>
+            <td>{{ money(r.monthly_fee) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3">No routes added yet.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
