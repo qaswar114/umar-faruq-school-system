@@ -7269,6 +7269,85 @@ def transport_routes():
         money=money
     )
 
+@app.route("/assign_transport", methods=["GET", "POST"])
+def assign_transport():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        pupil_id = int(request.form["pupil_id"])
+        bus_id = int(request.form["bus_id"])
+        route_id = int(request.form["route_id"])
+
+        existing = PupilTransport.query.filter_by(
+            school_id=school_id,
+            pupil_id=pupil_id,
+            status="Active"
+        ).first()
+
+        if existing:
+            existing.bus_id = bus_id
+            existing.route_id = route_id
+            existing.pickup_point = request.form.get("pickup_point", "")
+        else:
+            assignment = PupilTransport(
+                school_id=school_id,
+                pupil_id=pupil_id,
+                bus_id=bus_id,
+                route_id=route_id,
+                pickup_point=request.form.get("pickup_point", "")
+            )
+            db.session.add(assignment)
+
+        pupil = Pupil.query.filter_by(
+            id=pupil_id,
+            school_id=school_id
+        ).first()
+
+        if pupil:
+            pupil.uses_bus = "Yes"
+
+        db.session.commit()
+
+        flash("Pupil transport assignment saved successfully.")
+        return redirect(url_for("assign_transport"))
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active",
+        uses_bus="Yes"
+    ).order_by(Pupil.grade, Pupil.full_name).all()
+
+    buses = SchoolBus.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(SchoolBus.bus_name).all()
+
+    routes = TransportRoute.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(TransportRoute.route_name).all()
+
+    assignments = PupilTransport.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).all()
+
+    return render_template(
+        "assign_transport.html",
+        settings=get_settings(),
+        pupils=pupils,
+        buses=buses,
+        routes=routes,
+        assignments=assignments
+    )
+    
 @app.route("/fix_whatsapp_table")
 def fix_whatsapp_table():
     if not login_required():
