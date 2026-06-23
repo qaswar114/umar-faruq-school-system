@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.td-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:18px;
+}
+.td-card{
+    background:white;
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+.td-card h3{
+    margin:0;
+    color:#475569;
+    font-size:15px;
+}
+.td-card .num{
+    font-size:30px;
+    font-weight:bold;
+    margin-top:10px;
+    color:#0f172a;
+}
+.quick-links{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+}
+</style>
+
+<div class="panel">
+    <h2>Timetable Dashboard</h2>
+    <p>Overview of class timetable coverage and planning status.</p>
+</div>
+
+<div class="td-grid">
+    <div class="td-card">
+        <h3>Total Slots</h3>
+        <div class="num">{{ total_slots }}</div>
+    </div>
+
+    <div class="td-card">
+        <h3>Lessons Created</h3>
+        <div class="num">{{ total_lessons }}</div>
+    </div>
+
+    <div class="td-card">
+        <h3>Classes With Timetable</h3>
+        <div class="num">{{ classes_with_timetable }}</div>
+    </div>
+
+    <div class="td-card">
+        <h3>Teachers Assigned</h3>
+        <div class="num">{{ teachers_assigned }}</div>
+    </div>
+
+    <div class="td-card">
+        <h3>Empty Slots</h3>
+        <div class="num">{{ empty_slots }}</div>
+    </div>
+</div>
+
+<br>
+
+<div class="panel">
+    <h3>Quick Actions</h3>
+
+    <div class="quick-links">
+        <a class="btn green" href="{{ url_for('timetable') }}">Class Timetable</a>
+        <a class="btn" href="{{ url_for('master_timetable') }}">Master Timetable</a>
+        <a class="btn" href="{{ url_for('teacher_timetable') }}">Teacher Timetable</a>
+    </div>
+</div>
+
+{% endblock %}
