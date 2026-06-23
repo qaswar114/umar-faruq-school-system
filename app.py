@@ -3600,6 +3600,35 @@ def timetable_dashboard():
         teachers_assigned=teachers_assigned,
         empty_slots=empty_slots
     )
+
+@app.route("/auto_generate_timetable", methods=["GET", "POST"])
+def auto_generate_timetable():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        grade = request.form["grade"]
+
+        flash(
+            f"Automatic timetable generator for {grade} "
+            f"is ready for implementation."
+        )
+
+        return redirect(
+            url_for("timetable", grade=grade)
+        )
+
+    return render_template(
+        "auto_generate_timetable.html",
+        settings=get_settings(),
+        grades=GRADES
+    )
     
 @app.route("/timetable", methods=["GET", "POST"])
 def timetable():
