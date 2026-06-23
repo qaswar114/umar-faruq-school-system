@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Automatic Timetable Generator</h2>
+
+    <p>
+        Select a class and let the system generate a timetable
+        automatically.
+    </p>
+
+    <form method="post">
+
+        <label>Grade</label>
+
+        <select name="grade">
+            {% for g in grades %}
+            <option value="{{ g }}">{{ g }}</option>
+            {% endfor %}
+        </select>
+
+        <br><br>
+
+        <button class="btn green">
+            Generate Timetable
+        </button>
+
+    </form>
+</div>
+
+{% endblock %}
