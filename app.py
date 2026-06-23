@@ -7232,6 +7232,43 @@ def transport_buses():
         buses=buses
     )
 
+@app.route("/transport_routes", methods=["GET", "POST"])
+def transport_routes():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        route = TransportRoute(
+            school_id=school_id,
+            route_name=request.form["route_name"],
+            pickup_points=request.form.get("pickup_points", ""),
+            monthly_fee=float(request.form.get("monthly_fee") or 0)
+        )
+
+        db.session.add(route)
+        db.session.commit()
+
+        flash("Transport route added successfully.")
+        return redirect(url_for("transport_routes"))
+
+    routes = TransportRoute.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(TransportRoute.route_name).all()
+
+    return render_template(
+        "transport_routes.html",
+        settings=get_settings(),
+        routes=routes,
+        money=money
+    )
+
 @app.route("/fix_whatsapp_table")
 def fix_whatsapp_table():
     if not login_required():
