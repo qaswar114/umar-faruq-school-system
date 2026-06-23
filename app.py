@@ -3782,6 +3782,64 @@ def master_timetable():
         sections=sections,
         timetable_grid=timetable_grid
     )
+
+@app.route("/teacher_timetable")
+def teacher_timetable():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+    periods = [
+        {"name": "Assembly", "start": "07:30", "end": "08:00"},
+        {"name": "Period 1", "start": "08:00", "end": "08:40"},
+        {"name": "Period 2", "start": "08:40", "end": "09:20"},
+        {"name": "Period 3", "start": "09:20", "end": "10:00"},
+        {"name": "Break", "start": "10:00", "end": "10:30"},
+        {"name": "Period 4", "start": "10:30", "end": "11:10"},
+        {"name": "Period 5", "start": "11:10", "end": "11:50"},
+        {"name": "Lunch", "start": "11:50", "end": "12:40"},
+        {"name": "Period 6", "start": "12:40", "end": "13:20"},
+        {"name": "Period 7", "start": "13:20", "end": "14:00"},
+        {"name": "Games/Clubs", "start": "14:00", "end": "15:00"},
+    ]
+
+    teachers = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(Staff.full_name).all()
+
+    selected_teacher = request.args.get("teacher", "")
+
+    rows = []
+
+    if selected_teacher:
+        rows = Timetable.query.filter_by(
+            school_id=school_id,
+            teacher_name=selected_teacher,
+            status="Active"
+        ).all()
+
+    timetable_grid = {}
+
+    for r in rows:
+        timetable_grid[(r.day, r.period)] = r
+
+    return render_template(
+        "teacher_timetable.html",
+        settings=get_settings(),
+        teachers=teachers,
+        selected_teacher=selected_teacher,
+        days=days,
+        periods=periods,
+        timetable_grid=timetable_grid
+    )
     
 @app.route("/delete_timetable/<int:timetable_id>")
 def delete_timetable(timetable_id):
