@@ -3585,32 +3585,29 @@ def timetable():
     ]
 
     if request.method == "POST":
+        grade = request.form["grade"]
+        day = request.form["day"]
         period_name = request.form["period"]
-
+        subject_name = request.form["subject_name"]
         teacher_name = request.form.get("teacher_name", "")
+        room = request.form.get("room", "")
 
-if teacher_name:
+        # Teacher clash detection
+        if teacher_name:
+            clash = Timetable.query.filter_by(
+                school_id=school_id,
+                day=day,
+                period=period_name,
+                teacher_name=teacher_name,
+                status="Active"
+            ).first()
 
-    clash = Timetable.query.filter_by(
-        school_id=school_id,
-        day=request.form["day"],
-        period=period_name,
-        teacher_name=teacher_name,
-        status="Active"
-    ).first()
-
-    if clash and clash.grade != request.form["grade"]:
-        flash(
-            f"{teacher_name} is already assigned to "
-            f"{clash.grade} during {period_name} on "
-            f"{request.form['day']}."
-        )
-        return redirect(
-            url_for(
-                "timetable",
-                grade=request.form["grade"]
-            )
-        )
+            if clash and clash.grade != grade:
+                flash(
+                    f"{teacher_name} is already assigned to "
+                    f"{clash.grade} during {period_name} on {day}."
+                )
+                return redirect(url_for("timetable", grade=grade))
 
         selected_period = next(
             (p for p in periods if p["name"] == period_name),
@@ -3622,29 +3619,29 @@ if teacher_name:
 
         existing = Timetable.query.filter_by(
             school_id=school_id,
-            grade=request.form["grade"],
-            day=request.form["day"],
+            grade=grade,
+            day=day,
             period=period_name,
             status="Active"
         ).first()
 
         if existing:
-            existing.subject_name = request.form["subject_name"]
-            existing.teacher_name = request.form.get("teacher_name", "")
-            existing.room = request.form.get("room", "")
+            existing.subject_name = subject_name
+            existing.teacher_name = teacher_name
+            existing.room = room
             existing.start_time = start_time
             existing.end_time = end_time
         else:
             row = Timetable(
                 school_id=school_id,
-                grade=request.form["grade"],
-                day=request.form["day"],
+                grade=grade,
+                day=day,
                 period=period_name,
                 start_time=start_time,
                 end_time=end_time,
-                subject_name=request.form["subject_name"],
-                teacher_name=request.form.get("teacher_name", ""),
-                room=request.form.get("room", ""),
+                subject_name=subject_name,
+                teacher_name=teacher_name,
+                room=room,
                 created_by=session.get("username", "")
             )
             db.session.add(row)
@@ -3652,7 +3649,7 @@ if teacher_name:
         db.session.commit()
 
         flash("Timetable updated successfully.")
-        return redirect(url_for("timetable", grade=request.form["grade"]))
+        return redirect(url_for("timetable", grade=grade))
 
     selected_grade = request.args.get("grade", GRADES[0])
 
@@ -3689,7 +3686,6 @@ if teacher_name:
         teachers=teachers,
         selected_grade=selected_grade
     )
-
 @app.route("/delete_timetable/<int:timetable_id>")
 def delete_timetable(timetable_id):
     if not login_required():
