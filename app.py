@@ -7347,6 +7347,27 @@ def assign_transport():
         routes=routes,
         assignments=assignments
     )
+
+@app.route("/delete_transport_assignment/<int:assignment_id>")
+def delete_transport_assignment(assignment_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    assignment = PupilTransport.query.filter_by(
+        id=assignment_id,
+        school_id=current_school_id()
+    ).first_or_404()
+
+    assignment.status = "Deleted"
+    db.session.commit()
+
+    flash("Transport assignment removed successfully.")
+    return redirect(url_for("assign_transport"))
+    
     
 @app.route("/fix_whatsapp_table")
 def fix_whatsapp_table():
