@@ -3665,6 +3665,29 @@ def timetable():
         selected_grade=selected_grade
     )
 
+@app.route("/delete_timetable/<int:timetable_id>")
+def delete_timetable(timetable_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    row = Timetable.query.filter_by(
+        id=timetable_id,
+        school_id=current_school_id()
+    ).first_or_404()
+
+    grade = row.grade
+    row.status = "Deleted"
+
+    db.session.commit()
+
+    flash("Timetable lesson deleted successfully.")
+    return redirect(url_for("timetable", grade=grade))
+    
+
 @app.route("/edit_subject/<int:subject_id>", methods=["GET", "POST"])
 def edit_subject(subject_id):
     if not login_required():
