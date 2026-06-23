@@ -1,10 +1,109 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Manage Buses</h2>
+<style>
+.bus-hero{
+    background:white;
+    border-radius:18px;
+    padding:30px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+
+.bus-icon{
+    width:80px;
+    height:80px;
+    border-radius:20px;
+    background:#eaf2ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+}
+
+.bus-hero h2{
+    margin:0;
+    color:#0f172a;
+}
+
+.bus-hero p{
+    margin-top:8px;
+    color:#64748b;
+}
+
+.form-panel,
+.table-panel{
+    background:white;
+    border-radius:18px;
+    padding:28px;
+    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    margin-bottom:25px;
+}
+
+.form-title{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:20px;
+    color:#0f172a;
+}
+
+.action-delete{
+    color:#dc2626;
+    text-decoration:none;
+    font-weight:bold;
+}
+
+.action-delete:hover{
+    text-decoration:underline;
+}
+
+.bus-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.bus-table th{
+    background:#f8fafc;
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+}
+
+.bus-table td{
+    padding:12px;
+    border-bottom:1px solid #f1f5f9;
+}
+
+.capacity-badge{
+    background:#ecfdf5;
+    color:#059669;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+}
+</style>
+
+<div class="bus-hero">
+    <div class="bus-icon">🚌</div>
+
+    <div>
+        <h2>School Buses</h2>
+        <p>Manage buses, drivers and transport capacity.</p>
+    </div>
+</div>
+
+<div class="form-panel">
+
+    <div class="form-title">
+        Add New Bus
+    </div>
 
     <form method="post">
+
         <div class="three">
             <div>
                 <label>Bus Name</label>
@@ -12,7 +111,7 @@
             </div>
 
             <div>
-                <label>Registration No</label>
+                <label>Registration Number</label>
                 <input name="registration_no" required placeholder="KDA 123A">
             </div>
 
@@ -34,37 +133,76 @@
             </div>
         </div>
 
-        <button class="btn green">Add Bus</button>
-        <a class="btn" href="{{ url_for('transport') }}">Back</a>
+        <br>
+
+        <button class="btn green">
+            Save Bus
+        </button>
+
+        <a class="btn" href="{{ url_for('transport') }}">
+            Back
+        </a>
+
     </form>
+
 </div>
 
-<div class="panel">
-    <h3>School Buses</h3>
+<div class="table-panel">
 
-    <table>
+    <div class="form-title">
+        Registered Buses
+    </div>
+
+    <table class="bus-table">
+
         <tr>
-            <th>Bus</th>
+            <th>Bus Name</th>
             <th>Registration</th>
             <th>Capacity</th>
             <th>Driver</th>
             <th>Phone</th>
+            <th>Action</th>
         </tr>
 
         {% for b in buses %}
         <tr>
+
             <td>{{ b.bus_name }}</td>
+
             <td>{{ b.registration_no }}</td>
-            <td>{{ b.capacity }}</td>
+
+            <td>
+                <span class="capacity-badge">
+                    {{ b.capacity }} Seats
+                </span>
+            </td>
+
             <td>{{ b.driver_name }}</td>
+
             <td>{{ b.driver_phone }}</td>
+
+            <td>
+                <a class="action-delete"
+                   href="{{ url_for('delete_bus', bus_id=b.id) }}"
+                   onclick="return confirm('Delete this bus?')">
+                    Delete
+                </a>
+            </td>
+
         </tr>
+
         {% else %}
+
         <tr>
-            <td colspan="5">No buses added yet.</td>
+            <td colspan="6">
+                No buses registered yet.
+            </td>
         </tr>
+
         {% endfor %}
+
     </table>
+
 </div>
 
 {% endblock %}
