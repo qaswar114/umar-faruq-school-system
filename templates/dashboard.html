@@ -1,136 +1,239 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h1>CEO Smart Dashboard</h1>
+<style>
+.dash-page{
+    padding:10px;
+}
+.hero{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:white;
+    border-radius:22px;
+    padding:24px 28px;
+    box-shadow:0 10px 30px rgba(15,23,42,.08);
+    margin-bottom:20px;
+}
+.hero h1{margin:0;font-size:30px;color:#0f172a}
+.hero p{margin:6px 0 0;color:#64748b}
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:16px;
+    margin-bottom:20px;
+}
+.card{
+    background:white;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 8px 25px rgba(15,23,42,.08);
+    border:1px solid #e5e7eb;
+}
+.card .icon{
+    width:48px;height:48px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;margin-bottom:12px;
+}
+.card h3{margin:0;color:#475569;font-size:14px}
+.card .num{font-size:25px;font-weight:800;margin-top:8px;color:#0f172a}
+.blue{background:#eaf2ff}.green{background:#e8f8ee}.purple{background:#f1eaff}.orange{background:#fff1df}.red{background:#ffe8e8}
+.layout{
+    display:grid;
+    grid-template-columns:1.2fr .8fr;
+    gap:18px;
+}
+.panel-modern{
+    background:white;
+    border-radius:20px;
+    padding:22px;
+    box-shadow:0 8px 25px rgba(15,23,42,.08);
+}
+.panel-modern h2{margin:0 0 16px;color:#0f172a;font-size:20px}
+.finance-row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:20px;
+}
+.mini{
+    background:#f8fafc;
+    border-radius:14px;
+    padding:14px;
+}
+.mini b{display:block;font-size:13px;color:#64748b}
+.mini span{font-size:18px;font-weight:800;color:#0f172a}
+.quick-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(90px,1fr));
+    gap:12px;
+}
+.quick{
+    text-align:center;
+    text-decoration:none;
+    color:#0f172a;
+    background:#f8fafc;
+    border-radius:16px;
+    padding:14px 8px;
+}
+.quick div{font-size:26px;margin-bottom:6px}
+.comm-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+.comm{
+    background:#f8fafc;
+    border-radius:14px;
+    padding:14px;
+}
+.comm b{display:block;color:#2563eb;font-size:13px}
+.comm span{font-size:22px;font-weight:800}
+.notice{
+    background:#fff7d6;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:10px;
+}
+@media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .finance-row{grid-template-columns:1fr}
+}
+</style>
 
-    {% if session.get("school_name") %}
-    <div class="notice">
-        <b>Current School:</b> {{ session.get("school_name") }}
+<div class="dash-page">
+
+    <div class="hero">
+        <div>
+            <h1>CEO Smart Dashboard</h1>
+            <p>Welcome back, {{ session.get('username') }} ({{ session.get('role') }})</p>
+        </div>
+        <div>
+            <b>{{ settings.school_name }}</b><br>
+            <small>{{ settings.address }}</small>
+        </div>
     </div>
-    {% endif %}
 
-    <h3>Finance Overview</h3>
-    <div class="dashboard-grid">
-        <div class="card"><h3>Today's Collection</h3><div class="number">{{ today_collection }}</div></div>
-        <div class="card"><h3>This Month</h3><div class="number">{{ month_collection }}</div></div>
-        <div class="card"><h3>Expenses This Month</h3><div class="number">{{ month_expenses }}</div></div>
-        <div class="card"><h3>Net Income</h3><div class="number">{{ net_income }}</div></div>
-        <div class="card"><h3>Total Collected</h3><div class="number">{{ total_collected }}</div></div>
-        <div class="card"><h3>Outstanding Fees</h3><div class="number">{{ outstanding }}</div></div>
-        <div class="card"><h3>Defaulters</h3><div class="number">{{ defaulters }}</div></div>
-        <div class="card"><h3>Receipts</h3><div class="number">{{ receipts }}</div></div>
+    <div class="cards">
+        <div class="card">
+            <div class="icon green">💰</div>
+            <h3>Today's Collection</h3>
+            <div class="num">{{ today_collection }}</div>
+        </div>
+
+        <div class="card">
+            <div class="icon blue">📈</div>
+            <h3>This Month</h3>
+            <div class="num">{{ month_collection }}</div>
+        </div>
+
+        <div class="card">
+            <div class="icon purple">📄</div>
+            <h3>Outstanding Fees</h3>
+            <div class="num">{{ outstanding }}</div>
+        </div>
+
+        <div class="card">
+            <div class="icon orange">👥</div>
+            <h3>Total Pupils</h3>
+            <div class="num">{{ total_pupils }}</div>
+        </div>
+
+        <div class="card">
+            <div class="icon red">📌</div>
+            <h3>Attendance Today</h3>
+            <div class="num">{{ present_today }} / {{ total_pupils }}</div>
+            <small>{{ attendance_rate }}% Attendance</small>
+        </div>
     </div>
 
-    <h3>Student Overview</h3>
-    <div class="dashboard-grid">
-        <div class="card"><h3>Total Pupils</h3><div class="number">{{ total_pupils }}</div></div>
-        <div class="card"><h3>Active Pupils</h3><div class="number">{{ active_pupils }}</div></div>
-        <div class="card"><h3>Inactive Pupils</h3><div class="number">{{ inactive_pupils }}</div></div>
-        <div class="card"><h3>New Admissions</h3><div class="number">{{ new_admissions_month }}</div></div>
-        <div class="card"><h3>Bus Pupils</h3><div class="number">{{ bus_pupils }}</div></div>
+    <div class="layout">
+
+        <div>
+            <div class="panel-modern">
+                <h2>📊 Finance Overview</h2>
+
+                <div class="finance-row">
+                    <div class="mini">
+                        <b>Total Collected</b>
+                        <span>{{ total_collected }}</span>
+                    </div>
+
+                    <div class="mini">
+                        <b>Expenses This Month</b>
+                        <span>{{ month_expenses }}</span>
+                    </div>
+
+                    <div class="mini">
+                        <b>Net Income</b>
+                        <span>{{ net_income }}</span>
+                    </div>
+                </div>
+
+                <div style="height:190px;background:linear-gradient(180deg,#eff6ff,#fff);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#64748b;">
+                    Finance chart area
+                </div>
+            </div>
+
+            <br>
+
+            <div class="panel-modern">
+                <h2>⚡ Quick Actions</h2>
+
+                <div class="quick-grid">
+                    <a class="quick" href="{{ url_for('pupils') }}"><div>👨‍🎓</div>Register Pupil</a>
+                    <a class="quick" href="{{ url_for('payments') }}"><div>💵</div>Collect Fees</a>
+                    <a class="quick" href="{{ url_for('statement') }}"><div>📄</div>Statement</a>
+                    <a class="quick" href="{{ url_for('defaulters') }}"><div>👥</div>Defaulters</a>
+                    <a class="quick" href="{{ url_for('expense_report') }}"><div>📊</div>Expense</a>
+                    <a class="quick" href="{{ url_for('attendance') }}"><div>📅</div>Attendance</a>
+                    <a class="quick" href="{{ url_for('transport') }}"><div>🚌</div>Transport</a>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="panel-modern">
+                <h2>👥 Student Overview</h2>
+
+                <div class="mini"><b>Active Pupils</b><span>{{ active_pupils }}</span></div><br>
+                <div class="mini"><b>Inactive Pupils</b><span>{{ inactive_pupils }}</span></div><br>
+                <div class="mini"><b>New Admissions</b><span>{{ new_admissions_month }}</span></div><br>
+                <div class="mini"><b>Bus Pupils</b><span>{{ bus_pupils }}</span></div>
+            </div>
+
+            <br>
+
+            <div class="panel-modern">
+                <h2>📢 Recent Announcements</h2>
+
+                {% for a in recent_announcements %}
+                <div class="notice">
+                    <b>{{ a.title }}</b><br>
+                    {{ a.message[:80] }}...
+                </div>
+                {% else %}
+                <div class="notice">No recent announcements.</div>
+                {% endfor %}
+            </div>
+
+            <br>
+
+            <div class="panel-modern">
+                <h2>💬 Communication Centre</h2>
+
+                <div class="comm-grid">
+                    <div class="comm"><b>SMS Balance</b><span>{{ sms_balance }}</span></div>
+                    <div class="comm"><b>Pending SMS</b><span>{{ pending_sms }}</span></div>
+                    <div class="comm"><b>Sent SMS</b><span>{{ sent_sms }}</span></div>
+                    <div class="comm"><b>Failed SMS</b><span>{{ failed_sms }}</span></div>
+                    <div class="comm"><b>Attendance Alerts</b><span>{{ pending_attendance_alerts }}</span></div>
+                    <div class="comm"><b>Payment Alerts</b><span>{{ pending_payment_alerts }}</span></div>
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <h3>Attendance Today</h3>
-    <div class="dashboard-grid">
-        <div class="card"><h3>Present</h3><div class="number">{{ present_today }}</div></div>
-        <div class="card"><h3>Absent</h3><div class="number">{{ absent_today }}</div></div>
-        <div class="card"><h3>Late</h3><div class="number">{{ late_today }}</div></div>
-        <div class="card"><h3>Attendance Rate</h3><div class="number">{{ attendance_rate }}%</div></div>
-    </div>
-
-    <h3>Communication Centre</h3>
-    <div class="dashboard-grid">
-        <div class="card"><h3>SMS Balance</h3><div class="number">{{ sms_balance }}</div></div>
-        <div class="card"><h3>Pending SMS</h3><div class="number">{{ pending_sms }}</div></div>
-        <div class="card"><h3>Sent SMS</h3><div class="number">{{ sent_sms }}</div></div>
-        <div class="card"><h3>Failed SMS</h3><div class="number">{{ failed_sms }}</div></div>
-        <div class="card"><h3>Attendance Alerts</h3><div class="number">{{ pending_attendance_alerts }}</div></div>
-        <div class="card"><h3>Payment Alerts</h3><div class="number">{{ pending_payment_alerts }}</div></div>
-    </div>
-
-    <h3>Staff & Administration</h3>
-    <div class="dashboard-grid">
-        <div class="card"><h3>Teachers</h3><div class="number">{{ total_teachers }}</div></div>
-        <div class="card"><h3>Total Staff</h3><div class="number">{{ total_staff }}</div></div>
-    </div>
-
-    <br>
-
-    <div class="action-row">
-        {% if session.role|lower in ['admin', 'registrar'] %}
-        <a class="btn" href="{{ url_for('pupils') }}">Register Pupil</a>
-        {% endif %}
-
-        {% if session.role|lower in ['admin', 'bursar'] %}
-        <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
-        <a class="btn" href="{{ url_for('statements') }}">Parent Statement</a>
-        <a class="btn" href="{{ url_for('defaulters_report') }}">Defaulters Report</a>
-        <a class="btn" href="{{ url_for('expense_report') }}">Expense Report</a>
-        {% endif %}
-
-        {% if session.role|lower in ['admin', 'teacher', 'receptionist', 'bursar'] %}
-        <a class="btn" href="{{ url_for('sms_messages') }}">Communication Centre</a>
-        {% endif %}
-
-        {% if session.role|lower in ['admin', 'registrar', 'teacher'] %}
-        <a class="btn" href="{{ url_for('attendance') }}">Attendance</a>
-        {% endif %}
-    </div>
-
-    <br><br>
-
-    <h3>Upcoming / Active Exams</h3>
-
-    {% if upcoming_exams %}
-    <table>
-        <tr>
-            <th>#</th>
-            <th>Exam</th>
-            <th>Grade</th>
-            <th>Term</th>
-            <th>Year</th>
-        </tr>
-
-        {% for exam in upcoming_exams %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ exam.exam_name }}</td>
-            <td>{{ exam.grade }}</td>
-            <td>{{ exam.term }}</td>
-            <td>{{ exam.academic_year }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}
-    <div class="notice">No active exams set.</div>
-    {% endif %}
-
-    <br>
-
-    <h3>Recent Announcements</h3>
-
-    {% if recent_announcements %}
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Title</th>
-            <th>Audience</th>
-            <th>Created By</th>
-        </tr>
-
-        {% for a in recent_announcements %}
-        <tr>
-            <td>{{ a.created_at.strftime("%d-%m-%Y") if a.created_at else "-" }}</td>
-            <td>{{ a.title }}</td>
-            <td>{{ a.audience }}</td>
-            <td>{{ a.created_by }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}
-    <div class="notice">No recent announcements.</div>
-    {% endif %}
 
 </div>
 
