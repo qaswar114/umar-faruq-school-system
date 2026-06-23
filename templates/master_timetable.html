@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.master-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:20px;
+}
+.section-title{
+    background:#0f766e;
+    color:white;
+    padding:10px 14px;
+    border-radius:8px;
+    margin-top:25px;
+}
+.master-wrapper{
+    overflow-x:auto;
+    margin-bottom:25px;
+}
+.master-table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    font-size:12px;
+}
+.master-table th{
+    background:#f1f5f9;
+    border:1px solid #d1d5db;
+    padding:8px;
+    text-align:center;
+}
+.master-table td{
+    border:1px solid #d1d5db;
+    padding:6px;
+    vertical-align:top;
+    min-width:130px;
+    height:70px;
+}
+.grade-col{
+    background:#f8fafc;
+    font-weight:bold;
+    width:90px;
+    text-align:center;
+}
+.lesson{
+    background:#eef6ff;
+    padding:6px;
+    border-radius:6px;
+}
+.subject{
+    font-weight:bold;
+}
+.small{
+    font-size:11px;
+    color:#475569;
+}
+.empty{
+    color:#94a3b8;
+    text-align:center;
+    padding-top:20px;
+}
+@media print{
+    .no-print, nav, header, .navbar, .sidebar, .topbar{
+        display:none !important;
+    }
+    .panel{
+        box-shadow:none !important;
+        border:none !important;
+    }
+    .master-table{
+        font-size:10px;
+    }
+    .master-table td{
+        height:55px;
+    }
+}
+</style>
+
+<div class="panel">
+    <div class="master-header">
+        <div>
+            <h2>{{ settings.school_name }}</h2>
+            <h3>Master School Timetable</h3>
+        </div>
+
+        <div class="no-print">
+            <button onclick="window.print()" class="btn">Print Master Timetable</button>
+            <a href="{{ url_for('timetable') }}" class="btn">Class Timetable</a>
+        </div>
+    </div>
+
+    {% for section_name, grades in sections.items() %}
+
+    <h3 class="section-title">{{ section_name }}</h3>
+
+    {% for p in periods %}
+
+    <h4>{{ p.name }} — {{ p.start }} to {{ p.end }}</h4>
+
+    <div class="master-wrapper">
+        <table class="master-table">
+            <tr>
+                <th>Grade</th>
+                {% for d in days %}
+                <th>{{ d }}</th>
+                {% endfor %}
+            </tr>
+
+            {% for g in grades %}
+            <tr>
+                <td class="grade-col">{{ g }}</td>
+
+                {% for d in days %}
+                <td>
+                    {% set lesson = timetable_grid.get((g, d, p.name)) %}
+
+                    {% if lesson %}
+                    <div class="lesson">
+                        <div class="subject">{{ lesson.subject_name }}</div>
+                        <div class="small">{{ lesson.teacher_name }}</div>
+                        <div class="small">{{ lesson.room }}</div>
+                    </div>
+                    {% else %}
+                    <div class="empty">Empty</div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    {% endfor %}
+
+    {% endfor %}
+</div>
+
+{% endblock %}
