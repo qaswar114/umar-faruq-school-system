@@ -1,243 +1,359 @@
 <!doctype html>
 <html>
 <head>
-<title>{{ settings.school_name }}</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ settings.school_name if settings else "School System" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-body{font-family:Arial;margin:0;background:#f3f6fb;color:#1f2937}
-.header{background:#0b5ed7;color:white;padding:14px 22px}
-.brand{display:flex;align-items:center;gap:14px}
-.logo-small{width:70px;height:70px;border-radius:50%}
-.nav{margin-top:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.nav a{color:white;text-decoration:none;font-weight:bold}
-.container{padding:28px}
-.panel{background:white;padding:24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.08);max-width:1000px;margin:auto}
-.panel img{max-width:110px;height:auto;display:block;margin:0 auto 20px}
-input,select,textarea{width:100%;padding:12px;margin:8px 0 18px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;box-sizing:border-box}
-label{font-weight:bold;display:block}
-button,.btn{background:#0b5ed7;color:white;border:none;padding:12px 18px;border-radius:8px;font-size:16px;text-decoration:none;display:inline-block;cursor:pointer}
-.green{background:#198754}
-.red{background:#dc3545}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-.notice{background:#fff3cd;padding:12px;border-radius:8px;margin-bottom:15px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:12px;border-bottom:1px solid #ddd;text-align:left}
-.dropdown{display:inline-block;position:relative}
-.dropdown-content{display:none;position:absolute;background:white;min-width:220px;box-shadow:0 4px 8px rgba(0,0,0,0.2);z-index:9999}
-.dropdown-content a{display:block;padding:10px;color:black!important;text-decoration:none}
-.dropdown:hover .dropdown-content{display:block!important}
+    <style>
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:#f4f7fb;
+            color:#0f172a;
+        }
 
-.dashboard-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:18px;
-    margin-top:25px;
-}
-.card{
-    background:#eef5ff;
-    border-left:6px solid #0b5ed7;
-    border-radius:14px;
-    padding:25px;
-}
-.card h3{margin:0 0 25px;font-size:20px}
-.card .number{font-size:32px;font-weight:bold;white-space:nowrap}
+        .sidebar{
+            position:fixed;
+            left:0;
+            top:0;
+            bottom:0;
+            width:270px;
+            background:linear-gradient(180deg,#061b44,#052d66);
+            color:white;
+            padding:22px 16px;
+            overflow-y:auto;
+            z-index:1000;
+        }
 
-.action-row{
-    margin-top:25px;
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-}
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            margin-bottom:28px;
+        }
 
-@media(max-width:900px){
-    .dashboard-grid{grid-template-columns:1fr}
-    .two{grid-template-columns:1fr}
-}
+        .brand img{
+            width:65px;
+            height:65px;
+            border-radius:50%;
+            background:white;
+            object-fit:cover;
+        }
 
-@media print{
-    .header,
-    form,
-    .btn,
-    .notice,
-    .no-print{
-        display:none!important;
-    }
+        .brand h2{
+            font-size:16px;
+            margin:0;
+            line-height:1.2;
+        }
 
-    .panel{
-        box-shadow:none;
-        max-width:100%;
-    }
+        .brand small{
+            color:#dbeafe;
+        }
 
-    table{
-        font-size:12px;
-    }
+        .nav-section{
+            margin-top:12px;
+        }
 
-    body{
-        background:white;
-    }
-}
-</style>
+        .nav a{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            color:white;
+            text-decoration:none;
+            padding:13px 14px;
+            border-radius:10px;
+            margin-bottom:6px;
+            font-weight:600;
+        }
 
-<script>
-function updateMonths(termId, monthId){
-  const months={
-    "Term 1":["January","February","March"],
-    "Term 2":["May","June","July"],
-    "Term 3":["September","October","November"]
-  };
-  const t=document.getElementById(termId).value;
-  document.getElementById(monthId).innerHTML=months[t].map(m=>`<option>${m}</option>`).join("");
-}
-</script>
+        .nav a:hover,
+        .nav a.active{
+            background:#0b5ed7;
+        }
+
+        .nav-divider{
+            border-top:1px solid rgba(255,255,255,.18);
+            margin:18px 0;
+        }
+
+        .year-card{
+            margin-top:22px;
+            background:rgba(255,255,255,.08);
+            border:1px solid rgba(255,255,255,.18);
+            border-radius:16px;
+            padding:18px;
+        }
+
+        .year-card h3{
+            margin:0;
+            font-size:26px;
+        }
+
+        .main{
+            margin-left:270px;
+            min-height:100vh;
+        }
+
+        .topbar{
+            height:82px;
+            background:white;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:0 28px;
+            border-bottom:1px solid #e5e7eb;
+            position:sticky;
+            top:0;
+            z-index:500;
+        }
+
+        .top-title h1{
+            margin:0;
+            font-size:25px;
+        }
+
+        .top-title small{
+            color:#64748b;
+        }
+
+        .top-user{
+            display:flex;
+            align-items:center;
+            gap:18px;
+        }
+
+        .date-pill{
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            padding:12px 16px;
+            border-radius:12px;
+            font-weight:bold;
+        }
+
+        .user-pill{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            font-weight:bold;
+        }
+
+        .avatar{
+            width:45px;
+            height:45px;
+            border-radius:50%;
+            background:#dbeafe;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:24px;
+        }
+
+        .content{
+            padding:22px;
+        }
+
+        .panel{
+            background:white;
+            padding:24px;
+            border-radius:16px;
+            box-shadow:0 8px 25px rgba(15,23,42,.08);
+            margin-bottom:20px;
+        }
+
+        input,select,textarea{
+            width:100%;
+            padding:12px;
+            border:1px solid #cbd5e1;
+            border-radius:8px;
+            margin-bottom:12px;
+            font-size:15px;
+        }
+
+        label{
+            font-weight:bold;
+            display:block;
+            margin-bottom:6px;
+        }
+
+        .btn,button{
+            display:inline-block;
+            background:#0b5ed7;
+            color:white;
+            padding:11px 18px;
+            border-radius:8px;
+            text-decoration:none;
+            border:none;
+            cursor:pointer;
+            font-size:15px;
+        }
+
+        .btn.green,button.green{
+            background:#159947;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th,td{
+            padding:11px;
+            border-bottom:1px solid #e5e7eb;
+            text-align:left;
+        }
+
+        th{
+            background:#f8fafc;
+        }
+
+        .two{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:18px;
+        }
+
+        .three{
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap:18px;
+        }
+
+        .flash{
+            background:#fff7d6;
+            padding:12px 16px;
+            border-radius:10px;
+            margin-bottom:15px;
+        }
+
+        @media(max-width:900px){
+            .sidebar{
+                position:relative;
+                width:100%;
+                height:auto;
+            }
+
+            .main{
+                margin-left:0;
+            }
+
+            .topbar{
+                height:auto;
+                flex-direction:column;
+                align-items:flex-start;
+                gap:10px;
+                padding:18px;
+            }
+
+            .two,.three{
+                grid-template-columns:1fr;
+            }
+        }
+
+        @media print{
+            .sidebar,.topbar,.no-print{
+                display:none !important;
+            }
+
+            .main{
+                margin-left:0 !important;
+            }
+
+            body{
+                background:white !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-{% if session.username %}
-<div class="header">
+<div class="sidebar">
 
-  <div class="brand">
-    <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo-small">
-    <div>
-      <strong>{{ settings.school_name }}</strong><br>
-      <small>School Fees System</small>
-    </div>
-  </div>
-
-  <div class="nav">
-    {{ session.username }} ({{ session.role }})
-
-    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-
-    {% if session.role|lower in ['admin', 'principal', 'bursar'] %}
-    <a href="{{ url_for('business_dashboard') }}">CEO Dashboard</a>
-    {% endif %}
-
-    {% if session.get("role", "").lower() == "super admin" %}
-    <div class="dropdown">
-        <a href="#">Super Admin ▼</a>
-        <div class="dropdown-content">
-            <a href="{{ url_for('schools') }}">Schools Management</a>
-            <a href="{{ url_for('platform_sms') }}">SMS Platform</a>
-            <a href="{{ url_for('whatsapp_settings') }}">WhatsApp Settings</a>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if session.role|lower in ['admin', 'principal'] %}
-    <div class="dropdown">
-        <a href="#">Staff ▼</a>
-        <div class="dropdown-content">
-            <a href="{{ url_for('staff_dashboard') }}">Staff Management</a>
-
-            {% if session.role|lower == 'admin' %}
-            <a href="/users">User Accounts</a>
-            <a href="/audit_logs">Audit Logs</a>
-            {% endif %}
-
-            <a href="/change-password">Change Password</a>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if session.role|lower in ['admin', 'principal', 'teacher'] %}
-    <div class="dropdown">
-        <a href="#">Academics ▼</a>
-        <div class="dropdown-content">
-            <a href="{{ url_for('subjects') }}">Subjects Setup</a>
-            <a href="{{ url_for('timetable_dashboard') }}">Timetable Dashboard</a>
-            <a href="{{ url_for('timetable') }}">Class Timetable</a>
-            <a href="{{ url_for('master_timetable') }}">Master Timetable</a>
-            <a href="{{ url_for('teacher_timetable') }}">Teacher Timetable</a>
-            <a href="{{ url_for('exams') }}">Exam Setup</a>
-            <a href="{{ url_for('marks') }}">Marks Entry</a>
-            <a href="{{ url_for('report_cards') }}">Report Cards</a>
-            <a href="{{ url_for('rankings') }}">Rankings</a>
-            <a href="{{ url_for('grade_analysis') }}">Grade Analysis</a>
-            <a href="{{ url_for('teacher_remarks') }}">Teacher Remarks</a>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="dropdown">
-        <a href="#">Attendance ▼</a>
-        <div class="dropdown-content">
-            {% if session.role|lower in ['admin', 'registrar', 'teacher'] %}
-            <a href="{{ url_for('attendance') }}">Mark Attendance</a>
-            {% endif %}
-            <a href="{{ url_for('attendance_report') }}">Attendance Report</a>
+    <div class="brand">
+        <img src="{{ url_for('static', filename=settings.logo if settings and settings.logo else 'logo.png') }}">
+        <div>
+            <h2>{{ settings.school_name if settings else "School System" }}</h2>
+            <small>School Fees System</small>
         </div>
     </div>
 
-    {% if session.role|lower in ['admin', 'bursar'] %}
-    <div class="dropdown">
-        <a href="#">Finance ▼</a>
-        <div class="dropdown-content">
-            <a href="{{ url_for('fees') }}">Fee Structure</a>
-            <a href="{{ url_for('discounts') }}">Discounts</a>
-            <a href="{{ url_for('payments') }}">Payments</a>
-            <a href="{{ url_for('balances') }}">Balances</a>
-            <a href="{{ url_for('statements') }}">Statements</a>
-            <a href="{{ url_for('expenses') }}">Expenses</a>
+    <div class="nav">
 
-            {% if session.get("role") in ["admin", "bursar", "principal"] %}
-            <a href="{{ url_for('payroll') }}">Staff Payroll</a>
-            {% endif %}
-        </div>
+        <a class="active" href="/dashboard">🏠 Dashboard</a>
+        <a href="/business_dashboard">🖥️ CEO Dashboard</a>
+
+        <div class="nav-divider"></div>
+
+        <a href="/staff_dashboard">👥 Staff</a>
+        <a href="/pupils">🎓 Admissions</a>
+
+        <a href="/subjects">📚 Subjects</a>
+        <a href="/timetable_dashboard">📅 Timetable</a>
+        <a href="/exams">📝 Exams</a>
+        <a href="/report_cards">📄 Report Cards</a>
+
+        <a href="/attendance">✅ Attendance</a>
+
+        <a href="/payments">💰 Finance</a>
+        <a href="/defaulters_report">📊 Reports</a>
+
+        <a href="/whatsapp_messages">💬 Communication</a>
+        <a href="/settings">🎨 Branding</a>
+
+        <div class="nav-divider"></div>
+
+        <a href="/transport">🚌 Transport</a>
+        <a href="/change_password">🔐 Change Password</a>
+        <a href="/logout">🚪 Logout</a>
+
     </div>
-    {% endif %}
 
-    {% if session.role|lower in ['admin', 'bursar'] %}
-    <div class="dropdown">
-        <a href="#">Reports ▼</a>
-        <div class="dropdown-content">
-            <a href="{{ url_for('daily_collections') }}">Daily Collections</a>
-            <a href="/monthly_collections">Monthly Collections</a>
-            <a href="/termly_collections">Termly Collections</a>
-            <a href="/yearly_collections">Yearly Collections</a>
-            <a href="/defaulters_report">Defaulters Report</a>
-            <a href="{{ url_for('inactive_students') }}">Inactive Students</a>
-            <a href="{{ url_for('credits') }}">Credit / Advance Payments</a>
-            <a href="{{ url_for('expense_report') }}">Expense Report</a>
-        </div>
+    <div class="year-card">
+        <small>Academic Year</small>
+        <h3>2026</h3>
+        <hr style="border-color:rgba(255,255,255,.2)">
+        <small>Current Term</small>
+        <h3>Term 2</h3>
     </div>
-    {% endif %}
 
-    {% if session.role|lower in ['admin', 'principal', 'teacher', 'registrar', 'receptionist', 'bursar'] %}
-    <div class="dropdown">
-        <a href="#">Communication ▼</a>
-        <div class="dropdown-content">
-            <a href="{{ url_for('announcements') }}">Announcements</a>
-            <a href="{{ url_for('sms_messages') }}">SMS Messages</a>
-            <a href="{{ url_for('bulk_sms') }}">Bulk SMS</a>
-            <a href="{{ url_for('fee_reminders') }}">Fee Reminders</a>
-            <a href="{{ url_for('sms_wallet') }}">SMS Centre</a>
-            <a href="{{ url_for('whatsapp_outbox') }}">WhatsApp Outbox</a>
-            <a href="{{ url_for('whatsapp_messages') }}">Send WhatsApp</a>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if session.role|lower == 'admin' %}
-    <a href="{{ url_for('settings') }}">Branding</a>
-    <a href="{{ url_for('transport') }}">Transport</a>
-    {% endif %}
-
-    <a href="{{ url_for('change_password') }}">Change Password</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
-
-  </div>
 </div>
-{% endif %}
 
-<div class="container">
-{% for m in get_flashed_messages() %}
-<div class="notice">{{ m }}</div>
-{% endfor %}
+<div class="main">
 
-{% block content %}{% endblock %}
+    <div class="topbar">
+        <div class="top-title">
+            <h1>CEO Smart Dashboard</h1>
+            <small>Welcome back, {{ session.get('username') }} ({{ session.get('role') }})</small>
+        </div>
+
+        <div class="top-user">
+            <div class="date-pill">📅 23 June 2026</div>
+
+            <div class="user-pill">
+                <div class="avatar">👤</div>
+                <div>
+                    {{ session.get('username') }}<br>
+                    <small>{{ session.get('role') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+    </div>
+
 </div>
 
 </body>
