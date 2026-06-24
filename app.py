@@ -2942,8 +2942,8 @@ def attendance():
         attendance_date=attendance_date
     )
     
-@app.route("/attendance_report")
-def attendance_report():
+@app.route("/send_absent_whatsapp_alerts")
+def send_absent_whatsapp_alerts():
     if not login_required():
         return redirect(url_for("login"))
 
@@ -2952,47 +2952,59 @@ def attendance_report():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
-    current_role = session.get("role", "").lower()
-
     selected_grade = request.args.get("grade", "")
     attendance_date = request.args.get("attendance_date", str(date.today()))
 
-    if current_role == "teacher":
-        current_user = User.query.filter_by(
-            username=session.get("username"),
-            school_id=school_id
-        ).first()
+    if not selected_grade:
+        flash("Please select a grade first.")
+        return redirect(url_for("attendance_report"))
 
-        if current_user and current_user.assigned_grade:
-            selected_grade = current_user.assigned_grade
-        else:
-            flash("You have not been assigned to any grade. Contact Admin.")
-            return redirect(url_for("dashboard"))
+    report_date = datetime.strptime(attendance_date, "%Y-%m-%d").date()
 
-    records = []
+    records = Attendance.query.join(Pupil).filter(
+        Attendance.school_id == school_id,
+        Pupil.school_id == school_id,
+        Pupil.grade == selected_grade,
+        Attendance.attendance_date == report_date,
+        Attendance.status == "Absent"
+    ).all()
 
-    if selected_grade:
-        records = Attendance.query.join(Pupil).filter(
-            Attendance.school_id == school_id,
-            Pupil.school_id == school_id,
-            Pupil.grade == selected_grade,
-            Attendance.attendance_date == datetime.strptime(attendance_date, "%Y-%m-%d").date()
-        ).all()
+    count = 0
 
-    present = sum(1 for r in records if r.status == "Present")
-    absent = sum(1 for r in records if r.status == "Absent")
-    late = sum(1 for r in records if r.status == "Late")
+    for r in records:
+        pupil = r.pupil
 
-    return render_template(
-        "attendance_report.html",
-        settings=get_settings(),
-        records=records,
-        selected_grade=selected_grade,
-        attendance_date=attendance_date,
-        grades=GRADES,
-        present=present,
-        absent=absent,
-        late=late
+        if not pupil or not pupil.guardian_phone:
+            continue
+
+        message = (
+            f"Dear Parent, your child {pupil.full_name} was marked ABSENT "
+            f"today ({attendance_date}) at {get_settings().school_name}. "
+            f"Kindly contact the school if there is any issue. Thank you."
+        )
+
+        wa = WhatsAppMessage(
+            school_id=school_id,
+            recipient_name=pupil.guardian_name,
+            phone=pupil.guardian_phone,
+            message=message,
+            category="Attendance Alert",
+            status="Pending",
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(wa)
+        count += 1
+
+    db.session.commit()
+
+    flash(f"{count} WhatsApp absent alert(s) created as pending.")
+    return redirect(
+        url_for(
+            "attendance_report",
+            grade=selected_grade,
+            attendance_date=attendance_date
+        )
     )
 @app.route("/report_cards")
 def report_cards():
