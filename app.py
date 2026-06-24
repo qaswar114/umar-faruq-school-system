@@ -2420,7 +2420,9 @@ def pupils():
 
         if photo_file and photo_file.filename:
             photo_filename = secure_filename(photo_file.filename)
-            photo_file.save(os.path.join(app.config["UPLOAD_FOLDER"], photo_filename))
+            photo_file.save(
+                os.path.join(app.config["UPLOAD_FOLDER"], photo_filename)
+            )
 
         p = Pupil(
             school_id=school_id,
@@ -2451,9 +2453,30 @@ def pupils():
     q = request.args.get("q", "")
     selected_grade = request.args.get("grade", "")
 
-    query = Pupil.query.filter_by(
-        school_id=school_id
-    )
+    base_query = Pupil.query.filter_by(school_id=school_id)
+
+    active_pupils = base_query.filter_by(status="Active").all()
+
+    total_pupils = len(active_pupils)
+    boys = sum(1 for p in active_pupils if p.gender == "Male")
+    girls = sum(1 for p in active_pupils if p.gender == "Female")
+    bus_pupils = sum(1 for p in active_pupils if p.uses_bus == "Yes")
+    new_admissions = sum(1 for p in active_pupils if p.new_admission == "Yes")
+
+    grade_stats = []
+    max_grade_count = 1
+
+    for g in GRADES:
+        count = sum(1 for p in active_pupils if p.grade == g)
+        if count > max_grade_count:
+            max_grade_count = count
+
+        grade_stats.append({
+            "grade": g,
+            "count": count
+        })
+
+    query = base_query
 
     if selected_grade:
         query = query.filter(Pupil.grade == selected_grade)
@@ -2465,16 +2488,31 @@ def pupils():
             (Pupil.grade.ilike(f"%{q}%"))
         )
 
+    pupils = query.order_by(
+        Pupil.created_at.desc()
+    ).limit(12).all()
+
+    recent_pupils = base_query.order_by(
+        Pupil.created_at.desc()
+    ).limit(8).all()
+
     return render_template(
         "pupils.html",
         settings=get_settings(),
         grades=GRADES,
-        pupils=query.order_by(Pupil.grade, Pupil.full_name).all(),
+        pupils=pupils,
+        recent_pupils=recent_pupils,
         q=q,
         selected_grade=selected_grade,
-        can_register=can_register
+        can_register=can_register,
+        total_pupils=total_pupils,
+        boys=boys,
+        girls=girls,
+        bus_pupils=bus_pupils,
+        new_admissions=new_admissions,
+        grade_stats=grade_stats,
+        max_grade_count=max_grade_count
     )
-
 @app.route("/invalid_guardian_phones")
 def invalid_guardian_phones():
     if not login_required():
