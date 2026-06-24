@@ -6,270 +6,124 @@
 
     <style>
         *{box-sizing:border-box}
-
-        body{
-            margin:0;
-            font-family:Arial, sans-serif;
-            background:#f5f8fc;
-            color:#0f172a;
-        }
+        body{margin:0;font-family:Arial,sans-serif;background:#f5f8fc;color:#0f172a}
 
         .sidebar{
-            position:fixed;
-            left:0;
-            top:0;
-            bottom:0;
-            width:245px;
+            position:fixed;left:0;top:0;bottom:0;width:245px;
             background:linear-gradient(180deg,#061b44,#052b61);
-            color:white;
-            padding:16px 13px;
-            overflow-y:auto;
-            z-index:1000;
+            color:white;padding:16px 13px;overflow-y:auto;z-index:1000;
         }
 
-        .brand{
+        .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+        .brand img{width:55px;height:55px;border-radius:50%;background:white;object-fit:cover}
+        .brand h2{margin:0;font-size:14px;line-height:1.2;text-transform:uppercase}
+        .brand small{color:#dbeafe;font-size:12px}
+
+        .school-card{
+            background:rgba(255,255,255,.09);
+            border:1px solid rgba(255,255,255,.18);
+            border-radius:14px;
+            padding:12px;
+            margin-bottom:16px;
+        }
+
+        .school-card-row{
             display:flex;
+            justify-content:space-between;
             align-items:center;
-            gap:10px;
-            margin-bottom:18px;
-        }
-
-        .brand img{
-            width:55px;
-            height:55px;
-            border-radius:50%;
-            background:white;
-            object-fit:cover;
-            flex-shrink:0;
-        }
-
-        .brand h2{
-            margin:0;
-            font-size:14px;
-            line-height:1.2;
-            text-transform:uppercase;
-        }
-
-        .brand small{
             color:#dbeafe;
-            font-size:12px;
+            font-size:13px;
+            padding:6px 0;
+        }
+
+        .school-card-row b{
+            color:white;
+            font-size:14px;
         }
 
         .nav-label{
-            font-size:10.5px;
-            color:#93c5fd;
-            font-weight:bold;
-            letter-spacing:1px;
-            margin:13px 0 6px 8px;
+            font-size:10.5px;color:#93c5fd;font-weight:bold;
+            letter-spacing:1px;margin:13px 0 6px 8px;
         }
 
         .nav a{
-            display:flex;
-            align-items:center;
-            gap:9px;
-            color:white;
-            text-decoration:none;
-            padding:9px 11px;
-            border-radius:9px;
-            margin-bottom:3px;
-            font-weight:600;
-            font-size:14px;
+            display:flex;align-items:center;gap:9px;color:white;text-decoration:none;
+            padding:9px 11px;border-radius:9px;margin-bottom:3px;font-weight:600;font-size:14px;
         }
 
-        .nav a:hover,
-        .nav a.active{
-            background:#0b5ed7;
-        }
+        .nav a:hover,.nav a.active{background:#0b5ed7}
 
-        .main{
-            margin-left:245px;
-            min-height:100vh;
-        }
+        .main{margin-left:245px;min-height:100vh}
 
         .topbar{
-            height:70px;
-            background:white;
-            border-bottom:1px solid #e5e7eb;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 22px;
-            position:sticky;
-            top:0;
-            z-index:500;
+            height:70px;background:white;border-bottom:1px solid #e5e7eb;
+            display:flex;align-items:center;justify-content:space-between;
+            padding:0 22px;position:sticky;top:0;z-index:500;
         }
 
-        .top-left{
-            display:flex;
-            align-items:center;
-            gap:15px;
-        }
+        .top-left{display:flex;align-items:center;gap:15px}
+        .menu-icon{font-size:22px;color:#0f172a}
+        .top-title h1{margin:0;font-size:23px;color:#07142f}
+        .top-title small{color:#64748b}
 
-        .menu-icon{
-            font-size:22px;
-            color:#0f172a;
-        }
-
-        .top-title h1{
-            margin:0;
-            font-size:23px;
-            color:#07142f;
-        }
-
-        .top-title small{
-            color:#64748b;
-        }
-
-        .top-user{
-            display:flex;
-            align-items:center;
-            gap:12px;
-        }
-
+        .top-user{display:flex;align-items:center;gap:12px}
         .date-pill{
-            background:#f8fafc;
-            border:1px solid #e5e7eb;
-            padding:9px 13px;
-            border-radius:12px;
-            font-weight:bold;
-            white-space:nowrap;
+            background:#f8fafc;border:1px solid #e5e7eb;
+            padding:9px 13px;border-radius:12px;font-weight:bold;white-space:nowrap;
         }
 
-        .user-pill{
-            display:flex;
-            align-items:center;
-            gap:8px;
-            font-weight:bold;
-        }
-
+        .user-pill{display:flex;align-items:center;gap:8px;font-weight:bold}
         .avatar{
-            width:40px;
-            height:40px;
-            border-radius:50%;
-            background:#dbeafe;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:21px;
+            width:40px;height:40px;border-radius:50%;background:#dbeafe;
+            display:flex;align-items:center;justify-content:center;font-size:21px;
         }
 
-        .content{
-            padding:16px;
-        }
+        .content{padding:16px}
 
         .panel{
-            background:white;
-            padding:20px;
-            border-radius:14px;
-            box-shadow:0 6px 18px rgba(15,23,42,.07);
-            margin-bottom:18px;
+            background:white;padding:20px;border-radius:14px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);margin-bottom:18px;
         }
 
         input,select,textarea{
-            width:100%;
-            padding:10px;
-            border:1px solid #cbd5e1;
-            border-radius:8px;
-            margin-bottom:10px;
-            font-size:15px;
+            width:100%;padding:10px;border:1px solid #cbd5e1;
+            border-radius:8px;margin-bottom:10px;font-size:15px;
         }
 
-        label{
-            font-weight:bold;
-            display:block;
-            margin-bottom:5px;
-        }
+        label{font-weight:bold;display:block;margin-bottom:5px}
 
         .btn,button{
-            display:inline-block;
-            background:#0b5ed7;
-            color:white;
-            padding:10px 15px;
-            border-radius:8px;
-            text-decoration:none;
-            border:none;
-            cursor:pointer;
-            font-size:15px;
+            display:inline-block;background:#0b5ed7;color:white;
+            padding:10px 15px;border-radius:8px;text-decoration:none;
+            border:none;cursor:pointer;font-size:15px;
         }
 
-        .btn.green,button.green{
-            background:#159947;
-        }
+        .btn.green,button.green{background:#159947}
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
+        th{background:#f8fafc}
 
-        th,td{
-            padding:10px;
-            border-bottom:1px solid #e5e7eb;
-            text-align:left;
-        }
-
-        th{
-            background:#f8fafc;
-        }
-
-        .two{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:14px;
-        }
-
-        .three{
-            display:grid;
-            grid-template-columns:1fr 1fr 1fr;
-            gap:14px;
-        }
+        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 
         .flash{
-            background:#fff7d6;
-            padding:10px 14px;
-            border-radius:10px;
-            margin-bottom:12px;
+            background:#fff7d6;padding:10px 14px;
+            border-radius:10px;margin-bottom:12px;
         }
 
         @media(max-width:900px){
-            .sidebar{
-                position:relative;
-                width:100%;
-                height:auto;
-            }
-
-            .main{
-                margin-left:0;
-            }
-
-            .topbar{
-                height:auto;
-                flex-direction:column;
-                align-items:flex-start;
-                gap:10px;
-                padding:15px;
-            }
-
-            .top-user{
-                flex-wrap:wrap;
-            }
-
-            .two,.three{
-                grid-template-columns:1fr;
-            }
+            .sidebar{position:relative;width:100%;height:auto}
+            .main{margin-left:0}
+            .topbar{height:auto;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
+            .top-user{flex-wrap:wrap}
+            .two,.three{grid-template-columns:1fr}
         }
 
         @media print{
-            .sidebar,.topbar,.no-print{
-                display:none!important;
-            }
-
-            .main{
-                margin-left:0!important;
-            }
-
-            body{
-                background:white!important;
-            }
+            .sidebar,.topbar,.no-print{display:none!important}
+            .main{margin-left:0!important}
+            body{background:white!important}
         }
     </style>
 </head>
@@ -283,6 +137,23 @@
         <div>
             <h2>{{ settings.school_name if settings else "School System" }}</h2>
             <small>School Fees System</small>
+        </div>
+    </div>
+
+    <div class="school-card">
+        <div class="school-card-row">
+            <span>🎓 Pupils</span>
+            <b>{{ total_pupils if total_pupils is defined else '-' }}</b>
+        </div>
+
+        <div class="school-card-row">
+            <span>👥 Staff</span>
+            <b>{{ total_staff if total_staff is defined else '-' }}</b>
+        </div>
+
+        <div class="school-card-row">
+            <span>📱 SMS</span>
+            <b>{{ sms_balance if sms_balance is defined else '-' }}</b>
         </div>
     </div>
 
@@ -304,10 +175,7 @@
         <a href="/report_cards">📄 Report Cards</a>
 
         <div class="nav-label">FINANCE</div>
-        <a class="{% if request.path == '/payments' %}active{% endif %}"
-         href="/payments">
-        💰 Payments
-        </a>
+        <a href="/payments">💰 Payments</a>
         <a href="/statement">📄 Statements</a>
         <a href="/defaulters_report">📊 Defaulters</a>
         <a href="/expenses">🧾 Expenses</a>
