@@ -1,319 +1,222 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Communication Dashboard</h2>
+<style>
+.sms-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.sms-head h2{margin:0;font-size:26px}
+.sms-head p{margin:6px 0 0;color:#64748b}
+.head-actions{display:flex;gap:10px;flex-wrap:wrap}
 
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Pending SMS</h3>
-            <div class="number">{{ pending_count }}</div>
-        </div>
+.sms-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.sms-card{background:white;border:1px solid #e5e7eb;border-radius:14px;padding:16px;box-shadow:0 4px 14px rgba(15,23,42,.06);display:flex;gap:12px;align-items:center}
+.sms-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;flex-shrink:0}
+.sms-card small{font-weight:800;color:#64748b}
+.sms-card h2{margin:5px 0 0;font-size:24px}
+.i-blue{background:#2563eb}.i-green{background:#16a34a}.i-purple{background:#7c3aed}.i-orange{background:#f59e0b}.i-teal{background:#14b8a6}.i-red{background:#ef4444}
 
-        <div class="card">
-            <h3>Sent SMS</h3>
-            <div class="number">{{ sent_count }}</div>
-        </div>
+.sms-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-bottom:16px}
+.sms-panel{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.sms-panel h3{margin-top:0;font-size:20px}
 
-        <div class="card">
-            <h3>Today Created</h3>
-            <div class="number">{{ today_created }}</div>
-        </div>
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.action-btn{padding:13px;border-radius:10px;text-align:center;text-decoration:none;font-weight:800;border:1px solid #dbeafe;background:#eff6ff;color:#0b5ed7}
+.action-green{background:#ecfdf5;color:#15803d;border-color:#bbf7d0}
+.action-orange{background:#fff7ed;color:#ea580c;border-color:#fed7aa}
+.action-purple{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
+.action-red{background:#fff1f2;color:#dc2626;border-color:#fecdd3}
 
-        <div class="card">
-            <h3>Today Sent</h3>
-            <div class="number">{{ today_sent }}</div>
-        </div>
+.history-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}
+.filter-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.filter-row select{min-width:180px;margin-bottom:0}
+.table-wrap{overflow:auto}
+.sms-table{width:100%;border-collapse:collapse;font-size:14px}
+.sms-table th{background:#f8fafc;color:#334155;font-size:13px}
+.sms-table th,.sms-table td{padding:11px;border-bottom:1px solid #e5e7eb;vertical-align:top}
+.msg-preview{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
+.badge-pending{background:#fff7ed;color:#c2410c}
+.badge-sent{background:#ecfdf5;color:#15803d}
+.badge-failed{background:#fff1f2;color:#dc2626}
+.badge-cat{background:#eff6ff;color:#0b5ed7}
+
+@media(max-width:1200px){.sms-stats{grid-template-columns:repeat(2,1fr)}.sms-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.sms-stats,.action-grid{grid-template-columns:1fr}.sms-head,.history-head{flex-direction:column;align-items:flex-start}}
+</style>
+
+<div class="sms-head">
+    <div>
+        <h2>Communication / SMS</h2>
+        <p>Manage SMS balance, send messages and view communication history.</p>
     </div>
 
-    <h3>Pending by Category</h3>
-
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Attendance</h3>
-            <div class="number">{{ attendance_alert_count }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Payments</h3>
-            <div class="number">{{ payment_alert_count }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Fee Reminders</h3>
-            <div class="number">{{ fee_alert_count }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Announcements</h3>
-            <div class="number">{{ announcement_alert_count }}</div>
-        </div>
-    </div>
-
-    <br>
-
-    <div class="action-row">
-
-        <form method="post" style="display:inline;">
-            <input type="hidden" name="action" value="send_pending">
-            <button class="btn green">
-                Send All Pending SMS
-            </button>
-        </form>
-
-        <form method="post"
-              action="{{ url_for('cleanup_invalid_sms') }}"
-              style="display:inline;"
-              onsubmit="return confirm('Mark invalid pending SMS as Invalid?');">
-            <button class="btn red">
-                Clean Invalid SMS
-            </button>
-        </form>
-
-        <a class="btn"
-           style="background:#fd7e14;"
-           href="{{ url_for('invalid_guardian_phones') }}">
-            Invalid Guardian Phones
-        </a>
-
-        <a class="btn"
-           href="{{ url_for('sms_messages', status='Pending') }}">
-            View Pending
-        </a>
-
-        <a class="btn"
-           href="{{ url_for('sms_messages', category='Attendance Alert') }}">
-            Attendance Alerts
-        </a>
-
-        <a class="btn"
-           href="{{ url_for('sms_messages', category='Payment Confirmation') }}">
-            Payment Alerts
-        </a>
-
-        <a class="btn"
-           href="{{ url_for('sms_messages', category='Fees') }}">
-            Fee Reminders
-        </a>
-
+    <div class="head-actions">
+        <a class="btn" href="{{ url_for('sms_wallet') }}">SMS Wallet</a>
+        <a class="btn green" href="{{ url_for('bulk_sms') }}">Bulk SMS</a>
     </div>
 </div>
 
-<div class="panel">
+<div class="sms-stats">
+    <div class="sms-card"><div class="sms-icon i-blue">💳</div><div><small>SMS Balance</small><h2>{{ wallet.sms_balance }}</h2></div></div>
+    <div class="sms-card"><div class="sms-icon i-green">✈️</div><div><small>SMS Used</small><h2>{{ wallet.sms_used }}</h2></div></div>
+    <div class="sms-card"><div class="sms-icon i-purple">☁️</div><div><small>SMS Loaded</small><h2>{{ wallet.sms_loaded }}</h2></div></div>
+    <div class="sms-card"><div class="sms-icon i-orange">⏱️</div><div><small>Pending SMS</small><h2>{{ pending_count }}</h2></div></div>
+    <div class="sms-card"><div class="sms-icon i-teal">✅</div><div><small>Sent SMS</small><h2>{{ sent_count }}</h2></div></div>
+    <div class="sms-card"><div class="sms-icon i-red">✖️</div><div><small>Failed SMS</small><h2>{{ failed_count }}</h2></div></div>
+</div>
 
-    <h3>Create New SMS</h3>
+<div class="sms-grid">
 
-    <form method="post">
+    <div class="sms-panel">
+        <h3>✉️ Create New SMS</h3>
 
-        <input type="hidden"
-               name="action"
-               value="create_sms">
+        <form method="post">
+            <input type="hidden" name="action" value="create_sms">
 
-        <label>Send To</label>
+            <div class="three">
+                <div>
+                    <label>Send To</label>
+                    <select name="send_to">
+                        <option value="single">One Parent</option>
+                        <option value="grade">One Grade / Class</option>
+                        <option value="all">All Parents</option>
+                    </select>
+                </div>
 
-        <select name="send_to">
-            <option value="single">One Parent</option>
-            <option value="grade">One Grade / Class</option>
-            <option value="all">All Parents</option>
-        </select>
+                <div>
+                    <label>Recipient Name</label>
+                    <input name="recipient_name" placeholder="For one parent only">
+                </div>
 
-        <div class="three">
-
-            <div>
-                <label>Recipient Name</label>
-                <input name="recipient_name"
-                       placeholder="Required for one parent only">
+                <div>
+                    <label>Phone Number</label>
+                    <input name="phone" placeholder="0712345678">
+                </div>
             </div>
 
-            <div>
-                <label>Phone Number</label>
-                <input name="phone"
-                       placeholder="Required for one parent only">
+            <div class="two">
+                <div>
+                    <label>Grade/Class</label>
+                    <select name="grade">
+                        <option value="">Select Grade</option>
+                        {% for g in grades %}
+                        <option>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Category</label>
+                    <select name="category">
+                        <option>General</option>
+                        <option>Fees</option>
+                        <option>Attendance Alert</option>
+                        <option>Payment Confirmation</option>
+                        <option>Announcement</option>
+                        <option>Exam</option>
+                    </select>
+                </div>
             </div>
 
-            <div>
-                <label>Grade/Class</label>
+            <label>Message</label>
+            <textarea name="message" rows="4" required placeholder="Type SMS message here..."></textarea>
 
-                <select name="grade">
-                    <option value="">Select Grade</option>
+            <button class="btn">Save SMS as Pending</button>
+        </form>
+    </div>
 
-                    {% for g in grades %}
-                    <option>{{ g }}</option>
-                    {% endfor %}
-                </select>
+    <div class="sms-panel">
+        <h3>⚡ Quick Actions</h3>
 
-            </div>
+        <div class="action-grid">
+            <form method="post">
+                <input type="hidden" name="action" value="send_pending">
+                <button class="action-btn action-green" style="width:100%;">✈️ Send All Pending SMS</button>
+            </form>
 
+            <form method="post" action="{{ url_for('cleanup_invalid_sms') }}" onsubmit="return confirm('Mark invalid pending SMS as Invalid?');">
+                <button class="action-btn" style="width:100%;">🧹 Clean Invalid SMS</button>
+            </form>
+
+            <a class="action-btn action-orange" href="{{ url_for('invalid_guardian_phones') }}">📞 Invalid Guardian Phones</a>
+            <a class="action-btn" href="{{ url_for('sms_messages', status='Pending') }}">👁️ View Pending SMS</a>
+            <a class="action-btn action-purple" href="{{ url_for('sms_messages', category='Attendance Alert') }}">🔔 Attendance Alerts</a>
+            <a class="action-btn" href="{{ url_for('sms_messages', category='Payment Confirmation') }}">💳 Payment Alerts</a>
+            <a class="action-btn" href="{{ url_for('sms_messages', category='Fees') }}">📢 Fee Reminders</a>
         </div>
-
-        <label>Category</label>
-
-        <select name="category">
-            <option>General</option>
-            <option>Fees</option>
-            <option>Attendance Alert</option>
-            <option>Payment Confirmation</option>
-            <option>Announcement</option>
-            <option>Exam</option>
-        </select>
-
-        <label>Message</label>
-
-        <textarea name="message"
-                  rows="5"
-                  style="width:100%;"
-                  required></textarea>
-
-        <br><br>
-
-        <button class="btn">
-            Save SMS as Pending
-        </button>
-
-    </form>
+    </div>
 
 </div>
 
-<div class="panel">
+<div class="sms-panel">
+    <div class="history-head">
+        <h3>📋 SMS History</h3>
 
-    <h3>SMS History</h3>
-
-    <form method="get">
-
-        <div class="two">
-
+        <form method="get" class="filter-row">
             <div>
-
                 <label>Status</label>
-
                 <select name="status">
-
-                    <option value="">All</option>
-
-                    <option value="Pending"
-                    {% if selected_status=="Pending" %}
-                    selected
-                    {% endif %}>
-                    Pending
-                    </option>
-
-                    <option value="Sent"
-                    {% if selected_status=="Sent" %}
-                    selected
-                    {% endif %}>
-                    Sent
-                    </option>
-
-                    <option value="Failed"
-                    {% if selected_status=="Failed" %}
-                    selected
-                    {% endif %}>
-                    Failed
-                    </option>
-
+                    <option value="">All Status</option>
+                    <option value="Pending" {% if selected_status=="Pending" %}selected{% endif %}>Pending</option>
+                    <option value="Sent" {% if selected_status=="Sent" %}selected{% endif %}>Sent</option>
+                    <option value="Failed" {% if selected_status=="Failed" %}selected{% endif %}>Failed</option>
                 </select>
-
             </div>
 
             <div>
-
                 <label>Category</label>
-
                 <select name="category">
-
-                    <option value="">All</option>
-
-                    <option value="General">General</option>
-
-                    <option value="Fees"
-                    {% if selected_category=="Fees" %}
-                    selected
-                    {% endif %}>
-                    Fees
-                    </option>
-
-                    <option value="Attendance Alert"
-                    {% if selected_category=="Attendance Alert" %}
-                    selected
-                    {% endif %}>
-                    Attendance Alert
-                    </option>
-
-                    <option value="Payment Confirmation"
-                    {% if selected_category=="Payment Confirmation" %}
-                    selected
-                    {% endif %}>
-                    Payment Confirmation
-                    </option>
-
-                    <option value="Announcement"
-                    {% if selected_category=="Announcement" %}
-                    selected
-                    {% endif %}>
-                    Announcement
-                    </option>
-
-                    <option value="Exam"
-                    {% if selected_category=="Exam" %}
-                    selected
-                    {% endif %}>
-                    Exam
-                    </option>
-
+                    <option value="">All Category</option>
+                    <option value="General" {% if selected_category=="General" %}selected{% endif %}>General</option>
+                    <option value="Fees" {% if selected_category=="Fees" %}selected{% endif %}>Fees</option>
+                    <option value="Attendance Alert" {% if selected_category=="Attendance Alert" %}selected{% endif %}>Attendance Alert</option>
+                    <option value="Payment Confirmation" {% if selected_category=="Payment Confirmation" %}selected{% endif %}>Payment Confirmation</option>
+                    <option value="Announcement" {% if selected_category=="Announcement" %}selected{% endif %}>Announcement</option>
+                    <option value="Exam" {% if selected_category=="Exam" %}selected{% endif %}>Exam</option>
                 </select>
-
             </div>
 
-        </div>
+            <button class="btn">Filter</button>
+            <a href="{{ url_for('sms_messages') }}" class="btn" style="background:#64748b;">Reset</a>
+        </form>
+    </div>
 
-        <button class="btn">Filter</button>
+    <div class="table-wrap">
+        <table class="sms-table">
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Recipient</th>
+                <th>Phone</th>
+                <th>Category</th>
+                <th>Message</th>
+                <th>Status</th>
+            </tr>
 
-        <a href="{{ url_for('sms_messages') }}"
-           class="btn"
-           style="background:#6c757d;">
-            Reset
-        </a>
-
-    </form>
-
-    <br>
-
-    <table>
-
-        <tr>
-            <th>#</th>
-            <th>Date</th>
-            <th>Recipient</th>
-            <th>Phone</th>
-            <th>Category</th>
-            <th>Message</th>
-            <th>Status</th>
-        </tr>
-
-        {% for s in rows %}
-
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ s.created_at }}</td>
-            <td>{{ s.recipient_name }}</td>
-            <td>{{ s.phone }}</td>
-            <td>{{ s.category }}</td>
-            <td>{{ s.message }}</td>
-            <td>{{ s.status }}</td>
-        </tr>
-
-        {% else %}
-
-        <tr>
-            <td colspan="7">
-                No SMS messages found.
-            </td>
-        </tr>
-
-        {% endfor %}
-
-    </table>
-
+            {% for s in rows %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</td>
+                <td>{{ s.recipient_name }}</td>
+                <td>{{ s.phone }}</td>
+                <td><span class="badge badge-cat">{{ s.category }}</span></td>
+                <td class="msg-preview">{{ s.message }}</td>
+                <td>
+                    {% if s.status == "Sent" %}
+                        <span class="badge badge-sent">Sent</span>
+                    {% elif s.status == "Failed" %}
+                        <span class="badge badge-failed">Failed</span>
+                    {% else %}
+                        <span class="badge badge-pending">{{ s.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">No SMS messages found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 
 {% endblock %}
