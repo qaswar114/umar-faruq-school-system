@@ -1,114 +1,271 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+<style>
+.wa-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
+
+.wa-head h2{
+    margin:0;
+    font-size:26px;
+}
+
+.wa-head p{
+    margin:5px 0 0;
+    color:#64748b;
+}
+
+.wa-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.wa-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.wa-card{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.wa-icon{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+}
+
+.wa-card small{
+    color:#64748b;
+    font-weight:800;
+    font-size:12px;
+}
+
+.wa-card h2{
+    margin:4px 0 0;
+    font-size:22px;
+}
+
+.bg-blue{background:#dbeafe;color:#0b5ed7}
+.bg-green{background:#dcfce7;color:#15803d}
+.bg-orange{background:#ffedd5;color:#ea580c}
+.bg-red{background:#fee2e2;color:#dc2626}
+
+.wa-panel{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);
+    margin-bottom:14px;
+}
+
+.filter-row{
+    display:grid;
+    grid-template-columns:200px 220px auto auto;
+    gap:10px;
+    align-items:end;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.wa-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+}
+
+.wa-table th{
+    background:#f8fafc;
+    color:#334155;
+    font-size:13px;
+}
+
+.wa-table th,
+.wa-table td{
+    padding:11px;
+    border-bottom:1px solid #e5e7eb;
+    vertical-align:top;
+    text-align:left;
+}
+
+.msg-preview{
+    max-width:420px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.badge{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.badge-sent{background:#dcfce7;color:#15803d}
+.badge-pending{background:#ffedd5;color:#ea580c}
+.badge-failed{background:#fee2e2;color:#dc2626}
+.badge-cat{background:#eff6ff;color:#0b5ed7}
+
+@media(max-width:900px){
+    .wa-head{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
+
+    .filter-row{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="wa-head">
+    <div>
+        <h2>WhatsApp Outbox</h2>
+        <p>Manage pending, sent and failed WhatsApp messages.</p>
+    </div>
+
+    <div class="wa-actions">
+        <a href="{{ url_for('send_pending_whatsapp') }}"
+           class="btn green"
+           onclick="return confirm('Send pending WhatsApp messages now?');">
+            Send Pending
+        </a>
+
+        <a href="{{ url_for('whatsapp_messages') }}" class="btn">
+            New Message
+        </a>
+    </div>
+</div>
+
+<div class="wa-stats">
+    <div class="wa-card">
+        <div class="wa-icon bg-blue">💬</div>
         <div>
-            <h2>WhatsApp Outbox</h2>
-            <p>Manage queued and sent WhatsApp messages.</p>
+            <small>Total Loaded</small>
+            <h2>{{ messages|length }}</h2>
         </div>
+    </div>
 
+    <div class="wa-card">
+        <div class="wa-icon bg-orange">⏱️</div>
         <div>
-            <a href="{{ url_for('send_pending_whatsapp') }}"
-               class="btn green"
-               onclick="return confirm('Send all pending WhatsApp messages now?');">
-                Send Pending WhatsApp
-            </a>
+            <small>Pending</small>
+            <h2>{{ pending_count if pending_count is defined else messages|selectattr('status','equalto','Pending')|list|length }}</h2>
+        </div>
+    </div>
 
-            <a href="{{ url_for('whatsapp_messages') }}"
-               class="btn">
-                New Message
-            </a>
+    <div class="wa-card">
+        <div class="wa-icon bg-green">✅</div>
+        <div>
+            <small>Sent</small>
+            <h2>{{ sent_count if sent_count is defined else messages|selectattr('status','equalto','Sent')|list|length }}</h2>
+        </div>
+    </div>
+
+    <div class="wa-card">
+        <div class="wa-icon bg-red">❌</div>
+        <div>
+            <small>Failed</small>
+            <h2>{{ failed_count if failed_count is defined else messages|selectattr('status','equalto','Failed')|list|length }}</h2>
         </div>
     </div>
 </div>
 
-<div class="panel">
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-bottom:20px;">
-
-        <div style="background:#eef8ff;padding:18px;border-radius:12px;">
-            <small>Total Messages</small>
-            <h2>{{ messages|length }}</h2>
+<div class="wa-panel">
+    <form method="get" class="filter-row">
+        <div>
+            <label>Status</label>
+            <select name="status">
+                <option value="">All Status</option>
+                <option value="Pending" {% if selected_status == "Pending" %}selected{% endif %}>Pending</option>
+                <option value="Sent" {% if selected_status == "Sent" %}selected{% endif %}>Sent</option>
+                <option value="Failed" {% if selected_status == "Failed" %}selected{% endif %}>Failed</option>
+            </select>
         </div>
 
-        <div style="background:#eafaf1;padding:18px;border-radius:12px;">
-            <small>Sent</small>
-            <h2>
-                {{ messages|selectattr('status','equalto','Sent')|list|length }}
-            </h2>
+        <div>
+            <label>Category</label>
+            <select name="category">
+                <option value="">All Category</option>
+                <option value="General" {% if selected_category == "General" %}selected{% endif %}>General</option>
+                <option value="Attendance Alert" {% if selected_category == "Attendance Alert" %}selected{% endif %}>Attendance Alert</option>
+                <option value="Fee Reminder" {% if selected_category == "Fee Reminder" %}selected{% endif %}>Fee Reminder</option>
+                <option value="Payment Confirmation" {% if selected_category == "Payment Confirmation" %}selected{% endif %}>Payment Confirmation</option>
+                <option value="Announcement" {% if selected_category == "Announcement" %}selected{% endif %}>Announcement</option>
+                <option value="Exam Results" {% if selected_category == "Exam Results" %}selected{% endif %}>Exam Results</option>
+            </select>
         </div>
 
-        <div style="background:#fff8e6;padding:18px;border-radius:12px;">
-            <small>Pending</small>
-            <h2>
-                {{ messages|selectattr('status','equalto','Pending')|list|length }}
-            </h2>
-        </div>
+        <button class="btn">Filter</button>
 
-        <div style="background:#ffecec;padding:18px;border-radius:12px;">
-            <small>Failed</small>
-            <h2>
-                {{ messages|selectattr('status','equalto','Failed')|list|length }}
-            </h2>
-        </div>
+        <a href="{{ url_for('whatsapp_outbox') }}" class="btn" style="background:#64748b;">
+            Reset
+        </a>
+    </form>
+</div>
 
+<div class="wa-panel">
+    <div class="table-wrap">
+        <table class="wa-table">
+            <tr>
+                <th>Date</th>
+                <th>Recipient</th>
+                <th>Phone</th>
+                <th>Category</th>
+                <th>Message</th>
+                <th>Status</th>
+            </tr>
+
+            {% for msg in messages %}
+            <tr>
+                <td>{{ msg.created_at.strftime('%d-%m-%Y %H:%M') if msg.created_at else '' }}</td>
+                <td>{{ msg.recipient_name }}</td>
+                <td>{{ msg.phone }}</td>
+                <td><span class="badge badge-cat">{{ msg.category }}</span></td>
+                <td class="msg-preview">{{ msg.message }}</td>
+                <td>
+                    {% if msg.status == "Sent" %}
+                        <span class="badge badge-sent">Sent</span>
+                    {% elif msg.status == "Failed" %}
+                        <span class="badge badge-failed">Failed</span>
+                    {% else %}
+                        <span class="badge badge-pending">Pending</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align:center;padding:20px;">
+                    No WhatsApp messages found.
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
-
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Recipient</th>
-            <th>Phone</th>
-            <th>Category</th>
-            <th>Message</th>
-            <th>Status</th>
-        </tr>
-
-        {% for msg in messages %}
-        <tr>
-            <td>
-                {{ msg.created_at.strftime('%d-%m-%Y %H:%M') if msg.created_at else '' }}
-            </td>
-
-            <td>{{ msg.recipient_name }}</td>
-
-            <td>{{ msg.phone }}</td>
-
-            <td>{{ msg.category }}</td>
-
-            <td style="max-width:350px;">
-                {{ msg.message[:120] }}
-                {% if msg.message|length > 120 %}...{% endif %}
-            </td>
-
-            <td>
-                {% if msg.status == "Sent" %}
-                    <span style="color:green;font-weight:bold;">
-                        ✓ Sent
-                    </span>
-
-                {% elif msg.status == "Failed" %}
-                    <span style="color:red;font-weight:bold;">
-                        ✗ Failed
-                    </span>
-
-                {% else %}
-                    <span style="color:orange;font-weight:bold;">
-                        Pending
-                    </span>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6" style="text-align:center;padding:20px;">
-                No WhatsApp messages found.
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
 </div>
 
 {% endblock %}
