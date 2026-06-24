@@ -5886,6 +5886,20 @@ def sms_wallet():
     wallet = get_sms_wallet()
 
     if request.method == "POST":
+        action = request.form.get("action", "load_sms")
+
+        if action == "reset_balance":
+            wallet.sms_balance = 0
+            db.session.commit()
+
+            save_audit(
+                "Reset SMS wallet balance to 0.",
+                "Communication"
+            )
+
+            flash("SMS balance reset to 0.")
+            return redirect(url_for("sms_wallet"))
+
         provider = request.form.get("provider", "Other").strip()
         sms_count = int(request.form.get("sms_count") or 0)
         amount_paid = float(request.form.get("amount_paid") or 0)
@@ -5897,6 +5911,7 @@ def sms_wallet():
             return redirect(url_for("sms_wallet"))
 
         purchase_date = date.today()
+
         if purchase_date_raw:
             purchase_date = datetime.strptime(
                 purchase_date_raw,
