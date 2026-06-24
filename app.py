@@ -1684,9 +1684,7 @@ def dashboard():
             for p in Payment.query.all()
         )
 
-        recent_schools = School.query.order_by(
-            School.created_at.desc()
-        ).all()
+        recent_schools = School.query.order_by(School.created_at.desc()).all()
 
         return render_template(
             "super_dashboard.html",
@@ -1708,18 +1706,9 @@ def dashboard():
     current_year_num = today.year
 
     month_names = {
-        1: "January",
-        2: "February",
-        3: "March",
-        4: "April",
-        5: "May",
-        6: "June",
-        7: "July",
-        8: "August",
-        9: "September",
-        10: "October",
-        11: "November",
-        12: "December"
+        1: "January", 2: "February", 3: "March", 4: "April",
+        5: "May", 6: "June", 7: "July", 8: "August",
+        9: "September", 10: "October", 11: "November", 12: "December"
     }
 
     current_month_name = month_names.get(current_month, "May")
@@ -1762,9 +1751,7 @@ def dashboard():
         announcements = Announcement.query.filter_by(
             school_id=school_id,
             status="Active"
-        ).order_by(
-            Announcement.created_at.desc()
-        ).limit(5).all()
+        ).order_by(Announcement.created_at.desc()).limit(5).all()
 
         return render_template(
             "teacher_dashboard.html",
@@ -1780,36 +1767,38 @@ def dashboard():
 
     payments = Payment.query.filter_by(school_id=school_id).all()
 
-    total_collected = sum(
+    total_collected_raw = sum(
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
         for p in payments
     )
 
-    today_collection = sum(
+    today_collection_raw = sum(
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
         for p in payments
         if p.payment_date == today
     )
 
-    month_collection = sum(
+    month_collection_raw = sum(
         p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
         for p in payments
-        if p.payment_date.month == current_month and p.payment_date.year == current_year_num
+        if p.payment_date and p.payment_date.month == current_month and p.payment_date.year == current_year_num
     )
 
-    month_expenses = sum(
-        e.amount for e in Expense.query.filter_by(school_id=school_id).all()
-        if e.expense_date.month == current_month and e.expense_date.year == current_year_num
+    all_expenses = Expense.query.filter_by(school_id=school_id).all()
+
+    month_expenses_raw = sum(
+        e.amount for e in all_expenses
+        if e.expense_date and e.expense_date.month == current_month and e.expense_date.year == current_year_num
     )
 
-    net_income = month_collection - month_expenses
+    net_income_raw = month_collection_raw - month_expenses_raw
 
-    active_pupils = Pupil.query.filter_by(
+    active_pupils_list = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
     ).all()
 
-    total_pupils = len(active_pupils)
+    total_pupils = len(active_pupils_list)
 
     inactive_pupils = Pupil.query.filter(
         Pupil.school_id == school_id,
@@ -1823,9 +1812,9 @@ def dashboard():
     ).count()
 
     defaulters = 0
-    outstanding = 0
+    outstanding_raw = 0
 
-    for pupil in active_pupils:
+    for pupil in active_pupils_list:
         bal = (
             due_until_month(
                 pupil,
@@ -1839,7 +1828,7 @@ def dashboard():
 
         if bal > 0:
             defaulters += 1
-            outstanding += bal
+            outstanding_raw += bal
 
     today_attendance = Attendance.query.filter_by(
         school_id=school_id,
@@ -1869,10 +1858,7 @@ def dashboard():
         status="Failed"
     ).count()
 
-    sms_wallet = SMSWallet.query.filter_by(
-        school_id=school_id
-    ).first()
-
+    sms_wallet = SMSWallet.query.filter_by(school_id=school_id).first()
     sms_balance = sms_wallet.sms_balance if sms_wallet else 0
 
     pending_attendance_alerts = SMSMessage.query.filter_by(
@@ -1906,11 +1892,9 @@ def dashboard():
     upcoming_exams = Exam.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(
-        Exam.academic_year.desc()
-    ).limit(5).all()
+    ).order_by(Exam.academic_year.desc()).limit(5).all()
 
-        finance_months = ["May", "June", "July", "September", "October", "November"]
+    finance_months = ["May", "June", "July", "September", "October", "November"]
 
     finance_chart = []
 
@@ -1921,11 +1905,15 @@ def dashboard():
             if p.academic_year == current_year_num and p.month == m
         )
 
+        month_no = None
+        for num, name in month_names.items():
+            if name == m:
+                month_no = num
+                break
+
         expenses = sum(
-            e.amount for e in Expense.query.filter_by(
-                school_id=school_id
-            ).all()
-            if e.expense_date.year == current_year_num
+            e.amount for e in all_expenses
+            if e.expense_date and e.expense_date.year == current_year_num and e.expense_date.month == month_no
         )
 
         finance_chart.append({
@@ -1938,9 +1926,7 @@ def dashboard():
     recent_announcements = Announcement.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(
-        Announcement.created_at.desc()
-    ).limit(5).all()
+    ).order_by(Announcement.created_at.desc()).limit(5).all()
 
     return render_template(
         "dashboard.html",
@@ -1952,14 +1938,14 @@ def dashboard():
         bus_pupils=bus_pupils,
         new_admissions_month=new_admissions_month,
 
-        total_collected=money(total_collected),
+        total_collected=money(total_collected_raw),
         receipts=len(payments),
-        today_collection=money(today_collection),
-        month_collection=money(month_collection),
-        month_expenses=money(month_expenses),
-        net_income=money(net_income),
+        today_collection=money(today_collection_raw),
+        month_collection=money(month_collection_raw),
+        month_expenses=money(month_expenses_raw),
+        net_income=money(net_income_raw),
         defaulters=defaulters,
-        outstanding=money(outstanding),
+        outstanding=money(outstanding_raw),
 
         present_today=present_today,
         absent_today=absent_today,
