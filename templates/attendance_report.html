@@ -1,57 +1,247 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Attendance Report</h2>
+<style>
+.att-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
 
-    <form method="get" class="two">
+.att-head h2{
+    margin:0;
+    font-size:26px;
+}
+
+.att-head p{
+    margin:5px 0 0;
+    color:#64748b;
+}
+
+.att-panel{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);
+    margin-bottom:14px;
+}
+
+.filter-grid{
+    display:grid;
+    grid-template-columns:1fr 220px auto auto auto;
+    gap:10px;
+    align-items:end;
+}
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.stat-card{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.stat-icon{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+}
+
+.stat-card h2{
+    margin:0;
+    font-size:24px;
+}
+
+.stat-card small{
+    color:#64748b;
+    font-weight:800;
+}
+
+.bg-green{background:#dcfce7;color:#15803d;}
+.bg-red{background:#fee2e2;color:#dc2626;}
+.bg-orange{background:#ffedd5;color:#ea580c;}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.att-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+}
+
+.att-table th{
+    background:#f8fafc;
+    font-size:13px;
+    color:#334155;
+}
+
+.att-table th,
+.att-table td{
+    padding:11px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+}
+
+.badge{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.badge-present{background:#dcfce7;color:#15803d;}
+.badge-absent{background:#fee2e2;color:#dc2626;}
+.badge-late{background:#ffedd5;color:#ea580c;}
+
+@media print{
+    .no-print{
+        display:none!important;
+    }
+
+    .att-panel{
+        box-shadow:none!important;
+        border:none!important;
+    }
+}
+
+@media(max-width:900px){
+    .att-head{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .filter-grid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="att-head no-print">
+    <div>
+        <h2>Attendance Report</h2>
+        <p>Review daily class attendance and create WhatsApp absent alerts.</p>
+    </div>
+</div>
+
+<div class="att-panel no-print">
+    <form method="get" class="filter-grid">
         <div>
             <label>Grade</label>
             <select name="grade" required>
                 <option value="">Choose Grade</option>
                 {% for g in grades %}
-                <option value="{{g}}" {% if selected_grade == g %}selected{% endif %}>{{g}}</option>
+                <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
+                    {{ g }}
+                </option>
                 {% endfor %}
             </select>
         </div>
 
         <div>
             <label>Date</label>
-            <input type="date" name="attendance_date" value="{{attendance_date}}" required>
+            <input type="date" name="attendance_date" value="{{ attendance_date }}" required>
         </div>
 
         <button class="btn">Load Report</button>
-        <button type="button" class="btn green" onclick="window.print()">Print Report</button>
+
+        <button type="button" class="btn green" onclick="window.print()">
+            Print
+        </button>
+
+        {% if selected_grade and absent > 0 %}
+        <a class="btn"
+           style="background:#16a34a;"
+           href="{{ url_for('send_absent_whatsapp_alerts', grade=selected_grade, attendance_date=attendance_date) }}"
+           onclick="return confirm('Create WhatsApp alerts for all absent pupils?')">
+            WhatsApp Absent Alerts
+        </a>
+        {% endif %}
     </form>
 </div>
 
-<div class="panel">
-    <h2>{{ selected_grade }} Attendance Report</h2>
-    <p><b>Date:</b> {{ attendance_date }}</p>
-
-    <div class="dashboard-grid">
-        <div class="card"><h3>Present</h3><div class="number">{{ present }}</div></div>
-        <div class="card"><h3>Absent</h3><div class="number">{{ absent }}</div></div>
-        <div class="card"><h3>Late</h3><div class="number">{{ late }}</div></div>
+<div class="att-panel">
+    <div style="text-align:center;">
+        <h2>{{ settings.school_name }}</h2>
+        <h3>{{ selected_grade }} Attendance Report</h3>
+        <p><b>Date:</b> {{ attendance_date }}</p>
     </div>
 
-    <table>
-        <tr>
-            <th>No.</th>
-            <th>Admission No</th>
-            <th>Name</th>
-            <th>Status</th>
-        </tr>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-green">✅</div>
+            <div>
+                <h2>{{ present }}</h2>
+                <small>Present</small>
+            </div>
+        </div>
 
-        {% for r in records %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ r.pupil.admission_no }}</td>
-            <td>{{ r.pupil.full_name }}</td>
-            <td>{{ r.status }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+        <div class="stat-card">
+            <div class="stat-icon bg-red">❌</div>
+            <div>
+                <h2>{{ absent }}</h2>
+                <small>Absent</small>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-orange">⏰</div>
+            <div>
+                <h2>{{ late }}</h2>
+                <small>Late</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="att-table">
+            <tr>
+                <th>No.</th>
+                <th>Admission No</th>
+                <th>Name</th>
+                <th>Status</th>
+            </tr>
+
+            {% for r in records %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ r.pupil.admission_no }}</td>
+                <td>{{ r.pupil.full_name }}</td>
+                <td>
+                    {% if r.status == "Present" %}
+                        <span class="badge badge-present">Present</span>
+                    {% elif r.status == "Absent" %}
+                        <span class="badge badge-absent">Absent</span>
+                    {% else %}
+                        <span class="badge badge-late">Late</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No attendance records found for this grade/date.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 
 {% endblock %}
