@@ -3110,6 +3110,101 @@ def report_cards():
         selected_grade=selected_grade
     )
 
+@app.route("/send_report_whatsapp_alerts")
+def send_report_whatsapp_alerts():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    school = get_settings()
+
+    exam_id = request.args.get("exam_id", "")
+    grade = request.args.get("grade", "")
+
+    if not exam_id or not grade:
+        flash("Please select exam and grade first.")
+        return redirect(url_for("report_cards"))
+
+    exam = Exam.query.filter_by(
+        id=int(exam_id),
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not exam:
+        flash("Invalid exam selected.")
+        return redirect(url_for("report_cards"))
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        grade=grade,
+        status="Active"
+    ).order_by(Pupil.full_name).all()
+
+    count = 0
+
+    for p in pupils:
+        if not p.guardian_phone:
+            continue
+
+        marks = Mark.query.filter_by(
+            school_id=school_id,
+            pupil_id=p.id,
+            exam_id=exam.id
+        ).all()
+
+        if not marks:
+            continue
+
+        total = sum(m.marks for m in marks)
+        average = round(total / len(marks), 1) if marks else 0
+
+        if average >= 80:
+            level = "EE"
+        elif average >= 60:
+            level = "ME"
+        elif average >= 40:
+            level = "AE"
+        else:
+            level = "BE"
+
+        message = (
+            f"{school.school_name}\n"
+            f"REPORT CARD ALERT\n"
+            f"Dear Parent, {p.full_name}'s {exam.exam_name} report card is ready.\n"
+            f"Average: {average}%\n"
+            f"CBC Level: {level}\n"
+            f"Please visit the school/portal for full report. Thank you."
+        )
+
+        wa = WhatsAppMessage(
+            school_id=school_id,
+            recipient_name=p.guardian_name or p.full_name,
+            phone=p.guardian_phone,
+            message=message,
+            category="Exam Result",
+            status="Pending",
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(wa)
+        count += 1
+
+    db.session.commit()
+
+    flash(f"{count} WhatsApp report alert(s) created as pending.")
+    return redirect(
+        url_for(
+            "report_cards",
+            exam_id=exam_id,
+            grade=grade
+        )
+    )
+
 @app.route("/send_exam_whatsapp_alerts")
 def send_exam_whatsapp_alerts():
     if not login_required():
@@ -5867,6 +5962,7 @@ def cleanup_invalid_sms():
 
     flash(f"{count} invalid pending SMS message(s) marked as Invalid.")
     return redirect(url_for("sms_messages"))
+    
 @app.route("/announcements", methods=["GET", "POST"])
 def announcements():
     if not login_required():
@@ -5895,9 +5991,6 @@ def announcements():
         db.session.add(ann)
         db.session.commit()
 
-        sms_count = 0
-        failed_count = 0
-
         recipients = []
 
         if audience in ["All", "Parents"]:
@@ -5909,51 +6002,69 @@ def announcements():
             for p in pupils:
                 if p.guardian_phone:
                     recipients.append({
-                        "name": p.guardian_name,
+                        "name": p.guardian_name or p.full_name,
                         "phone": p.guardian_phone
                     })
 
-        required_sms = len(recipients)
+        sms_count = 0
+        sms_failed = 0
+        whatsapp_count = 0
 
-        if required_sms > 0:
+        announcement_message = (
+            f"{school.school_name}\n\n"
+            f"ANNOUNCEMENT: {title}\n\n"
+            f"{message}"
+        )
+
+        if recipients:
             wallet = get_sms_wallet()
 
-            if not wallet.sms_enabled:
-                flash("Announcement created, but SMS service is disabled.")
-            elif wallet.sms_balance < required_sms:
-                flash(
-                    f"Announcement created, but SMS not queued. "
-                    f"You need {required_sms} SMS, but balance is {wallet.sms_balance}."
-                )
-            else:
-                sms_message = (
-                    f"{school.school_name}\n\n"
-                    f"ANNOUNCEMENT: {title}\n\n"
-                    f"{message}"
-                )
-
+            if wallet.sms_enabled and wallet.sms_balance >= len(recipients):
                 for r in recipients:
                     ok, sms_msg = create_sms(
                         r["name"],
                         r["phone"],
-                        sms_message,
+                        announcement_message,
                         "Announcement"
                     )
 
                     if ok:
                         sms_count += 1
                     else:
-                        failed_count += 1
+                        sms_failed += 1
+            else:
+                flash(
+                    f"Announcement created. SMS not queued because SMS is disabled "
+                    f"or balance is insufficient."
+                )
+
+            for r in recipients:
+                wa = WhatsAppMessage(
+                    school_id=school_id,
+                    recipient_name=r["name"],
+                    phone=r["phone"],
+                    message=announcement_message,
+                    category="Announcement",
+                    status="Pending",
+                    created_by=session.get("username", "")
+                )
+
+                db.session.add(wa)
+                whatsapp_count += 1
+
+            db.session.commit()
 
         save_audit(
-            f"Created announcement: {ann.title}. SMS queued: {sms_count}. Failed: {failed_count}",
+            f"Created announcement: {ann.title}. "
+            f"SMS queued: {sms_count}. SMS failed: {sms_failed}. "
+            f"WhatsApp queued: {whatsapp_count}.",
             "Communication"
         )
 
-        if sms_count > 0:
-            flash(f"Announcement created successfully. {sms_count} SMS queued and deducted.")
-        else:
-            flash("Announcement created successfully.")
+        flash(
+            f"Announcement created successfully. "
+            f"SMS queued: {sms_count}. WhatsApp queued: {whatsapp_count}."
+        )
 
         return redirect(url_for("announcements"))
 
