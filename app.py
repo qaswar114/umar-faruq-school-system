@@ -1910,6 +1910,31 @@ def dashboard():
         Exam.academic_year.desc()
     ).limit(5).all()
 
+        finance_months = ["May", "June", "July", "September", "October", "November"]
+
+    finance_chart = []
+
+    for m in finance_months:
+        collected = sum(
+            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+            for p in payments
+            if p.academic_year == current_year_num and p.month == m
+        )
+
+        expenses = sum(
+            e.amount for e in Expense.query.filter_by(
+                school_id=school_id
+            ).all()
+            if e.expense_date.year == current_year_num
+        )
+
+        finance_chart.append({
+            "month": m[:3],
+            "collected": collected,
+            "expenses": expenses,
+            "net": collected - expenses
+        })
+
     recent_announcements = Announcement.query.filter_by(
         school_id=school_id,
         status="Active"
@@ -1951,7 +1976,8 @@ def dashboard():
         total_staff=total_staff,
         total_teachers=total_teachers,
         upcoming_exams=upcoming_exams,
-        recent_announcements=recent_announcements
+        recent_announcements=recent_announcements,
+        finance_chart=finance_chart
     )
 @app.route("/business_dashboard")
 def business_dashboard():
