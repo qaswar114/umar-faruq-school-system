@@ -304,7 +304,10 @@
         <a href="/report_cards">📄 Report Cards</a>
 
         <div class="nav-label">FINANCE</div>
-        <a href="/payments">💰 Payments</a>
+        <a class="{% if request.path == '/payments' %}active{% endif %}"
+         href="/payments">
+        💰 Payments
+        </a>
         <a href="/statement">📄 Statements</a>
         <a href="/defaulters_report">📊 Defaulters</a>
         <a href="/expenses">🧾 Expenses</a>
