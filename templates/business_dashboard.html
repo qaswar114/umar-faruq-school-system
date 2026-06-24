@@ -1,117 +1,361 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h1>Business Intelligence Dashboard</h1>
+<style>
+.bi-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
 
-    <div class="notice">
-        This dashboard helps school owners understand finance, attendance, communication, and growth.
+.bi-head h2{
+    margin:0;
+    font-size:26px;
+}
+
+.bi-head p{
+    margin:5px 0 0;
+    color:#64748b;
+}
+
+.bi-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.bi-kpis{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.bi-card{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+}
+
+.bi-icon{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:21px;
+    flex-shrink:0;
+}
+
+.bi-card small{
+    font-weight:800;
+    color:#64748b;
+    font-size:12px;
+}
+
+.bi-card h2{
+    margin:4px 0 0;
+    font-size:20px;
+    word-break:break-word;
+}
+
+.bg-green{background:#dcfce7;color:#15803d}
+.bg-blue{background:#dbeafe;color:#0b5ed7}
+.bg-purple{background:#ede9fe;color:#6d28d9}
+.bg-red{background:#fee2e2;color:#dc2626}
+.bg-orange{background:#ffedd5;color:#ea580c}
+.bg-teal{background:#ccfbf1;color:#0f766e}
+
+.bi-grid{
+    display:grid;
+    grid-template-columns:1.2fr .8fr;
+    gap:14px;
+    margin-bottom:14px;
+}
+
+.bi-panel{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 4px 12px rgba(15,23,42,.05);
+}
+
+.bi-panel h3{
+    margin-top:0;
+    font-size:20px;
+}
+
+.rate-box{
+    background:#f8fafc;
+    border:1px solid #eef2f7;
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:12px;
+}
+
+.rate-top{
+    display:flex;
+    justify-content:space-between;
+    font-weight:800;
+    margin-bottom:8px;
+}
+
+.progress{
+    height:12px;
+    background:#e5e7eb;
+    border-radius:999px;
+    overflow:hidden;
+}
+
+.progress-fill{
+    height:100%;
+    background:#16a34a;
+    border-radius:999px;
+}
+
+.insight-list{
+    display:grid;
+    gap:10px;
+}
+
+.insight{
+    background:#f8fafc;
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:800;
+}
+
+.insight span{
+    color:#64748b;
+    font-size:13px;
+}
+
+.cash-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.cash-box{
+    background:#f8fafc;
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:12px;
+}
+
+.cash-box small{
+    color:#64748b;
+    font-weight:800;
+}
+
+.cash-box h3{
+    margin:5px 0 0;
+}
+
+.bottom-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+}
+
+@media(max-width:1100px){
+    .bi-grid,
+    .bottom-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+    .bi-head{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
+
+    .cash-grid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="bi-head">
+    <div>
+        <h2>Business Intelligence Dashboard</h2>
+        <p>Finance, attendance, communication and growth insights for school owners.</p>
     </div>
 
-    <h3>Finance Intelligence</h3>
+    <div class="bi-actions">
+        <a href="{{ url_for('dashboard') }}" class="btn">Dashboard</a>
+        <a href="{{ url_for('defaulters_report') }}" class="btn">Defaulters</a>
+        <a href="{{ url_for('payments') }}" class="btn green">Collect Fees</a>
+    </div>
+</div>
 
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Expected Income</h3>
-            <div class="number">{{ total_expected }}</div>
-        </div>
+<div class="bi-kpis">
 
-        <div class="card">
-            <h3>Total Paid</h3>
-            <div class="number">{{ total_paid }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Outstanding Fees</h3>
-            <div class="number">{{ outstanding }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Collection Rate</h3>
-            <div class="number">{{ collection_rate }}%</div>
+    <div class="bi-card">
+        <div class="bi-icon bg-green">💰</div>
+        <div>
+            <small>Expected Income</small>
+            <h2>{{ total_expected }}</h2>
         </div>
     </div>
 
-    <h3>Cash Flow</h3>
-
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Today</h3>
-            <div class="number">{{ today_collection }}</div>
-        </div>
-
-        <div class="card">
-            <h3>This Month</h3>
-            <div class="number">{{ month_collection }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Defaulters</h3>
-            <div class="number">{{ defaulters }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Top Defaulter Grade</h3>
-            <div class="number">{{ top_defaulter_grade }}</div>
-            <p>{{ top_defaulter_amount }}</p>
+    <div class="bi-card">
+        <div class="bi-icon bg-blue">✅</div>
+        <div>
+            <small>Total Paid</small>
+            <h2>{{ total_paid }}</h2>
         </div>
     </div>
 
-    <h3>Attendance Intelligence</h3>
-
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Attendance Rate</h3>
-            <div class="number">{{ attendance_rate }}%</div>
-        </div>
-
-        <div class="card">
-            <h3>Present Today</h3>
-            <div class="number">{{ present_today }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Absent Today</h3>
-            <div class="number">{{ absent_today }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Late Today</h3>
-            <div class="number">{{ late_today }}</div>
+    <div class="bi-card">
+        <div class="bi-icon bg-red">📄</div>
+        <div>
+            <small>Outstanding Fees</small>
+            <h2>{{ outstanding }}</h2>
         </div>
     </div>
 
-    <h3>Communication & Growth</h3>
-
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Pending SMS</h3>
-            <div class="number">{{ pending_sms }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Sent SMS</h3>
-            <div class="number">{{ sent_sms }}</div>
-        </div>
-
-        <div class="card">
-            <h3>New Admissions</h3>
-            <div class="number">{{ new_admissions }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Total Pupils</h3>
-            <div class="number">{{ total_pupils }}</div>
+    <div class="bi-card">
+        <div class="bi-icon bg-purple">📊</div>
+        <div>
+            <small>Collection Rate</small>
+            <h2>{{ collection_rate }}%</h2>
         </div>
     </div>
 
-    <br>
+</div>
 
-    <div class="action-row">
-        <a href="{{ url_for('dashboard') }}" class="btn">Back to Dashboard</a>
-        <a href="{{ url_for('defaulters_report') }}" class="btn">Defaulters Report</a>
-        <a href="{{ url_for('sms_messages') }}" class="btn green">Communication Centre</a>
-        <a href="{{ url_for('payments') }}" class="btn">Collect Fees</a>
+<div class="bi-grid">
+
+    <div class="bi-panel">
+        <h3>📈 Finance Intelligence</h3>
+
+        <div class="rate-box">
+            <div class="rate-top">
+                <span>Collection Performance</span>
+                <span>{{ collection_rate }}%</span>
+            </div>
+
+            <div class="progress">
+                <div class="progress-fill" style="width:{{ collection_rate if collection_rate < 100 else 100 }}%;"></div>
+            </div>
+        </div>
+
+        <div class="cash-grid">
+            <div class="cash-box">
+                <small>Today Collection</small>
+                <h3>{{ today_collection }}</h3>
+            </div>
+
+            <div class="cash-box">
+                <small>This Month</small>
+                <h3>{{ month_collection }}</h3>
+            </div>
+
+            <div class="cash-box">
+                <small>Defaulters</small>
+                <h3>{{ defaulters }}</h3>
+            </div>
+
+            <div class="cash-box">
+                <small>Top Defaulter Grade</small>
+                <h3>{{ top_defaulter_grade }}</h3>
+                <small>{{ top_defaulter_amount }}</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="bi-panel">
+        <h3>🎓 Growth Intelligence</h3>
+
+        <div class="insight-list">
+            <div class="insight">
+                <span>Total Pupils</span>
+                <b>{{ total_pupils }}</b>
+            </div>
+
+            <div class="insight">
+                <span>New Admissions</span>
+                <b>{{ new_admissions }}</b>
+            </div>
+
+            <div class="insight">
+                <span>Pending SMS</span>
+                <b>{{ pending_sms }}</b>
+            </div>
+
+            <div class="insight">
+                <span>Sent SMS</span>
+                <b>{{ sent_sms }}</b>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="bottom-grid">
+
+    <div class="bi-panel">
+        <h3>✅ Attendance Intelligence</h3>
+
+        <div class="rate-box">
+            <div class="rate-top">
+                <span>Attendance Rate</span>
+                <span>{{ attendance_rate }}%</span>
+            </div>
+
+            <div class="progress">
+                <div class="progress-fill" style="width:{{ attendance_rate if attendance_rate < 100 else 100 }}%;"></div>
+            </div>
+        </div>
+
+        <div class="cash-grid">
+            <div class="cash-box">
+                <small>Present Today</small>
+                <h3>{{ present_today }}</h3>
+            </div>
+
+            <div class="cash-box">
+                <small>Absent Today</small>
+                <h3>{{ absent_today }}</h3>
+            </div>
+
+            <div class="cash-box">
+                <small>Late Today</small>
+                <h3>{{ late_today }}</h3>
+            </div>
+
+            <div class="cash-box">
+                <small>Total Pupils</small>
+                <h3>{{ total_pupils }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="bi-panel">
+        <h3>⚡ Quick Decisions</h3>
+
+        <div class="insight-list">
+            <a class="btn" href="{{ url_for('defaulters_report') }}">View Defaulters Report</a>
+            <a class="btn green" href="{{ url_for('payments') }}">Collect Fees</a>
+            <a class="btn" href="{{ url_for('sms_messages') }}">Communication Centre</a>
+            <a class="btn" href="{{ url_for('attendance_report') }}">Attendance Report</a>
+        </div>
     </div>
 
 </div>
