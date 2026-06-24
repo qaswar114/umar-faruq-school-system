@@ -5474,6 +5474,7 @@ def bulk_sms():
         selected_grade=selected_grade,
         pupils=pupils
     )
+    
 @app.route("/sms_messages", methods=["GET", "POST"])
 def sms_messages():
     if not login_required():
@@ -5485,6 +5486,7 @@ def sms_messages():
 
     school_id = current_school_id()
     today = date.today()
+    wallet = get_sms_wallet()
 
     if request.method == "POST":
         action = request.form.get("action", "create_sms")
@@ -5500,10 +5502,7 @@ def sms_messages():
             last_error = ""
 
             for sms in pending_messages:
-                ok, response = send_sms_gateway(
-                    sms.phone,
-                    sms.message
-                )
+                ok, response = send_sms_gateway(sms.phone, sms.message)
 
                 if ok:
                     sms.status = "Sent"
@@ -5516,18 +5515,17 @@ def sms_messages():
             db.session.commit()
 
             save_audit(
-                f"Sent pending SMS via Africa's Talking. Sent: {sent_count}, Failed: {failed_count}",
+                f"Sent pending SMS. Sent: {sent_count}, Failed: {failed_count}",
                 "Communication"
             )
 
-            if last_error:
-                flash(
-                    f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}. "
-                    f"Last error: {last_error}"
-                )
-            else:
-                flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}.")
+            flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}. {last_error}")
+            return redirect(url_for("sms_messages"))
 
+        if action == "reset_balance":
+            wallet.sms_balance = 0
+            db.session.commit()
+            flash("SMS balance reset to 0.")
             return redirect(url_for("sms_messages"))
 
         send_to = request.form.get("send_to", "single")
@@ -5544,14 +5542,10 @@ def sms_messages():
             phone = request.form.get("phone", "").strip()
             recipient_name = request.form.get("recipient_name", "").strip()
 
-            if not phone:
-                flash("Phone number is required for one-parent SMS.")
-                return redirect(url_for("sms_messages"))
-
             cleaned_phone = clean_phone_number(phone)
 
             if not cleaned_phone:
-                flash("Invalid phone number. Use Kenyan format like 0712345678 or 254712345678.")
+                flash("Invalid phone number.")
                 return redirect(url_for("sms_messages"))
 
             recipients.append({
@@ -5562,10 +5556,6 @@ def sms_messages():
         elif send_to == "grade":
             grade = request.form.get("grade")
 
-            if not grade:
-                flash("Please select a grade/class.")
-                return redirect(url_for("sms_messages"))
-
             pupils = Pupil.query.filter_by(
                 school_id=school_id,
                 grade=grade,
@@ -5574,7 +5564,6 @@ def sms_messages():
 
             for p in pupils:
                 cleaned_phone = clean_phone_number(p.guardian_phone)
-
                 if cleaned_phone:
                     recipients.append({
                         "name": p.guardian_name,
@@ -5589,7 +5578,6 @@ def sms_messages():
 
             for p in pupils:
                 cleaned_phone = clean_phone_number(p.guardian_phone)
-
                 if cleaned_phone:
                     recipients.append({
                         "name": p.guardian_name,
@@ -5602,15 +5590,13 @@ def sms_messages():
             flash("No valid recipient phone numbers found.")
             return redirect(url_for("sms_messages"))
 
-        wallet = get_sms_wallet()
-
         if not wallet.sms_enabled:
             flash("SMS service is disabled for this school.")
             return redirect(url_for("sms_messages"))
 
         if wallet.sms_balance < required_sms:
             flash(
-                f"Insufficient SMS balance. You need {required_sms} SMS, "
+                f"Insufficient SMS balance. You need {required_sms}, "
                 f"but your balance is {wallet.sms_balance}."
             )
             return redirect(url_for("sms_messages"))
@@ -5636,19 +5622,13 @@ def sms_messages():
             "Communication"
         )
 
-        if failed_count > 0:
-            flash(f"{count} SMS message(s) saved as pending. {failed_count} failed.")
-        else:
-            flash(f"{count} SMS message(s) saved as pending. {count} SMS deducted.")
-
+        flash(f"{count} SMS message(s) saved as pending. {failed_count} failed.")
         return redirect(url_for("sms_messages"))
 
     selected_status = request.args.get("status", "")
     selected_category = request.args.get("category", "")
 
-    query = SMSMessage.query.filter_by(
-        school_id=school_id
-    )
+    query = SMSMessage.query.filter_by(school_id=school_id)
 
     if selected_status:
         query = query.filter(SMSMessage.status == selected_status)
@@ -5656,9 +5636,7 @@ def sms_messages():
     if selected_category:
         query = query.filter(SMSMessage.category == selected_category)
 
-    rows = query.order_by(
-        SMSMessage.created_at.desc()
-    ).all()
+    rows = query.order_by(SMSMessage.created_at.desc()).limit(100).all()
 
     pending_count = SMSMessage.query.filter_by(
         school_id=school_id,
@@ -5721,6 +5699,7 @@ def sms_messages():
         settings=get_settings(),
         rows=rows,
         grades=GRADES,
+        wallet=wallet,
         pending_count=pending_count,
         sent_count=sent_count,
         failed_count=failed_count,
@@ -5734,6 +5713,7 @@ def sms_messages():
         selected_status=selected_status,
         selected_category=selected_category
     )
+    
 @app.route("/cleanup_invalid_sms", methods=["POST"])
 def cleanup_invalid_sms():
     if not login_required():
