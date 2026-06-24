@@ -2941,6 +2941,59 @@ def attendance():
         selected_grade=selected_grade,
         attendance_date=attendance_date
     )
+
+@app.route("/attendance_report")
+def attendance_report():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "registrar", "receptionist", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    current_role = session.get("role", "").lower()
+
+    selected_grade = request.args.get("grade", "")
+    attendance_date = request.args.get("attendance_date", str(date.today()))
+
+    if current_role == "teacher":
+        current_user = User.query.filter_by(
+            username=session.get("username"),
+            school_id=school_id
+        ).first()
+
+        if current_user and current_user.assigned_grade:
+            selected_grade = current_user.assigned_grade
+        else:
+            flash("You have not been assigned to any grade. Contact Admin.")
+            return redirect(url_for("dashboard"))
+
+    records = []
+
+    if selected_grade:
+        records = Attendance.query.join(Pupil).filter(
+            Attendance.school_id == school_id,
+            Pupil.school_id == school_id,
+            Pupil.grade == selected_grade,
+            Attendance.attendance_date == datetime.strptime(attendance_date, "%Y-%m-%d").date()
+        ).all()
+
+    present = sum(1 for r in records if r.status == "Present")
+    absent = sum(1 for r in records if r.status == "Absent")
+    late = sum(1 for r in records if r.status == "Late")
+
+    return render_template(
+        "attendance_report.html",
+        settings=get_settings(),
+        records=records,
+        selected_grade=selected_grade,
+        attendance_date=attendance_date,
+        grades=GRADES,
+        present=present,
+        absent=absent,
+        late=late
+    )
     
 @app.route("/send_absent_whatsapp_alerts")
 def send_absent_whatsapp_alerts():
