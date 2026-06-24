@@ -2826,11 +2826,13 @@ def attendance():
             status="Active"
         ).all()
 
-        absent_count = 0
-        sms_failed_count = 0
         whatsapp_count = 0
 
-        attendance_day = datetime.strptime(attendance_date, "%Y-%m-%d").date()
+        attendance_day = datetime.strptime(
+            attendance_date,
+            "%Y-%m-%d"
+        ).date()
+
         school_name = get_settings().school_name
 
         for pupil in pupils:
@@ -2856,7 +2858,6 @@ def attendance():
                 db.session.add(new_attendance)
 
             if status == "Absent" and pupil.guardian_phone and previous_status != "Absent":
-
                 message = (
                     f"{school_name}\n\n"
                     f"ATTENDANCE ALERT\n\n"
@@ -2867,27 +2868,6 @@ def attendance():
                     f"Thank you.\n"
                     f"School Administration."
                 )
-
-                duplicate_sms = SMSMessage.query.filter(
-                    SMSMessage.school_id == school_id,
-                    SMSMessage.phone == pupil.guardian_phone,
-                    SMSMessage.category == "Attendance Alert",
-                    SMSMessage.message.ilike(f"%{pupil.full_name}%"),
-                    SMSMessage.message.ilike(f"%{attendance_date}%")
-                ).first()
-
-                if not duplicate_sms:
-                    ok, sms_msg = create_sms(
-                        pupil.guardian_name,
-                        pupil.guardian_phone,
-                        message,
-                        "Attendance Alert"
-                    )
-
-                    if ok:
-                        absent_count += 1
-                    else:
-                        sms_failed_count += 1
 
                 duplicate_whatsapp = WhatsAppMessage.query.filter(
                     WhatsAppMessage.school_id == school_id,
@@ -2915,16 +2895,13 @@ def attendance():
 
         save_audit(
             f"Saved attendance for {selected_grade} on {attendance_date}. "
-            f"SMS alerts: {absent_count}. Failed SMS: {sms_failed_count}. "
-            f"WhatsApp alerts: {whatsapp_count}.",
+            f"WhatsApp alerts queued: {whatsapp_count}.",
             "Attendance"
         )
 
         flash(
             f"Attendance saved successfully. "
-            f"SMS alerts: {absent_count}. "
-            f"WhatsApp alerts queued: {whatsapp_count}. "
-            f"Failed SMS: {sms_failed_count}."
+            f"WhatsApp alerts queued: {whatsapp_count}."
         )
 
         return redirect(url_for(
@@ -2941,7 +2918,6 @@ def attendance():
         selected_grade=selected_grade,
         attendance_date=attendance_date
     )
-
 @app.route("/attendance_report")
 def attendance_report():
     if not login_required():
