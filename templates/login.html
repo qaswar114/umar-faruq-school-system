@@ -1,112 +1,180 @@
+<!doctype html>
+<html>
+<head>
+    <title>EduManage Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% block content %}
+    <style>
+        *{
+            box-sizing:border-box;
+            margin:0;
+            padding:0;
+        }
 
-<style>
-.login-wrapper{
-    max-width:500px;
-    margin:40px auto;
-}
+        body{
+            font-family:Arial,sans-serif;
+            min-height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:linear-gradient(135deg,#0b5ed7,#16a34a);
+            padding:20px;
+        }
 
-.login-card{
-    background:white;
-    border-radius:20px;
-    padding:35px;
-    box-shadow:0 10px 30px rgba(0,0,0,.08);
-    text-align:center;
-}
+        .login-card{
+            width:100%;
+            max-width:500px;
+            background:white;
+            border-radius:20px;
+            padding:40px;
+            box-shadow:0 20px 50px rgba(0,0,0,.15);
+        }
 
-.edumanage-logo{
-    width:110px;
-    margin-bottom:15px;
-}
+        .logo-area{
+            text-align:center;
+            margin-bottom:25px;
+        }
 
-.login-title{
-    font-size:38px;
-    font-weight:800;
-    color:#0b5ed7;
-    margin:0;
-}
+        .logo-area img{
+            width:140px;
+            height:auto;
+            margin-bottom:15px;
+        }
 
-.login-title span{
-    color:#16a34a;
-}
+        .brand{
+            font-size:48px;
+            font-weight:800;
+            margin-bottom:8px;
+        }
 
-.login-subtitle{
-    color:#64748b;
-    margin-bottom:25px;
-    font-size:15px;
-}
+        .brand .edu{
+            color:#2563eb;
+        }
 
-.login-card label{
-    text-align:left;
-    display:block;
-    margin-top:12px;
-    margin-bottom:6px;
-    font-weight:600;
-}
+        .brand .manage{
+            color:#16a34a;
+        }
 
-.login-card input{
-    width:100%;
-    padding:12px;
-    border:1px solid #d1d5db;
-    border-radius:10px;
-}
+        .tagline{
+            color:#64748b;
+            font-size:17px;
+            margin-bottom:20px;
+        }
 
-.login-btn{
-    width:100%;
-    margin-top:20px;
-    padding:13px;
-    font-size:16px;
-    font-weight:bold;
-    background:#0b5ed7;
-    border:none;
-    border-radius:10px;
-    color:white;
-}
+        .flash{
+            background:#fff7d6;
+            color:#7c5c00;
+            padding:12px;
+            border-radius:10px;
+            margin-bottom:15px;
+        }
 
-.login-footer{
-    margin-top:20px;
-    color:#64748b;
-    font-size:13px;
-}
-</style>
+        label{
+            display:block;
+            margin-bottom:6px;
+            font-weight:bold;
+            color:#1e293b;
+        }
 
-<div class="login-wrapper">
+        input{
+            width:100%;
+            padding:14px;
+            border:1px solid #cbd5e1;
+            border-radius:10px;
+            margin-bottom:18px;
+            font-size:16px;
+        }
 
-    <div class="login-card">
+        input:focus{
+            outline:none;
+            border-color:#2563eb;
+        }
 
-        <img src="{{ url_for('static', filename='edumanage_logo.png') }}" class="login-logo">
-             class="edumanage-logo">
+        button{
+            width:100%;
+            border:none;
+            background:#0b5ed7;
+            color:white;
+            padding:15px;
+            font-size:18px;
+            font-weight:bold;
+            border-radius:10px;
+            cursor:pointer;
+        }
 
-        <h1 class="login-title">
-            Edu<span>Manage</span>
-        </h1>
+        button:hover{
+            background:#084298;
+        }
 
-        <div class="login-subtitle">
-            Smart School Management System
+        .footer{
+            text-align:center;
+            margin-top:25px;
+            color:#64748b;
+            font-size:14px;
+        }
+
+        @media(max-width:600px){
+            .login-card{
+                padding:25px;
+            }
+
+            .brand{
+                font-size:38px;
+            }
+
+            .logo-area img{
+                width:110px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+    <div class="logo-area">
+
+        <img src="{{ url_for('static', filename='edumanage_logo.png') }}"
+             alt="EduManage Logo">
+
+        <div class="brand">
+            <span class="edu">Edu</span><span class="manage">Manage</span>
         </div>
 
-        <form method="post">
-
-            <label>Username</label>
-            <input name="username" required>
-
-            <label>Password</label>
-            <input name="password" type="password" required>
-
-            <button class="login-btn">
-                Login
-            </button>
-
-        </form>
-
-        <div class="login-footer">
-            © {{ current_year() if current_year else "2026" }}
-            EduManage SaaS Platform
+        <div class="tagline">
+            Smart School Management System
         </div>
 
     </div>
 
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="post">
+
+        <label>Username</label>
+        <input name="username" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">
+            Login
+        </button>
+
+    </form>
+
+    <div class="footer">
+        © 2026 EduManage SaaS Platform
+    </div>
+
 </div>
 
-{% endblock %}
+</body>
+</html>
