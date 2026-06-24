@@ -1,1 +1,136 @@
-{% extends "base.html" %}{% block content %}<div class="panel" style="max-width:430px;margin:60px auto"><img src="{{ url_for('static', filename='logo.png') }}" class="login-logo"><h2 style="text-align:center">{{ settings.school_name }}</h2><p style="text-align:center">Online School Fees System</p><div class="notice"></div><form method="post"><label>Username</label><input name="username"><label>Password</label><input name="password" type="password"><button class="btn">Login</button></form></div>{% endblock %}
+<!doctype html>
+<html>
+<head>
+    <title>{{ settings.school_name if settings else "School Login" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        *{box-sizing:border-box}
+
+        body{
+            margin:0;
+            font-family:Arial,sans-serif;
+            min-height:100vh;
+            background:linear-gradient(135deg,#061b44,#0b5ed7);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+        }
+
+        .login-card{
+            width:100%;
+            max-width:420px;
+            background:white;
+            border-radius:20px;
+            padding:30px;
+            box-shadow:0 20px 50px rgba(0,0,0,.25);
+            text-align:center;
+        }
+
+        .login-logo{
+            width:95px;
+            height:95px;
+            border-radius:50%;
+            object-fit:cover;
+            margin-bottom:15px;
+            border:4px solid #e5e7eb;
+        }
+
+        h2{
+            margin:0;
+            color:#0f172a;
+            font-size:24px;
+        }
+
+        p{
+            color:#64748b;
+            margin:8px 0 25px;
+        }
+
+        label{
+            display:block;
+            text-align:left;
+            font-weight:bold;
+            margin-bottom:6px;
+            color:#0f172a;
+        }
+
+        input{
+            width:100%;
+            padding:13px;
+            border:1px solid #cbd5e1;
+            border-radius:10px;
+            margin-bottom:15px;
+            font-size:15px;
+        }
+
+        button{
+            width:100%;
+            background:#0b5ed7;
+            color:white;
+            border:none;
+            padding:13px;
+            border-radius:10px;
+            font-size:16px;
+            font-weight:bold;
+            cursor:pointer;
+        }
+
+        button:hover{
+            background:#084bb0;
+        }
+
+        .flash{
+            background:#fff7d6;
+            padding:10px;
+            border-radius:10px;
+            margin-bottom:15px;
+            color:#92400e;
+            text-align:left;
+        }
+
+        .footer{
+            margin-top:20px;
+            font-size:12px;
+            color:#64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+    <img src="{{ url_for('static', filename=settings.logo if settings and settings.logo else 'logo.png') }}"
+         class="login-logo">
+
+    <h2>{{ settings.school_name if settings else "School System" }}</h2>
+    <p>Online School Management System</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="post">
+        <label>Username</label>
+        <input name="username" required placeholder="Enter username">
+
+        <label>Password</label>
+        <input name="password" type="password" required placeholder="Enter password">
+
+        <button type="submit">Login</button>
+    </form>
+
+    <div class="footer">
+        Powered by EduManage SaaS
+    </div>
+
+</div>
+
+</body>
+</html>
