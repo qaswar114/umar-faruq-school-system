@@ -1,28 +1,102 @@
 {% extends "base.html" %}
 {% block content %}
 
-{% if can_register %}
-<div class="panel">
-    <h2>Pupil Registration</h2>
+<style>
+.pupil-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pupil-head h2{margin:0;font-size:26px}
+.pupil-head p{margin:5px 0 0;color:#64748b}
+.pupil-panel{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:16px;box-shadow:0 4px 12px rgba(15,23,42,.05);margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.stat-card{background:white;border:1px solid #e5e7eb;border-radius:14px;padding:12px;box-shadow:0 4px 12px rgba(15,23,42,.05);display:flex;gap:10px;align-items:center}
+.stat-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.stat-card h2{margin:0;font-size:22px}
+.stat-card small{color:#64748b;font-weight:800}
+.bg-blue{background:#dbeafe;color:#0b5ed7}.bg-green{background:#dcfce7;color:#15803d}.bg-pink{background:#fce7f3;color:#db2777}.bg-purple{background:#ede9fe;color:#6d28d9}.bg-orange{background:#ffedd5;color:#ea580c}.bg-teal{background:#ccfbf1;color:#0f766e}
+.main-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-bottom:14px}
+.chart{height:240px;display:flex;align-items:flex-end;gap:10px;padding:15px;border-radius:14px;background:#f8fafc;border:1px solid #eef2f7}
+.bar-item{flex:1;text-align:center}
+.bar{background:#0b5ed7;border-radius:8px 8px 0 0;min-height:4px}
+.bar-item small{font-size:11px;color:#64748b}
+.recent-table{width:100%;border-collapse:collapse;font-size:13px}
+.recent-table th,.recent-table td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left}
+.recent-table th{background:#f8fafc}
+.badge{padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800;background:#dcfce7;color:#15803d}
+.filter-row{display:grid;grid-template-columns:1fr 220px auto auto auto;gap:10px;align-items:end}
+.table-wrap{overflow-x:auto}
+.action-mini{display:flex;gap:6px;flex-wrap:wrap}
+.btn-red{background:#dc2626}
+@media(max-width:1100px){.form-grid,.form-grid-4,.main-grid,.filter-row{grid-template-columns:1fr}}
+</style>
 
+<div class="pupil-head">
+    <div>
+        <h2>Pupil Registration</h2>
+        <p>Register new pupils and manage recent pupil records.</p>
+    </div>
+</div>
+
+{% if can_register %}
+<div class="pupil-panel">
     <form method="post" enctype="multipart/form-data">
-        <div class="two">
+
+        <div class="form-grid">
             <div>
                 <label>Full Name</label>
-                <input name="full_name" required>
+                <input name="full_name" required placeholder="Enter full name">
+            </div>
 
+            <div>
+                <label>Guardian Name</label>
+                <input name="guardian_name" required placeholder="Enter guardian name">
+            </div>
+
+            <div>
+                <label>Guardian Phone</label>
+                <input name="guardian_phone" required placeholder="0712345678">
+            </div>
+        </div>
+
+        <div class="form-grid-4">
+            <div>
                 <label>Student Photo</label>
                 <input type="file" name="photo" accept="image/*">
+            </div>
 
+            <div>
                 <label>Gender</label>
                 <select name="gender">
                     <option>Male</option>
                     <option>Female</option>
                 </select>
+            </div>
 
-                <label>DOB</label>
+            <div>
+                <label>New Admission?</label>
+                <select name="new_admission">
+                    <option>Yes</option>
+                    <option>No</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Uses School Bus?</label>
+                <select name="uses_bus">
+                    <option>No</option>
+                    <option>Yes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div>
+                <label>Date of Birth</label>
                 <input name="dob" type="date">
+            </div>
 
+            <div>
                 <label>Grade</label>
                 <select name="grade">
                     {% for g in grades %}
@@ -32,126 +106,169 @@
             </div>
 
             <div>
-                <label>Guardian Name</label>
-                <input name="guardian_name" required>
-
-                <label>Guardian Phone</label>
-                <input name="guardian_phone" required>
-
-                <label>New Admission?</label>
-                <select name="new_admission">
-                    <option>Yes</option>
-                    <option>No</option>
-                </select>
-
-                <label>Uses School Bus?</label>
-                <select name="uses_bus">
-                    <option>No</option>
-                    <option>Yes</option>
-                </select>
+                <label>Home Address</label>
+                <input name="home_address" placeholder="Optional">
             </div>
         </div>
 
-        <label>Home Address</label>
-        <textarea name="home_address" style="width:100%;"></textarea>
-
-        <br><br>
-        <button class="btn green">Register Pupil</button>
+        <div class="form-actions">
+            <button type="reset" class="btn" style="background:#64748b;">Reset</button>
+            <button class="btn green">Save Pupil</button>
+        </div>
     </form>
 </div>
 {% else %}
-<div class="panel">
-    <h2>Pupils</h2>
-    <div class="notice">
-        You have view-only access to pupil records.
-    </div>
+<div class="pupil-panel">
+    <b>View-only access.</b> You can view pupil records but cannot register new pupils.
 </div>
 {% endif %}
 
-<div class="panel">
-    <h3>Registered Pupils</h3>
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon bg-blue">👥</div><div><h2>{{ total_pupils }}</h2><small>Total Pupils</small></div></div>
+    <div class="stat-card"><div class="stat-icon bg-green">✅</div><div><h2>{{ boys }}</h2><small>Boys</small></div></div>
+    <div class="stat-card"><div class="stat-icon bg-pink">👧</div><div><h2>{{ girls }}</h2><small>Girls</small></div></div>
+    <div class="stat-card"><div class="stat-icon bg-purple">🎓</div><div><h2>{{ grades|length }}</h2><small>Grades</small></div></div>
+    <div class="stat-card"><div class="stat-icon bg-orange">🚌</div><div><h2>{{ bus_pupils }}</h2><small>Use Bus</small></div></div>
+    <div class="stat-card"><div class="stat-icon bg-teal">📅</div><div><h2>{{ new_admissions }}</h2><small>New Admissions</small></div></div>
+</div>
 
-    <form method="get" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
-        <input name="q" value="{{ q }}" placeholder="Search pupil...">
+<div class="main-grid">
+    <div class="pupil-panel">
+        <h3>👥 Pupil Overview by Grade</h3>
 
-        <select name="grade">
-            <option value="">All Grades</option>
-            {% for g in grades %}
-            <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
-                {{ g }}
-            </option>
+        <div class="chart">
+            {% for row in grade_stats %}
+            {% set h = (row.count / max_grade_count * 180) if max_grade_count > 0 else 4 %}
+            <div class="bar-item">
+                <div class="bar" style="height:{{ h }}px"></div>
+                <small>{{ row.grade }}</small><br>
+                <small><b>{{ row.count }}</b></small>
+            </div>
             {% endfor %}
-        </select>
+        </div>
+    </div>
+
+    <div class="pupil-panel">
+        <h3>🧾 Recent Pupils</h3>
+
+        <table class="recent-table">
+            <tr>
+                <th>Admission</th>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Status</th>
+            </tr>
+
+            {% for p in recent_pupils %}
+            <tr>
+                <td>{{ p.admission_no }}</td>
+                <td>
+                    <a href="{{ url_for('student_profile', pupil_id=p.id) }}">
+                        {{ p.full_name }}
+                    </a>
+                </td>
+                <td>{{ p.grade }}</td>
+                <td><span class="badge">{{ p.status }}</span></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No pupils yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div class="pupil-panel">
+    <h3>🔎 Find Pupils</h3>
+
+    <form method="get" class="filter-row">
+        <div>
+            <label>Search</label>
+            <input name="q" value="{{ q }}" placeholder="Search admission, name or grade">
+        </div>
+
+        <div>
+            <label>Grade</label>
+            <select name="grade">
+                <option value="">All Grades</option>
+                {% for g in grades %}
+                <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
         <button class="btn">Filter</button>
 
         <a href="{{ url_for('print_pupils', grade=selected_grade) }}" target="_blank" class="btn green">
-            Print Grade List
+            Print
         </a>
+
+        {% if session.get("role", "")|lower == "admin" %}
+        <form method="post" action="{{ url_for('promote_students') }}"
+              onsubmit="return confirm('Promote all active students to the next grade?');">
+            <button type="submit" class="btn" style="background:#f97316;">Promote</button>
+        </form>
+        {% endif %}
     </form>
 
-    {% if session.get("role", "")|lower == "admin" %}
-    <form method="post"
-          action="{{ url_for('promote_students') }}"
-          onsubmit="return confirm('Are you sure you want to promote all active students to the next grade? This action cannot be undone easily.');"
-          style="margin-bottom:15px;">
-        <button type="submit" class="btn green">Promote All Students</button>
-    </form>
-    {% endif %}
+    <br>
 
-    <table>
-        <tr>
-            <th>Admission</th>
-            <th>Name</th>
-            <th>Grade</th>
-            <th>Guardian</th>
-            <th>Phone</th>
-            <th>Bus</th>
-            <th>New</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
+    <div class="table-wrap">
+        <table class="recent-table">
+            <tr>
+                <th>Admission</th>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Guardian</th>
+                <th>Phone</th>
+                <th>Bus</th>
+                <th>New</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
 
-        {% for p in pupils %}
-        <tr>
-            <td>{{ p.admission_no }}</td>
+            {% for p in pupils %}
+            <tr>
+                <td>{{ p.admission_no }}</td>
+                <td>
+                    <a href="{{ url_for('student_profile', pupil_id=p.id) }}">
+                        {{ p.full_name }}
+                    </a>
+                </td>
+                <td>{{ p.grade }}</td>
+                <td>{{ p.guardian_name }}</td>
+                <td>{{ p.guardian_phone }}</td>
+                <td>{{ p.uses_bus }}</td>
+                <td>{{ p.new_admission }}</td>
+                <td><span class="badge">{{ p.status }}</span></td>
+                <td>
+                    <div class="action-mini">
+                        {% if can_register %}
+                        <a href="{{ url_for('edit_pupil', pupil_id=p.id) }}" class="btn">Edit</a>
+                        {% endif %}
 
-            <td>
-                <a href="{{ url_for('student_profile', pupil_id=p.id) }}">
-                    {{ p.full_name }}
-                </a>
-            </td>
+                        {% if session.get("role", "")|lower == "admin" %}
+                        <form method="post"
+                              action="{{ url_for('exit_pupil', pupil_id=p.id) }}"
+                              onsubmit="return confirm('Mark this student as inactive?');">
+                            <button type="submit" class="btn btn-red">Exit</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9">No pupils found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
-            <td>{{ p.grade }}</td>
-            <td>{{ p.guardian_name }}</td>
-            <td>{{ p.guardian_phone }}</td>
-            <td>{{ p.uses_bus }}</td>
-            <td>{{ p.new_admission }}</td>
-            <td>{{ p.status }}</td>
-
-            <td>
-                {% if can_register %}
-                <a href="{{ url_for('edit_pupil', pupil_id=p.id) }}" class="btn">Edit</a>
-                {% else %}
-                <span>View Only</span>
-                {% endif %}
-
-                {% if session.get("role", "")|lower == "admin" %}
-                <form method="post"
-                      action="{{ url_for('exit_pupil', pupil_id=p.id) }}"
-                      style="display:inline;"
-                      onsubmit="return confirm('Mark this student as inactive?');">
-                    <button type="submit" class="btn" style="background:red;">Exit Student</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="9">No pupils found.</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <p style="color:#64748b;font-size:13px;margin-top:10px;">
+        Showing latest matching records only. Use search or grade filter to find a specific pupil.
+    </p>
 </div>
 
 {% endblock %}
