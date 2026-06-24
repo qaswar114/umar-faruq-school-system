@@ -1,57 +1,174 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>SMS Wallet</h2>
-    <p>Load and manage SMS balance for {{ settings.school_name }}.</p>
+<style>
+.wallet-header{
+    background:white;
+    border-radius:18px;
+    padding:24px;
+    margin-bottom:20px;
+    box-shadow:0 6px 18px rgba(15,23,42,.06);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
 
-    <a class="btn" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
-    <a class="btn blue" href="{{ url_for('sms_messages') }}">SMS Messages</a>
-    <a class="btn green" href="{{ url_for('bulk_sms') }}">Bulk SMS</a>
+.wallet-header h2{
+    margin:0;
+    color:#0f172a;
+}
+
+.wallet-header p{
+    margin:5px 0 0;
+    color:#64748b;
+}
+
+.wallet-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+    margin-bottom:20px;
+}
+
+.stat-card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 6px 18px rgba(15,23,42,.06);
+}
+
+.stat-card small{
+    color:#64748b;
+    font-weight:bold;
+}
+
+.stat-card h2{
+    margin:10px 0 0;
+    font-size:30px;
+    color:#0f172a;
+}
+
+.form-panel,
+.history-panel{
+    background:white;
+    border-radius:18px;
+    padding:24px;
+    margin-bottom:20px;
+    box-shadow:0 6px 18px rgba(15,23,42,.06);
+}
+
+.form-panel h3,
+.history-panel h3{
+    margin-top:0;
+    color:#0f172a;
+}
+
+.reset-box{
+    background:#fff1f2;
+    border:1px solid #fecdd3;
+    padding:14px;
+    border-radius:12px;
+    margin-top:15px;
+}
+
+.reset-box p{
+    margin:0 0 10px;
+    color:#991b1b;
+    font-weight:bold;
+}
+
+.btn-danger{
+    background:#dc2626;
+    color:white;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#f8fafc;
+}
+
+th,td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+}
+
+@media(max-width:900px){
+    .wallet-header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:15px;
+    }
+}
+</style>
+
+<div class="wallet-header">
+
+    <div>
+        <h2>📱 SMS Wallet</h2>
+        <p>Manage SMS balance and communication services for {{ settings.school_name }}</p>
+    </div>
+
+    <div class="wallet-actions">
+        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="btn" href="{{ url_for('sms_messages') }}">SMS Messages</a>
+        <a class="btn green" href="{{ url_for('bulk_sms') }}">Bulk SMS</a>
+    </div>
+
 </div>
 
-<div class="three">
-    <div class="panel">
-        <h3>SMS Balance</h3>
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <small>Available SMS</small>
         <h2>{{ wallet.sms_balance }}</h2>
-        <p>Available SMS</p>
     </div>
 
-    <div class="panel">
-        <h3>SMS Used</h3>
+    <div class="stat-card">
+        <small>SMS Used</small>
         <h2>{{ wallet.sms_used }}</h2>
-        <p>Total SMS sent/charged</p>
     </div>
 
-    <div class="panel">
-        <h3>SMS Loaded</h3>
+    <div class="stat-card">
+        <small>SMS Loaded</small>
         <h2>{{ wallet.sms_loaded }}</h2>
-        <p>Total SMS loaded</p>
     </div>
-</div>
 
-<div class="three">
-    <div class="panel">
-        <h3>Pending SMS</h3>
+    <div class="stat-card">
+        <small>Pending SMS</small>
         <h2>{{ pending_sms }}</h2>
     </div>
 
-    <div class="panel">
-        <h3>Sent SMS</h3>
+    <div class="stat-card">
+        <small>Sent SMS</small>
         <h2>{{ sent_sms }}</h2>
     </div>
 
-    <div class="panel">
-        <h3>Failed SMS</h3>
+    <div class="stat-card">
+        <small>Failed SMS</small>
         <h2>{{ failed_sms }}</h2>
     </div>
+
 </div>
 
-<div class="panel">
-    <h3>Load SMS</h3>
+<div class="form-panel">
+
+    <h3>➕ Load SMS Credits</h3>
 
     <form method="post">
+
         <div class="three">
+
             <div>
                 <label>Provider</label>
                 <select name="provider" required>
@@ -66,35 +183,73 @@
 
             <div>
                 <label>SMS Purchased</label>
-                <input type="number" name="sms_count" min="1" required placeholder="e.g. 5000">
+                <input type="number"
+                       name="sms_count"
+                       min="1"
+                       required
+                       placeholder="5000">
             </div>
 
             <div>
-                <label>Amount Paid</label>
-                <input type="number" name="amount_paid" step="0.01" placeholder="e.g. 5000">
+                <label>Amount Paid (KES)</label>
+                <input type="number"
+                       name="amount_paid"
+                       step="0.01"
+                       placeholder="5000">
             </div>
+
         </div>
 
         <div class="two">
+
             <div>
                 <label>Reference Number</label>
-                <input name="reference_no" placeholder="Receipt / Transaction / Invoice No.">
+                <input name="reference_no"
+                       placeholder="Receipt / Transaction No">
             </div>
 
             <div>
                 <label>Purchase Date</label>
-                <input type="date" name="purchase_date" value="{{ today }}">
+                <input type="date"
+                       name="purchase_date"
+                       value="{{ today }}">
             </div>
+
         </div>
 
-        <button class="btn green" type="submit">Load SMS</button>
+        <button class="btn green" type="submit">
+            Load SMS Credits
+        </button>
+
     </form>
+
+    <div class="reset-box">
+
+        <p>⚠ Reset SMS Balance (Use only if wrong balance was entered)</p>
+
+        <form method="post"
+              onsubmit="return confirm('Reset SMS balance to 0?')">
+
+            <input type="hidden"
+                   name="action"
+                   value="reset_balance">
+
+            <button class="btn btn-danger">
+                Reset Wrong SMS Balance
+            </button>
+
+        </form>
+
+    </div>
+
 </div>
 
-<div class="panel">
-    <h3>SMS Loading History</h3>
+<div class="history-panel">
+
+    <h3>📜 SMS Loading History</h3>
 
     <table>
+
         <tr>
             <th>Date</th>
             <th>Provider</th>
@@ -108,17 +263,21 @@
         <tr>
             <td>{{ r.purchase_date }}</td>
             <td>{{ r.provider }}</td>
-            <td>{{ r.sms_count }}</td>
+            <td>{{ "{:,}".format(r.sms_count) }}</td>
             <td>{{ money(r.amount_paid) }}</td>
-            <td>{{ r.reference_no if r.reference_no else "-" }}</td>
+            <td>{{ r.reference_no or "-" }}</td>
             <td>{{ r.loaded_by }}</td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="6">No SMS loading history yet.</td>
+            <td colspan="6">
+                No SMS loading history found.
+            </td>
         </tr>
         {% endfor %}
+
     </table>
+
 </div>
 
 {% endblock %}
