@@ -7669,20 +7669,65 @@ def whatsapp_outbox():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+    if not role_allowed(
+        "admin",
+        "principal",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "bursar",
+        "super admin"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    messages = WhatsAppMessage.query.filter_by(
-        school_id=current_school_id()
-    ).order_by(
+    school_id = current_school_id()
+
+    selected_status = request.args.get("status", "")
+    selected_category = request.args.get("category", "")
+
+    query = WhatsAppMessage.query.filter_by(
+        school_id=school_id
+    )
+
+    if selected_status:
+        query = query.filter(
+            WhatsAppMessage.status == selected_status
+        )
+
+    if selected_category:
+        query = query.filter(
+            WhatsAppMessage.category == selected_category
+        )
+
+    messages = query.order_by(
         WhatsAppMessage.created_at.desc()
     ).limit(200).all()
+
+    pending_count = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    sent_count = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    failed_count = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
 
     return render_template(
         "whatsapp_outbox.html",
         settings=get_settings(),
-        messages=messages
+        messages=messages,
+        pending_count=pending_count,
+        sent_count=sent_count,
+        failed_count=failed_count,
+        selected_status=selected_status,
+        selected_category=selected_category
     )
 
 @app.route("/whatsapp_messages", methods=["GET", "POST"])
@@ -7808,26 +7853,34 @@ def send_pending_whatsapp():
     pending = WhatsAppMessage.query.filter_by(
         school_id=school_id,
         status="Pending"
-    ).limit(10).all()
+    ).order_by(
+        WhatsAppMessage.created_at.asc()
+    ).limit(20).all()
 
     sent_count = 0
+    failed_count = 0
 
     for msg in pending:
-        ok, response = send_whatsapp_message(msg.phone, msg.message)
+        ok, response = send_school_whatsapp_message(
+            msg.school_id,
+            msg.phone,
+            msg.message
+        )
 
         msg.response = str(response)
-        msg.sent_at = datetime.utcnow()
+        msg.sent_at = datetime.now()
 
         if ok:
             msg.status = "Sent"
             sent_count += 1
         else:
             msg.status = "Failed"
+            failed_count += 1
 
     db.session.commit()
 
-    flash(f"{sent_count} WhatsApp message(s) sent.")
-    return redirect(url_for("whatsapp_messages"))
+    flash(f"WhatsApp sending complete. Sent: {sent_count}. Failed: {failed_count}.")
+    return redirect(url_for("whatsapp_outbox"))
     
 @app.route("/whatsapp_settings", methods=["GET", "POST"])
 def whatsapp_settings():
