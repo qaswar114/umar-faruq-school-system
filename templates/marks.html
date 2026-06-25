@@ -1,4 +1,9 @@
-{% extends "base.html" %}
+{% if session.get("role", "")|lower == "teacher" %}
+    {% extends "base_teacher.html" %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %}
+
 {% block content %}
 
 <div class="panel">
