@@ -3563,7 +3563,6 @@ def grade_analysis():
 
 @app.route("/teacher_dashboard")
 def teacher_dashboard():
-
     if not login_required():
         return redirect(url_for("login"))
 
@@ -3571,7 +3570,56 @@ def teacher_dashboard():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    return dashboard()
+    school_id = current_school_id()
+
+    current_user = User.query.filter_by(
+        username=session.get("username"),
+        school_id=school_id
+    ).first()
+
+    assigned_grade = current_user.assigned_grade if current_user else ""
+
+    pupils_count = Pupil.query.filter_by(
+        school_id=school_id,
+        grade=assigned_grade,
+        status="Active"
+    ).count()
+
+    today = date.today()
+
+    today_attendance = Attendance.query.join(Pupil).filter(
+        Attendance.school_id == school_id,
+        Attendance.attendance_date == today,
+        Pupil.school_id == school_id,
+        Pupil.grade == assigned_grade
+    ).all()
+
+    present = sum(1 for r in today_attendance if r.status == "Present")
+    absent = sum(1 for r in today_attendance if r.status == "Absent")
+
+    active_exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    announcements = Announcement.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(
+        Announcement.created_at.desc()
+    ).limit(5).all()
+
+    return render_template(
+        "teacher_dashboard.html",
+        settings=get_settings(),
+        assigned_grade=assigned_grade,
+        pupils_count=pupils_count,
+        present=present,
+        absent=absent,
+        active_exams=active_exams,
+        announcements=announcements
+    )
+    
 @app.route("/teacher_remarks")
 def teacher_remarks():
     if not login_required():
