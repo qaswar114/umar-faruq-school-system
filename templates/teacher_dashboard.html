@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_teacher.html" %}
 {% block content %}
 
 <style>
@@ -127,8 +127,8 @@
 }
 
 @media(max-width:650px){
-    .content{
-        padding:10px;
+    .teacher-app{
+        padding:0;
     }
 
     .teacher-hero{
@@ -138,18 +138,6 @@
 
     .mobile-actions{
         grid-template-columns:1fr;
-    }
-
-    .topbar{
-        display:none;
-    }
-
-    .sidebar{
-        display:none;
-    }
-
-    .main{
-        margin-left:0!important;
     }
 }
 </style>
