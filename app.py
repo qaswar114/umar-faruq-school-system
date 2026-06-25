@@ -1690,6 +1690,10 @@ def dashboard():
 
     role = session.get("role", "").lower()
 
+    # Teachers must never see CEO/Admin dashboard
+    if role == "teacher":
+        return redirect(url_for("teacher_dashboard"))
+
     if role == "super admin":
         total_schools = School.query.count()
         active_schools = School.query.filter_by(is_active=True).count()
@@ -1743,48 +1747,6 @@ def dashboard():
     else:
         current_term = "Term 2"
         current_month_name = "May"
-
-    if role == "teacher":
-        assigned_grade = session.get("assigned_grade", "")
-
-        pupils_count = Pupil.query.filter_by(
-            school_id=school_id,
-            grade=assigned_grade,
-            status="Active"
-        ).count()
-
-        today_attendance = Attendance.query.join(Pupil).filter(
-            Attendance.school_id == school_id,
-            Pupil.school_id == school_id,
-            Pupil.grade == assigned_grade,
-            Attendance.attendance_date == today
-        ).all()
-
-        present = sum(1 for r in today_attendance if r.status == "Present")
-        absent = sum(1 for r in today_attendance if r.status == "Absent")
-        late = sum(1 for r in today_attendance if r.status == "Late")
-
-        active_exams = Exam.query.filter_by(
-            school_id=school_id,
-            status="Active"
-        ).count()
-
-        announcements = Announcement.query.filter_by(
-            school_id=school_id,
-            status="Active"
-        ).order_by(Announcement.created_at.desc()).limit(5).all()
-
-        return render_template(
-            "teacher_dashboard.html",
-            settings=get_settings(),
-            assigned_grade=assigned_grade,
-            pupils_count=pupils_count,
-            present=present,
-            absent=absent,
-            late=late,
-            active_exams=active_exams,
-            announcements=announcements
-        )
 
     payments = Payment.query.filter_by(school_id=school_id).all()
 
@@ -1947,18 +1909,18 @@ def dashboard():
     recent_announcements = Announcement.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(Announcement.created_at.desc()).limit(5).all()
+    ).order_by(
+        Announcement.created_at.desc()
+    ).limit(5).all()
 
     return render_template(
         "dashboard.html",
         settings=get_settings(),
-
         total_pupils=total_pupils,
         active_pupils=total_pupils,
         inactive_pupils=inactive_pupils,
         bus_pupils=bus_pupils,
         new_admissions_month=new_admissions_month,
-
         total_collected=money(total_collected_raw),
         receipts=len(payments),
         today_collection=money(today_collection_raw),
@@ -1967,25 +1929,23 @@ def dashboard():
         net_income=money(net_income_raw),
         defaulters=defaulters,
         outstanding=money(outstanding_raw),
-
         present_today=present_today,
         absent_today=absent_today,
         late_today=late_today,
         attendance_rate=attendance_rate,
-
         pending_sms=pending_sms,
         sent_sms=sent_sms,
         failed_sms=failed_sms,
         sms_balance=sms_balance,
         pending_attendance_alerts=pending_attendance_alerts,
         pending_payment_alerts=pending_payment_alerts,
-
         total_staff=total_staff,
         total_teachers=total_teachers,
         upcoming_exams=upcoming_exams,
         recent_announcements=recent_announcements,
         finance_chart=finance_chart
     )
+    
 @app.route("/business_dashboard")
 def business_dashboard():
     if not login_required():
