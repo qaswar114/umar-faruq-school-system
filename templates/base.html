@@ -1,8 +1,16 @@
 <!doctype html>
 <html>
 <head>
-    <title>{{ settings.school_name if settings else "School System" }}</title>
+    <title>{{ settings.school_name if settings else "EduManage" }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- PWA -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0b5ed7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="EduManage">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='edumanage_logo.png') }}">
 
     <style>
         *{box-sizing:border-box}
@@ -150,7 +158,7 @@
         <img src="{{ url_for('static', filename=settings.logo if settings and settings.logo else 'logo.png') }}">
         <div>
             <h2>{{ settings.school_name if settings else "School System" }}</h2>
-            <small>School Fees System</small>
+            <small>EduManage SaaS</small>
         </div>
     </div>
 
@@ -210,6 +218,7 @@
             <summary>💬 Communication</summary>
             <div class="subnav">
                 <a href="/whatsapp_messages">WhatsApp</a>
+                <a href="/whatsapp_outbox">WhatsApp Outbox</a>
                 <a href="/sms_messages">SMS</a>
                 <a href="/announcements">Announcements</a>
             </div>
@@ -264,6 +273,20 @@
     </div>
 
 </div>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("/static/service-worker.js")
+        .then(function() {
+            console.log("EduManage service worker registered");
+        })
+        .catch(function(error) {
+            console.log("Service worker registration failed:", error);
+        });
+    });
+}
+</script>
 
 </body>
 </html>
