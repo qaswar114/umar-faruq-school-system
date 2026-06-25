@@ -1,264 +1,225 @@
 <!doctype html>
 <html>
 <head>
-    <title>{{ settings.school_name if settings else "EduManage" }}</title>
+    <title>Teacher Portal - EduManage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- PWA -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0b5ed7">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="EduManage">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='edumanage_logo.png') }}">
 
     <style>
         *{box-sizing:border-box}
-        body{margin:0;font-family:Arial,sans-serif;background:#f5f8fc;color:#0f172a}
-
-        .sidebar{
-            position:fixed;left:0;top:0;bottom:0;width:230px;
-            background:linear-gradient(180deg,#061b44,#052b61);
-            color:white;padding:14px 12px;overflow-y:auto;z-index:1000;
+        body{
+            margin:0;
+            font-family:Arial,sans-serif;
+            background:#f5f8fc;
+            color:#0f172a;
         }
 
-        .brand{display:flex;align-items:center;gap:9px;margin-bottom:10px}
-        .brand img{width:50px;height:50px;border-radius:50%;background:white;object-fit:cover}
-        .brand h2{margin:0;font-size:13px;line-height:1.15;text-transform:uppercase}
-        .brand small{color:#dbeafe;font-size:11px}
-
-        .school-card{
-            background:rgba(255,255,255,.09);
-            border:1px solid rgba(255,255,255,.16);
-            border-radius:13px;
-            padding:9px;
-            margin-bottom:12px;
+        .teacher-shell{
+            min-height:100vh;
         }
 
-        .school-card-row{
-            display:flex;justify-content:space-between;align-items:center;
-            color:#dbeafe;font-size:12px;padding:4px 0;
+        .teacher-top{
+            background:linear-gradient(135deg,#0b5ed7,#16a34a);
+            color:white;
+            padding:18px;
+            border-radius:0 0 24px 24px;
         }
 
-        .school-card-row b{color:white;font-size:12px}
-
-        .nav-label{
-            font-size:10px;color:#93c5fd;font-weight:bold;
-            letter-spacing:1px;margin:10px 0 5px 8px;
+        .teacher-top h2{
+            margin:0;
+            font-size:24px;
         }
 
-        .nav a,
-        .nav summary{
-            display:flex;align-items:center;gap:8px;color:white;text-decoration:none;
-            padding:8px 10px;border-radius:8px;margin-bottom:3px;
-            font-weight:600;font-size:13px;cursor:pointer;
-        }
-
-        .nav a:hover,
-        .nav a.active,
-        .nav summary:hover{background:#0b5ed7}
-
-        details{margin-bottom:3px}
-        summary{list-style:none}
-        summary::-webkit-details-marker{display:none}
-
-        .subnav{
-            margin-left:18px;
-            border-left:1px solid rgba(255,255,255,.18);
-            padding-left:8px;
-            margin-bottom:6px;
-        }
-
-        .subnav a{
-            font-size:12px;
-            padding:6px 8px;
+        .teacher-top small{
             color:#dbeafe;
         }
 
-        .main{margin-left:230px;min-height:100vh}
-
-        .topbar{
-            height:68px;background:white;border-bottom:1px solid #e5e7eb;
-            display:flex;align-items:center;justify-content:space-between;
-            padding:0 22px;position:sticky;top:0;z-index:500;
+        .teacher-nav{
+            display:grid;
+            grid-template-columns:repeat(5,1fr);
+            gap:8px;
+            background:white;
+            padding:10px;
+            box-shadow:0 4px 16px rgba(15,23,42,.08);
+            position:sticky;
+            top:0;
+            z-index:100;
         }
 
-        .top-left{display:flex;align-items:center;gap:15px}
-        .menu-icon{font-size:22px;color:#0f172a}
-        .top-title h1{margin:0;font-size:22px;color:#07142f}
-        .top-title small{color:#64748b}
-
-        .top-user{display:flex;align-items:center;gap:12px}
-        .date-pill{
-            background:#f8fafc;border:1px solid #e5e7eb;
-            padding:8px 12px;border-radius:12px;font-weight:bold;white-space:nowrap;
+        .teacher-nav a{
+            text-align:center;
+            text-decoration:none;
+            color:#0f172a;
+            font-size:12px;
+            font-weight:bold;
+            padding:8px 4px;
+            border-radius:12px;
         }
 
-        .user-pill{display:flex;align-items:center;gap:8px;font-weight:bold}
-        .avatar{
-            width:38px;height:38px;border-radius:50%;background:#dbeafe;
-            display:flex;align-items:center;justify-content:center;font-size:20px;
+        .teacher-nav a:hover,
+        .teacher-nav a.active{
+            background:#eff6ff;
+            color:#0b5ed7;
         }
 
-        .content{padding:16px}
+        .teacher-nav span{
+            display:block;
+            font-size:22px;
+            margin-bottom:3px;
+        }
+
+        .teacher-content{
+            padding:14px;
+            max-width:1000px;
+            margin:0 auto;
+        }
 
         .panel{
-            background:white;padding:20px;border-radius:14px;
-            box-shadow:0 6px 18px rgba(15,23,42,.07);margin-bottom:18px;
+            background:white;
+            padding:18px;
+            border-radius:16px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            margin-bottom:16px;
         }
 
         input,select,textarea{
-            width:100%;padding:10px;border:1px solid #cbd5e1;
-            border-radius:8px;margin-bottom:10px;font-size:15px;
+            width:100%;
+            padding:11px;
+            border:1px solid #cbd5e1;
+            border-radius:9px;
+            margin-bottom:10px;
+            font-size:15px;
         }
 
-        label{font-weight:bold;display:block;margin-bottom:5px}
+        label{
+            display:block;
+            font-weight:bold;
+            margin-bottom:5px;
+        }
 
         .btn,button{
-            display:inline-block;background:#0b5ed7;color:white;
-            padding:10px 15px;border-radius:8px;text-decoration:none;
-            border:none;cursor:pointer;font-size:15px;
+            display:inline-block;
+            background:#0b5ed7;
+            color:white;
+            padding:10px 15px;
+            border-radius:9px;
+            border:none;
+            text-decoration:none;
+            cursor:pointer;
+            font-size:15px;
         }
 
-        .btn.green,button.green{background:#159947}
+        .btn.green,button.green{
+            background:#159947;
+        }
 
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
-        th{background:#f8fafc}
+        table{
+            width:100%;
+            border-collapse:collapse;
+            font-size:14px;
+        }
 
-        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+        th,td{
+            padding:10px;
+            border-bottom:1px solid #e5e7eb;
+            text-align:left;
+        }
+
+        th{
+            background:#f8fafc;
+        }
+
+        .two{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+
+        .three{
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap:14px;
+        }
 
         .flash{
-            background:#fff7d6;padding:10px 14px;
-            border-radius:10px;margin-bottom:12px;
+            background:#fff7d6;
+            padding:10px 14px;
+            border-radius:10px;
+            margin-bottom:12px;
         }
 
-        @media(max-width:900px){
-            .sidebar{position:relative;width:100%;height:auto}
-            .main{margin-left:0}
-            .topbar{height:auto;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
-            .top-user{flex-wrap:wrap}
-            .two,.three{grid-template-columns:1fr}
+        @media(max-width:700px){
+            .teacher-top{
+                padding:16px;
+            }
+
+            .teacher-nav{
+                position:fixed;
+                bottom:0;
+                top:auto;
+                left:0;
+                right:0;
+                border-top:1px solid #e5e7eb;
+            }
+
+            .teacher-content{
+                padding-bottom:85px;
+            }
+
+            .two,.three{
+                grid-template-columns:1fr;
+            }
+
+            table{
+                font-size:13px;
+            }
         }
 
         @media print{
-            .sidebar,.topbar,.no-print{display:none!important}
-            .main{margin-left:0!important}
-            body{background:white!important}
+            .teacher-top,.teacher-nav,.no-print{
+                display:none!important;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<div class="sidebar">
+<div class="teacher-shell">
 
-    <div class="brand">
-        <img src="{{ url_for('static', filename=settings.logo if settings and settings.logo else 'logo.png') }}">
-        <div>
-            <h2>{{ settings.school_name if settings else "School System" }}</h2>
-            <small>EduManage SaaS</small>
-        </div>
+    <div class="teacher-top">
+        <h2>Teacher Portal</h2>
+        <small>
+            {{ settings.school_name if settings else "EduManage" }} |
+            {{ session.get("username") }}
+        </small>
     </div>
 
-    <div class="school-card">
-        <div class="school-card-row"><span>🎓 Pupils</span><b>{{ total_pupils if total_pupils is defined else '-' }}</b></div>
-        <div class="school-card-row"><span>👥 Staff</span><b>{{ total_staff if total_staff is defined else '-' }}</b></div>
-        <div class="school-card-row"><span>📱 SMS</span><b>{{ sms_balance if sms_balance is defined else '-' }}</b></div>
+    <div class="teacher-nav no-print">
+        <a class="{% if request.path == '/teacher_dashboard' %}active{% endif %}" href="/teacher_dashboard">
+            <span>🏠</span>Home
+        </a>
+
+        <a class="{% if request.path == '/attendance' %}active{% endif %}" href="/attendance">
+            <span>✅</span>Attend
+        </a>
+
+        <a href="/attendance_report">
+            <span>📊</span>Report
+        </a>
+
+        <a href="/exams">
+            <span>📝</span>Marks
+        </a>
+
+        <a href="/logout">
+            <span>🚪</span>Logout
+        </a>
     </div>
 
-    <div class="nav">
-
-        <div class="nav-label">OVERVIEW</div>
-        <a class="{% if request.path == '/dashboard' %}active{% endif %}" href="/dashboard">🏠 Dashboard</a>
-        <a class="{% if request.path == '/business_dashboard' %}active{% endif %}" href="/business_dashboard">🖥️ CEO Dashboard</a>
-
-        <div class="nav-label">MODULES</div>
-
-        <details open>
-            <summary>🎓 Students</summary>
-            <div class="subnav">
-                <a href="/pupils">Admissions</a>
-                <a href="/attendance">Mark Attendance</a>
-                <a href="/attendance_report">Attendance Report</a>
-                <a href="/transport">Transport</a>
-            </div>
-        </details>
-
-        <details>
-            <summary>📚 Academics</summary>
-            <div class="subnav">
-                <a href="/subjects">Subjects</a>
-                <a href="/timetable_dashboard">Timetable</a>
-                <a href="/exams">Exams</a>
-                <a href="/report_cards">Report Cards</a>
-            </div>
-        </details>
-
-        <details>
-            <summary>💰 Finance</summary>
-            <div class="subnav">
-                <a href="/payments">Payments</a>
-                <a href="/statement">Statements</a>
-                <a href="/defaulters_report">Defaulters</a>
-                <a href="/expenses">Expenses</a>
-            </div>
-        </details>
-
-        <details>
-            <summary>👥 HR</summary>
-            <div class="subnav">
-                <a href="/staff_dashboard">Staff Dashboard</a>
-                <a href="/payroll">Payroll</a>
-            </div>
-        </details>
-
-        <details>
-            <summary>💬 Communication</summary>
-            <div class="subnav">
-                <a href="/whatsapp_messages">WhatsApp</a>
-                <a href="/whatsapp_outbox">WhatsApp Outbox</a>
-                <a href="/sms_messages">SMS</a>
-                <a href="/announcements">Announcements</a>
-            </div>
-        </details>
-
-        <div class="nav-label">SYSTEM</div>
-        <a href="/settings">🎨 Branding</a>
-        <a href="/change_password">🔐 Password</a>
-        <a href="/logout">🚪 Logout</a>
-
-    </div>
-
-</div>
-
-<div class="main">
-
-    <div class="topbar">
-        <div class="top-left">
-            <div class="menu-icon">☰</div>
-
-            <div class="top-title">
-                <h1>CEO Smart Dashboard</h1>
-                <small>Welcome back, {{ session.get('username') }} ({{ session.get('role') }})</small>
-            </div>
-        </div>
-
-        <div class="top-user">
-            <div class="date-pill">📅 2026</div>
-
-            <div class="user-pill">
-                <div class="avatar">👤</div>
-                <div>
-                    {{ session.get('username') }}<br>
-                    <small>{{ session.get('role') }}</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="content">
+    <div class="teacher-content">
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -277,13 +238,7 @@
 <script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function() {
-        navigator.serviceWorker.register("/static/service-worker.js")
-        .then(function() {
-            console.log("EduManage service worker registered");
-        })
-        .catch(function(error) {
-            console.log("Service worker registration failed:", error);
-        });
+        navigator.serviceWorker.register("/static/service-worker.js");
     });
 }
 </script>
