@@ -3526,8 +3526,11 @@ def teacher_dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("teacher"):
-        flash("Access denied.")
+    # IMPORTANT:
+    # Do not use role_allowed("teacher") here,
+    # because role_allowed allows Admin to access everything.
+    if session.get("role", "").lower() != "teacher":
+        flash("Teacher dashboard is only for teacher accounts.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
@@ -3537,25 +3540,34 @@ def teacher_dashboard():
         school_id=school_id
     ).first()
 
-    assigned_grade = current_user.assigned_grade if current_user else ""
+    if not current_user:
+        flash("Teacher account not found.")
+        return redirect(url_for("logout"))
 
-    pupils_count = Pupil.query.filter_by(
-        school_id=school_id,
-        grade=assigned_grade,
-        status="Active"
-    ).count()
+    assigned_grade = current_user.assigned_grade or ""
 
-    today = date.today()
+    pupils_count = 0
+    present = 0
+    absent = 0
 
-    today_attendance = Attendance.query.join(Pupil).filter(
-        Attendance.school_id == school_id,
-        Attendance.attendance_date == today,
-        Pupil.school_id == school_id,
-        Pupil.grade == assigned_grade
-    ).all()
+    if assigned_grade:
+        pupils_count = Pupil.query.filter_by(
+            school_id=school_id,
+            grade=assigned_grade,
+            status="Active"
+        ).count()
 
-    present = sum(1 for r in today_attendance if r.status == "Present")
-    absent = sum(1 for r in today_attendance if r.status == "Absent")
+        today = date.today()
+
+        today_attendance = Attendance.query.join(Pupil).filter(
+            Attendance.school_id == school_id,
+            Attendance.attendance_date == today,
+            Pupil.school_id == school_id,
+            Pupil.grade == assigned_grade
+        ).all()
+
+        present = sum(1 for r in today_attendance if r.status == "Present")
+        absent = sum(1 for r in today_attendance if r.status == "Absent")
 
     active_exams = Exam.query.filter_by(
         school_id=school_id,
