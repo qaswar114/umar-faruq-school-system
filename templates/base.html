@@ -1,0 +1,279 @@
+<!doctype html>
+<html>
+<head>
+    <title>{{ settings.school_name if settings else "EduManage" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0b5ed7">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='edumanage_logo.png') }}">
+
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
+
+        .sidebar{
+            position:fixed;left:0;top:0;bottom:0;width:245px;
+            background:linear-gradient(180deg,#061b44,#052b61);
+            color:white;padding:14px 12px;overflow-y:auto;z-index:1000;
+        }
+
+        .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+        .brand img{width:48px;height:48px;border-radius:12px;background:white;object-fit:contain;padding:4px}
+        .brand h2{margin:0;font-size:18px;line-height:1.1}
+        .brand small{color:#dbeafe;font-size:11px}
+
+        .school-box{
+            background:rgba(255,255,255,.09);
+            border:1px solid rgba(255,255,255,.16);
+            border-radius:14px;
+            padding:12px;
+            margin-bottom:12px;
+        }
+
+        .school-box b{display:block;font-size:13px}
+        .school-box small{color:#dbeafe;font-size:12px}
+
+        .nav-label{
+            font-size:10px;color:#93c5fd;font-weight:bold;
+            letter-spacing:1px;margin:12px 0 6px 8px;
+        }
+
+        .nav a,.nav summary{
+            display:flex;align-items:center;gap:8px;color:white;text-decoration:none;
+            padding:8px 10px;border-radius:9px;margin-bottom:3px;
+            font-weight:700;font-size:13px;cursor:pointer;
+        }
+
+        .nav a:hover,.nav a.active,.nav summary:hover{background:#0b5ed7}
+
+        details{margin-bottom:3px}
+        summary{list-style:none}
+        summary::-webkit-details-marker{display:none}
+
+        .subnav{
+            margin-left:18px;
+            border-left:1px solid rgba(255,255,255,.18);
+            padding-left:8px;
+            margin-bottom:5px;
+        }
+
+        .subnav a{
+            font-size:12px;
+            padding:6px 8px;
+            color:#dbeafe;
+        }
+
+        .main{margin-left:245px;min-height:100vh}
+
+        .topbar{
+            height:68px;background:white;border-bottom:1px solid #e5e7eb;
+            display:flex;align-items:center;justify-content:space-between;
+            padding:0 22px;position:sticky;top:0;z-index:500;
+        }
+
+        .top-title h1{margin:0;font-size:22px;color:#07142f}
+        .top-title small{color:#64748b}
+
+        .top-user{display:flex;align-items:center;gap:12px}
+        .pill{
+            background:#f8fafc;border:1px solid #e5e7eb;
+            padding:8px 12px;border-radius:12px;font-weight:bold;
+        }
+
+        .avatar{
+            width:38px;height:38px;border-radius:50%;background:#dbeafe;
+            display:flex;align-items:center;justify-content:center;font-size:20px;
+        }
+
+        .content{padding:16px}
+
+        .panel{
+            background:white;padding:20px;border-radius:14px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);margin-bottom:18px;
+        }
+
+        input,select,textarea{
+            width:100%;padding:10px;border:1px solid #cbd5e1;
+            border-radius:8px;margin-bottom:10px;font-size:15px;
+        }
+
+        label{font-weight:bold;display:block;margin-bottom:5px}
+
+        .btn,button{
+            display:inline-block;background:#0b5ed7;color:white;
+            padding:10px 15px;border-radius:8px;text-decoration:none;
+            border:none;cursor:pointer;font-size:15px;
+        }
+
+        .btn.green,button.green{background:#159947}
+        .btn.red,button.red{background:#dc2626}
+        .btn.gray,button.gray{background:#64748b}
+
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
+        th{background:#f8fafc}
+
+        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+        .flash{
+            background:#fff7d6;padding:10px 14px;
+            border-radius:10px;margin-bottom:12px;
+        }
+
+        @media(max-width:900px){
+            .sidebar{position:relative;width:100%;height:auto}
+            .main{margin-left:0}
+            .topbar{height:auto;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
+            .top-user{flex-wrap:wrap}
+            .two,.three{grid-template-columns:1fr}
+        }
+
+        @media print{
+            .sidebar,.topbar,.no-print{display:none!important}
+            .main{margin-left:0!important}
+            body{background:white!important}
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+    <div class="brand">
+        <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+        <div>
+            <h2>EduManage</h2>
+            <small>Smart School ERP</small>
+        </div>
+    </div>
+
+    <div class="school-box">
+        <b>{{ settings.school_name if settings else "School System" }}</b>
+        <small>{{ session.get("username") }} | {{ session.get("role") }}</small>
+    </div>
+
+    <div class="nav">
+
+        <div class="nav-label">OVERVIEW</div>
+        <a class="{% if request.path == '/dashboard' %}active{% endif %}" href="/dashboard">🏠 Dashboard</a>
+        <a class="{% if request.path == '/business_dashboard' %}active{% endif %}" href="/business_dashboard">🖥️ CEO Dashboard</a>
+
+        {% if session.get("role","")|lower == "super admin" %}
+        <div class="nav-label">SAAS</div>
+        <a href="/schools">🏫 Schools</a>
+        <a href="/create_school">➕ Add School</a>
+        <a href="/platform_sms">📱 Platform SMS</a>
+        {% endif %}
+
+        <div class="nav-label">MODULES</div>
+
+        <details open>
+            <summary>🎓 Students</summary>
+            <div class="subnav">
+                <a href="/pupils">Admissions</a>
+                <a href="/attendance">Mark Attendance</a>
+                <a href="/attendance_report">Attendance Report</a>
+                <a href="/transport">Transport</a>
+            </div>
+        </details>
+
+        <details>
+            <summary>📚 Academics</summary>
+            <div class="subnav">
+                <a href="/subjects">Subjects</a>
+                <a href="/timetable_dashboard">Timetable</a>
+                <a href="/exams">Exams</a>
+                <a href="/report_cards">Report Cards</a>
+            </div>
+        </details>
+
+        <details>
+            <summary>💰 Finance</summary>
+            <div class="subnav">
+                <a href="/payments">Payments</a>
+                <a href="/fee_structure">Fee Structure</a>
+                <a href="/statement">Statements</a>
+                <a href="/defaulters_report">Defaulters</a>
+                <a href="/expenses">Expenses</a>
+                <a href="/expense_report">Expense Report</a>
+            </div>
+        </details>
+
+        <details>
+            <summary>👥 Human Resource</summary>
+            <div class="subnav">
+                <a href="/staff_dashboard">Staff Dashboard</a>
+                <a href="/staff">Staff Directory</a>
+                <a href="/staff_attendance">Staff Attendance</a>
+                <a href="/staff_attendance_report">Staff Attendance Report</a>
+                <a href="/payroll">Payroll</a>
+            </div>
+        </details>
+
+        <details>
+            <summary>💬 Communication</summary>
+            <div class="subnav">
+                <a href="/whatsapp_messages">WhatsApp</a>
+                <a href="/whatsapp_outbox">WhatsApp Outbox</a>
+                <a href="/sms_messages">SMS</a>
+                <a href="/sms_wallet">SMS Wallet</a>
+                <a href="/announcements">Announcements</a>
+            </div>
+        </details>
+
+        <div class="nav-label">SYSTEM</div>
+        <a href="/users">👤 Users</a>
+        <a href="/audit_logs">🧾 Audit Logs</a>
+        <a href="/settings">🎨 Branding</a>
+        <a href="/change_password">🔐 Password</a>
+        <a href="/logout">🚪 Logout</a>
+
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="topbar">
+        <div class="top-title">
+            <h1>EduManage Admin Portal</h1>
+            <small>{{ settings.school_name if settings else "School System" }}</small>
+        </div>
+
+        <div class="top-user">
+            <div class="pill">📅 2026</div>
+            <div class="avatar">👤</div>
+            <div>
+                <b>{{ session.get("username") }}</b><br>
+                <small>{{ session.get("role") }}</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+    </div>
+</div>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("/static/service-worker.js");
+    });
+}
+</script>
+
+</body>
+</html>
