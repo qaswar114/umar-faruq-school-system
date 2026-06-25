@@ -1630,30 +1630,51 @@ def setup_once():
         init_database()
         app._database_initialized = True
 
-@app.route("/", methods=["GET","POST"])
+@app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        user = User.query.filter_by(username=request.form["username"].strip()).first()
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
 
-        school = School.query.get(user.school_id) if user else None
+        user = User.query.filter_by(username=username).first()
 
-        if user and (not school or not school.is_active or school.subscription_status != "active"):
+        if not user:
+            flash("Wrong username or password.")
+            return redirect(url_for("login"))
+
+        school = School.query.get(user.school_id) if user.school_id else None
+
+        if not school:
+            flash("School account not found. Contact system owner.")
+            return redirect(url_for("login"))
+
+        if not school.is_active or school.subscription_status != "active":
             flash("This school account is not active. Contact system owner.")
             return redirect(url_for("login"))
 
-        if user and not user.is_active:
+        if not user.is_active:
             flash("This account has been disabled. Contact Admin.")
             return redirect(url_for("login"))
 
-        if user and check_password_hash(user.password_hash, request.form["password"].strip()):
-            session["username"] = user.username
-            session["role"] = user.role
-            session["assigned_grade"] = user.assigned_grade
-            session["school_id"] = user.school_id
-            session["school_name"] = school.school_name if school else ""
+        if not check_password_hash(user.password_hash, password):
+            flash("Wrong username or password.")
+            return redirect(url_for("login"))
+
+        session["username"] = user.username
+        session["role"] = user.role
+        session["assigned_grade"] = user.assigned_grade
+        session["school_id"] = user.school_id
+        session["school_name"] = school.school_name
+
+        role = user.role.lower()
+
+        if role == "teacher":
+            return redirect(url_for("teacher_dashboard"))
+
+        if role == "super admin":
             return redirect(url_for("dashboard"))
 
-        flash("Wrong username or password.")
+        return redirect(url_for("dashboard"))
 
     return render_template("login.html", settings=get_settings())
 
