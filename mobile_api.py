@@ -94,3 +94,128 @@ def api_mobile_login():
             "school_name": school.school_name
         }
     })
+
+@mobile_api.route("/api/mobile/teacher_dashboard", methods=["GET"])
+def api_mobile_teacher_dashboard():
+    from app import app, User, School, Pupil, Attendance, Exam, Announcement, current_school_id
+    from datetime import date
+
+    auth_header = request.headers.get("Authorization", "")
+
+    if not auth_header.startswith("Bearer "):
+        return jsonify({
+            "success": False,
+            "message": "Missing mobile token."
+        }), 401
+
+    token = auth_header.replace("Bearer ", "").strip()
+    token_data = verify_mobile_token(app, token)
+
+    if not token_data:
+        return jsonify({
+            "success": False,
+            "message": "Invalid or expired token."
+        }), 401
+
+    if token_data.get("role", "").lower() != "teacher":
+        return jsonify({
+            "success": False,
+            "message": "Teacher access only."
+        }), 403
+
+    school_id = token_data.get("school_id")
+    user_id = token_data.get("user_id")
+
+    school = School.query.get(school_id)
+
+    if not school or not school.is_active:
+        return jsonify({
+            "success": False,
+            "message": "School account is not active."
+        }), 403
+
+    teacher = User.query.filter_by(
+        id=user_id,
+        school_id=school_id,
+        is_active=True
+    ).first()
+
+    if not teacher:
+        return jsonify({
+            "success": False,
+            "message": "Teacher account not found."
+        }), 404
+
+    assigned_grade = teacher.assigned_grade or ""
+
+    pupils_count = 0
+    present = 0
+    absent = 0
+    late = 0
+
+    today = date.today()
+
+    if assigned_grade:
+        pupils_count = Pupil.query.filter_by(
+            school_id=school_id,
+            grade=assigned_grade,
+            status="Active"
+        ).count()
+
+        today_attendance = Attendance.query.join(Pupil).filter(
+            Attendance.school_id == school_id,
+            Attendance.attendance_date == today,
+            Pupil.school_id == school_id,
+            Pupil.grade == assigned_grade
+        ).all()
+
+        present = sum(1 for r in today_attendance if r.status == "Present")
+        absent = sum(1 for r in today_attendance if r.status == "Absent")
+        late = sum(1 for r in today_attendance if r.status == "Late")
+
+    active_exams = Exam.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    announcements = Announcement.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(
+        Announcement.created_at.desc()
+    ).limit(5).all()
+
+    announcement_list = []
+
+    for a in announcements:
+        announcement_list.append({
+            "id": a.id,
+            "title": a.title,
+            "message": a.message,
+            "audience": a.audience,
+            "created_at": str(a.created_at)
+        })
+
+    return jsonify({
+        "success": True,
+        "message": "Teacher dashboard loaded.",
+        "data": {
+            "school": {
+                "id": school.id,
+                "name": school.school_name
+            },
+            "teacher": {
+                "id": teacher.id,
+                "username": teacher.username,
+                "assigned_grade": assigned_grade
+            },
+            "summary": {
+                "pupils_count": pupils_count,
+                "present_today": present,
+                "absent_today": absent,
+                "late_today": late,
+                "active_exams": active_exams
+            },
+            "announcements": announcement_list
+        }
+    })
