@@ -3540,7 +3540,17 @@ def grade_analysis():
         rows=rows
     )
 
+@app.route("/teacher_dashboard")
+def teacher_dashboard():
 
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    return dashboard()
 @app.route("/teacher_remarks")
 def teacher_remarks():
     if not login_required():
