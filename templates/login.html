@@ -4,12 +4,16 @@
     <title>EduManage Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- PWA -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0b5ed7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="EduManage">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='edumanage_logo.png') }}">
+
     <style>
-        *{
-            box-sizing:border-box;
-            margin:0;
-            padding:0;
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
 
         body{
             font-family:Arial,sans-serif;
@@ -30,30 +34,22 @@
             box-shadow:0 20px 50px rgba(0,0,0,.15);
         }
 
-        .logo-area{
-            text-align:center;
-            margin-bottom:25px;
-        }
+        .logo-area{text-align:center;margin-bottom:25px}
 
         .logo-area img{
-            width:140px;
+            width:130px;
             height:auto;
-            margin-bottom:15px;
+            margin-bottom:12px;
         }
 
         .brand{
-            font-size:48px;
+            font-size:46px;
             font-weight:800;
             margin-bottom:8px;
         }
 
-        .brand .edu{
-            color:#2563eb;
-        }
-
-        .brand .manage{
-            color:#16a34a;
-        }
+        .edu{color:#2563eb}
+        .manage{color:#16a34a}
 
         .tagline{
             color:#64748b;
@@ -102,9 +98,7 @@
             cursor:pointer;
         }
 
-        button:hover{
-            background:#084298;
-        }
+        button:hover{background:#084298}
 
         .footer{
             text-align:center;
@@ -114,17 +108,9 @@
         }
 
         @media(max-width:600px){
-            .login-card{
-                padding:25px;
-            }
-
-            .brand{
-                font-size:38px;
-            }
-
-            .logo-area img{
-                width:110px;
-            }
+            .login-card{padding:25px}
+            .brand{font-size:38px}
+            .logo-area img{width:105px}
         }
     </style>
 </head>
@@ -134,7 +120,6 @@
 <div class="login-card">
 
     <div class="logo-area">
-
         <img src="{{ url_for('static', filename='edumanage_logo.png') }}"
              alt="EduManage Logo">
 
@@ -145,7 +130,6 @@
         <div class="tagline">
             Smart School Management System
         </div>
-
     </div>
 
     {% with messages = get_flashed_messages() %}
@@ -157,17 +141,13 @@
     {% endwith %}
 
     <form method="post">
-
         <label>Username</label>
         <input name="username" required>
 
         <label>Password</label>
         <input type="password" name="password" required>
 
-        <button type="submit">
-            Login
-        </button>
-
+        <button type="submit">Login</button>
     </form>
 
     <div class="footer">
@@ -175,6 +155,14 @@
     </div>
 
 </div>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("/static/service-worker.js");
+    });
+}
+</script>
 
 </body>
 </html>
