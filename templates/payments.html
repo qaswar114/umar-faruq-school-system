@@ -13,26 +13,16 @@
     border-radius:18px;
     padding:22px;
     margin-bottom:16px;
-    display:flex;
-    justify-content:space-between;
-    gap:15px;
-    align-items:center;
 }
 
 .pay-hero h2{
     margin:0;
-    font-size:26px;
+    font-size:27px;
 }
 
 .pay-hero p{
     margin:6px 0 0;
     color:#dbeafe;
-}
-
-.pay-layout{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:16px;
 }
 
 .pay-card{
@@ -41,18 +31,25 @@
     padding:18px;
     box-shadow:0 6px 18px rgba(15,23,42,.07);
     border:1px solid #e5e7eb;
+    margin-bottom:16px;
 }
 
 .section-title{
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:10px;
     margin-bottom:14px;
 }
 
 .section-title h3{
     margin:0;
     font-size:20px;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
 }
 
 .form-grid-3{
@@ -71,6 +68,7 @@
     display:grid;
     grid-template-columns:repeat(4,1fr);
     gap:12px;
+    margin-top:5px;
 }
 
 .amount-box{
@@ -81,8 +79,8 @@
 }
 
 .amount-box label{
-    color:#475569;
     font-size:13px;
+    color:#475569;
 }
 
 .amount-box input{
@@ -99,7 +97,7 @@
     flex-wrap:wrap;
 }
 
-.recent-table-wrap{
+.table-wrap{
     overflow-x:auto;
 }
 
@@ -111,16 +109,17 @@
 
 .pay-table th{
     background:#f8fafc;
-    padding:12px;
+    padding:11px;
     font-size:13px;
     color:#475569;
 }
 
 .pay-table td{
     background:white;
-    padding:12px;
+    padding:11px;
     border-top:1px solid #e5e7eb;
     border-bottom:1px solid #e5e7eb;
+    vertical-align:middle;
 }
 
 .pay-table td:first-child{
@@ -141,16 +140,19 @@
     font-weight:bold;
     font-size:13px;
     display:inline-block;
+    white-space:nowrap;
 }
 
 .total-money{
     font-weight:900;
     color:#159947;
+    white-space:nowrap;
 }
 
-.muted{
+.empty-row{
+    text-align:center;
+    padding:20px!important;
     color:#64748b;
-    font-size:13px;
 }
 
 @media(max-width:900px){
@@ -160,7 +162,7 @@
         grid-template-columns:1fr;
     }
 
-    .pay-hero{
+    .section-title{
         flex-direction:column;
         align-items:flex-start;
     }
@@ -170,205 +172,201 @@
 <div class="pay-page">
 
     <div class="pay-hero">
-        <div>
-            <h2>Collect School Fees</h2>
-            <p>Record payments, generate receipts and queue WhatsApp confirmations.</p>
-        </div>
-
-        <a class="btn green" href="{{ url_for('defaulters_report') }}">
-            View Defaulters
-        </a>
+        <h2>Collect School Fees</h2>
+        <p>Record payments, generate receipts and queue payment confirmations.</p>
     </div>
 
-    <div class="pay-layout">
-
-        <div class="pay-card">
-            <div class="section-title">
-                <h3>💳 New Payment</h3>
-                <span class="muted">Academic Year {{ year }}</span>
-            </div>
-
-            <form method="post">
-
-                <label>Search Pupil</label>
-                <input type="text"
-                       id="studentSearch"
-                       placeholder="Type admission number, pupil name or grade...">
-
-                <label>Pupil</label>
-                <select name="pupil_id" required>
-                    {% for p in pupils %}
-                    <option value="{{ p.id }}">
-                        {{ p.admission_no }} - {{ p.full_name }} - {{ p.grade }}
-                    </option>
-                    {% endfor %}
-                </select>
-
-                <div class="form-grid-3">
-                    <div>
-                        <label>Academic Year</label>
-                        <input name="academic_year"
-                               type="number"
-                               value="{{ year }}"
-                               required>
-                    </div>
-
-                    <div>
-                        <label>Term</label>
-                        <select name="term"
-                                id="payTerm"
-                                onchange="updateMonths('payTerm','payMonth')"
-                                required>
-                            {% for t in terms %}
-                            <option>{{ t }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>Month</label>
-                        <select name="month" id="payMonth" required>
-                            <option>January</option>
-                            <option>February</option>
-                            <option>March</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="amount-grid">
-                    <div class="amount-box">
-                        <label>Tuition Paid</label>
-                        <input name="tuition_paid" type="number" step="0.01" value="0">
-                    </div>
-
-                    <div class="amount-box">
-                        <label>Bus Paid</label>
-                        <input name="bus_paid" type="number" step="0.01" value="0">
-                    </div>
-
-                    <div class="amount-box">
-                        <label>Exam Paid</label>
-                        <input name="exam_paid" type="number" step="0.01" value="0">
-                    </div>
-
-                    <div class="amount-box">
-                        <label>Admission Paid</label>
-                        <input name="admission_paid" type="number" step="0.01" value="0">
-                    </div>
-                </div>
-
-                <div class="form-grid-2">
-                    <div>
-                        <label>Payment Method</label>
-                        <select name="payment_method" required>
-                            <option>Cash</option>
-                            <option>M-Pesa</option>
-                            <option>Bank</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label>Date</label>
-                        <input name="payment_date"
-                               type="date"
-                               value="{{ today }}"
-                               required>
-                    </div>
-                </div>
-
-                <div class="pay-actions">
-                    <button class="btn green" type="submit">
-                        Save Payment & Generate Receipt
-                    </button>
-                </div>
-
-            </form>
+    <div class="pay-card">
+        <div class="section-title">
+            <h3>💳 New Payment</h3>
+            <span class="muted">Academic Year {{ year }}</span>
         </div>
 
-        <div class="pay-card">
-            <div class="section-title">
-                <h3>🧾 Recent Payments</h3>
-                <span class="muted">Latest {{ payments|length }} records</span>
+        <form method="post">
+
+            <label>Search Pupil</label>
+            <input type="text"
+                   id="studentSearch"
+                   placeholder="Type admission number, pupil name or grade...">
+
+            <label>Pupil</label>
+            <select name="pupil_id" required>
+                {% for p in pupils %}
+                <option value="{{ p.id }}">
+                    {{ p.admission_no }} - {{ p.full_name }} - {{ p.grade }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <div class="form-grid-3">
+                <div>
+                    <label>Academic Year</label>
+                    <input name="academic_year"
+                           type="number"
+                           value="{{ year }}"
+                           required>
+                </div>
+
+                <div>
+                    <label>Term</label>
+                    <select name="term"
+                            id="payTerm"
+                            onchange="updateMonths('payTerm','payMonth')"
+                            required>
+                        {% for t in terms %}
+                        <option>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Month</label>
+                    <select name="month" id="payMonth" required>
+                        <option>January</option>
+                        <option>February</option>
+                        <option>March</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="recent-table-wrap">
-                <table class="pay-table">
-                    <tr>
-                        <th>Receipt</th>
-                        <th>Pupil</th>
-                        <th>Term</th>
-                        <th>Month</th>
-                        <th>Total</th>
-                        <th>Date</th>
-                        <th>Action</th>
-                    </tr>
+            <div class="amount-grid">
+                <div class="amount-box">
+                    <label>Tuition Paid</label>
+                    <input name="tuition_paid" type="number" step="0.01" value="0">
+                </div>
 
-                    {% for p in payments %}
-                    <tr>
-                        <td>
-                            <span class="receipt-pill">
-                                {{ p.receipt_no }}
-                            </span>
-                            <div class="muted">{{ p.academic_year }}</div>
-                        </td>
+                <div class="amount-box">
+                    <label>Bus Paid</label>
+                    <input name="bus_paid" type="number" step="0.01" value="0">
+                </div>
 
-                        <td>
-                            <b>{{ p.pupil.full_name }}</b>
-                        </td>
+                <div class="amount-box">
+                    <label>Exam Paid</label>
+                    <input name="exam_paid" type="number" step="0.01" value="0">
+                </div>
 
-                        <td>{{ p.term }}</td>
-                        <td>{{ p.month }}</td>
-
-                        <td class="total-money">
-                            {{ money(p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) }}
-                        </td>
-
-                        <td>{{ p.payment_date }}</td>
-
-                        <td>
-                            <a class="btn" href="{{ url_for('receipt', payment_id=p.id) }}">
-                                Receipt
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" style="text-align:center;padding:20px;">
-                            No payments recorded yet.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
+                <div class="amount-box">
+                    <label>Admission Paid</label>
+                    <input name="admission_paid" type="number" step="0.01" value="0">
+                </div>
             </div>
+
+            <div class="form-grid-2">
+                <div>
+                    <label>Payment Method</label>
+                    <select name="payment_method" required>
+                        <option>Cash</option>
+                        <option>M-Pesa</option>
+                        <option>Bank</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Date</label>
+                    <input name="payment_date"
+                           type="date"
+                           value="{{ today }}"
+                           required>
+                </div>
+            </div>
+
+            <div class="pay-actions">
+                <button class="btn green" type="submit">
+                    Save Payment & Generate Receipt
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="pay-card">
+        <div class="section-title">
+            <h3>🧾 Recent Payments</h3>
+            <span class="muted">Latest {{ payments|length }} records</span>
         </div>
 
+        <div class="table-wrap">
+            <table class="pay-table">
+                <tr>
+                    <th>Receipt</th>
+                    <th>Pupil</th>
+                    <th>Term</th>
+                    <th>Month</th>
+                    <th>Total</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+
+                {% for p in payments %}
+                <tr>
+                    <td>
+                        <span class="receipt-pill">
+                            {{ p.receipt_no }}
+                        </span>
+                        <div class="muted">{{ p.academic_year }}</div>
+                    </td>
+
+                    <td>
+                        <b>
+                            {{ p.pupil.full_name if p.pupil else "Deleted / Missing Pupil" }}
+                        </b>
+                    </td>
+
+                    <td>{{ p.term }}</td>
+                    <td>{{ p.month }}</td>
+
+                    <td class="total-money">
+                        {{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}
+                    </td>
+
+                    <td>{{ p.payment_date }}</td>
+
+                    <td>
+                        <a class="btn" href="/receipt/{{ p.id }}">
+                            Receipt
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-row">
+                        No payments recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
 
 </div>
 
 <script>
-document.getElementById("studentSearch").addEventListener("keyup", function () {
-    let search = this.value.toLowerCase();
-    let select = document.querySelector('select[name="pupil_id"]');
-    let firstMatch = null;
+const searchBox = document.getElementById("studentSearch");
+const pupilSelect = document.querySelector('select[name="pupil_id"]');
 
-    select.querySelectorAll("option").forEach(function(option) {
-        let txt = option.textContent.toLowerCase();
+if (searchBox && pupilSelect) {
+    searchBox.addEventListener("keyup", function () {
+        let search = this.value.toLowerCase();
+        let firstMatch = null;
 
-        if (txt.includes(search)) {
-            option.style.display = "";
-            if (!firstMatch) {
-                firstMatch = option;
+        pupilSelect.querySelectorAll("option").forEach(function(option) {
+            let txt = option.textContent.toLowerCase();
+
+            if (txt.includes(search)) {
+                option.style.display = "";
+                if (!firstMatch) {
+                    firstMatch = option;
+                }
+            } else {
+                option.style.display = "none";
             }
-        } else {
-            option.style.display = "none";
+        });
+
+        if (firstMatch) {
+            pupilSelect.value = firstMatch.value;
         }
     });
-
-    if (firstMatch) {
-        select.value = firstMatch.value;
-    }
-});
+}
 </script>
 
 {% endblock %}
