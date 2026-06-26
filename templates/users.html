@@ -1,92 +1,433 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="panel">
-    <h2>User Management</h2>
 
-    <form method="POST">
-        <div class="two">
-            <div>
-                <label>Username</label>
-                <input type="text" name="username" required>
+<style>
+.users-page{
+    max-width:1150px;
+    margin:0 auto;
+}
+
+.users-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.users-hero h2{
+    margin:0;
+    font-size:27px;
+}
+
+.users-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.users-card{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
+}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.section-title h3{
+    margin:0;
+    font-size:20px;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
+}
+
+.form-grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.form-grid-3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+}
+
+.user-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:10px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.summary-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+}
+
+.summary-card small{
+    color:#64748b;
+    font-weight:bold;
+}
+
+.summary-card h3{
+    margin:6px 0 0;
+    font-size:22px;
+}
+
+.filter-row{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.users-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 8px;
+}
+
+.users-table th{
+    background:#f8fafc;
+    padding:11px;
+    color:#475569;
+    font-size:13px;
+}
+
+.users-table td{
+    background:white;
+    padding:11px;
+    border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    vertical-align:top;
+}
+
+.users-table td:first-child{
+    border-left:1px solid #e5e7eb;
+    border-radius:12px 0 0 12px;
+}
+
+.users-table td:last-child{
+    border-right:1px solid #e5e7eb;
+    border-radius:0 12px 12px 0;
+}
+
+.role-pill{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    background:#eff6ff;
+    color:#0b5ed7;
+}
+
+.grade-pill{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    background:#f0fdf4;
+    color:#15803d;
+}
+
+.action-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:8px;
+}
+
+.reset-form{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+.reset-form input{
+    max-width:220px;
+    margin-bottom:0;
+}
+
+.small-btn{
+    padding:8px 11px;
+    font-size:13px;
+}
+
+.delete-btn{
+    background:#dc2626!important;
+}
+
+.empty-row{
+    text-align:center;
+    padding:20px!important;
+    color:#64748b;
+}
+
+@media(max-width:900px){
+    .form-grid-2,
+    .form-grid-3,
+    .summary-grid,
+    .filter-row{
+        grid-template-columns:1fr;
+    }
+
+    .section-title{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .reset-form input{
+        max-width:100%;
+    }
+}
+</style>
+
+<div class="users-page">
+
+    <div class="users-hero">
+        <h2>User Management</h2>
+        <p>Create users, assign roles, reset passwords and manage teacher grade access.</p>
+    </div>
+
+    <div class="users-card">
+        <div class="section-title">
+            <h3>👤 Create New User</h3>
+            <span class="muted">School user account</span>
+        </div>
+
+        <form method="POST">
+
+            <div class="form-grid-2">
+                <div>
+                    <label>Username</label>
+                    <input type="text"
+                           name="username"
+                           placeholder="Enter username"
+                           required>
+                </div>
+
+                <div>
+                    <label>Password</label>
+                    <input type="password"
+                           name="password"
+                           placeholder="Enter password"
+                           required>
+                </div>
             </div>
 
-            <div>
-                <label>Password</label>
-                <input type="password" name="password" required>
+            <div class="form-grid-2">
+                <div>
+                    <label>Role</label>
+                    <select name="role" required>
+                        <option>Admin</option>
+                        <option>Principal</option>
+                        <option>Bursar</option>
+                        <option>Registrar</option>
+                        <option>Teacher</option>
+                        <option>Receptionist</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Assigned Grade</label>
+                    <select name="assigned_grade">
+                        <option value="">None</option>
+                        {% for g in grades %}
+                        <option value="{{ g }}">{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="user-actions">
+                <button type="submit" class="btn green">
+                    Create User
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="users-card">
+        <div class="section-title">
+            <h3>📋 Existing Users</h3>
+            <span class="muted">{{ users|length }} users</span>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <small>Total Users</small>
+                <h3>{{ users|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Teachers</small>
+                <h3>{{ users|selectattr("role", "equalto", "Teacher")|list|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Admins</small>
+                <h3>{{ users|selectattr("role", "equalto", "Admin")|list|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Other Roles</small>
+                <h3>
+                    {{
+                        users|length
+                        -
+                        (users|selectattr("role", "equalto", "Teacher")|list|length)
+                        -
+                        (users|selectattr("role", "equalto", "Admin")|list|length)
+                    }}
+                </h3>
             </div>
         </div>
 
-        <div>
- <label>Role</label>
- <select name="role">
-    <option>Admin</option>
-    <option>Principal</option>
-    <option>Bursar</option>
-    <option>Registrar</option>
-    <option>Teacher</option>
-    <option>Receptionist</option>
-</select>
-            <label>Assigned Grade (For Teachers)</label>
-<select name="assigned_grade">
-    <option value="">None</option>
-    {% for g in grades %}
-    <option value="{{g}}">{{g}}</option>
-    {% endfor %}
-</select>
+        <div class="filter-row">
+            <input type="text"
+                   id="userSearch"
+                   placeholder="Search username, role or assigned grade...">
+
+            <select id="roleFilter">
+                <option value="">All Roles</option>
+                <option>Admin</option>
+                <option>Principal</option>
+                <option>Bursar</option>
+                <option>Registrar</option>
+                <option>Teacher</option>
+                <option>Receptionist</option>
+            </select>
         </div>
 
-        <br>
-        <button type="submit">Create User</button>
-    </form>
-   <hr><br>
-   <h3>Existing Users</h3>
+        <div class="table-wrap">
+            <table class="users-table" id="usersTable">
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Assigned Grade</th>
+                    <th>Actions</th>
+                </tr>
 
-<table border="1" cellpadding="8" cellspacing="0" width="100%">
-    <tr>
-        <th>Username</th>
-        <th>Role</th>
-        <th>Assigned Grade</th>
-        <th>Action</th>
-    </tr>
+                {% for u in users %}
+                <tr data-role="{{ u.role }}">
+                    <td>
+                        <b>{{ u.username }}</b>
+                    </td>
 
-    {% for u in users %}
-    <tr>
-        <td>{{ u.username }}</td>
-        <td>{{ u.role }}</td>
-        <td>{{ u.assigned_grade or "-" }}</td>
-        
-       <td>
-    <a href="{{ url_for('edit_user', user_id=u.id) }}">Edit</a>
+                    <td>
+                        <span class="role-pill">
+                            {{ u.role }}
+                        </span>
+                    </td>
 
-    {% if u.username != 'admin' %}
-    |
-    <form method="post"
-      action="{{ url_for('delete_user', user_id=u.id) }}"
-      style="display:inline;">
-    <button type="submit"
-            onclick="return confirm('Delete this user?')"
-            style="color:red;">
-        Delete
-    </button>
-</form>
-    {% endif %}
-           <br><br>
+                    <td>
+                        {% if u.assigned_grade %}
+                            <span class="grade-pill">{{ u.assigned_grade }}</span>
+                        {% else %}
+                            <span class="muted">Not assigned</span>
+                        {% endif %}
+                    </td>
 
-<form method="post"
-      action="/reset_user_password/{{ u.id }}">
-    <input type="text"
-           name="new_password"
-           placeholder="New Password"
-           required>
+                    <td>
+                        <div class="action-row">
+                            <a class="btn small-btn"
+                               href="{{ url_for('edit_user', user_id=u.id) }}">
+                                Edit
+                            </a>
 
-    <button type="submit" class="btn">
-        Reset Password
-    </button>
-</form>
-</td>
-    </tr>
- {% endfor %}
-</table>
+                            {% if u.username != 'admin' %}
+                            <form method="post"
+                                  action="{{ url_for('delete_user', user_id=u.id) }}"
+                                  style="display:inline;">
+                                <button type="submit"
+                                        class="btn small-btn delete-btn"
+                                        onclick="return confirm('Delete this user?')">
+                                    Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <form method="post"
+                              action="/reset_user_password/{{ u.id }}"
+                              class="reset-form">
+                            <input type="text"
+                                   name="new_password"
+                                   placeholder="New password"
+                                   required>
+
+                            <button type="submit" class="btn small-btn">
+                                Reset Password
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="empty-row">
+                        No users created yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
 </div>
+
+<script>
+const userSearch = document.getElementById("userSearch");
+const roleFilter = document.getElementById("roleFilter");
+const userRows = document.querySelectorAll("#usersTable tr[data-role]");
+
+function filterUsers(){
+    let search = userSearch.value.toLowerCase();
+    let role = roleFilter.value;
+
+    userRows.forEach(function(row){
+        let text = row.textContent.toLowerCase();
+        let rowRole = row.getAttribute("data-role");
+
+        let matchSearch = text.includes(search);
+        let matchRole = !role || rowRole === role;
+
+        row.style.display = (matchSearch && matchRole) ? "" : "none";
+    });
+}
+
+if(userSearch && roleFilter){
+    userSearch.addEventListener("keyup", filterUsers);
+    roleFilter.addEventListener("change", filterUsers);
+}
+</script>
+
 {% endblock %}
