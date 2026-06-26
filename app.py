@@ -8305,6 +8305,71 @@ def stock_out():
         items=items
     )
 
+@app.route("/inventory_transactions")
+def inventory_transactions():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    selected_type = request.args.get("type", "")
+    selected_item = request.args.get("item_id", "")
+
+    query = InventoryTransaction.query.filter_by(
+        school_id=school_id
+    )
+
+    if selected_type:
+        query = query.filter(
+            InventoryTransaction.transaction_type == selected_type
+        )
+
+    if selected_item:
+        query = query.filter(
+            InventoryTransaction.item_id == int(selected_item)
+        )
+
+    transactions = query.order_by(
+        InventoryTransaction.created_at.desc()
+    ).limit(300).all()
+
+    items = InventoryItem.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        InventoryItem.item_name.asc()
+    ).all()
+
+    stock_in_total = sum(
+        t.quantity or 0
+        for t in InventoryTransaction.query.filter_by(
+            school_id=school_id,
+            transaction_type="Stock In"
+        ).all()
+    )
+
+    stock_out_total = sum(
+        t.quantity or 0
+        for t in InventoryTransaction.query.filter_by(
+            school_id=school_id,
+            transaction_type="Stock Out"
+        ).all()
+    )
+
+    return render_template(
+        "inventory_transactions.html",
+        settings=get_settings(),
+        transactions=transactions,
+        items=items,
+        selected_type=selected_type,
+        selected_item=selected_item,
+        stock_in_total=stock_in_total,
+        stock_out_total=stock_out_total
+    )
+
 # =====================================================
 #               MOBILE API
 # =====================================================
