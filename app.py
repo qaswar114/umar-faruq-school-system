@@ -838,6 +838,35 @@ class InventoryItem(db.Model):
     created_by = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class InventoryTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
+
+    item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("inventory_item.id"),
+        nullable=False
+    )
+
+    transaction_type = db.Column(db.String(20))   # Stock In / Stock Out
+
+    quantity = db.Column(db.Integer)
+
+    reference = db.Column(db.String(100))
+
+    remarks = db.Column(db.Text)
+
+    created_by = db.Column(db.String(100))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    item = db.relationship("InventoryItem")
+
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
 
@@ -8136,6 +8165,71 @@ def inventory():
         low_stock=low_stock,
         total_value=total_value,
         money=money
+    )
+
+@app.route("/stock_in", methods=["GET", "POST"])
+def stock_in():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        item_id = int(request.form["item_id"])
+        quantity = int(request.form.get("quantity") or 0)
+        reference = request.form.get("reference", "").strip()
+        remarks = request.form.get("remarks", "").strip()
+
+        if quantity <= 0:
+            flash("Enter a valid stock-in quantity.")
+            return redirect(url_for("stock_in"))
+
+        item = InventoryItem.query.filter_by(
+            id=item_id,
+            school_id=school_id
+        ).first()
+
+        if not item:
+            flash("Invalid inventory item selected.")
+            return redirect(url_for("stock_in"))
+
+        item.quantity = (item.quantity or 0) + quantity
+
+        tx = InventoryTransaction(
+            school_id=school_id,
+            item_id=item.id,
+            transaction_type="Stock In",
+            quantity=quantity,
+            reference=reference,
+            remarks=remarks,
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(tx)
+        db.session.commit()
+
+        save_audit(
+            f"Stock In: {quantity} {item.unit} added to {item.item_name}. Reference: {reference}",
+            "Inventory"
+        )
+
+        flash("Stock added successfully.")
+        return redirect(url_for("inventory"))
+
+    items = InventoryItem.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        InventoryItem.item_name.asc()
+    ).all()
+
+    return render_template(
+        "stock_in.html",
+        settings=get_settings(),
+        items=items
     )
 
 # =====================================================
