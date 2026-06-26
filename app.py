@@ -8232,6 +8232,79 @@ def stock_in():
         items=items
     )
 
+@app.route("/stock_out", methods=["GET", "POST"])
+def stock_out():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        item_id = int(request.form["item_id"])
+        quantity = int(request.form.get("quantity") or 0)
+        issued_to = request.form.get("issued_to", "").strip()
+        reference = request.form.get("reference", "").strip()
+        remarks = request.form.get("remarks", "").strip()
+
+        if quantity <= 0:
+            flash("Enter a valid stock-out quantity.")
+            return redirect(url_for("stock_out"))
+
+        item = InventoryItem.query.filter_by(
+            id=item_id,
+            school_id=school_id
+        ).first()
+
+        if not item:
+            flash("Invalid inventory item selected.")
+            return redirect(url_for("stock_out"))
+
+        if quantity > (item.quantity or 0):
+            flash(
+                f"Not enough stock. Available quantity is "
+                f"{item.quantity} {item.unit}."
+            )
+            return redirect(url_for("stock_out"))
+
+        item.quantity = (item.quantity or 0) - quantity
+
+        tx = InventoryTransaction(
+            school_id=school_id,
+            item_id=item.id,
+            transaction_type="Stock Out",
+            quantity=quantity,
+            reference=reference,
+            remarks=f"Issued to: {issued_to}. {remarks}",
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(tx)
+        db.session.commit()
+
+        save_audit(
+            f"Stock Out: {quantity} {item.unit} issued from {item.item_name} to {issued_to}.",
+            "Inventory"
+        )
+
+        flash("Stock issued successfully.")
+        return redirect(url_for("inventory"))
+
+    items = InventoryItem.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        InventoryItem.item_name.asc()
+    ).all()
+
+    return render_template(
+        "stock_out.html",
+        settings=get_settings(),
+        items=items
+    )
+
 # =====================================================
 #               MOBILE API
 # =====================================================
