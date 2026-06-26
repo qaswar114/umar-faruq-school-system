@@ -10,62 +10,97 @@
 
     <style>
         *{box-sizing:border-box}
-        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
-
-        .sidebar{
-            position:fixed;left:0;top:0;bottom:0;width:245px;
-            background:linear-gradient(180deg,#061b44,#052b61);
-            color:white;padding:14px 12px;overflow-y:auto;z-index:1000;
+        body{
+            margin:0;
+            font-family:Arial,sans-serif;
+            background:#f4f7fb;
+            color:#0f172a;
         }
 
-        .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-        .brand img{width:48px;height:48px;border-radius:12px;background:white;object-fit:contain;padding:4px}
-        .brand h2{margin:0;font-size:18px;line-height:1.1}
-        .brand small{color:#dbeafe;font-size:11px}
+        .sidebar{
+            position:fixed;
+            left:0;
+            top:0;
+            bottom:0;
+            width:245px;
+            background:linear-gradient(180deg,#061b44,#052b61);
+            color:white;
+            padding:16px 13px;
+            overflow-y:auto;
+            z-index:1000;
+        }
 
-        .school-box{
-            background:rgba(255,255,255,.09);
-            border:1px solid rgba(255,255,255,.16);
-            border-radius:14px;
-            padding:12px;
+        .brand{
+            text-align:center;
+            padding:8px 6px 16px;
+            border-bottom:1px solid rgba(255,255,255,.15);
             margin-bottom:12px;
         }
 
-        .school-box b{display:block;font-size:13px}
-        .school-box small{color:#dbeafe;font-size:12px}
-
-        .school-mini{
-            display:flex;
-            align-items:center;
-            gap:10px;
+        .brand img{
+            width:72px;
+            height:72px;
+            border-radius:18px;
+            background:white;
+            object-fit:contain;
+            padding:5px;
+            margin-bottom:10px;
         }
 
-        .school-mini img{
-            width:48px;
-            height:48px;
-            border-radius:12px;
-            background:white;
-            object-fit:cover;
-            padding:3px;
-            flex-shrink:0;
+        .brand h2{
+            margin:0;
+            font-size:15px;
+            line-height:1.2;
+            text-transform:uppercase;
+        }
+
+        .brand small{
+            display:block;
+            color:#dbeafe;
+            font-size:11px;
+            margin-top:5px;
         }
 
         .nav-label{
-            font-size:10px;color:#93c5fd;font-weight:bold;
-            letter-spacing:1px;margin:12px 0 6px 8px;
+            font-size:10px;
+            color:#93c5fd;
+            font-weight:bold;
+            letter-spacing:1px;
+            margin:14px 0 6px 8px;
         }
 
-        .nav a,.nav summary{
-            display:flex;align-items:center;gap:8px;color:white;text-decoration:none;
-            padding:8px 10px;border-radius:9px;margin-bottom:3px;
-            font-weight:700;font-size:13px;cursor:pointer;
+        .nav a,
+        .nav summary{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            color:white;
+            text-decoration:none;
+            padding:8px 10px;
+            border-radius:9px;
+            margin-bottom:3px;
+            font-weight:700;
+            font-size:13px;
+            cursor:pointer;
         }
 
-        .nav a:hover,.nav a.active,.nav summary:hover{background:#0b5ed7}
+        .nav a:hover,
+        .nav a.active,
+        .nav summary:hover{
+            background:#0b5ed7;
+        }
 
-        details{margin-bottom:3px}
-        summary{list-style:none}
-        summary::-webkit-details-marker{display:none}
+        details{
+            margin-bottom:3px;
+        }
+
+        summary{
+            list-style:none;
+        }
+
+        summary::-webkit-details-marker{
+            display:none;
+        }
 
         .subnav{
             margin-left:18px;
@@ -80,76 +115,194 @@
             color:#dbeafe;
         }
 
-        .main{margin-left:245px;min-height:100vh}
-
-        .topbar{
-            height:68px;background:white;border-bottom:1px solid #e5e7eb;
-            display:flex;align-items:center;justify-content:space-between;
-            padding:0 22px;position:sticky;top:0;z-index:500;
+        .main{
+            margin-left:245px;
+            min-height:100vh;
         }
 
-        .top-title h1{margin:0;font-size:22px;color:#07142f}
-        .top-title small{color:#64748b}
+        .topbar{
+            height:68px;
+            background:white;
+            border-bottom:1px solid #e5e7eb;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:0 22px;
+            position:sticky;
+            top:0;
+            z-index:500;
+        }
 
-        .top-user{display:flex;align-items:center;gap:12px}
+        .top-title h1{
+            margin:0;
+            font-size:22px;
+            color:#07142f;
+        }
+
+        .top-title small{
+            color:#64748b;
+        }
+
+        .top-user{
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
         .pill{
-            background:#f8fafc;border:1px solid #e5e7eb;
-            padding:8px 12px;border-radius:12px;font-weight:bold;
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            padding:8px 12px;
+            border-radius:12px;
+            font-weight:bold;
         }
 
         .avatar{
-            width:38px;height:38px;border-radius:50%;background:#dbeafe;
-            display:flex;align-items:center;justify-content:center;font-size:20px;
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            background:#dbeafe;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:20px;
         }
 
-        .content{padding:16px}
+        .content{
+            padding:16px;
+        }
 
         .panel{
-            background:white;padding:20px;border-radius:14px;
-            box-shadow:0 6px 18px rgba(15,23,42,.07);margin-bottom:18px;
+            background:white;
+            padding:20px;
+            border-radius:14px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            margin-bottom:18px;
         }
 
-        input,select,textarea{
-            width:100%;padding:10px;border:1px solid #cbd5e1;
-            border-radius:8px;margin-bottom:10px;font-size:15px;
+        input,
+        select,
+        textarea{
+            width:100%;
+            padding:10px;
+            border:1px solid #cbd5e1;
+            border-radius:8px;
+            margin-bottom:10px;
+            font-size:15px;
         }
 
-        label{font-weight:bold;display:block;margin-bottom:5px}
-
-        .btn,button{
-            display:inline-block;background:#0b5ed7;color:white;
-            padding:10px 15px;border-radius:8px;text-decoration:none;
-            border:none;cursor:pointer;font-size:15px;
+        label{
+            font-weight:bold;
+            display:block;
+            margin-bottom:5px;
         }
 
-        .btn.green,button.green{background:#159947}
-        .btn.red,button.red{background:#dc2626}
-        .btn.gray,button.gray{background:#64748b}
+        .btn,
+        button{
+            display:inline-block;
+            background:#0b5ed7;
+            color:white;
+            padding:10px 15px;
+            border-radius:8px;
+            text-decoration:none;
+            border:none;
+            cursor:pointer;
+            font-size:15px;
+        }
 
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
-        th{background:#f8fafc}
+        .btn.green,
+        button.green{
+            background:#159947;
+        }
 
-        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+        .btn.red,
+        button.red{
+            background:#dc2626;
+        }
+
+        .btn.gray,
+        button.gray{
+            background:#64748b;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th,
+        td{
+            padding:10px;
+            border-bottom:1px solid #e5e7eb;
+            text-align:left;
+        }
+
+        th{
+            background:#f8fafc;
+        }
+
+        .two{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+
+        .three{
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap:14px;
+        }
 
         .flash{
-            background:#fff7d6;padding:10px 14px;
-            border-radius:10px;margin-bottom:12px;
+            background:#fff7d6;
+            padding:10px 14px;
+            border-radius:10px;
+            margin-bottom:12px;
         }
 
         @media(max-width:900px){
-            .sidebar{position:relative;width:100%;height:auto}
-            .main{margin-left:0}
-            .topbar{height:auto;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
-            .top-user{flex-wrap:wrap}
-            .two,.three{grid-template-columns:1fr}
+            .sidebar{
+                position:relative;
+                width:100%;
+                height:auto;
+            }
+
+            .main{
+                margin-left:0;
+            }
+
+            .topbar{
+                height:auto;
+                flex-direction:column;
+                align-items:flex-start;
+                gap:10px;
+                padding:15px;
+            }
+
+            .top-user{
+                flex-wrap:wrap;
+            }
+
+            .two,
+            .three{
+                grid-template-columns:1fr;
+            }
         }
 
         @media print{
-            .sidebar,.topbar,.no-print{display:none!important}
-            .main{margin-left:0!important}
-            body{background:white!important}
+            .sidebar,
+            .topbar,
+            .no-print{
+                display:none!important;
+            }
+
+            .main{
+                margin-left:0!important;
+            }
+
+            body{
+                background:white!important;
+            }
         }
     </style>
 </head>
@@ -161,44 +314,17 @@
     <div class="brand">
         {% if session.get("role","")|lower == "super admin" %}
             <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+            <h2>EduManage</h2>
+            <small>SaaS Control Panel</small>
         {% elif settings and settings.logo %}
             <img src="{{ url_for('static', filename=settings.logo) }}">
+            <h2>{{ settings.school_name if settings else "School System" }}</h2>
+            <small>Powered by EduManage</small>
         {% else %}
             <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+            <h2>{{ settings.school_name if settings else "School System" }}</h2>
+            <small>Powered by EduManage</small>
         {% endif %}
-
-        <div>
-            {% if session.get("role","")|lower == "super admin" %}
-                <h2>EduManage</h2>
-                <small>SaaS Control Panel</small>
-            {% else %}
-                <h2>{{ settings.school_name if settings else "School" }}</h2>
-                <small>Powered by EduManage</small>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="school-box">
-        <div class="school-mini">
-            {% if session.get("role","")|lower == "super admin" %}
-                <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
-            {% elif settings and settings.logo %}
-                <img src="{{ url_for('static', filename=settings.logo) }}">
-            {% else %}
-                <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
-            {% endif %}
-
-            <div>
-                <b>
-                    {% if session.get("role","")|lower == "super admin" %}
-                        EduManage Platform
-                    {% else %}
-                        {{ settings.school_name if settings else "School System" }}
-                    {% endif %}
-                </b>
-                <small>{{ session.get("username") }} | {{ session.get("role") }}</small>
-            </div>
-        </div>
     </div>
 
     <div class="nav">
@@ -284,13 +410,35 @@
 
     <div class="topbar">
         <div class="top-title">
-            {% if session.get("role","")|lower == "super admin" %}
-                <h1>EduManage SaaS Control Panel</h1>
-                <small>Manage schools, subscriptions and platform settings</small>
+            {% if request.path == '/dashboard' %}
+                <h1>Dashboard</h1>
+            {% elif request.path == '/business_dashboard' %}
+                <h1>CEO Dashboard</h1>
+            {% elif request.path == '/payments' %}
+                <h1>Payments</h1>
+            {% elif request.path == '/fees' %}
+                <h1>Fee Structure</h1>
+            {% elif request.path == '/pupils' %}
+                <h1>Admissions</h1>
+            {% elif request.path == '/attendance' %}
+                <h1>Attendance</h1>
+            {% elif request.path == '/defaulters_report' %}
+                <h1>Defaulters Report</h1>
+            {% elif request.path == '/staff_dashboard' %}
+                <h1>Human Resource</h1>
+            {% elif request.path == '/payroll' %}
+                <h1>Payroll</h1>
+            {% elif request.path == '/whatsapp_messages' %}
+                <h1>WhatsApp</h1>
+            {% elif request.path == '/whatsapp_outbox' %}
+                <h1>WhatsApp Outbox</h1>
             {% else %}
-                <h1>{{ settings.school_name if settings else "School Dashboard" }}</h1>
-                <small>Powered by EduManage SaaS</small>
+                <h1>EduManage</h1>
             {% endif %}
+
+            <small>
+                Welcome back, {{ session.get("username") }}
+            </small>
         </div>
 
         <div class="top-user">
