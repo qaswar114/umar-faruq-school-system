@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.stock-page{
+    max-width:900px;
+    margin:0 auto;
+}
+
+.stock-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.stock-hero h2{
+    margin:0;
+    font-size:27px;
+}
+
+.stock-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.stock-card{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
+}
+
+.form-grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.stock-actions{
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:14px;
+}
+
+.info-box{
+    background:#eff6ff;
+    color:#1e40af;
+    border:1px solid #bfdbfe;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:14px;
+    font-size:14px;
+}
+
+@media(max-width:800px){
+    .form-grid-2{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="stock-page">
+
+    <div class="stock-hero">
+        <h2>Stock In</h2>
+        <p>Add received store items and automatically increase inventory quantity.</p>
+    </div>
+
+    <div class="stock-card">
+
+        <div class="info-box">
+            Use this page when the school receives new items from suppliers, purchases, donations, or transfers.
+        </div>
+
+        <form method="post">
+
+            <label>Select Item</label>
+            <select name="item_id" required>
+                <option value="">Choose inventory item</option>
+                {% for item in items %}
+                <option value="{{ item.id }}">
+                    {{ item.item_name }} - Current: {{ item.quantity }} {{ item.unit }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <div class="form-grid-2">
+                <div>
+                    <label>Quantity Received</label>
+                    <input name="quantity" type="number" min="1" required>
+                </div>
+
+                <div>
+                    <label>Reference / Invoice No.</label>
+                    <input name="reference" placeholder="e.g. INV-001, LPO-23">
+                </div>
+            </div>
+
+            <label>Remarks</label>
+            <textarea name="remarks" placeholder="Optional notes about this stock received"></textarea>
+
+            <div class="stock-actions">
+                <a class="btn gray" href="/inventory">
+                    Back to Inventory
+                </a>
+
+                <button class="btn green" type="submit">
+                    Save Stock In
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}
