@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.report-page{
+    max-width:1150px;
+    margin:0 auto;
+}
+
+.report-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.report-hero h2{
+    margin:0;
+    font-size:27px;
+}
+
+.report-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.report-card{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+    margin-bottom:16px;
+}
+
+.summary-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+}
+
+.summary-card small{
+    color:#64748b;
+    font-weight:bold;
+}
+
+.summary-card h3{
+    margin:6px 0 0;
+    font-size:21px;
+}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+.section-title h3{
+    margin:0;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.report-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 8px;
+}
+
+.report-table th{
+    background:#f8fafc;
+    padding:11px;
+    color:#475569;
+    font-size:13px;
+}
+
+.report-table td{
+    background:white;
+    padding:11px;
+    border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.report-table td:first-child{
+    border-left:1px solid #e5e7eb;
+    border-radius:12px 0 0 12px;
+}
+
+.report-table td:last-child{
+    border-right:1px solid #e5e7eb;
+    border-radius:0 12px 12px 0;
+}
+
+.low{
+    color:#dc2626;
+    font-weight:900;
+}
+
+.ok{
+    color:#159947;
+    font-weight:900;
+}
+
+.category-pill{
+    background:#eff6ff;
+    color:#0b5ed7;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+}
+
+.no-print{
+    margin-bottom:12px;
+}
+
+@media(max-width:1000px){
+    .summary-grid{
+        grid-template-columns:1fr;
+    }
+
+    .section-title{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:8px;
+    }
+}
+
+@media print{
+    .sidebar,
+    .topbar,
+    .no-print{
+        display:none!important;
+    }
+
+    .main{
+        margin-left:0!important;
+    }
+
+    .content{
+        padding:0!important;
+    }
+
+    .report-card{
+        box-shadow:none;
+        border:none;
+    }
+}
+</style>
+
+<div class="report-page">
+
+    <div class="report-hero no-print">
+        <h2>Inventory Reports</h2>
+        <p>Review low stock, stock value and category summaries.</p>
+    </div>
+
+    <div class="no-print">
+        <button class="btn" onclick="window.print()">Print Report</button>
+        <a class="btn gray" href="/inventory">Back to Inventory</a>
+    </div>
+
+    <div class="report-card">
+        <div class="section-title">
+            <h3>📊 Store Summary</h3>
+            <small>{{ settings.school_name }}</small>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <small>Total Items</small>
+                <h3>{{ total_items }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Total Quantity</small>
+                <h3>{{ total_quantity }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Low Stock</small>
+                <h3>{{ low_stock_items|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Total Value</small>
+                <h3>{{ money(total_value) }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>In / Out</small>
+                <h3>{{ stock_in_total }} / {{ stock_out_total }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-card">
+        <div class="section-title">
+            <h3>⚠ Low Stock Report</h3>
+            <small>{{ low_stock_items|length }} items need attention</small>
+        </div>
+
+        <div class="table-wrap">
+            <table class="report-table">
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Minimum</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                </tr>
+
+                {% for item in low_stock_items %}
+                <tr>
+                    <td><b>{{ item.item_name }}</b></td>
+                    <td><span class="category-pill">{{ item.category }}</span></td>
+                    <td>{{ item.quantity }} {{ item.unit }}</td>
+                    <td>{{ item.minimum_stock }}</td>
+                    <td>{{ item.supplier or "-" }}</td>
+                    <td><span class="low">Low Stock</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:20px;">
+                        No low stock items.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div class="report-card">
+        <div class="section-title">
+            <h3>📦 Category Summary</h3>
+            <small>{{ category_summary|length }} categories</small>
+        </div>
+
+        <div class="table-wrap">
+            <table class="report-table">
+                <tr>
+                    <th>Category</th>
+                    <th>Items</th>
+                    <th>Total Quantity</th>
+                    <th>Total Value</th>
+                </tr>
+
+                {% for c in category_summary %}
+                <tr>
+                    <td><span class="category-pill">{{ c.category }}</span></td>
+                    <td>{{ c.items }}</td>
+                    <td>{{ c.quantity }}</td>
+                    <td>{{ money(c.value) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align:center;padding:20px;">
+                        No category summary available.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
