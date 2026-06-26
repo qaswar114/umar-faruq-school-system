@@ -4563,6 +4563,82 @@ def payments():
         payments=recent_payments,
         money=money
     )
+
+@app.route("/defaulters_report")
+def defaulters_report():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    year = int(request.args.get("year", current_year()))
+    selected_grade = request.args.get("grade", "")
+    selected_term = request.args.get("term", "Term 2")
+    selected_month = request.args.get("month", "May")
+
+    if selected_month not in term_months(selected_term):
+        months = term_months(selected_term)
+        selected_month = months[0] if months else "May"
+
+    query = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    )
+
+    if selected_grade:
+        query = query.filter_by(grade=selected_grade)
+
+    rows = []
+
+    for pupil in query.order_by(Pupil.grade, Pupil.full_name).all():
+        total_due = due_until_month(
+            pupil,
+            year,
+            selected_term,
+            selected_month
+        )
+
+        total_paid = paid_year(pupil.id, year)
+        discounts = discount_year(pupil.id, year)
+        balance = total_due - total_paid - discounts
+
+        if balance > 0:
+            rows.append({
+                "pupil": pupil,
+                "total_due": total_due,
+                "total_paid": total_paid,
+                "discounts": discounts,
+                "balance": balance
+            })
+
+    total_defaulters = len(rows)
+    total_due_all = sum(row["total_due"] for row in rows)
+    total_paid_all = sum(row["total_paid"] for row in rows)
+    total_discount_all = sum(row["discounts"] for row in rows)
+    total_balance = sum(row["balance"] for row in rows)
+
+    return render_template(
+        "defaulters_report.html",
+        settings=get_settings(),
+        grades=GRADES,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
+        selected_grade=selected_grade,
+        selected_term=selected_term,
+        selected_month=selected_month,
+        year=year,
+        rows=rows,
+        total_defaulters=total_defaulters,
+        total_due_all=total_due_all,
+        total_paid_all=total_paid_all,
+        total_discount_all=total_discount_all,
+        total_balance=total_balance,
+        money=money
+    )
  
 @app.route("/daily_collections")
 def daily_collections():
