@@ -1,14 +1,392 @@
-{% extends "base.html" %}{% block content %}<div class="panel"><h2>Fee Structure</h2><div class="notice">Tuition and bus are monthly. Exam and admission are term-based.</div><form method="post">
-  <div class="three">
-    <div><label>Academic Year</label><input name="academic_year" type="number" value="{{year}}"></div>
-    <div><label>Grade</label><select name="grade">{% for g in grades %}<option>{{g}}</option>{% endfor %}</select></div>
-   <div><label>Term</label><select name="term" id="fTerm">{% for t in terms %}<option>{{t}}</option>{% endfor %}</select></div></div><div class="two">
-      <div><label>Monthly Tuition</label>
-          <input name="tuition_fee" type="number" value="0"></div>
-      <div><label>Monthly Bus</label>
-        <input name="bus_fee" type="number" value="0"></div>
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.fees-page{
+    max-width:1150px;
+    margin:0 auto;
+}
+
+.fees-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.fees-hero h2{
+    margin:0;
+    font-size:27px;
+}
+
+.fees-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.fees-card{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
+}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.section-title h3{
+    margin:0;
+    font-size:20px;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
+}
+
+.form-grid-3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+}
+
+.amount-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+}
+
+.amount-box{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:12px;
+}
+
+.amount-box label{
+    font-size:13px;
+    color:#475569;
+}
+
+.amount-box input{
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:0;
+}
+
+.info-box{
+    background:#eff6ff;
+    color:#1e40af;
+    border:1px solid #bfdbfe;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:14px;
+    font-size:14px;
+}
+
+.fees-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:14px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:16px;
+}
+
+.summary-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+}
+
+.summary-card small{
+    color:#64748b;
+    font-weight:bold;
+}
+
+.summary-card h3{
+    margin:6px 0 0;
+    font-size:22px;
+}
+
+.filter-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.fees-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 8px;
+}
+
+.fees-table th{
+    background:#f8fafc;
+    padding:11px;
+    color:#475569;
+    font-size:13px;
+}
+
+.fees-table td{
+    background:white;
+    padding:11px;
+    border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.fees-table td:first-child{
+    border-left:1px solid #e5e7eb;
+    border-radius:12px 0 0 12px;
+}
+
+.fees-table td:last-child{
+    border-right:1px solid #e5e7eb;
+    border-radius:0 12px 12px 0;
+}
+
+.term-pill{
+    background:#eff6ff;
+    color:#0b5ed7;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:bold;
+    font-size:13px;
+}
+
+.money{
+    font-weight:900;
+    white-space:nowrap;
+}
+
+.empty-row{
+    text-align:center;
+    color:#64748b;
+    padding:20px!important;
+}
+
+@media(max-width:900px){
+    .form-grid-3,
+    .amount-grid,
+    .summary-grid,
+    .filter-row{
+        grid-template-columns:1fr;
+    }
+
+    .section-title{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+}
+</style>
+
+<div class="fees-page">
+
+    <div class="fees-hero">
+        <h2>Fee Structure</h2>
+        <p>Set monthly tuition, monthly bus fees, term exam fees and admission fees.</p>
     </div>
-  <div class="two">
-      <div><label>Term Exam Fee</label><input name="exam_fee" type="number" value="0"></div>
-      <div><label>Term Admission Fee</label><input name="admission_fee" type="number" value="0"></div></div>
-  <button class="btn green">Save Fee Structure</button></form></div><div class="panel"><table><tr><th>Year</th><th>Grade</th><th>Term</th><th>Applies To</th><th>Tuition</th><th>Bus</th><th>Exam</th><th>Admission</th></tr>{% for f in fees %}<tr><td>{{f.academic_year}}</td><td>{{f.grade}}</td><td>{{f.term}}</td><td>{{f.month or "Term"}}</td><td>{{money(f.tuition_fee)}}</td><td>{{money(f.bus_fee)}}</td><td>{{money(f.exam_fee)}}</td><td>{{money(f.admission_fee)}}</td></tr>{% endfor %}</table></div>{% endblock %}
+
+    <div class="fees-card">
+        <div class="section-title">
+            <h3>💰 Setup Fees</h3>
+            <span class="muted">Academic Year {{ year }}</span>
+        </div>
+
+        <div class="info-box">
+            Tuition and bus fees are applied monthly. Exam and admission fees are applied once at the beginning of the selected term.
+        </div>
+
+        <form method="post">
+
+            <div class="form-grid-3">
+                <div>
+                    <label>Academic Year</label>
+                    <input name="academic_year" type="number" value="{{ year }}" required>
+                </div>
+
+                <div>
+                    <label>Grade</label>
+                    <select name="grade" required>
+                        {% for g in grades %}
+                        <option>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Term</label>
+                    <select name="term" required>
+                        {% for t in terms %}
+                        <option>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="amount-grid">
+                <div class="amount-box">
+                    <label>Monthly Tuition</label>
+                    <input name="tuition_fee" type="number" step="0.01" value="0">
+                </div>
+
+                <div class="amount-box">
+                    <label>Monthly Bus</label>
+                    <input name="bus_fee" type="number" step="0.01" value="0">
+                </div>
+
+                <div class="amount-box">
+                    <label>Term Exam Fee</label>
+                    <input name="exam_fee" type="number" step="0.01" value="0">
+                </div>
+
+                <div class="amount-box">
+                    <label>Admission Fee</label>
+                    <input name="admission_fee" type="number" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="fees-actions">
+                <button class="btn green" type="submit">
+                    Save Fee Structure
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="fees-card">
+        <div class="section-title">
+            <h3>📋 Current Fee Structures</h3>
+            <span class="muted">{{ fees|length }} fee records</span>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <small>Total Records</small>
+                <h3>{{ fees|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Academic Year</small>
+                <h3>{{ year }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Grades</small>
+                <h3>{{ grades|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Terms</small>
+                <h3>{{ terms|length }}</h3>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <input type="text"
+                   id="feeSearch"
+                   placeholder="Search grade, term or month...">
+
+            <select id="gradeFilter">
+                <option value="">All Grades</option>
+                {% for g in grades %}
+                <option value="{{ g }}">{{ g }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="termFilter">
+                <option value="">All Terms</option>
+                {% for t in terms %}
+                <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table class="fees-table" id="feesTable">
+                <tr>
+                    <th>Year</th>
+                    <th>Grade</th>
+                    <th>Term</th>
+                    <th>Month</th>
+                    <th>Tuition</th>
+                    <th>Bus</th>
+                    <th>Exam</th>
+                    <th>Admission</th>
+                </tr>
+
+                {% for f in fees %}
+                <tr data-grade="{{ f.grade }}" data-term="{{ f.term }}">
+                    <td>{{ f.academic_year }}</td>
+                    <td><b>{{ f.grade }}</b></td>
+                    <td><span class="term-pill">{{ f.term }}</span></td>
+                    <td>{{ f.month or "Term" }}</td>
+                    <td class="money">{{ money(f.tuition_fee or 0) }}</td>
+                    <td class="money">{{ money(f.bus_fee or 0) }}</td>
+                    <td class="money">{{ money(f.exam_fee or 0) }}</td>
+                    <td class="money">{{ money(f.admission_fee or 0) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="empty-row">
+                        No fee structures saved yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const feeSearch = document.getElementById("feeSearch");
+const gradeFilter = document.getElementById("gradeFilter");
+const termFilter = document.getElementById("termFilter");
+const rows = document.querySelectorAll("#feesTable tr[data-grade]");
+
+function filterFees(){
+    let search = feeSearch.value.toLowerCase();
+    let grade = gradeFilter.value;
+    let term = termFilter.value;
+
+    rows.forEach(function(row){
+        let text = row.textContent.toLowerCase();
+        let rowGrade = row.getAttribute("data-grade");
+        let rowTerm = row.getAttribute("data-term");
+
+        let matchSearch = text.includes(search);
+        let matchGrade = !grade || rowGrade === grade;
+        let matchTerm = !term || rowTerm === term;
+
+        row.style.display = (matchSearch && matchGrade && matchTerm) ? "" : "none";
+    });
+}
+
+if(feeSearch && gradeFilter && termFilter){
+    feeSearch.addEventListener("keyup", filterFees);
+    gradeFilter.addEventListener("change", filterFees);
+    termFilter.addEventListener("change", filterFees);
+}
+</script>
+
+{% endblock %}
