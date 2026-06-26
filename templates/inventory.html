@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.inventory-page{
+    max-width:1150px;
+    margin:0 auto;
+}
+
+.inventory-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.inventory-hero h2{
+    margin:0;
+    font-size:27px;
+}
+
+.inventory-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.inventory-card{
+    background:white;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
+}
+
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+}
+
+.section-title h3{
+    margin:0;
+    font-size:20px;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
+}
+
+.form-grid-3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+}
+
+.form-grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.summary-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+}
+
+.summary-card small{
+    color:#64748b;
+    font-weight:bold;
+}
+
+.summary-card h3{
+    margin:6px 0 0;
+    font-size:22px;
+}
+
+.filter-row{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.inventory-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 8px;
+}
+
+.inventory-table th{
+    background:#f8fafc;
+    padding:11px;
+    color:#475569;
+    font-size:13px;
+}
+
+.inventory-table td{
+    background:white;
+    padding:11px;
+    border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    vertical-align:top;
+}
+
+.inventory-table td:first-child{
+    border-left:1px solid #e5e7eb;
+    border-radius:12px 0 0 12px;
+}
+
+.inventory-table td:last-child{
+    border-right:1px solid #e5e7eb;
+    border-radius:0 12px 12px 0;
+}
+
+.category-pill{
+    background:#eff6ff;
+    color:#0b5ed7;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+}
+
+.stock-ok{
+    color:#159947;
+    font-weight:900;
+}
+
+.stock-low{
+    color:#dc2626;
+    font-weight:900;
+}
+
+.inventory-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:12px;
+}
+
+.empty-row{
+    text-align:center;
+    color:#64748b;
+    padding:20px!important;
+}
+
+@media(max-width:900px){
+    .form-grid-3,
+    .form-grid-2,
+    .summary-grid,
+    .filter-row{
+        grid-template-columns:1fr;
+    }
+
+    .section-title{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+}
+</style>
+
+<div class="inventory-page">
+
+    <div class="inventory-hero">
+        <h2>Inventory / Store Management</h2>
+        <p>Track school items, stock levels, suppliers, locations and low-stock alerts.</p>
+    </div>
+
+    <div class="inventory-card">
+        <div class="section-title">
+            <h3>📦 Add Inventory Item</h3>
+            <span class="muted">Store register</span>
+        </div>
+
+        <form method="post">
+            <div class="form-grid-3">
+                <div>
+                    <label>Item Name</label>
+                    <input name="item_name" placeholder="e.g. Exercise Books" required>
+                </div>
+
+                <div>
+                    <label>Category</label>
+                    <select name="category">
+                        <option>General</option>
+                        <option>Stationery</option>
+                        <option>Uniform</option>
+                        <option>Cleaning</option>
+                        <option>Kitchen</option>
+                        <option>Office</option>
+                        <option>ICT</option>
+                        <option>Sports</option>
+                        <option>Transport</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Unit</label>
+                    <select name="unit">
+                        <option>pcs</option>
+                        <option>books</option>
+                        <option>reams</option>
+                        <option>boxes</option>
+                        <option>packets</option>
+                        <option>litres</option>
+                        <option>kg</option>
+                        <option>sets</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div>
+                    <label>Quantity</label>
+                    <input name="quantity" type="number" value="0" required>
+                </div>
+
+                <div>
+                    <label>Minimum Stock Alert</label>
+                    <input name="minimum_stock" type="number" value="5">
+                </div>
+
+                <div>
+                    <label>Purchase Price Per Unit</label>
+                    <input name="purchase_price" type="number" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div>
+                    <label>Supplier</label>
+                    <input name="supplier" placeholder="Supplier name">
+                </div>
+
+                <div>
+                    <label>Store Location</label>
+                    <input name="location" placeholder="e.g. Main Store">
+                </div>
+            </div>
+
+            <label>Notes</label>
+            <textarea name="notes" placeholder="Optional notes"></textarea>
+
+            <div class="inventory-actions">
+                <button class="btn green" type="submit">
+                    Save Inventory Item
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="inventory-card">
+        <div class="section-title">
+            <h3>📋 Store Items</h3>
+            <span class="muted">{{ total_items }} items</span>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <small>Total Items</small>
+                <h3>{{ total_items }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Total Quantity</small>
+                <h3>{{ total_quantity }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Low Stock</small>
+                <h3>{{ low_stock }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Stock Value</small>
+                <h3>{{ money(total_value) }}</h3>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <input type="text"
+                   id="inventorySearch"
+                   placeholder="Search item, category, supplier or location...">
+
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
+                <option>General</option>
+                <option>Stationery</option>
+                <option>Uniform</option>
+                <option>Cleaning</option>
+                <option>Kitchen</option>
+                <option>Office</option>
+                <option>ICT</option>
+                <option>Sports</option>
+                <option>Transport</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table class="inventory-table" id="inventoryTable">
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Minimum</th>
+                    <th>Supplier</th>
+                    <th>Location</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                </tr>
+
+                {% for item in items %}
+                <tr data-category="{{ item.category }}">
+                    <td>
+                        <b>{{ item.item_name }}</b><br>
+                        <small class="muted">{{ item.notes or "" }}</small>
+                    </td>
+
+                    <td>
+                        <span class="category-pill">{{ item.category }}</span>
+                    </td>
+
+                    <td>
+                        <b>{{ item.quantity }}</b> {{ item.unit }}
+                    </td>
+
+                    <td>{{ item.minimum_stock }}</td>
+
+                    <td>{{ item.supplier or "-" }}</td>
+
+                    <td>{{ item.location or "-" }}</td>
+
+                    <td>
+                        {{ money((item.quantity or 0) * (item.purchase_price or 0)) }}
+                    </td>
+
+                    <td>
+                        {% if (item.quantity or 0) <= (item.minimum_stock or 0) %}
+                            <span class="stock-low">Low Stock</span>
+                        {% else %}
+                            <span class="stock-ok">Available</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="empty-row">
+                        No inventory items added yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const inventorySearch = document.getElementById("inventorySearch");
+const categoryFilter = document.getElementById("categoryFilter");
+const inventoryRows = document.querySelectorAll("#inventoryTable tr[data-category]");
+
+function filterInventory(){
+    let search = inventorySearch.value.toLowerCase();
+    let category = categoryFilter.value;
+
+    inventoryRows.forEach(function(row){
+        let text = row.textContent.toLowerCase();
+        let rowCategory = row.getAttribute("data-category");
+
+        let matchSearch = text.includes(search);
+        let matchCategory = !category || rowCategory === category;
+
+        row.style.display = (matchSearch && matchCategory) ? "" : "none";
+    });
+}
+
+if(inventorySearch && categoryFilter){
+    inventorySearch.addEventListener("keyup", filterInventory);
+    categoryFilter.addEventListener("change", filterInventory);
+}
+</script>
+
+{% endblock %}
