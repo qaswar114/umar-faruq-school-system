@@ -816,6 +816,28 @@ class PupilTransport(db.Model):
     bus = db.relationship("SchoolBus")
     route = db.relationship("TransportRoute")
 
+class InventoryItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+
+    item_name = db.Column(db.String(150), nullable=False)
+    category = db.Column(db.String(100), default="General")
+
+    quantity = db.Column(db.Integer, default=0)
+    unit = db.Column(db.String(50), default="pcs")
+
+    minimum_stock = db.Column(db.Integer, default=5)
+
+    supplier = db.Column(db.String(150))
+    purchase_price = db.Column(db.Float, default=0)
+
+    location = db.Column(db.String(150))
+    notes = db.Column(db.Text)
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 def money(n):
     return "KES {:,.2f}".format(float(n or 0))
 
@@ -8055,6 +8077,66 @@ def fix_school_whatsapp_columns():
 
     flash("School WhatsApp columns added successfully.")
     return redirect(url_for("dashboard"))
+
+@app.route("/inventory", methods=["GET", "POST"])
+def inventory():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        item = InventoryItem(
+            school_id=school_id,
+            item_name=request.form["item_name"].strip(),
+            category=request.form.get("category", "General").strip(),
+            quantity=int(request.form.get("quantity") or 0),
+            unit=request.form.get("unit", "pcs").strip(),
+            minimum_stock=int(request.form.get("minimum_stock") or 5),
+            supplier=request.form.get("supplier", "").strip(),
+            purchase_price=float(request.form.get("purchase_price") or 0),
+            location=request.form.get("location", "").strip(),
+            notes=request.form.get("notes", "").strip(),
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(item)
+        db.session.commit()
+
+        save_audit(
+            f"Added inventory item: {item.item_name} ({item.quantity} {item.unit})",
+            "Inventory"
+        )
+
+        flash("Inventory item added successfully.")
+        return redirect(url_for("inventory"))
+
+    items = InventoryItem.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        InventoryItem.category.asc(),
+        InventoryItem.item_name.asc()
+    ).all()
+
+    total_items = len(items)
+    total_quantity = sum(i.quantity or 0 for i in items)
+    low_stock = sum(1 for i in items if (i.quantity or 0) <= (i.minimum_stock or 0))
+    total_value = sum((i.quantity or 0) * (i.purchase_price or 0) for i in items)
+
+    return render_template(
+        "inventory.html",
+        settings=get_settings(),
+        items=items,
+        total_items=total_items,
+        total_quantity=total_quantity,
+        low_stock=low_stock,
+        total_value=total_value,
+        money=money
+    )
 
 # =====================================================
 #               MOBILE API
