@@ -34,6 +34,22 @@
         .school-box b{display:block;font-size:13px}
         .school-box small{color:#dbeafe;font-size:12px}
 
+        .school-mini{
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+
+        .school-mini img{
+            width:48px;
+            height:48px;
+            border-radius:12px;
+            background:white;
+            object-fit:cover;
+            padding:3px;
+            flex-shrink:0;
+        }
+
         .nav-label{
             font-size:10px;color:#93c5fd;font-weight:bold;
             letter-spacing:1px;margin:12px 0 6px 8px;
@@ -143,16 +159,46 @@
 <div class="sidebar">
 
     <div class="brand">
-        <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+        {% if session.get("role","")|lower == "super admin" %}
+            <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+        {% elif settings and settings.logo %}
+            <img src="{{ url_for('static', filename=settings.logo) }}">
+        {% else %}
+            <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+        {% endif %}
+
         <div>
-            <h2>EduManage</h2>
-            <small>Smart School ERP</small>
+            {% if session.get("role","")|lower == "super admin" %}
+                <h2>EduManage</h2>
+                <small>SaaS Control Panel</small>
+            {% else %}
+                <h2>{{ settings.school_name if settings else "School" }}</h2>
+                <small>Powered by EduManage</small>
+            {% endif %}
         </div>
     </div>
 
     <div class="school-box">
-        <b>{{ settings.school_name if settings else "School System" }}</b>
-        <small>{{ session.get("username") }} | {{ session.get("role") }}</small>
+        <div class="school-mini">
+            {% if session.get("role","")|lower == "super admin" %}
+                <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+            {% elif settings and settings.logo %}
+                <img src="{{ url_for('static', filename=settings.logo) }}">
+            {% else %}
+                <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+            {% endif %}
+
+            <div>
+                <b>
+                    {% if session.get("role","")|lower == "super admin" %}
+                        EduManage Platform
+                    {% else %}
+                        {{ settings.school_name if settings else "School System" }}
+                    {% endif %}
+                </b>
+                <small>{{ session.get("username") }} | {{ session.get("role") }}</small>
+            </div>
+        </div>
     </div>
 
     <div class="nav">
@@ -238,8 +284,13 @@
 
     <div class="topbar">
         <div class="top-title">
-            <h1>EduManage Admin Portal</h1>
-            <small>{{ settings.school_name if settings else "School System" }}</small>
+            {% if session.get("role","")|lower == "super admin" %}
+                <h1>EduManage SaaS Control Panel</h1>
+                <small>Manage schools, subscriptions and platform settings</small>
+            {% else %}
+                <h1>{{ settings.school_name if settings else "School Dashboard" }}</h1>
+                <small>Powered by EduManage SaaS</small>
+            {% endif %}
         </div>
 
         <div class="top-user">
