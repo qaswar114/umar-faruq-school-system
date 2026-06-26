@@ -8370,6 +8370,88 @@ def inventory_transactions():
         stock_out_total=stock_out_total
     )
 
+@app.route("/inventory_reports")
+def inventory_reports():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    items = InventoryItem.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        InventoryItem.category.asc(),
+        InventoryItem.item_name.asc()
+    ).all()
+
+    low_stock_items = [
+        item for item in items
+        if (item.quantity or 0) <= (item.minimum_stock or 0)
+    ]
+
+    total_items = len(items)
+    total_quantity = sum(item.quantity or 0 for item in items)
+    total_value = sum(
+        (item.quantity or 0) * (item.purchase_price or 0)
+        for item in items
+    )
+
+    categories = {}
+
+    for item in items:
+        category = item.category or "General"
+
+        if category not in categories:
+            categories[category] = {
+                "category": category,
+                "items": 0,
+                "quantity": 0,
+                "value": 0
+            }
+
+        categories[category]["items"] += 1
+        categories[category]["quantity"] += item.quantity or 0
+        categories[category]["value"] += (
+            (item.quantity or 0) * (item.purchase_price or 0)
+        )
+
+    category_summary = list(categories.values())
+
+    stock_in_total = sum(
+        tx.quantity or 0
+        for tx in InventoryTransaction.query.filter_by(
+            school_id=school_id,
+            transaction_type="Stock In"
+        ).all()
+    )
+
+    stock_out_total = sum(
+        tx.quantity or 0
+        for tx in InventoryTransaction.query.filter_by(
+            school_id=school_id,
+            transaction_type="Stock Out"
+        ).all()
+    )
+
+    return render_template(
+        "inventory_reports.html",
+        settings=get_settings(),
+        items=items,
+        low_stock_items=low_stock_items,
+        category_summary=category_summary,
+        total_items=total_items,
+        total_quantity=total_quantity,
+        total_value=total_value,
+        stock_in_total=stock_in_total,
+        stock_out_total=stock_out_total,
+        money=money
+    )
+    
+
 # =====================================================
 #               MOBILE API
 # =====================================================
