@@ -2,195 +2,72 @@
 {% block content %}
 
 <style>
-.discount-page{
-    max-width:1150px;
-    margin:0 auto;
-}
-
+.discount-page{max-width:1150px;margin:0 auto}
 .discount-hero{
     background:linear-gradient(135deg,#0b5ed7,#16a34a);
-    color:white;
-    border-radius:18px;
-    padding:22px;
-    margin-bottom:16px;
+    color:white;border-radius:18px;padding:22px;margin-bottom:16px;
 }
-
-.discount-hero h2{
-    margin:0;
-    font-size:27px;
-}
-
-.discount-hero p{
-    margin:6px 0 0;
-    color:#dbeafe;
-}
+.discount-hero h2{margin:0;font-size:27px}
+.discount-hero p{margin:6px 0 0;color:#dbeafe}
 
 .discount-card{
-    background:white;
-    border-radius:16px;
-    padding:18px;
+    background:white;border-radius:16px;padding:18px;
     box-shadow:0 6px 18px rgba(15,23,42,.07);
-    border:1px solid #e5e7eb;
-    margin-bottom:16px;
+    border:1px solid #e5e7eb;margin-bottom:16px;
 }
-
-.section-title{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    margin-bottom:14px;
-}
-
-.section-title h3{
-    margin:0;
-    font-size:20px;
-}
-
-.muted{
-    color:#64748b;
-    font-size:13px;
-}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.section-title h3{margin:0;font-size:20px}
+.muted{color:#64748b;font-size:13px}
 
 .info-box{
-    background:#eff6ff;
-    color:#1e40af;
-    border:1px solid #bfdbfe;
-    padding:12px;
-    border-radius:12px;
-    margin-bottom:14px;
-    font-size:14px;
+    background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;
+    padding:12px;border-radius:12px;margin-bottom:14px;font-size:14px;
 }
 
-.form-grid-3{
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr;
-    gap:12px;
-}
-
-.form-grid-2{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-}
-
-.summary-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:12px;
-    margin-bottom:14px;
-}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 
 .summary-card{
-    background:#f8fafc;
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    padding:14px;
+    background:#f8fafc;border:1px solid #e5e7eb;
+    border-radius:14px;padding:14px;
 }
+.summary-card small{color:#64748b;font-weight:bold}
+.summary-card h3{margin:6px 0 0;font-size:22px}
 
-.summary-card small{
-    color:#64748b;
-    font-weight:bold;
-}
-
-.summary-card h3{
-    margin:6px 0 0;
-    font-size:22px;
-}
-
-.discount-actions{
-    display:flex;
-    justify-content:flex-end;
-    margin-top:14px;
-}
-
-.table-wrap{
-    overflow-x:auto;
-}
+.discount-actions{display:flex;justify-content:flex-end;margin-top:14px}
+.table-wrap{overflow-x:auto}
 
 .discount-table{
-    width:100%;
-    border-collapse:separate;
-    border-spacing:0 8px;
+    width:100%;border-collapse:separate;border-spacing:0 8px;
 }
-
 .discount-table th{
-    background:#f8fafc;
-    padding:11px;
-    color:#475569;
-    font-size:13px;
+    background:#f8fafc;padding:11px;color:#475569;font-size:13px;
 }
-
 .discount-table td{
-    background:white;
-    padding:11px;
-    border-top:1px solid #e5e7eb;
-    border-bottom:1px solid #e5e7eb;
-    vertical-align:top;
+    background:white;padding:11px;border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;vertical-align:top;
 }
-
 .discount-table td:first-child{
-    border-left:1px solid #e5e7eb;
-    border-radius:12px 0 0 12px;
+    border-left:1px solid #e5e7eb;border-radius:12px 0 0 12px;
 }
-
 .discount-table td:last-child{
-    border-right:1px solid #e5e7eb;
-    border-radius:0 12px 12px 0;
+    border-right:1px solid #e5e7eb;border-radius:0 12px 12px 0;
 }
 
-.type-pill{
-    display:inline-block;
-    padding:6px 10px;
-    border-radius:999px;
-    font-weight:900;
-    font-size:12px;
-    background:#eff6ff;
-    color:#0b5ed7;
+.type-pill,.month-pill{
+    display:inline-block;padding:6px 10px;border-radius:999px;
+    font-weight:900;font-size:12px;
 }
-
-.month-pill{
-    display:inline-block;
-    padding:6px 10px;
-    border-radius:999px;
-    font-weight:900;
-    font-size:12px;
-    background:#f0fdf4;
-    color:#15803d;
-}
-
-.amount{
-    font-weight:900;
-    color:#159947;
-    white-space:nowrap;
-}
-
-.btn-small{
-    padding:8px 11px;
-    font-size:13px;
-}
-
-.delete-btn{
-    background:#dc2626!important;
-}
-
-.empty-row{
-    text-align:center;
-    color:#64748b;
-    padding:20px!important;
-}
+.type-pill{background:#eff6ff;color:#0b5ed7}
+.month-pill{background:#f0fdf4;color:#15803d}
+.amount{font-weight:900;color:#159947;white-space:nowrap}
+.btn-small{padding:8px 11px;font-size:13px}
+.delete-btn{background:#dc2626!important}
+.empty-row{text-align:center;color:#64748b;padding:20px!important}
 
 @media(max-width:900px){
-    .form-grid-3,
-    .form-grid-2,
-    .summary-grid{
-        grid-template-columns:1fr;
-    }
-
-    .section-title{
-        flex-direction:column;
-        align-items:flex-start;
-    }
+    .form-grid-3,.summary-grid{grid-template-columns:1fr}
+    .section-title{flex-direction:column;align-items:flex-start}
 }
 </style>
 
@@ -243,7 +120,7 @@
             <div class="form-grid-3">
                 <div>
                     <label>Term</label>
-                    <select name="term" id="discountTerm">
+                    <select name="term" id="discountTerm" onchange="loadDiscountMonths()">
                         {% for t in terms %}
                         <option value="{{ t }}">{{ t }}</option>
                         {% endfor %}
@@ -253,13 +130,7 @@
                 <div>
                     <label>Month</label>
                     <select name="month" id="discountMonth">
-                        <option>All Months</option>
-                        <option>May</option>
-                        <option>June</option>
-                        <option>July</option>
-                        <option>September</option>
-                        <option>October</option>
-                        <option>November</option>
+                        <option value="All Months">All Months</option>
                     </select>
                 </div>
 
@@ -337,25 +208,12 @@
                         <small class="muted">{{ d.pupil.admission_no if d.pupil else "" }}</small>
                     </td>
 
-                    <td>
-                        <span class="type-pill">{{ d.discount_type }}</span>
-                    </td>
-
-                    <td>
-                        <span class="month-pill">{{ d.month or "All Year" }}</span>
-                    </td>
-
-                    <td class="amount">
-                        {{ money(d.amount or 0) }}
-                    </td>
-
+                    <td><span class="type-pill">{{ d.discount_type }}</span></td>
+                    <td><span class="month-pill">{{ d.month or "All Year" }}</span></td>
+                    <td class="amount">{{ money(d.amount or 0) }}</td>
                     <td>{{ d.reason or "-" }}</td>
-
                     <td>{{ d.created_by or "-" }}</td>
-
-                    <td>
-                        {{ d.created_at.strftime('%d/%m/%Y') if d.created_at else "-" }}
-                    </td>
+                    <td>{{ d.created_at.strftime('%d/%m/%Y') if d.created_at else "-" }}</td>
 
                     <td>
                         {% set user_role = session.get("role", "")|lower %}
@@ -369,7 +227,6 @@
                             <button class="btn btn-small delete-btn" type="submit">
                                 Delete
                             </button>
-
                         </form>
                         {% else %}
                         <span class="muted">No permission</span>
@@ -391,13 +248,41 @@
 </div>
 
 <script>
-const discountType = document.getElementById("discountType");
+const termMonths = {{ term_months|tojson }};
+const discountTerm = document.getElementById("discountTerm");
 const discountMonth = document.getElementById("discountMonth");
+const discountType = document.getElementById("discountType");
+
+function loadDiscountMonths(){
+    let term = discountTerm.value;
+    let months = termMonths[term] || [];
+
+    discountMonth.innerHTML = "";
+
+    let allOption = document.createElement("option");
+    allOption.value = "All Months";
+    allOption.textContent = "All Months";
+    discountMonth.appendChild(allOption);
+
+    months.forEach(function(month){
+        let option = document.createElement("option");
+        option.value = month;
+        option.textContent = month;
+        discountMonth.appendChild(option);
+    });
+}
 
 function updateDiscountFields(){
+    loadDiscountMonths();
+
     if(discountType.value === "Free"){
         discountMonth.value = "All Months";
     }
+}
+
+if(discountTerm && discountMonth){
+    loadDiscountMonths();
+    discountTerm.addEventListener("change", loadDiscountMonths);
 }
 
 if(discountType){
