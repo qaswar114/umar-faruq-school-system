@@ -2,181 +2,407 @@
 {% block content %}
 
 <style>
-.discount-wrap{
-    max-width:1100px;
-    margin:20px auto;
+.discount-page{
+    max-width:1150px;
+    margin:0 auto;
+}
+
+.discount-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.discount-hero h2{
+    margin:0;
+    font-size:27px;
+}
+
+.discount-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
 }
 
 .discount-card{
     background:white;
-    padding:25px;
-    border-radius:14px;
-    box-shadow:0 4px 14px rgba(0,0,0,.08);
-    margin-bottom:22px;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:15px;
+.section-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
 }
 
-label{
-    font-weight:bold;
-    margin-bottom:6px;
-    display:block;
+.section-title h3{
+    margin:0;
+    font-size:20px;
 }
 
-input, select{
-    width:100%;
-    padding:10px;
-    border:1px solid #cbd5e1;
-    border-radius:8px;
-}
-
-.btn{
-    border:none;
-    padding:8px 13px;
-    border-radius:7px;
-    color:white;
-    background:#0d6efd;
-    cursor:pointer;
-    text-decoration:none;
-    display:inline-block;
-}
-
-.btn.green{ background:#198754; }
-.btn.red{ background:#dc3545; }
-
-table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
-}
-
-th{
-    background:#198754;
-    color:white;
-    padding:10px;
-    text-align:left;
-}
-
-td{
-    padding:9px;
-    border-bottom:1px solid #e5e7eb;
-}
-
-.small{
-    font-size:13px;
+.muted{
     color:#64748b;
+    font-size:13px;
+}
+
+.info-box{
+    background:#eff6ff;
+    color:#1e40af;
+    border:1px solid #bfdbfe;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:14px;
+    font-size:14px;
+}
+
+.form-grid-3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+}
+
+.form-grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.summary-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+}
+
+.summary-card small{
+    color:#64748b;
+    font-weight:bold;
+}
+
+.summary-card h3{
+    margin:6px 0 0;
+    font-size:22px;
+}
+
+.discount-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:14px;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.discount-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 8px;
+}
+
+.discount-table th{
+    background:#f8fafc;
+    padding:11px;
+    color:#475569;
+    font-size:13px;
+}
+
+.discount-table td{
+    background:white;
+    padding:11px;
+    border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    vertical-align:top;
+}
+
+.discount-table td:first-child{
+    border-left:1px solid #e5e7eb;
+    border-radius:12px 0 0 12px;
+}
+
+.discount-table td:last-child{
+    border-right:1px solid #e5e7eb;
+    border-radius:0 12px 12px 0;
+}
+
+.type-pill{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+    background:#eff6ff;
+    color:#0b5ed7;
+}
+
+.month-pill{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:12px;
+    background:#f0fdf4;
+    color:#15803d;
+}
+
+.amount{
+    font-weight:900;
+    color:#159947;
+    white-space:nowrap;
+}
+
+.btn-small{
+    padding:8px 11px;
+    font-size:13px;
+}
+
+.delete-btn{
+    background:#dc2626!important;
+}
+
+.empty-row{
+    text-align:center;
+    color:#64748b;
+    padding:20px!important;
+}
+
+@media(max-width:900px){
+    .form-grid-3,
+    .form-grid-2,
+    .summary-grid{
+        grid-template-columns:1fr;
+    }
+
+    .section-title{
+        flex-direction:column;
+        align-items:flex-start;
+    }
 }
 </style>
 
-<div class="discount-wrap">
+<div class="discount-page">
 
-<div class="discount-card">
-<h2>Discounts / Waivers</h2>
+    <div class="discount-hero">
+        <h2>Discounts / Waivers</h2>
+        <p>Apply monthly discounts, term waivers, scholarships and special fee arrangements.</p>
+    </div>
 
-<form method="post">
+    <div class="discount-card">
+        <div class="section-title">
+            <h3>🎁 Add Discount / Waiver</h3>
+            <span class="muted">For individual pupil billing</span>
+        </div>
 
-<div class="grid">
+        <div class="info-box">
+            Example: If normal monthly fee is KES 2,000 but a pupil should pay KES 1,000, enter a monthly discount of KES 1,000.
+        </div>
 
-<div>
-<label>Pupil</label>
-<select name="pupil_id" required>
-{% for p in pupils %}
-<option value="{{ p.id }}">{{ p.admission_no }} - {{ p.full_name }}</option>
-{% endfor %}
-</select>
+        <form method="post">
+
+            <div class="form-grid-3">
+                <div>
+                    <label>Pupil</label>
+                    <select name="pupil_id" required>
+                        {% for p in pupils %}
+                        <option value="{{ p.id }}">
+                            {{ p.admission_no }} - {{ p.full_name }} - {{ p.grade }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Academic Year</label>
+                    <input name="academic_year" type="number" value="{{ year }}" required>
+                </div>
+
+                <div>
+                    <label>Discount Type</label>
+                    <select name="discount_type" id="discountType" required>
+                        <option value="Monthly">Monthly Discount</option>
+                        <option value="Term">Term Discount</option>
+                        <option value="Free">Full Scholarship / Free</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid-3">
+                <div>
+                    <label>Term</label>
+                    <select name="term" id="discountTerm">
+                        {% for t in terms %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Month</label>
+                    <select name="month" id="discountMonth">
+                        <option>All Months</option>
+                        <option>May</option>
+                        <option>June</option>
+                        <option>July</option>
+                        <option>September</option>
+                        <option>October</option>
+                        <option>November</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Discount Amount</label>
+                    <input name="amount"
+                           type="number"
+                           step="0.01"
+                           value="0"
+                           placeholder="Example: 1000">
+                </div>
+            </div>
+
+            <label>Reason / Approval Note</label>
+            <input name="reason"
+                   placeholder="Example: Approved reduced monthly tuition from KES 2,000 to KES 1,000">
+
+            <div class="discount-actions">
+                <button class="btn green" type="submit">
+                    Save Discount / Waiver
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="discount-card">
+        <div class="section-title">
+            <h3>📋 Discount Records</h3>
+            <span class="muted">{{ discounts|length }} active records</span>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <small>Total Records</small>
+                <h3>{{ discounts|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Monthly Discounts</small>
+                <h3>{{ discounts|selectattr("discount_type", "equalto", "Monthly")|list|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Term Discounts</small>
+                <h3>{{ discounts|selectattr("discount_type", "equalto", "Term")|list|length }}</h3>
+            </div>
+
+            <div class="summary-card">
+                <small>Scholarships</small>
+                <h3>{{ discounts|selectattr("discount_type", "equalto", "Free")|list|length }}</h3>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="discount-table">
+                <tr>
+                    <th>Year</th>
+                    <th>Pupil</th>
+                    <th>Type</th>
+                    <th>Month</th>
+                    <th>Amount</th>
+                    <th>Reason</th>
+                    <th>Created By</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+
+                {% for d in discounts %}
+                <tr>
+                    <td>{{ d.academic_year }}</td>
+
+                    <td>
+                        <b>{{ d.pupil.full_name if d.pupil else "-" }}</b><br>
+                        <small class="muted">{{ d.pupil.admission_no if d.pupil else "" }}</small>
+                    </td>
+
+                    <td>
+                        <span class="type-pill">{{ d.discount_type }}</span>
+                    </td>
+
+                    <td>
+                        <span class="month-pill">{{ d.month or "All Year" }}</span>
+                    </td>
+
+                    <td class="amount">
+                        {{ money(d.amount or 0) }}
+                    </td>
+
+                    <td>{{ d.reason or "-" }}</td>
+
+                    <td>{{ d.created_by or "-" }}</td>
+
+                    <td>
+                        {{ d.created_at.strftime('%d/%m/%Y') if d.created_at else "-" }}
+                    </td>
+
+                    <td>
+                        {% set user_role = session.get("role", "")|lower %}
+
+                        {% if user_role in ["admin", "super admin", "bursar", "principal"] %}
+                        <form method="post"
+                              action="{{ url_for('delete_discount', discount_id=d.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Delete this discount record?');">
+
+                            <button class="btn btn-small delete-btn" type="submit">
+                                Delete
+                            </button>
+
+                        </form>
+                        {% else %}
+                        <span class="muted">No permission</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td colspan="9" class="empty-row">
+                        No discount records found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
 </div>
 
-<div>
-<label>Academic Year</label>
-<input name="academic_year" type="number" value="{{ year }}" required>
-</div>
+<script>
+const discountType = document.getElementById("discountType");
+const discountMonth = document.getElementById("discountMonth");
 
-<div>
-<label>Term</label>
-<select name="term">
-<option>All Year</option>
-<option>Term 1</option>
-<option>Term 2</option>
-<option>Term 3</option>
-</select>
-</div>
+function updateDiscountFields(){
+    if(discountType.value === "Free"){
+        discountMonth.value = "All Months";
+    }
+}
 
-<div>
-<label>Amount</label>
-<input name="amount" type="number" step="0.01" required>
-</div>
-
-</div>
-
-<br>
-
-<label>Reason</label>
-<input name="reason" placeholder="Example: Orphan support, staff child, scholarship">
-
-<br><br>
-
-<button class="btn green" type="submit">Add Discount / Waiver</button>
-
-</form>
-</div>
-
-<div class="discount-card">
-<h2>Discount Records</h2>
-<p class="small">Admin and Super Admin can delete discount records.</p>
-
-<table>
-<tr>
-<th>Year</th>
-<th>Pupil</th>
-<th>Term</th>
-<th>Amount</th>
-<th>Reason</th>
-<th>Created By</th>
-<th>Date</th>
-<th>Action</th>
-</tr>
-
-{% for d in discounts %}
-<tr>
-<td>{{ d.academic_year }}</td>
-<td>{{ d.pupil.full_name if d.pupil else "-" }}</td>
-<td>{{ d.term if d.term else "All Year" }}</td>
-<td>{{ money(d.amount) }}</td>
-<td>{{ d.reason }}</td>
-<td>{{ d.created_by if d.created_by else "-" }}</td>
-<td>{{ d.created_at.strftime('%d/%m/%Y') if d.created_at else "-" }}</td>
-
-<td>
-{% set user_role = session.get("role", "")|lower %}
-
-{% if user_role in ["admin", "super admin"] %}
-<form method="post"
-      action="{{ url_for('delete_discount', discount_id=d.id) }}"
-      style="display:inline;"
-      onsubmit="return confirm('Are you sure you want to delete this discount?');">
-
-    <button class="btn red" type="submit">Delete</button>
-
-</form>
-{% else %}
-<span class="small">No permission</span>
-{% endif %}
-</td>
-</tr>
-
-{% else %}
-<tr>
-<td colspan="8">No discount records found.</td>
-</tr>
-{% endfor %}
-
-</table>
-</div>
-
-</div>
+if(discountType){
+    discountType.addEventListener("change", updateDiscountFields);
+}
+</script>
 
 {% endblock %}
