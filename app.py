@@ -4328,62 +4328,114 @@ def discounts():
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    year = current_year()
 
     if request.method == "POST":
-        discount_type = request.form.get("discount_type") or "Monthly"
+        pupil_id = int(request.form["pupil_id"])
+        academic_year = int(request.form["academic_year"])
+        discount_type = request.form["discount_type"]
+        term = request.form.get("term", "")
+        month = request.form.get("month", "")
+        amount = float(request.form.get("amount") or 0)
+        reason = request.form.get("reason", "").strip()
 
-        d = Discount(
+        pupil = Pupil.query.filter_by(
+            id=pupil_id,
             school_id=school_id,
-            pupil_id=int(request.form["pupil_id"]),
-            academic_year=int(request.form["academic_year"]),
-            discount_type=discount_type,
-            month=request.form.get("month") or "Every Month",
-            amount=float(request.form.get("amount") or 0),
-            apply_tuition=True if request.form.get("apply_tuition") else False,
-            apply_bus=True if request.form.get("apply_bus") else False,
-            apply_exam=True if request.form.get("apply_exam") else False,
-            apply_admission=True if request.form.get("apply_admission") else False,
-            reason=request.form.get("reason", ""),
-            status=request.form.get("status") or "Active",
-            created_by=session.get("username")
-        )
+            status="Active"
+        ).first()
 
-        if d.discount_type == "Free":
-            d.amount = 0
+        if not pupil:
+            flash("Invalid pupil selected.")
+            return redirect(url_for("discounts"))
 
-        db.session.add(d)
+        if amount <= 0 and discount_type != "Free":
+            flash("Enter a valid discount amount.")
+            return redirect(url_for("discounts"))
+
+        months_to_apply = []
+
+        if discount_type == "Monthly":
+            if month == "All Months":
+                months_to_apply = ["May", "June", "July", "September", "October", "November"]
+            else:
+                months_to_apply = [month]
+
+        elif discount_type == "Term":
+            months_to_apply = TERM_MONTHS.get(term, [])
+
+        elif discount_type == "Free":
+            months_to_apply = ["May", "June", "July", "September", "October", "November"]
+
+        else:
+            months_to_apply = [month]
+
+        created = 0
+
+        for m in months_to_apply:
+            existing = Discount.query.filter_by(
+                school_id=school_id,
+                pupil_id=pupil.id,
+                academic_year=academic_year,
+                discount_type=discount_type,
+                month=m,
+                status="Active"
+            ).first()
+
+            if existing:
+                existing.amount = amount
+                existing.reason = reason
+                existing.apply_tuition = True
+            else:
+                d = Discount(
+                    school_id=school_id,
+                    pupil_id=pupil.id,
+                    academic_year=academic_year,
+                    discount_type=discount_type,
+                    month=m,
+                    amount=amount,
+                    apply_tuition=True,
+                    apply_bus=False,
+                    apply_exam=False,
+                    apply_admission=False,
+                    reason=reason,
+                    status="Active",
+                    created_by=session.get("username", "")
+                )
+
+                db.session.add(d)
+                created += 1
+
         db.session.commit()
 
         save_audit(
-            f"Added {d.discount_type} discount for pupil ID {d.pupil_id}",
+            f"Added {discount_type} discount for {pupil.full_name}: KES {amount:,.2f}",
             "Finance"
         )
 
-        flash("Discount/waiver added successfully.")
+        flash("Discount / waiver saved successfully.")
         return redirect(url_for("discounts"))
 
     pupils = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(Pupil.full_name).all()
+    ).order_by(Pupil.full_name.asc()).all()
 
-    discounts = Discount.query.filter_by(
-        school_id=school_id
-    ).order_by(Discount.id.desc()).all()
-
-    months = [
-        "Every Month",
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ]
+    discount_list = Discount.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(
+        Discount.created_at.desc()
+    ).all()
 
     return render_template(
         "discounts.html",
         settings=get_settings(),
         pupils=pupils,
-        discounts=discounts,
-        months=months,
-        year=current_year(),
+        discounts=discount_list,
+        year=year,
+        terms=TERMS,
+        term_months=TERM_MONTHS,
         money=money
     )
 
