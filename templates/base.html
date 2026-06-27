@@ -317,7 +317,8 @@
             <h2>EduManage</h2>
             <small>SaaS Control Panel</small>
         {% elif settings and settings.logo %}
-            <img src="{{ url_for('static', filename=settings.logo) }}">
+            <img src="{{ url_for('static', filename=settings.logo if settings and settings.logo else 'edumanage_logo.png') }}"
+     alt="School Logo">
             <h2>{{ settings.school_name if settings else "School System" }}</h2>
             <small>Powered by EduManage</small>
         {% else %}
