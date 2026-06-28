@@ -8295,6 +8295,103 @@ def parent_logout():
     flash("You have logged out successfully.")
     return redirect(url_for("parent_login"))
 
+@app.route("/parent_statement")
+def parent_statement():
+    if "parent_pupil_id" not in session:
+        return redirect(url_for("parent_login"))
+
+    pupil_id = session.get("parent_pupil_id")
+    school_id = session.get("parent_school_id")
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not pupil:
+        flash("Parent session expired. Please login again.")
+        return redirect(url_for("parent_login"))
+
+    year = int(request.args.get("year", current_year()))
+
+    billing_months = [
+        ("Term 1", "January"),
+        ("Term 1", "February"),
+        ("Term 1", "March"),
+        ("Term 2", "May"),
+        ("Term 2", "June"),
+        ("Term 2", "July"),
+        ("Term 3", "September"),
+        ("Term 3", "October"),
+        ("Term 3", "November"),
+    ]
+
+    rows = []
+    running_balance = 0
+
+    for term, month in billing_months:
+        monthly_due = (
+            due_until_month(pupil, year, term, month)
+            -
+            due_until_month(pupil, year, term, billing_months[billing_months.index((term, month)) - 1][1])
+            if billing_months.index((term, month)) > 0
+            else due_until_month(pupil, year, term, month)
+        )
+
+        monthly_paid = sum(
+            (p.tuition_paid or 0) +
+            (p.bus_paid or 0) +
+            (p.exam_paid or 0) +
+            (p.admission_paid or 0)
+            for p in Payment.query.filter_by(
+                school_id=school_id,
+                pupil_id=pupil.id,
+                academic_year=year,
+                month=month
+            ).all()
+        )
+
+        monthly_discount = sum(
+            d.amount or 0
+            for d in Discount.query.filter_by(
+                school_id=school_id,
+                pupil_id=pupil.id,
+                academic_year=year,
+                month=month,
+                status="Active"
+            ).all()
+        )
+
+        running_balance += monthly_due - monthly_paid - monthly_discount
+
+        rows.append({
+            "term": term,
+            "month": month,
+            "due": monthly_due,
+            "paid": monthly_paid,
+            "discount": monthly_discount,
+            "balance": running_balance
+        })
+
+    total_due = sum(r["due"] for r in rows)
+    total_paid = sum(r["paid"] for r in rows)
+    total_discount = sum(r["discount"] for r in rows)
+    closing_balance = total_due - total_paid - total_discount
+
+    return render_template(
+        "parent_statement.html",
+        settings=get_settings(),
+        pupil=pupil,
+        year=year,
+        rows=rows,
+        total_due=total_due,
+        total_paid=total_paid,
+        total_discount=total_discount,
+        closing_balance=closing_balance,
+        money=money
+    )
+
 @app.route("/inventory", methods=["GET", "POST"])
 def inventory():
     if not login_required():
