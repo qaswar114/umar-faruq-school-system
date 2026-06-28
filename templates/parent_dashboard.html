@@ -66,7 +66,7 @@
         .container{
             max-width:1100px;
             margin:18px auto;
-            padding:0 14px 80px;
+            padding:0 14px 90px;
         }
 
         .hero{
@@ -86,6 +86,38 @@
         .hero p{
             margin:6px 0 0;
             color:#64748b;
+        }
+
+        .quick-actions{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:12px;
+            margin-bottom:16px;
+        }
+
+        .quick-action{
+            background:white;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            padding:16px;
+            text-decoration:none;
+            color:#0f172a;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            font-weight:900;
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .quick-action span{
+            font-size:28px;
+        }
+
+        .quick-action small{
+            display:block;
+            color:#64748b;
+            font-weight:600;
+            margin-top:3px;
         }
 
         .summary-grid{
@@ -185,7 +217,8 @@
             }
 
             .summary-grid,
-            .grid-2{
+            .grid-2,
+            .quick-actions{
                 grid-template-columns:1fr;
             }
 
@@ -250,6 +283,40 @@
             Grade: <b>{{ pupil.grade }}</b> |
             Guardian: <b>{{ pupil.guardian_name or "Parent" }}</b>
         </p>
+    </div>
+
+    <div class="quick-actions">
+        <a class="quick-action" href="/parent_statement">
+            <span>📄</span>
+            <div>
+                Fee Statement
+                <small>View monthly fee breakdown</small>
+            </div>
+        </a>
+
+        <a class="quick-action" href="#">
+            <span>🧾</span>
+            <div>
+                Receipts
+                <small>View payment receipts</small>
+            </div>
+        </a>
+
+        <a class="quick-action" href="#">
+            <span>📊</span>
+            <div>
+                Report Cards
+                <small>View learner reports</small>
+            </div>
+        </a>
+
+        <a class="quick-action" href="#">
+            <span>📅</span>
+            <div>
+                Timetable
+                <small>View class timetable</small>
+            </div>
+        </a>
     </div>
 
     <div class="summary-grid">
@@ -375,7 +442,7 @@
 <div class="bottom-nav">
     <a href="/parent_dashboard"><span>🏠</span>Home</a>
     <a href="/parent_statement"><span>💰</span>Fees</a>
-    <a href="#"><span>✅</span>Attend</a>
+    <a href="#"><span>📊</span>Reports</a>
     <a href="/parent_logout"><span>🚪</span>Logout</a>
 </div>
 
