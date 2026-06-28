@@ -8331,6 +8331,50 @@ def parent_receipts():
         money=money
     )
 
+@app.route("/parent_attendance")
+def parent_attendance():
+    if "parent_pupil_id" not in session:
+        return redirect(url_for("parent_login"))
+
+    pupil_id = session.get("parent_pupil_id")
+    school_id = session.get("parent_school_id")
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not pupil:
+        flash("Parent session expired. Please login again.")
+        return redirect(url_for("parent_login"))
+
+    records = Attendance.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil.id
+    ).order_by(
+        Attendance.attendance_date.desc()
+    ).all()
+
+    present = sum(1 for r in records if r.status == "Present")
+    absent = sum(1 for r in records if r.status == "Absent")
+    late = sum(1 for r in records if r.status == "Late")
+
+    total = len(records)
+    attendance_rate = round((present / total) * 100, 1) if total > 0 else 0
+
+    return render_template(
+        "parent_attendance.html",
+        settings=get_settings(),
+        pupil=pupil,
+        records=records,
+        present=present,
+        absent=absent,
+        late=late,
+        total=total,
+        attendance_rate=attendance_rate
+    )
+
 
 @app.route("/parent_logout")
 def parent_logout():
