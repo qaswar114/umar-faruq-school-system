@@ -1,1 +1,220 @@
+<!doctype html>
+<html>
+<head>
+    <title>Parent Attendance - EduManage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
+
+        .top{
+            background:linear-gradient(135deg,#061b44,#0b5ed7,#16a34a);
+            color:white;padding:20px;border-radius:0 0 24px 24px;
+        }
+
+        .top-inner{
+            max-width:1050px;margin:0 auto;
+            display:flex;justify-content:space-between;align-items:center;gap:14px;
+        }
+
+        .brand{display:flex;align-items:center;gap:12px}
+        .brand img{
+            width:58px;height:58px;border-radius:16px;
+            object-fit:contain;background:white;padding:5px;
+        }
+
+        .brand h2{margin:0;font-size:22px}
+        .brand small{color:#dbeafe}
+
+        .actions{display:flex;gap:10px;flex-wrap:wrap}
+        .btn{
+            background:white;color:#0b5ed7;padding:10px 14px;
+            border-radius:10px;text-decoration:none;font-weight:bold;
+            border:none;cursor:pointer;font-size:15px;
+        }
+
+        .container{max-width:1050px;margin:18px auto;padding:0 14px 70px}
+
+        .card{
+            background:white;border-radius:18px;padding:18px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;margin-bottom:16px;
+        }
+
+        .student h2{margin:0;font-size:26px}
+        .student p{margin:8px 0 0;color:#64748b}
+
+        .summary{
+            display:grid;
+            grid-template-columns:repeat(5,1fr);
+            gap:12px;
+            margin-bottom:16px;
+        }
+
+        .summary-card{
+            background:white;border-radius:16px;padding:16px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;
+        }
+
+        .summary-card small{color:#64748b;font-weight:bold}
+        .summary-card h3{margin:7px 0 0;font-size:22px}
+
+        .green{color:#159947}
+        .red{color:#dc2626}
+        .blue{color:#0b5ed7}
+        .orange{color:#ea580c}
+
+        .progress-box{
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+            padding:14px;
+            margin-bottom:16px;
+        }
+
+        .progress-bar{
+            width:100%;
+            height:14px;
+            background:#e5e7eb;
+            border-radius:999px;
+            overflow:hidden;
+            margin-top:10px;
+        }
+
+        .progress-fill{
+            height:100%;
+            background:#159947;
+            width:{{ attendance_rate }}%;
+        }
+
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left}
+        th{background:#f8fafc;color:#475569}
+
+        .badge{
+            display:inline-block;
+            padding:6px 10px;
+            border-radius:999px;
+            font-weight:bold;
+            font-size:12px;
+        }
+
+        .present{background:#dcfce7;color:#15803d}
+        .absent{background:#fee2e2;color:#dc2626}
+        .late{background:#ffedd5;color:#ea580c}
+
+        @media(max-width:850px){
+            .top-inner{flex-direction:column;align-items:flex-start}
+            .summary{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="top">
+    <div class="top-inner">
+        <div class="brand">
+            {% if settings and settings.logo %}
+                <img src="{{ url_for('static', filename=settings.logo) }}"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+            {% else %}
+                <img src="{{ url_for('static', filename='logo.png') }}">
+            {% endif %}
+
+            <div>
+                <h2>{{ settings.school_name if settings else "School" }}</h2>
+                <small>Parent Attendance Report</small>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn" href="/parent_dashboard">Back</a>
+            <a class="btn" href="/parent_statement">Statement</a>
+            <a class="btn" href="/parent_logout">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card student">
+        <h2>{{ pupil.full_name }}</h2>
+        <p>
+            Admission No: <b>{{ pupil.admission_no }}</b> |
+            Grade: <b>{{ pupil.grade }}</b>
+        </p>
+    </div>
+
+    <div class="summary">
+        <div class="summary-card">
+            <small>Total Records</small>
+            <h3>{{ total }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Present</small>
+            <h3 class="green">{{ present }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Absent</small>
+            <h3 class="red">{{ absent }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Late</small>
+            <h3 class="orange">{{ late }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Attendance Rate</small>
+            <h3 class="blue">{{ attendance_rate }}%</h3>
+        </div>
+    </div>
+
+    <div class="progress-box">
+        <b>Attendance Progress</b>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>✅ Attendance History</h3>
+
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Status</th>
+            </tr>
+
+            {% for r in records %}
+            <tr>
+                <td>{{ r.attendance_date }}</td>
+                <td>
+                    {% if r.status == "Present" %}
+                        <span class="badge present">Present</span>
+                    {% elif r.status == "Absent" %}
+                        <span class="badge absent">Absent</span>
+                    {% elif r.status == "Late" %}
+                        <span class="badge late">Late</span>
+                    {% else %}
+                        {{ r.status }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="2">No attendance records found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
