@@ -8159,6 +8159,33 @@ def fix_school_whatsapp_columns():
     flash("School WhatsApp columns added successfully.")
     return redirect(url_for("dashboard"))
 
+@app.route("/parent_login", methods=["GET", "POST"])
+def parent_login():
+    if request.method == "POST":
+        admission_no = request.form["admission_no"].strip()
+        phone = request.form["phone"].strip()
+
+        pupil = Pupil.query.filter(
+            Pupil.admission_no == admission_no,
+            Pupil.guardian_phone == phone,
+            Pupil.status == "Active"
+        ).first()
+
+        if not pupil:
+            flash("Invalid admission number or phone number.")
+            return redirect(url_for("parent_login"))
+
+        session["parent_pupil_id"] = pupil.id
+        session["parent_school_id"] = pupil.school_id
+        session["parent_name"] = pupil.guardian_name or "Parent"
+
+        return redirect(url_for("parent_dashboard"))
+
+    return render_template(
+        "parent_login.html",
+        settings=get_settings()
+    )
+
 @app.route("/inventory", methods=["GET", "POST"])
 def inventory():
     if not login_required():
