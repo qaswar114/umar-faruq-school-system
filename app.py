@@ -8186,6 +8186,115 @@ def parent_login():
         settings=get_settings()
     )
 
+@app.route("/parent_dashboard")
+def parent_dashboard():
+    if "parent_pupil_id" not in session:
+        return redirect(url_for("parent_login"))
+
+    pupil_id = session.get("parent_pupil_id")
+    school_id = session.get("parent_school_id")
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not pupil:
+        flash("Parent session expired. Please login again.")
+        return redirect(url_for("parent_login"))
+
+    year = current_year()
+    today = date.today()
+
+    payments = Payment.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil.id,
+        academic_year=year
+    ).order_by(
+        Payment.payment_date.desc()
+    ).limit(10).all()
+
+    total_paid = sum(
+        (p.tuition_paid or 0) +
+        (p.bus_paid or 0) +
+        (p.exam_paid or 0) +
+        (p.admission_paid or 0)
+        for p in payments
+    )
+
+    months = ["May", "June", "July", "September", "October", "November"]
+    current_month = today.strftime("%B")
+
+    if current_month not in months:
+        current_month = "May"
+
+    if current_month in ["January", "February", "March"]:
+        current_term = "Term 1"
+    elif current_month in ["May", "June", "July"]:
+        current_term = "Term 2"
+    elif current_month in ["September", "October", "November"]:
+        current_term = "Term 3"
+    else:
+        current_term = "Term 2"
+
+    total_due = due_until_month(
+        pupil,
+        year,
+        current_term,
+        current_month
+    )
+
+    discounts = discount_year(pupil.id, year)
+    balance = total_due - paid_year(pupil.id, year) - discounts
+
+    attendance_rows = Attendance.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil.id
+    ).order_by(
+        Attendance.attendance_date.desc()
+    ).limit(30).all()
+
+    present = sum(1 for a in attendance_rows if a.status == "Present")
+    absent = sum(1 for a in attendance_rows if a.status == "Absent")
+    late = sum(1 for a in attendance_rows if a.status == "Late")
+
+    announcements = Announcement.query.filter(
+        Announcement.school_id == school_id,
+        Announcement.status == "Active",
+        Announcement.audience.in_(["All", "Parents"])
+    ).order_by(
+        Announcement.created_at.desc()
+    ).limit(5).all()
+
+    return render_template(
+        "parent_dashboard.html",
+        settings=get_settings(),
+        pupil=pupil,
+        year=year,
+        payments=payments,
+        total_due=total_due,
+        total_paid=paid_year(pupil.id, year),
+        discounts=discounts,
+        balance=balance,
+        attendance_rows=attendance_rows,
+        present=present,
+        absent=absent,
+        late=late,
+        announcements=announcements,
+        money=money
+    )
+
+
+@app.route("/parent_logout")
+def parent_logout():
+    session.pop("parent_pupil_id", None)
+    session.pop("parent_school_id", None)
+    session.pop("parent_name", None)
+
+    flash("You have logged out successfully.")
+    return redirect(url_for("parent_login"))
+
 @app.route("/inventory", methods=["GET", "POST"])
 def inventory():
     if not login_required():
