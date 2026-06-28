@@ -8285,6 +8285,52 @@ def parent_dashboard():
         money=money
     )
 
+@app.route("/parent_receipts")
+def parent_receipts():
+    if "parent_pupil_id" not in session:
+        return redirect(url_for("parent_login"))
+
+    pupil_id = session.get("parent_pupil_id")
+    school_id = session.get("parent_school_id")
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not pupil:
+        flash("Parent session expired. Please login again.")
+        return redirect(url_for("parent_login"))
+
+    year = int(request.args.get("year", current_year()))
+
+    payments = Payment.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil.id,
+        academic_year=year
+    ).order_by(
+        Payment.payment_date.desc()
+    ).all()
+
+    total_paid = sum(
+        (p.tuition_paid or 0) +
+        (p.bus_paid or 0) +
+        (p.exam_paid or 0) +
+        (p.admission_paid or 0)
+        for p in payments
+    )
+
+    return render_template(
+        "parent_receipts.html",
+        settings=get_settings(),
+        pupil=pupil,
+        payments=payments,
+        year=year,
+        total_paid=total_paid,
+        money=money
+    )
+
 
 @app.route("/parent_logout")
 def parent_logout():
