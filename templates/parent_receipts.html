@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+    <title>Parent Receipts - EduManage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
+
+        .top{
+            background:linear-gradient(135deg,#061b44,#0b5ed7,#16a34a);
+            color:white;
+            padding:20px;
+            border-radius:0 0 24px 24px;
+        }
+
+        .top-inner{
+            max-width:1050px;
+            margin:0 auto;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:14px;
+        }
+
+        .brand{display:flex;align-items:center;gap:12px}
+        .brand img{
+            width:58px;height:58px;border-radius:16px;
+            object-fit:contain;background:white;padding:5px;
+        }
+
+        .brand h2{margin:0;font-size:22px}
+        .brand small{color:#dbeafe}
+
+        .actions{display:flex;gap:10px;flex-wrap:wrap}
+        .btn{
+            background:white;color:#0b5ed7;padding:10px 14px;
+            border-radius:10px;text-decoration:none;font-weight:bold;
+            border:none;cursor:pointer;font-size:15px;
+        }
+
+        .container{max-width:1050px;margin:18px auto;padding:0 14px 70px}
+
+        .card{
+            background:white;border-radius:18px;padding:18px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;margin-bottom:16px;
+        }
+
+        .student h2{margin:0;font-size:26px}
+        .student p{margin:8px 0 0;color:#64748b}
+
+        .summary{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:12px;
+            margin-bottom:16px;
+        }
+
+        .summary-card{
+            background:white;border-radius:16px;padding:16px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;
+        }
+
+        .summary-card small{color:#64748b;font-weight:bold}
+        .summary-card h3{margin:7px 0 0;font-size:22px}
+        .green{color:#159947}
+
+        table{width:100%;border-collapse:collapse;font-size:14px}
+        th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left}
+        th{background:#f8fafc;color:#475569}
+
+        .receipt-btn{
+            background:#0b5ed7;
+            color:white;
+            padding:8px 11px;
+            border-radius:8px;
+            text-decoration:none;
+            font-weight:bold;
+            display:inline-block;
+        }
+
+        @media(max-width:850px){
+            .top-inner{flex-direction:column;align-items:flex-start}
+            .summary{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="top">
+    <div class="top-inner">
+        <div class="brand">
+            {% if settings and settings.logo %}
+                <img src="{{ url_for('static', filename=settings.logo) }}"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+            {% else %}
+                <img src="{{ url_for('static', filename='logo.png') }}">
+            {% endif %}
+
+            <div>
+                <h2>{{ settings.school_name if settings else "School" }}</h2>
+                <small>Parent Payment Receipts</small>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn" href="/parent_dashboard">Back</a>
+            <a class="btn" href="/parent_statement">Statement</a>
+            <a class="btn" href="/parent_logout">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card student">
+        <h2>{{ pupil.full_name }}</h2>
+        <p>
+            Admission No: <b>{{ pupil.admission_no }}</b> |
+            Grade: <b>{{ pupil.grade }}</b> |
+            Academic Year: <b>{{ year }}</b>
+        </p>
+    </div>
+
+    <div class="summary">
+        <div class="summary-card">
+            <small>Total Receipts</small>
+            <h3>{{ payments|length }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Total Paid</small>
+            <h3 class="green">{{ money(total_paid) }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Year</small>
+            <h3>{{ year }}</h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🧾 Payment Receipts</h3>
+
+        <table>
+            <tr>
+                <th>Receipt No</th>
+                <th>Term</th>
+                <th>Month</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.receipt_no }}</td>
+                <td>{{ p.term }}</td>
+                <td>{{ p.month }}</td>
+                <td>
+                    {{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}
+                </td>
+                <td>{{ p.payment_date }}</td>
+                <td>
+                    <a class="receipt-btn" href="{{ url_for('receipt', payment_id=p.id) }}">
+                        Open Receipt
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">No payment receipts found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
