@@ -1,0 +1,306 @@
+<!doctype html>
+<html>
+<head>
+    <title>Fee Statement - EduManage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        *{box-sizing:border-box}
+
+        body{
+            margin:0;
+            font-family:Arial,sans-serif;
+            background:#f4f7fb;
+            color:#0f172a;
+        }
+
+        .top{
+            background:linear-gradient(135deg,#061b44,#0b5ed7,#16a34a);
+            color:white;
+            padding:20px;
+            border-radius:0 0 24px 24px;
+        }
+
+        .top-inner{
+            max-width:1050px;
+            margin:0 auto;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:14px;
+        }
+
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .brand img{
+            width:58px;
+            height:58px;
+            border-radius:16px;
+            object-fit:contain;
+            background:white;
+            padding:5px;
+        }
+
+        .brand h2{
+            margin:0;
+            font-size:22px;
+        }
+
+        .brand small{
+            color:#dbeafe;
+        }
+
+        .actions{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            background:white;
+            color:#0b5ed7;
+            padding:10px 14px;
+            border-radius:10px;
+            text-decoration:none;
+            font-weight:bold;
+            border:none;
+            cursor:pointer;
+            font-size:15px;
+        }
+
+        .container{
+            max-width:1050px;
+            margin:18px auto;
+            padding:0 14px 60px;
+        }
+
+        .card{
+            background:white;
+            border-radius:18px;
+            padding:18px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;
+            margin-bottom:16px;
+        }
+
+        .student h2{
+            margin:0;
+            font-size:26px;
+        }
+
+        .student p{
+            margin:8px 0 0;
+            color:#64748b;
+        }
+
+        .summary-grid{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:12px;
+            margin-bottom:16px;
+        }
+
+        .summary-card{
+            background:white;
+            border-radius:16px;
+            padding:16px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;
+        }
+
+        .summary-card small{
+            color:#64748b;
+            font-weight:bold;
+        }
+
+        .summary-card h3{
+            margin:7px 0 0;
+            font-size:22px;
+        }
+
+        .green{color:#159947}
+        .red{color:#dc2626}
+        .blue{color:#0b5ed7}
+
+        .table-wrap{
+            overflow-x:auto;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            font-size:14px;
+        }
+
+        th,td{
+            padding:11px;
+            border-bottom:1px solid #e5e7eb;
+            text-align:left;
+        }
+
+        th{
+            background:#f8fafc;
+            color:#475569;
+        }
+
+        .balance{
+            font-weight:900;
+        }
+
+        .print-title{
+            display:none;
+            text-align:center;
+            margin-bottom:16px;
+        }
+
+        @media(max-width:850px){
+            .top-inner{
+                flex-direction:column;
+                align-items:flex-start;
+            }
+
+            .summary-grid{
+                grid-template-columns:1fr;
+            }
+        }
+
+        @media print{
+            body{
+                background:white;
+            }
+
+            .top,.actions,.no-print{
+                display:none!important;
+            }
+
+            .container{
+                max-width:100%;
+                margin:0;
+                padding:0;
+            }
+
+            .card,.summary-card{
+                box-shadow:none;
+                border:1px solid #ddd;
+            }
+
+            .print-title{
+                display:block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="top no-print">
+    <div class="top-inner">
+        <div class="brand">
+            {% if settings and settings.logo %}
+                <img src="{{ url_for('static', filename=settings.logo) }}"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+            {% else %}
+                <img src="{{ url_for('static', filename='logo.png') }}">
+            {% endif %}
+
+            <div>
+                <h2>{{ settings.school_name if settings else "School" }}</h2>
+                <small>Parent Fee Statement</small>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn" href="/parent_dashboard">Back</a>
+            <button class="btn" onclick="window.print()">Print</button>
+            <a class="btn" href="/parent_logout">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="print-title">
+        <h2>{{ settings.school_name if settings else "School" }}</h2>
+        <h3>Parent Fee Statement</h3>
+        <p>Academic Year {{ year }}</p>
+    </div>
+
+    <div class="card student">
+        <h2>{{ pupil.full_name }}</h2>
+        <p>
+            Admission No: <b>{{ pupil.admission_no }}</b> |
+            Grade: <b>{{ pupil.grade }}</b> |
+            Guardian: <b>{{ pupil.guardian_name or "Parent" }}</b>
+        </p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <small>Total Charges</small>
+            <h3>{{ money(total_due) }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Total Paid</small>
+            <h3 class="green">{{ money(total_paid) }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Total Discounts</small>
+            <h3 class="blue">{{ money(total_discount) }}</h3>
+        </div>
+
+        <div class="summary-card">
+            <small>Closing Balance</small>
+            <h3 class="{% if closing_balance > 0 %}red{% else %}green{% endif %}">
+                {{ money(closing_balance) }}
+            </h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📄 Monthly Fee Statement</h3>
+
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Term</th>
+                    <th>Month</th>
+                    <th>Charges</th>
+                    <th>Paid</th>
+                    <th>Discount</th>
+                    <th>Running Balance</th>
+                </tr>
+
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.term }}</td>
+                    <td>{{ row.month }}</td>
+                    <td>{{ money(row.due) }}</td>
+                    <td class="green">{{ money(row.paid) }}</td>
+                    <td class="blue">{{ money(row.discount) }}</td>
+                    <td class="balance {% if row.balance > 0 %}red{% else %}green{% endif %}">
+                        {{ money(row.balance) }}
+                    </td>
+                </tr>
+                {% endfor %}
+
+                <tr>
+                    <th colspan="2">TOTAL</th>
+                    <th>{{ money(total_due) }}</th>
+                    <th>{{ money(total_paid) }}</th>
+                    <th>{{ money(total_discount) }}</th>
+                    <th>{{ money(closing_balance) }}</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
