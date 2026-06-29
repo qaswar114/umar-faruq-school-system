@@ -117,7 +117,14 @@
 
 <div class="receipt-box">
 
-    <img src="{{ url_for('static', filename=settings.logo or 'logo.png') }}" class="logo">
+    {% if settings and settings.logo %}
+    <img src="{{ url_for('static', filename=settings.logo) }}"
+         style="width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 8px;"
+         onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+    {% else %}
+    <img src="{{ url_for('static', filename='logo.png') }}"
+         style="width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 8px;">
+    {% endif %}
 
     <h2>{{ settings.school_name }}</h2>
     <h3>OFFICIAL FEE RECEIPT</h3>
