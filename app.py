@@ -4497,156 +4497,68 @@ def payments():
     school_id = current_school_id()
 
     if request.method == "POST":
-        year = int(request.form["academic_year"])
-        term = request.form["term"]
-        month = request.form["month"]
-        pupil_id = int(request.form["pupil_id"])
-
-        pupil = Pupil.query.filter_by(
-            id=pupil_id,
-            school_id=school_id,
-            status="Active"
-        ).first()
-
-        if not pupil:
-            flash("Invalid pupil selected.")
-            return redirect(url_for("payments"))
-
-        if month not in term_months(term):
-            flash("Selected month does not belong to the selected term.")
-            return redirect(url_for("payments"))
-
-        tuition_paid = float(request.form.get("tuition_paid") or 0)
-        bus_paid = float(request.form.get("bus_paid") or 0)
-        exam_paid = float(request.form.get("exam_paid") or 0)
-        admission_paid = float(request.form.get("admission_paid") or 0)
-
-        amount_paid = tuition_paid + bus_paid + exam_paid + admission_paid
-
-        if amount_paid <= 0:
-            flash("Enter at least one payment amount.")
-            return redirect(url_for("payments"))
-
-        payment_date = datetime.strptime(
-            request.form["payment_date"],
-            "%Y-%m-%d"
-        ).date()
-
-        pay = Payment(
-            school_id=school_id,
-            receipt_no=receipt_no(year, term),
-            pupil_id=pupil.id,
-            academic_year=year,
-            term=term,
-            month=month,
-            tuition_paid=tuition_paid,
-            bus_paid=bus_paid,
-            exam_paid=exam_paid,
-            admission_paid=admission_paid,
-            payment_method=request.form["payment_method"],
-            payment_date=payment_date,
-            collected_by=session.get("username", "")
-        )
-
-        db.session.add(pay)
-        db.session.commit()
-
-        save_audit(
-            f"Recorded payment: {pay.receipt_no} - KES {amount_paid:,.2f}",
-            "Finance"
-        )
-
-        status_message = ""
-
         try:
-            if pupil.guardian_phone and amount_paid > 0:
-                school = get_settings()
+            year = int(request.form["academic_year"])
+            term = request.form["term"]
+            month = request.form["month"]
+            pupil_id = int(request.form["pupil_id"])
 
-                balance = (
-                    due_until_month(pupil, year, term, month)
-                    - paid_year(pupil.id, year)
-                    - discount_year(pupil.id, year)
-                )
+            pupil = Pupil.query.filter_by(
+                id=pupil_id,
+                school_id=school_id,
+                status="Active"
+            ).first()
 
-                if balance <= 0:
-                    balance_text = (
-                        "Your account is fully cleared. "
-                        "Thank you for supporting the school."
-                    )
-                else:
-                    balance_text = f"Current Balance: KES {balance:,.2f}"
+            if not pupil:
+                flash("Invalid pupil selected.")
+                return redirect(url_for("payments"))
 
-                message = (
-                    f"{school.school_name}\n\n"
-                    f"PAYMENT RECEIVED\n\n"
-                    f"Learner: {pupil.full_name}\n"
-                    f"Amount Paid: KES {amount_paid:,.2f}\n"
-                    f"Receipt No: {pay.receipt_no}\n"
-                    f"Fee Month: {month} {year}\n"
-                    f"{balance_text}\n\n"
-                    f"Thank you.\n"
-                    f"Accounts Office."
-                )
+            if month not in term_months(term):
+                flash("Selected month does not belong to the selected term.")
+                return redirect(url_for("payments"))
 
-                if "SMSMessage" in globals():
-                    duplicate_sms = SMSMessage.query.filter_by(
-                        school_id=school_id,
-                        category="Payment Confirmation"
-                    ).filter(
-                        SMSMessage.message.ilike(f"%{pay.receipt_no}%")
-                    ).first()
+            tuition_paid = float(request.form.get("tuition_paid") or 0)
+            bus_paid = float(request.form.get("bus_paid") or 0)
+            exam_paid = float(request.form.get("exam_paid") or 0)
+            admission_paid = float(request.form.get("admission_paid") or 0)
 
-                    if not duplicate_sms:
-                        ok, sms_msg = create_sms(
-                            pupil.guardian_name or pupil.full_name,
-                            pupil.guardian_phone,
-                            message,
-                            "Payment Confirmation"
-                        )
+            amount_paid = tuition_paid + bus_paid + exam_paid + admission_paid
 
-                        if ok:
-                            status_message += " Payment confirmation SMS prepared."
-                        else:
-                            status_message += f" SMS not prepared: {sms_msg}"
+            if amount_paid <= 0:
+                flash("Enter at least one payment amount.")
+                return redirect(url_for("payments"))
 
-                if "WhatsAppMessage" in globals():
-                    duplicate_whatsapp = WhatsAppMessage.query.filter_by(
-                        school_id=school_id,
-                        category="Payment Confirmation"
-                    ).filter(
-                        WhatsAppMessage.message.ilike(f"%{pay.receipt_no}%")
-                    ).first()
+            payment_date = datetime.strptime(
+                request.form["payment_date"],
+                "%Y-%m-%d"
+            ).date()
 
-                    if not duplicate_whatsapp:
-                        wa = WhatsAppMessage(
-                            school_id=school_id,
-                            recipient_name=pupil.guardian_name or pupil.full_name,
-                            phone=pupil.guardian_phone,
-                            message=message,
-                            category="Payment Confirmation",
-                            status="Pending",
-                            created_by=session.get("username", "")
-                        )
+            pay = Payment(
+                school_id=school_id,
+                receipt_no=receipt_no(year, term),
+                pupil_id=pupil.id,
+                academic_year=year,
+                term=term,
+                month=month,
+                tuition_paid=tuition_paid,
+                bus_paid=bus_paid,
+                exam_paid=exam_paid,
+                admission_paid=admission_paid,
+                payment_method=request.form["payment_method"],
+                payment_date=payment_date,
+                collected_by=session.get("username", "")
+            )
 
-                        db.session.add(wa)
-                        db.session.commit()
+            db.session.add(pay)
+            db.session.commit()
 
-                        status_message += " WhatsApp payment confirmation queued."
+            flash("Payment recorded successfully.")
+            return redirect(url_for("receipt", payment_id=pay.id))
 
         except Exception as e:
             db.session.rollback()
-            status_message += " Payment saved, but confirmation message was not queued."
-
-            try:
-                save_audit(
-                    f"Payment confirmation failed for {pay.receipt_no}: {str(e)}",
-                    "Communication"
-                )
-            except Exception:
-                pass
-
-        flash("Payment recorded successfully." + status_message)
-        return redirect(url_for("receipt", payment_id=pay.id))
+            flash(f"Payment failed: {str(e)}")
+            return redirect(url_for("payments"))
 
     pupils = Pupil.query.filter_by(
         school_id=school_id,
