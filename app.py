@@ -4545,7 +4545,7 @@ def payments():
             admission_paid=admission_paid,
             payment_method=request.form["payment_method"],
             payment_date=payment_date,
-            collected_by=session["username"]
+            collected_by=session.get("username", "")
         )
 
         db.session.add(pay)
@@ -4558,88 +4558,92 @@ def payments():
 
         status_message = ""
 
-        if pupil.guardian_phone and amount_paid > 0:
-            school = get_settings()
+        try:
+            if pupil.guardian_phone and amount_paid > 0:
+                school = get_settings()
 
-            balance = (
-                due_until_month(pupil, year, term, month)
-                - paid_year(pupil.id, year)
-                - discount_year(pupil.id, year)
-            )
-
-            if balance <= 0:
-                balance_text = (
-                    "Your account is fully cleared. "
-                    "Thank you for supporting the school."
-                )
-            else:
-                balance_text = f"Current Balance: KES {balance:,.2f}"
-
-            message = (
-                f"{school.school_name}\n\n"
-                f"PAYMENT RECEIVED\n\n"
-                f"Learner: {pupil.full_name}\n"
-                f"Amount Paid: KES {amount_paid:,.2f}\n"
-                f"Receipt No: {pay.receipt_no}\n"
-                f"Fee Month: {month} {year}\n"
-                f"{balance_text}\n\n"
-                f"Thank you.\n"
-                f"Accounts Office."
-            )
-
-            duplicate_sms = SMSMessage.query.filter_by(
-                school_id=school_id,
-                category="Payment Confirmation"
-            ).filter(
-                SMSMessage.message.ilike(f"%{pay.receipt_no}%")
-            ).first()
-
-            if not duplicate_sms:
-                ok, sms_msg = create_sms(
-                    pupil.guardian_name,
-                    pupil.guardian_phone,
-                    message,
-                    "Payment Confirmation"
+                balance = (
+                    due_until_month(pupil, year, term, month)
+                    - paid_year(pupil.id, year)
+                    - discount_year(pupil.id, year)
                 )
 
-                if ok:
-                    status_message += " Payment confirmation SMS prepared."
-                    save_audit(
-                        f"Generated payment confirmation SMS: {pay.receipt_no}",
-                        "Communication"
+                if balance <= 0:
+                    balance_text = (
+                        "Your account is fully cleared. "
+                        "Thank you for supporting the school."
                     )
                 else:
-                    status_message += f" SMS not prepared: {sms_msg}"
+                    balance_text = f"Current Balance: KES {balance:,.2f}"
 
-            duplicate_whatsapp = WhatsAppMessage.query.filter_by(
-                school_id=school_id,
-                category="Payment Confirmation"
-            ).filter(
-                WhatsAppMessage.message.ilike(f"%{pay.receipt_no}%")
-            ).first()
-
-            if not duplicate_whatsapp:
-                wa = WhatsAppMessage(
-                    school_id=school_id,
-                    recipient_name=pupil.guardian_name or pupil.full_name,
-                    phone=pupil.guardian_phone,
-                    message=message,
-                    category="Payment Confirmation",
-                    status="Pending",
-                    created_by=session.get("username", "")
+                message = (
+                    f"{school.school_name}\n\n"
+                    f"PAYMENT RECEIVED\n\n"
+                    f"Learner: {pupil.full_name}\n"
+                    f"Amount Paid: KES {amount_paid:,.2f}\n"
+                    f"Receipt No: {pay.receipt_no}\n"
+                    f"Fee Month: {month} {year}\n"
+                    f"{balance_text}\n\n"
+                    f"Thank you.\n"
+                    f"Accounts Office."
                 )
 
-                db.session.add(wa)
-                db.session.commit()
+                if "SMSMessage" in globals():
+                    duplicate_sms = SMSMessage.query.filter_by(
+                        school_id=school_id,
+                        category="Payment Confirmation"
+                    ).filter(
+                        SMSMessage.message.ilike(f"%{pay.receipt_no}%")
+                    ).first()
 
-                status_message += " WhatsApp payment confirmation queued."
+                    if not duplicate_sms:
+                        ok, sms_msg = create_sms(
+                            pupil.guardian_name or pupil.full_name,
+                            pupil.guardian_phone,
+                            message,
+                            "Payment Confirmation"
+                        )
 
+                        if ok:
+                            status_message += " Payment confirmation SMS prepared."
+                        else:
+                            status_message += f" SMS not prepared: {sms_msg}"
+
+                if "WhatsAppMessage" in globals():
+                    duplicate_whatsapp = WhatsAppMessage.query.filter_by(
+                        school_id=school_id,
+                        category="Payment Confirmation"
+                    ).filter(
+                        WhatsAppMessage.message.ilike(f"%{pay.receipt_no}%")
+                    ).first()
+
+                    if not duplicate_whatsapp:
+                        wa = WhatsAppMessage(
+                            school_id=school_id,
+                            recipient_name=pupil.guardian_name or pupil.full_name,
+                            phone=pupil.guardian_phone,
+                            message=message,
+                            category="Payment Confirmation",
+                            status="Pending",
+                            created_by=session.get("username", "")
+                        )
+
+                        db.session.add(wa)
+                        db.session.commit()
+
+                        status_message += " WhatsApp payment confirmation queued."
+
+        except Exception as e:
+            db.session.rollback()
+            status_message += " Payment saved, but confirmation message was not queued."
+
+            try:
                 save_audit(
-                    f"Queued payment confirmation WhatsApp: {pay.receipt_no}",
+                    f"Payment confirmation failed for {pay.receipt_no}: {str(e)}",
                     "Communication"
                 )
-            else:
-                status_message += " WhatsApp confirmation already exists."
+            except Exception:
+                pass
 
         flash("Payment recorded successfully." + status_message)
         return redirect(url_for("receipt", payment_id=pay.id))
@@ -4666,7 +4670,7 @@ def payments():
         payments=recent_payments,
         money=money
     )
-
+    
 @app.route("/defaulters_report")
 def defaulters_report():
     if not login_required():
