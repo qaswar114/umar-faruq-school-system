@@ -1556,6 +1556,33 @@ def receipt_no(year, term):
     ).count() + 1
     return f"UFIA/{year}/{term_code}/{count:05d}"
 
+def unique_receipt_no(year, term, school_id):
+    prefix = "UFIA" if get_settings().school_name.startswith("UMAR") else "BIA"
+    term_code = term.replace("Term ", "T")
+
+    last_payment = Payment.query.filter_by(
+        school_id=school_id,
+        academic_year=year,
+        term=term
+    ).order_by(Payment.id.desc()).first()
+
+    if last_payment:
+        next_no = last_payment.id + 1
+    else:
+        next_no = 1
+
+    while True:
+        new_receipt = f"{prefix}/{year}/{term_code}/{next_no:05d}"
+
+        exists = Payment.query.filter_by(
+            receipt_no=new_receipt
+        ).first()
+
+        if not exists:
+            return new_receipt
+
+        next_no += 1
+
 def get_fee(year, grade, term, month):
     school_id = current_school_id()
 
@@ -4535,7 +4562,7 @@ def payments():
 
             pay = Payment(
                 school_id=school_id,
-                receipt_no=receipt_no(year, term),
+                receipt_no=unique_receipt_no(year, term, school_id),
                 pupil_id=pupil.id,
                 academic_year=year,
                 term=term,
