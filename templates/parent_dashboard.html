@@ -6,23 +6,17 @@
 
     <style>
         *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
 
-        body{
-            margin:0;
-            font-family:Arial,sans-serif;
-            background:#f4f7fb;
-            color:#0f172a;
-        }
-
-        .parent-top{
+        .top{
             background:linear-gradient(135deg,#061b44,#0b5ed7,#16a34a);
             color:white;
             padding:22px;
-            border-radius:0 0 24px 24px;
+            border-radius:0 0 26px 26px;
         }
 
-        .top-row{
-            max-width:1100px;
+        .top-inner{
+            max-width:1150px;
             margin:0 auto;
             display:flex;
             justify-content:space-between;
@@ -30,62 +24,67 @@
             gap:15px;
         }
 
-        .school-brand{
-            display:flex;
-            align-items:center;
-            gap:12px;
+        .brand{display:flex;align-items:center;gap:12px}
+
+        .brand img{
+            width:60px;height:60px;border-radius:16px;
+            object-fit:contain;background:white;padding:5px;
         }
 
-        .school-brand img{
-            width:58px;
-            height:58px;
-            border-radius:16px;
-            object-fit:contain;
-            background:white;
-            padding:5px;
-        }
-
-        .school-brand h2{
-            margin:0;
-            font-size:22px;
-        }
-
-        .school-brand small{
-            color:#dbeafe;
-        }
+        .brand h2{margin:0;font-size:22px}
+        .brand small{color:#dbeafe}
 
         .logout{
-            background:white;
-            color:#0b5ed7;
-            padding:10px 14px;
-            border-radius:10px;
-            text-decoration:none;
-            font-weight:bold;
+            background:white;color:#0b5ed7;
+            padding:10px 14px;border-radius:10px;
+            text-decoration:none;font-weight:bold;
         }
 
         .container{
-            max-width:1100px;
+            max-width:1150px;
             margin:18px auto;
             padding:0 14px 90px;
         }
 
-        .hero{
+        .profile-card{
             background:white;
-            border-radius:18px;
+            border-radius:20px;
             padding:18px;
             box-shadow:0 6px 18px rgba(15,23,42,.07);
             border:1px solid #e5e7eb;
             margin-bottom:16px;
+            display:grid;
+            grid-template-columns:90px 1fr;
+            gap:16px;
+            align-items:center;
         }
 
-        .hero h2{
+        .learner-photo{
+            width:90px;height:90px;
+            border-radius:22px;
+            background:#eff6ff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:42px;
+            overflow:hidden;
+        }
+
+        .learner-photo img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+
+        .profile-card h2{
             margin:0;
             font-size:26px;
         }
 
-        .hero p{
+        .profile-card p{
             margin:6px 0 0;
             color:#64748b;
+            line-height:1.6;
         }
 
         .quick-actions{
@@ -98,7 +97,7 @@
         .quick-action{
             background:white;
             border:1px solid #e5e7eb;
-            border-radius:16px;
+            border-radius:18px;
             padding:16px;
             text-decoration:none;
             color:#0f172a;
@@ -107,17 +106,15 @@
             display:flex;
             align-items:center;
             gap:12px;
+            min-height:86px;
         }
 
-        .quick-action span{
-            font-size:28px;
-        }
-
+        .quick-action span{font-size:30px}
         .quick-action small{
             display:block;
             color:#64748b;
             font-weight:600;
-            margin-top:3px;
+            margin-top:4px;
         }
 
         .summary-grid{
@@ -129,25 +126,20 @@
 
         .card{
             background:white;
-            border-radius:16px;
+            border-radius:18px;
             padding:16px;
             box-shadow:0 6px 18px rgba(15,23,42,.07);
             border:1px solid #e5e7eb;
+            margin-bottom:16px;
         }
 
-        .card small{
-            color:#64748b;
-            font-weight:bold;
-        }
-
-        .card h3{
-            margin:6px 0 0;
-            font-size:23px;
-        }
+        .card small{color:#64748b;font-weight:bold}
+        .card h3{margin:7px 0 0;font-size:24px}
 
         .green{color:#159947}
         .red{color:#dc2626}
         .blue{color:#0b5ed7}
+        .orange{color:#ea580c}
 
         .grid-2{
             display:grid;
@@ -163,8 +155,16 @@
             margin-bottom:10px;
         }
 
-        .section-title h3{
-            margin:0;
+        .section-title h3{margin:0}
+
+        .badge{
+            display:inline-block;
+            padding:6px 10px;
+            border-radius:999px;
+            background:#eff6ff;
+            color:#0b5ed7;
+            font-weight:bold;
+            font-size:12px;
         }
 
         table{
@@ -179,56 +179,66 @@
             font-size:14px;
         }
 
-        th{
+        th{background:#f8fafc;color:#475569}
+
+        .progress-box{
             background:#f8fafc;
-            color:#475569;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+            padding:12px;
+            margin-top:10px;
         }
 
-        .badge{
-            display:inline-block;
-            padding:5px 9px;
+        .progress-bar{
+            height:12px;
+            background:#e5e7eb;
             border-radius:999px;
-            background:#eff6ff;
-            color:#0b5ed7;
-            font-weight:bold;
-            font-size:12px;
+            overflow:hidden;
+            margin-top:8px;
+        }
+
+        .progress-fill{
+            height:100%;
+            background:#159947;
+            width:{% if total_due and total_due > 0 %}{{ ((total_paid / total_due) * 100)|round(0) }}{% else %}0{% endif %}%;
         }
 
         .announcement{
             background:#f8fafc;
             border:1px solid #e5e7eb;
-            border-radius:12px;
-            padding:12px;
+            border-radius:14px;
+            padding:13px;
             margin-bottom:10px;
         }
 
-        .announcement b{
-            color:#0b5ed7;
+        .announcement b{color:#0b5ed7}
+
+        .contact-grid{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:12px;
         }
 
-        .bottom-nav{
-            display:none;
+        .contact-box{
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+            padding:14px;
         }
 
-        @media(max-width:850px){
-            .top-row{
-                flex-direction:column;
-                align-items:flex-start;
-            }
+        .bottom-nav{display:none}
 
-            .summary-grid,
-            .grid-2,
-            .quick-actions{
-                grid-template-columns:1fr;
-            }
+        @media(max-width:900px){
+            .top-inner{flex-direction:column;align-items:flex-start}
+            .profile-card{grid-template-columns:1fr;text-align:center}
+            .learner-photo{margin:0 auto}
+            .quick-actions,.summary-grid,.grid-2,.contact-grid{grid-template-columns:1fr}
 
             .bottom-nav{
                 display:grid;
                 grid-template-columns:repeat(4,1fr);
                 position:fixed;
-                left:0;
-                right:0;
-                bottom:0;
+                left:0;right:0;bottom:0;
                 background:white;
                 border-top:1px solid #e5e7eb;
                 padding:8px 4px;
@@ -254,9 +264,9 @@
 
 <body>
 
-<div class="parent-top">
-    <div class="top-row">
-        <div class="school-brand">
+<div class="top">
+    <div class="top-inner">
+        <div class="brand">
             {% if settings and settings.logo %}
                 <img src="{{ url_for('static', filename=settings.logo) }}"
                      onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
@@ -276,46 +286,57 @@
 
 <div class="container">
 
-    <div class="hero">
-        <h2>{{ pupil.full_name }}</h2>
-        <p>
-            Admission No: <b>{{ pupil.admission_no }}</b> |
-            Grade: <b>{{ pupil.grade }}</b> |
-            Guardian: <b>{{ pupil.guardian_name or "Parent" }}</b>
-        </p>
+    <div class="profile-card">
+        <div class="learner-photo">
+            {% if pupil.photo %}
+                <img src="{{ url_for('static', filename=pupil.photo) }}">
+            {% else %}
+                👨‍🎓
+            {% endif %}
+        </div>
+
+        <div>
+            <h2>{{ pupil.full_name }}</h2>
+            <p>
+                Admission No: <b>{{ pupil.admission_no }}</b> |
+                Grade: <b>{{ pupil.grade }}</b><br>
+                Guardian: <b>{{ pupil.guardian_name or "Parent" }}</b> |
+                Phone: <b>{{ pupil.guardian_phone or "-" }}</b>
+            </p>
+        </div>
     </div>
 
     <div class="quick-actions">
         <a class="quick-action" href="/parent_statement">
-            <span>📄</span>
-            <div>
-                Fee Statement
-                <small>View monthly fee breakdown</small>
-            </div>
+            <span>📄</span><div>Fee Statement<small>Monthly breakdown</small></div>
         </a>
 
         <a class="quick-action" href="/parent_receipts">
-            <span>🧾</span>
-            <div>
-                Receipts
-                <small>View payment receipts</small>
-            </div>
+            <span>🧾</span><div>Receipts<small>Payment records</small></div>
+        </a>
+
+        <a class="quick-action" href="/parent_report_cards">
+            <span>📊</span><div>Report Cards<small>Exam performance</small></div>
+        </a>
+
+        <a class="quick-action" href="/parent_attendance">
+            <span>✅</span><div>Attendance<small>Presence history</small></div>
+        </a>
+
+        <a class="quick-action" href="/parent_timetable">
+            <span>📅</span><div>Timetable<small>Class schedule</small></div>
+        </a>
+
+        <a class="quick-action" href="#announcements">
+            <span>📢</span><div>Announcements<small>School updates</small></div>
         </a>
 
         <a class="quick-action" href="#">
-            <span>📊</span>
-            <div>
-                Report Cards
-                <small>View learner reports</small>
-            </div>
+            <span>🚌</span><div>Transport<small>Coming soon</small></div>
         </a>
 
         <a class="quick-action" href="#">
-            <span>📅</span>
-            <div>
-                Timetable
-                <small>View class timetable</small>
-            </div>
+            <span>📚</span><div>Homework<small>Coming soon</small></div>
         </a>
     </div>
 
@@ -343,6 +364,28 @@
         </div>
     </div>
 
+    <div class="card">
+        <div class="section-title">
+            <h3>💰 Fee Progress</h3>
+            <span class="badge">
+                {% if total_due and total_due > 0 %}
+                    {{ ((total_paid / total_due) * 100)|round(0) }}% Paid
+                {% else %}
+                    0% Paid
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="progress-box">
+            <b>Paid: {{ money(total_paid) }}</b> |
+            <b>Outstanding: {{ money(balance) }}</b>
+
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="grid-2">
 
         <div class="card">
@@ -361,9 +404,7 @@
                 {% for p in payments %}
                 <tr>
                     <td>{{ p.receipt_no }}</td>
-                    <td>
-                        {{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}
-                    </td>
+                    <td>{{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}</td>
                     <td>{{ p.payment_date }}</td>
                 </tr>
                 {% else %}
@@ -393,7 +434,7 @@
 
                 <div>
                     <small>Late</small>
-                    <h3 class="blue">{{ late }}</h3>
+                    <h3 class="orange">{{ late }}</h3>
                 </div>
             </div>
 
@@ -418,23 +459,49 @@
 
     </div>
 
-    <div class="card" style="margin-top:16px;">
-        <div class="section-title">
-            <h3>📢 Announcements</h3>
-            <span class="badge">Latest</span>
+    <div class="grid-2">
+        <div class="card" id="announcements">
+            <div class="section-title">
+                <h3>📢 Announcements</h3>
+                <span class="badge">Latest</span>
+            </div>
+
+            {% for a in announcements %}
+            <div class="announcement">
+                <b>{{ a.title }}</b><br>
+                <small>{{ a.created_at.strftime('%d-%m-%Y') if a.created_at else "" }}</small>
+                <p>{{ a.message }}</p>
+            </div>
+            {% else %}
+            <div class="announcement">
+                No announcements available.
+            </div>
+            {% endfor %}
         </div>
 
-        {% for a in announcements %}
-        <div class="announcement">
-            <b>{{ a.title }}</b><br>
-            <small>{{ a.created_at.strftime('%d-%m-%Y') if a.created_at else "" }}</small>
-            <p>{{ a.message }}</p>
+        <div class="card">
+            <div class="section-title">
+                <h3>☎️ School Contacts</h3>
+                <span class="badge">Need Help?</span>
+            </div>
+
+            <div class="contact-grid">
+                <div class="contact-box">
+                    <small>Phone</small>
+                    <h3>{{ settings.phone if settings and settings.phone else "-" }}</h3>
+                </div>
+
+                <div class="contact-box">
+                    <small>Email</small>
+                    <h3 style="font-size:15px;">{{ settings.email if settings and settings.email else "-" }}</h3>
+                </div>
+
+                <div class="contact-box">
+                    <small>Address</small>
+                    <h3 style="font-size:15px;">{{ settings.address if settings and settings.address else "-" }}</h3>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="announcement">
-            No announcements available.
-        </div>
-        {% endfor %}
     </div>
 
 </div>
