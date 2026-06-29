@@ -7400,6 +7400,20 @@ def edit_user(user_id):
         grades=GRADES
     )
 
+@app.route("/reports_dashboard")
+def reports_dashboard():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "principal", "super admin", "registrar", "teacher"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    return render_template(
+        "reports_dashboard.html",
+        settings=get_settings()
+    )
+
 
 @app.route("/reset_user_password/<int:user_id>", methods=["POST"])
 def reset_user_password(user_id):
