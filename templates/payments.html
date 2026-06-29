@@ -209,23 +209,16 @@
 
                 <div>
                     <label>Term</label>
-                    <select name="term"
-                            id="payTerm"
-                            onchange="updateMonths('payTerm','payMonth')"
-                            required>
+                    <select name="term" id="payTerm" required>
                         {% for t in terms %}
-                        <option>{{ t }}</option>
+                        <option value="{{ t }}">{{ t }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div>
                     <label>Month</label>
-                    <select name="month" id="payMonth" required>
-                        <option>January</option>
-                        <option>February</option>
-                        <option>March</option>
-                    </select>
+                    <select name="month" id="payMonth" required></select>
                 </div>
             </div>
 
@@ -300,16 +293,12 @@
                 {% for p in payments %}
                 <tr>
                     <td>
-                        <span class="receipt-pill">
-                            {{ p.receipt_no }}
-                        </span>
+                        <span class="receipt-pill">{{ p.receipt_no }}</span>
                         <div class="muted">{{ p.academic_year }}</div>
                     </td>
 
                     <td>
-                        <b>
-                            {{ p.pupil.full_name if p.pupil else "Deleted / Missing Pupil" }}
-                        </b>
+                        <b>{{ p.pupil.full_name if p.pupil else "Deleted / Missing Pupil" }}</b>
                     </td>
 
                     <td>{{ p.term }}</td>
@@ -341,32 +330,66 @@
 </div>
 
 <script>
-const searchBox = document.getElementById("studentSearch");
-const pupilSelect = document.querySelector('select[name="pupil_id"]');
+const termMonths = {
+    "Term 1": ["January", "February", "March"],
+    "Term 2": ["May", "June", "July"],
+    "Term 3": ["September", "October", "November"]
+};
 
-if (searchBox && pupilSelect) {
-    searchBox.addEventListener("keyup", function () {
-        let search = this.value.toLowerCase();
-        let firstMatch = null;
+function updatePaymentMonths(){
+    const termSelect = document.getElementById("payTerm");
+    const monthSelect = document.getElementById("payMonth");
 
-        pupilSelect.querySelectorAll("option").forEach(function(option) {
-            let txt = option.textContent.toLowerCase();
+    if(!termSelect || !monthSelect) return;
 
-            if (txt.includes(search)) {
-                option.style.display = "";
-                if (!firstMatch) {
-                    firstMatch = option;
-                }
-            } else {
-                option.style.display = "none";
-            }
-        });
+    const selectedTerm = termSelect.value;
+    const months = termMonths[selectedTerm] || [];
 
-        if (firstMatch) {
-            pupilSelect.value = firstMatch.value;
-        }
+    monthSelect.innerHTML = "";
+
+    months.forEach(function(month){
+        const option = document.createElement("option");
+        option.value = month;
+        option.textContent = month;
+        monthSelect.appendChild(option);
     });
 }
+
+document.addEventListener("DOMContentLoaded", function(){
+    updatePaymentMonths();
+
+    const payTerm = document.getElementById("payTerm");
+    if(payTerm){
+        payTerm.addEventListener("change", updatePaymentMonths);
+    }
+
+    const searchBox = document.getElementById("studentSearch");
+    const pupilSelect = document.querySelector('select[name="pupil_id"]');
+
+    if (searchBox && pupilSelect) {
+        searchBox.addEventListener("keyup", function () {
+            let search = this.value.toLowerCase();
+            let firstMatch = null;
+
+            pupilSelect.querySelectorAll("option").forEach(function(option) {
+                let txt = option.textContent.toLowerCase();
+
+                if (txt.includes(search)) {
+                    option.style.display = "";
+                    if (!firstMatch) {
+                        firstMatch = option;
+                    }
+                } else {
+                    option.style.display = "none";
+                }
+            });
+
+            if (firstMatch) {
+                pupilSelect.value = firstMatch.value;
+            }
+        });
+    }
+});
 </script>
 
 {% endblock %}
