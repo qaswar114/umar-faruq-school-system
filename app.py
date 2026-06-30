@@ -816,6 +816,24 @@ class PupilTransport(db.Model):
     bus = db.relationship("SchoolBus")
     route = db.relationship("TransportRoute")
 
+class Homework(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+
+    title = db.Column(db.String(150), nullable=False)
+    subject = db.Column(db.String(100), nullable=False)
+    grade = db.Column(db.String(50), nullable=False)
+
+    description = db.Column(db.Text, nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+
+    attachment = db.Column(db.String(255), nullable=True)
+
+    status = db.Column(db.String(20), default="Active")
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class InventoryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -3925,6 +3943,67 @@ def subjects():
         grades=GRADES,
         rows=rows
     )
+
+@app.route("/homework", methods=["GET", "POST"])
+def homework():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    role = session.get("role", "").lower()
+
+    if request.method == "POST":
+        title = request.form["title"]
+        subject = request.form["subject"]
+        grade = request.form["grade"]
+        description = request.form["description"]
+
+        due_date = datetime.strptime(
+            request.form["due_date"],
+            "%Y-%m-%d"
+        ).date()
+
+        hw = Homework(
+            school_id=school_id,
+            title=title,
+            subject=subject,
+            grade=grade,
+            description=description,
+            due_date=due_date,
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(hw)
+        db.session.commit()
+
+        flash("Homework added successfully.")
+        return redirect(url_for("homework"))
+
+    if role == "teacher":
+        assigned_grade = session.get("assigned_grade")
+
+        homeworks = Homework.query.filter_by(
+            school_id=school_id,
+            grade=assigned_grade,
+            status="Active"
+        ).order_by(Homework.due_date.desc()).all()
+    else:
+        homeworks = Homework.query.filter_by(
+            school_id=school_id,
+            status="Active"
+        ).order_by(Homework.due_date.desc()).all()
+
+    return render_template(
+        "homework.html",
+        settings=get_settings(),
+        grades=GRADES,
+        homeworks=homeworks
+    )
+    
 @app.route("/timetable_dashboard")
 def timetable_dashboard():
     if not login_required():
