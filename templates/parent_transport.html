@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head>
+    <title>Parent Transport - EduManage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
+
+        .top{
+            background:linear-gradient(135deg,#061b44,#0b5ed7,#16a34a);
+            color:white;padding:20px;border-radius:0 0 24px 24px;
+        }
+
+        .top-inner{
+            max-width:1100px;margin:0 auto;
+            display:flex;justify-content:space-between;align-items:center;gap:14px;
+        }
+
+        .brand{display:flex;align-items:center;gap:12px}
+        .brand img{
+            width:58px;height:58px;border-radius:16px;
+            object-fit:contain;background:white;padding:5px;
+        }
+
+        .brand h2{margin:0;font-size:22px}
+        .brand small{color:#dbeafe}
+
+        .actions{display:flex;gap:10px;flex-wrap:wrap}
+        .btn{
+            background:white;color:#0b5ed7;padding:10px 14px;
+            border-radius:10px;text-decoration:none;font-weight:bold;
+        }
+
+        .container{max-width:1100px;margin:18px auto;padding:0 14px 70px}
+
+        .card{
+            background:white;border-radius:18px;padding:18px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;margin-bottom:16px;
+        }
+
+        .student h2{margin:0;font-size:26px}
+        .student p{margin:8px 0 0;color:#64748b}
+
+        .transport-grid{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:14px;
+        }
+
+        .info-box{
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            padding:16px;
+        }
+
+        .info-box small{
+            display:block;
+            color:#64748b;
+            font-weight:bold;
+            margin-bottom:6px;
+        }
+
+        .info-box h3{
+            margin:0;
+            color:#0b5ed7;
+            font-size:20px;
+        }
+
+        .driver-card{
+            background:#eff6ff;
+            border:1px solid #bfdbfe;
+            border-radius:18px;
+            padding:18px;
+        }
+
+        .driver-card h3{
+            margin:0 0 10px;
+            color:#0b5ed7;
+        }
+
+        .empty{
+            background:#fff7d6;
+            border-radius:16px;
+            padding:18px;
+            color:#92400e;
+        }
+
+        @media(max-width:850px){
+            .top-inner{flex-direction:column;align-items:flex-start}
+            .transport-grid{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="top">
+    <div class="top-inner">
+        <div class="brand">
+            {% if settings and settings.logo %}
+                <img src="{{ url_for('static', filename=settings.logo) }}"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+            {% else %}
+                <img src="{{ url_for('static', filename='logo.png') }}">
+            {% endif %}
+
+            <div>
+                <h2>{{ settings.school_name if settings else "School" }}</h2>
+                <small>Parent Transport Portal</small>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn" href="/parent_dashboard">Back</a>
+            <a class="btn" href="/parent_logout">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card student">
+        <h2>{{ pupil.full_name }}</h2>
+        <p>
+            Admission No: <b>{{ pupil.admission_no }}</b> |
+            Grade: <b>{{ pupil.grade }}</b>
+        </p>
+    </div>
+
+    {% if assignment %}
+    <div class="card">
+        <h3>🚌 Transport Details</h3>
+
+        <div class="transport-grid">
+            <div class="info-box">
+                <small>Bus</small>
+                <h3>{{ assignment.bus.bus_name if assignment.bus else "-" }}</h3>
+            </div>
+
+            <div class="info-box">
+                <small>Registration</small>
+                <h3>{{ assignment.bus.registration_no if assignment.bus else "-" }}</h3>
+            </div>
+
+            <div class="info-box">
+                <small>Route</small>
+                <h3>{{ assignment.route.route_name if assignment.route else "-" }}</h3>
+            </div>
+
+            <div class="info-box">
+                <small>Pickup Point</small>
+                <h3>{{ assignment.pickup_point or "-" }}</h3>
+            </div>
+
+            <div class="info-box">
+                <small>Monthly Transport Fee</small>
+                <h3>
+                    {% if assignment.route %}
+                        KES {{ "{:,.2f}".format(assignment.route.monthly_fee or 0) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </h3>
+            </div>
+
+            <div class="info-box">
+                <small>Status</small>
+                <h3>{{ assignment.status }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="driver-card">
+        <h3>👨‍✈️ Driver Contact</h3>
+        <p><b>Name:</b> {{ assignment.bus.driver_name if assignment.bus else "-" }}</p>
+        <p><b>Phone:</b> {{ assignment.bus.driver_phone if assignment.bus else "-" }}</p>
+    </div>
+
+    {% else %}
+    <div class="empty">
+        This learner has not been assigned to school transport yet.
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
