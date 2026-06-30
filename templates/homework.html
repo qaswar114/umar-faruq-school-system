@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.hw-page{
+    max-width:1500px;
+    margin:0 auto;
+}
+
+.hw-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+}
+
+.hw-hero h2{
+    margin:0;
+    font-size:30px;
+}
+
+.hw-hero p{
+    margin:8px 0 0;
+    color:#dbeafe;
+}
+
+.hw-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:16px;
+}
+
+.hw-card{
+    background:white;
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    border:1px solid #e5e7eb;
+    margin-bottom:16px;
+}
+
+.hw-card h3{
+    margin-top:0;
+}
+
+.hw-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+    gap:14px;
+}
+
+.hw-item{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
+}
+
+.hw-item h3{
+    margin:0 0 8px;
+    color:#0b5ed7;
+}
+
+.badge{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    background:#eff6ff;
+    color:#0b5ed7;
+    font-size:12px;
+    font-weight:900;
+    margin-right:5px;
+}
+
+.due{
+    color:#dc2626;
+    font-weight:900;
+}
+
+.empty{
+    background:#fff7d6;
+    border-radius:14px;
+    padding:16px;
+}
+
+@media(max-width:1000px){
+    .hw-grid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="hw-page">
+
+    <div class="hw-hero">
+        <h2>📚 Homework / Assignments</h2>
+        <p>Create, manage and view homework assigned to learners.</p>
+    </div>
+
+    <div class="hw-grid">
+
+        <div class="hw-card">
+            <h3>➕ Add Homework</h3>
+
+            <form method="post">
+                <label>Title</label>
+                <input name="title" required placeholder="Example: Mathematics Revision">
+
+                <label>Subject</label>
+                <input name="subject" required placeholder="Example: Mathematics">
+
+                <label>Grade</label>
+                <select name="grade" required>
+                    {% for g in grades %}
+                    <option>{{ g }}</option>
+                    {% endfor %}
+                </select>
+
+                <label>Due Date</label>
+                <input type="date" name="due_date" required>
+
+                <label>Description</label>
+                <textarea name="description" rows="6" required
+                          placeholder="Write homework instructions here..."></textarea>
+
+                <button class="btn green" type="submit">
+                    Save Homework
+                </button>
+            </form>
+        </div>
+
+        <div class="hw-card">
+            <h3>📋 Homework Records</h3>
+
+            <div class="hw-list">
+                {% for h in homeworks %}
+                <div class="hw-item">
+                    <h3>{{ h.title }}</h3>
+
+                    <p>
+                        <span class="badge">{{ h.grade }}</span>
+                        <span class="badge">{{ h.subject }}</span>
+                    </p>
+
+                    <p>{{ h.description }}</p>
+
+                    <p>
+                        <b>Due Date:</b>
+                        <span class="due">{{ h.due_date }}</span>
+                    </p>
+
+                    <p>
+                        <small>
+                            Created by {{ h.created_by or "-" }}
+                            on {{ h.created_at.strftime('%d/%m/%Y') if h.created_at else "-" }}
+                        </small>
+                    </p>
+                </div>
+                {% else %}
+                <div class="empty">
+                    No homework added yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
