@@ -7720,6 +7720,37 @@ def transport():
         unassigned_pupils=unassigned_pupils
     )
 
+@app.route("/parent_transport")
+def parent_transport():
+    if "parent_pupil_id" not in session:
+        return redirect(url_for("parent_login"))
+
+    pupil_id = session.get("parent_pupil_id")
+    school_id = session.get("parent_school_id")
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not pupil:
+        flash("Parent session expired. Please login again.")
+        return redirect(url_for("parent_login"))
+
+    assignment = PupilTransport.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil.id,
+        status="Active"
+    ).first()
+
+    return render_template(
+        "parent_transport.html",
+        settings=School.query.get(school_id),
+        pupil=pupil,
+        assignment=assignment
+    )
+
 @app.route("/transport_buses", methods=["GET", "POST"])
 def transport_buses():
     if not login_required():
