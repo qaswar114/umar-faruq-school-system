@@ -7851,27 +7851,30 @@ def assign_transport():
     school_id = current_school_id()
 
     if request.method == "POST":
+
         pupil_id = int(request.form["pupil_id"])
         bus_id = int(request.form["bus_id"])
         route_id = int(request.form["route_id"])
+        pickup_point = request.form.get("pickup_point", "").strip()
 
-        existing = PupilTransport.query.filter_by(
+        assignment = PupilTransport.query.filter_by(
             school_id=school_id,
             pupil_id=pupil_id,
             status="Active"
         ).first()
 
-        if existing:
-            existing.bus_id = bus_id
-            existing.route_id = route_id
-            existing.pickup_point = request.form.get("pickup_point", "")
+        if assignment:
+            assignment.bus_id = bus_id
+            assignment.route_id = route_id
+            assignment.pickup_point = pickup_point
         else:
             assignment = PupilTransport(
                 school_id=school_id,
                 pupil_id=pupil_id,
                 bus_id=bus_id,
                 route_id=route_id,
-                pickup_point=request.form.get("pickup_point", "")
+                pickup_point=pickup_point,
+                status="Active"
             )
             db.session.add(assignment)
 
@@ -7885,24 +7888,31 @@ def assign_transport():
 
         db.session.commit()
 
-        flash("Pupil transport assignment saved successfully.")
+        flash("Transport assignment saved successfully.")
         return redirect(url_for("assign_transport"))
 
     pupils = Pupil.query.filter_by(
         school_id=school_id,
         status="Active",
         uses_bus="Yes"
-    ).order_by(Pupil.grade, Pupil.full_name).all()
+    ).order_by(
+        Pupil.grade.asc(),
+        Pupil.full_name.asc()
+    ).all()
 
     buses = SchoolBus.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(SchoolBus.bus_name).all()
+    ).order_by(
+        SchoolBus.bus_name.asc()
+    ).all()
 
     routes = TransportRoute.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(TransportRoute.route_name).all()
+    ).order_by(
+        TransportRoute.route_name.asc()
+    ).all()
 
     assignments = PupilTransport.query.filter_by(
         school_id=school_id,
@@ -7917,6 +7927,7 @@ def assign_transport():
         routes=routes,
         assignments=assignments
     )
+    
 
 @app.route("/delete_transport_assignment/<int:assignment_id>")
 def delete_transport_assignment(assignment_id):
