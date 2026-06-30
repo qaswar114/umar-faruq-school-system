@@ -4003,6 +4003,39 @@ def homework():
         grades=GRADES,
         homeworks=homeworks
     )
+
+@app.route("/parent_homework")
+def parent_homework():
+    if "parent_pupil_id" not in session:
+        return redirect(url_for("parent_login"))
+
+    pupil_id = session.get("parent_pupil_id")
+    school_id = session.get("parent_school_id")
+
+    pupil = Pupil.query.filter_by(
+        id=pupil_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not pupil:
+        flash("Parent session expired. Please login again.")
+        return redirect(url_for("parent_login"))
+
+    homeworks = Homework.query.filter_by(
+        school_id=school_id,
+        grade=pupil.grade,
+        status="Active"
+    ).order_by(
+        Homework.due_date.asc()
+    ).all()
+
+    return render_template(
+        "parent_homework.html",
+        settings=get_settings(),
+        pupil=pupil,
+        homeworks=homeworks
+    )
     
 @app.route("/timetable_dashboard")
 def timetable_dashboard():
