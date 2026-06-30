@@ -8338,7 +8338,7 @@ def parent_dashboard():
 
     return render_template(
         "parent_dashboard.html",
-        settings=get_settings(),
+        settings=School.query.get(school_id),
         pupil=pupil,
         year=year,
         payments=payments,
@@ -8392,7 +8392,7 @@ def parent_receipts():
 
     return render_template(
         "parent_receipts.html",
-        settings=get_settings(),
+        settings=School.query.get(school_id),
         pupil=pupil,
         payments=payments,
         year=year,
@@ -8434,7 +8434,7 @@ def parent_attendance():
 
     return render_template(
         "parent_attendance.html",
-        settings=get_settings(),
+        settings=School.query.get(school_id),
         pupil=pupil,
         records=records,
         present=present,
@@ -8540,7 +8540,7 @@ def parent_statement():
 
     return render_template(
         "parent_statement.html",
-        settings=get_settings(),
+        settings=School.query.get(school_id),
         pupil=pupil,
         year=year,
         rows=rows,
