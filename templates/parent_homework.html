@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+<head>
+    <title>Parent Homework - EduManage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
+
+        .top{
+            background:linear-gradient(135deg,#061b44,#0b5ed7,#16a34a);
+            color:white;
+            padding:20px;
+            border-radius:0 0 24px 24px;
+        }
+
+        .top-inner{
+            max-width:1100px;
+            margin:0 auto;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:14px;
+        }
+
+        .brand{display:flex;align-items:center;gap:12px}
+
+        .brand img{
+            width:58px;
+            height:58px;
+            border-radius:16px;
+            object-fit:contain;
+            background:white;
+            padding:5px;
+        }
+
+        .brand h2{margin:0;font-size:22px}
+        .brand small{color:#dbeafe}
+
+        .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+        .btn{
+            background:white;
+            color:#0b5ed7;
+            padding:10px 14px;
+            border-radius:10px;
+            text-decoration:none;
+            font-weight:bold;
+            border:none;
+            cursor:pointer;
+            font-size:15px;
+        }
+
+        .container{
+            max-width:1100px;
+            margin:18px auto;
+            padding:0 14px 70px;
+        }
+
+        .student-card,
+        .homework-card{
+            background:white;
+            border-radius:18px;
+            padding:18px;
+            box-shadow:0 6px 18px rgba(15,23,42,.07);
+            border:1px solid #e5e7eb;
+            margin-bottom:16px;
+        }
+
+        .student-card h2{
+            margin:0;
+            font-size:26px;
+        }
+
+        .student-card p{
+            margin:8px 0 0;
+            color:#64748b;
+        }
+
+        .hw-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+            gap:14px;
+        }
+
+        .hw-item{
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            padding:16px;
+        }
+
+        .hw-item h3{
+            margin:0 0 8px;
+            color:#0b5ed7;
+        }
+
+        .badge{
+            display:inline-block;
+            padding:6px 10px;
+            border-radius:999px;
+            background:#eff6ff;
+            color:#0b5ed7;
+            font-size:12px;
+            font-weight:900;
+            margin-right:5px;
+        }
+
+        .due{
+            color:#dc2626;
+            font-weight:900;
+        }
+
+        .empty{
+            background:#fff7d6;
+            border-radius:14px;
+            padding:16px;
+        }
+
+        @media(max-width:850px){
+            .top-inner{
+                flex-direction:column;
+                align-items:flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="top">
+    <div class="top-inner">
+        <div class="brand">
+            {% if settings and settings.logo %}
+                <img src="{{ url_for('static', filename=settings.logo) }}"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+            {% else %}
+                <img src="{{ url_for('static', filename='logo.png') }}">
+            {% endif %}
+
+            <div>
+                <h2>{{ settings.school_name if settings else "School" }}</h2>
+                <small>Parent Homework Portal</small>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn" href="/parent_dashboard">Back</a>
+            <a class="btn" href="/parent_logout">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="student-card">
+        <h2>{{ pupil.full_name }}</h2>
+        <p>
+            Admission No: <b>{{ pupil.admission_no }}</b> |
+            Grade: <b>{{ pupil.grade }}</b>
+        </p>
+    </div>
+
+    <div class="homework-card">
+        <h3>📚 Homework / Assignments</h3>
+
+        <div class="hw-grid">
+            {% for h in homeworks %}
+            <div class="hw-item">
+                <h3>{{ h.title }}</h3>
+
+                <p>
+                    <span class="badge">{{ h.subject }}</span>
+                    <span class="badge">{{ h.grade }}</span>
+                </p>
+
+                <p>{{ h.description }}</p>
+
+                <p>
+                    <b>Due Date:</b>
+                    <span class="due">{{ h.due_date }}</span>
+                </p>
+
+                <p>
+                    <small>
+                        Created by {{ h.created_by or "-" }}
+                        on {{ h.created_at.strftime('%d/%m/%Y') if h.created_at else "-" }}
+                    </small>
+                </p>
+            </div>
+            {% else %}
+            <div class="empty">
+                No homework has been assigned for this learner's grade.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
