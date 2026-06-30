@@ -798,6 +798,21 @@ class TransportRoute(db.Model):
     status = db.Column(db.String(20), default="Active")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class TransportDriver(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+
+    full_name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(30), nullable=False)
+    id_number = db.Column(db.String(50))
+    license_number = db.Column(db.String(80))
+
+    status = db.Column(db.String(20), default="Active")
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class PupilTransport(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -7778,6 +7793,44 @@ def transport_routes():
         settings=get_settings(),
         routes=routes,
         money=money
+    )
+
+@app.route("/transport_drivers", methods=["GET", "POST"])
+def transport_drivers():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        driver = TransportDriver(
+            school_id=school_id,
+            full_name=request.form["full_name"].strip(),
+            phone=request.form["phone"].strip(),
+            id_number=request.form.get("id_number", "").strip(),
+            license_number=request.form.get("license_number", "").strip(),
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(driver)
+        db.session.commit()
+
+        flash("Driver added successfully.")
+        return redirect(url_for("transport_drivers"))
+
+    drivers = TransportDriver.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(TransportDriver.full_name.asc()).all()
+
+    return render_template(
+        "transport_drivers.html",
+        settings=get_settings(),
+        drivers=drivers
     )
 
 @app.route("/assign_transport", methods=["GET", "POST"])
