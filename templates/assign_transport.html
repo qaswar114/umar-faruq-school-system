@@ -2,93 +2,134 @@
 {% block content %}
 
 <style>
+.assign-page{
+    max-width:1600px;
+    margin:0 auto;
+}
+
 .assign-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
+}
+
+.assign-hero h2{
+    margin:0;
+    font-size:30px;
+}
+
+.assign-hero p{
+    margin:8px 0 0;
+    color:#dbeafe;
+}
+
+.assign-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:18px;
+}
+
+.assign-card{
     background:white;
     border-radius:18px;
-    padding:30px;
-    display:flex;
-    align-items:center;
-    gap:20px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+    padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
 }
-.assign-icon{
-    width:80px;
-    height:80px;
-    border-radius:20px;
-    background:#fff7ed;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:42px;
+
+.assign-card h3{
+    margin-top:0;
+    color:#0b5ed7;
 }
-.panel-box{
-    background:white;
-    border-radius:18px;
-    padding:28px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+
+.assignment-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(310px,1fr));
+    gap:14px;
 }
-.section-title{
-    font-size:22px;
-    font-weight:bold;
-    margin-bottom:20px;
-}
-.assign-table{
-    width:100%;
-    border-collapse:collapse;
-}
-.assign-table th{
+
+.assignment-item{
     background:#f8fafc;
-    padding:12px;
-    text-align:left;
-    border-bottom:1px solid #e5e7eb;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
 }
-.assign-table td{
-    padding:12px;
-    border-bottom:1px solid #f1f5f9;
+
+.assignment-item h3{
+    margin:0 0 8px;
 }
-.grade-badge{
-    background:#eef2ff;
-    color:#4338ca;
-    padding:5px 10px;
+
+.badge{
+    display:inline-block;
+    padding:6px 10px;
     border-radius:999px;
+    background:#eff6ff;
+    color:#0b5ed7;
     font-size:12px;
-    font-weight:bold;
+    font-weight:900;
+    margin-right:5px;
+    margin-bottom:6px;
 }
-.delete-link{
-    color:#dc2626;
+
+.info-box{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:12px;
+    margin-top:10px;
+    line-height:1.7;
+}
+
+.delete-btn{
+    display:inline-block;
+    margin-top:12px;
+    padding:8px 12px;
+    background:#dc2626;
+    color:white;
+    border-radius:9px;
     text-decoration:none;
     font-weight:bold;
+    font-size:13px;
+}
+
+.empty{
+    background:#fff7d6;
+    border-radius:14px;
+    padding:16px;
+}
+
+@media(max-width:1000px){
+    .assign-grid{
+        grid-template-columns:1fr;
+    }
 }
 </style>
 
-<div class="assign-hero">
-    <div class="assign-icon">👦</div>
+<div class="assign-page">
 
-    <div>
-        <h2>Assign Pupils to Transport</h2>
-        <p>Connect learners to buses, routes and pickup points.</p>
+    <div class="assign-hero">
+        <h2>👨‍🎓 Transport Assignments</h2>
+        <p>Assign learners to buses, routes and pickup points.</p>
     </div>
-</div>
 
-<div class="panel-box">
-    <div class="section-title">New Transport Assignment</div>
+    <div class="assign-grid">
 
-    <form method="post">
-        <div class="two">
-            <div>
+        <div class="assign-card">
+            <h3>➕ Assign Learner</h3>
+
+            <form method="post">
+
                 <label>Pupil</label>
                 <select name="pupil_id" required>
                     {% for p in pupils %}
                     <option value="{{ p.id }}">
-                        {{ p.admission_no }} - {{ p.full_name }} ({{ p.grade }})
+                        {{ p.admission_no }} - {{ p.full_name }} - {{ p.grade }}
                     </option>
                     {% endfor %}
                 </select>
-            </div>
 
-            <div>
                 <label>Bus</label>
                 <select name="bus_id" required>
                     {% for b in buses %}
@@ -97,75 +138,74 @@
                     </option>
                     {% endfor %}
                 </select>
-            </div>
-        </div>
 
-        <div class="two">
-            <div>
                 <label>Route</label>
                 <select name="route_id" required>
                     {% for r in routes %}
                     <option value="{{ r.id }}">
-                        {{ r.route_name }}
+                        {{ r.route_name }} - {{ money(r.monthly_fee) }}
                     </option>
                     {% endfor %}
                 </select>
-            </div>
 
-            <div>
                 <label>Pickup Point</label>
-                <input name="pickup_point" placeholder="e.g. Mosque, Estate, Town">
+                <input name="pickup_point" placeholder="Example: Town Centre, Mosque, Estate">
+
+                <button class="btn green" type="submit">
+                    Save Assignment
+                </button>
+
+                <a class="btn" href="{{ url_for('transport') }}">
+                    Back
+                </a>
+
+            </form>
+        </div>
+
+        <div class="assign-card">
+            <h3>📋 Current Assignments</h3>
+
+            <div class="assignment-list">
+
+                {% for a in assignments %}
+                <div class="assignment-item">
+                    <h3>{{ a.pupil.full_name if a.pupil else "-" }}</h3>
+
+                    <p>
+                        <span class="badge">
+                            {{ a.pupil.admission_no if a.pupil else "-" }}
+                        </span>
+                        <span class="badge">
+                            {{ a.pupil.grade if a.pupil else "-" }}
+                        </span>
+                    </p>
+
+                    <div class="info-box">
+                        <b>Bus:</b> {{ a.bus.bus_name if a.bus else "-" }}<br>
+                        <b>Registration:</b> {{ a.bus.registration_no if a.bus else "-" }}<br>
+                        <b>Driver:</b> {{ a.bus.driver_name if a.bus else "-" }}<br>
+                        <b>Driver Phone:</b> {{ a.bus.driver_phone if a.bus else "-" }}<br>
+                        <b>Route:</b> {{ a.route.route_name if a.route else "-" }}<br>
+                        <b>Pickup:</b> {{ a.pickup_point or "-" }}
+                    </div>
+
+                    <a class="delete-btn"
+                       href="{{ url_for('delete_transport_assignment', assignment_id=a.id) }}"
+                       onclick="return confirm('Remove this transport assignment?')">
+                        Delete Assignment
+                    </a>
+                </div>
+                {% else %}
+                <div class="empty">
+                    No transport assignments found.
+                </div>
+                {% endfor %}
+
             </div>
         </div>
 
-        <br>
+    </div>
 
-        <button class="btn green">Save Assignment</button>
-        <a class="btn" href="{{ url_for('transport') }}">Back</a>
-    </form>
-</div>
-
-<div class="panel-box">
-    <div class="section-title">Current Transport Assignments</div>
-
-    <table class="assign-table">
-        <tr>
-            <th>Pupil</th>
-            <th>Grade</th>
-            <th>Bus</th>
-            <th>Route</th>
-            <th>Pickup Point</th>
-            <th>Action</th>
-        </tr>
-
-        {% for a in assignments %}
-        <tr>
-            <td>{{ a.pupil.full_name if a.pupil else '' }}</td>
-
-            <td>
-                <span class="grade-badge">
-                    {{ a.pupil.grade if a.pupil else '' }}
-                </span>
-            </td>
-
-            <td>{{ a.bus.bus_name if a.bus else '' }}</td>
-            <td>{{ a.route.route_name if a.route else '' }}</td>
-            <td>{{ a.pickup_point }}</td>
-
-            <td>
-                <a class="delete-link"
-                   href="{{ url_for('delete_transport_assignment', assignment_id=a.id) }}"
-                   onclick="return confirm('Remove this transport assignment?')">
-                    Delete
-                </a>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6">No pupils assigned yet.</td>
-        </tr>
-        {% endfor %}
-    </table>
 </div>
 
 {% endblock %}
