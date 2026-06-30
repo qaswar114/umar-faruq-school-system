@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.driver-page{
+    max-width:1600px;
+    margin:0 auto;
+}
+
+.hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
+}
+
+.hero h2{
+    margin:0;
+    font-size:30px;
+}
+
+.hero p{
+    margin-top:8px;
+    color:#dbeafe;
+}
+
+.driver-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:18px;
+}
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+}
+
+.card h3{
+    margin-top:0;
+    margin-bottom:18px;
+    color:#0b5ed7;
+}
+
+.form-group{
+    margin-bottom:14px;
+}
+
+label{
+    display:block;
+    margin-bottom:6px;
+    font-weight:bold;
+    color:#334155;
+}
+
+input{
+    width:100%;
+    padding:11px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+}
+
+.btn-save{
+    width:100%;
+    background:#16a34a;
+    color:white;
+    border:none;
+    padding:13px;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.btn-save:hover{
+    background:#15803d;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#eff6ff;
+    color:#0b5ed7;
+    padding:12px;
+    text-align:left;
+}
+
+td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.status{
+    background:#dcfce7;
+    color:#166534;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.empty{
+    text-align:center;
+    color:#64748b;
+    padding:25px;
+}
+
+@media(max-width:1000px){
+
+.driver-grid{
+    grid-template-columns:1fr;
+}
+
+}
+</style>
+
+<div class="driver-page">
+
+    <div class="hero">
+        <h2>🚌 Transport Drivers</h2>
+        <p>Manage school drivers, licences and contact information.</p>
+    </div>
+
+    <div class="driver-grid">
+
+        <div class="card">
+
+            <h3>➕ Register Driver</h3>
+
+            <form method="post">
+
+                <div class="form-group">
+                    <label>Driver Full Name</label>
+                    <input
+                        name="full_name"
+                        required
+                        placeholder="Example: Mohamed Hassan">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input
+                        name="phone"
+                        required
+                        placeholder="07XXXXXXXX">
+                </div>
+
+                <div class="form-group">
+                    <label>ID Number</label>
+                    <input
+                        name="id_number"
+                        placeholder="National ID">
+                </div>
+
+                <div class="form-group">
+                    <label>Driving Licence Number</label>
+                    <input
+                        name="license_number"
+                        placeholder="DLXXXXXXXX">
+                </div>
+
+                <button class="btn-save" type="submit">
+                    Save Driver
+                </button>
+
+            </form>
+
+        </div>
+
+        <div class="card">
+
+            <h3>👨‍✈️ Registered Drivers</h3>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <tr>
+                        <th>#</th>
+                        <th>Driver</th>
+                        <th>Phone</th>
+                        <th>ID Number</th>
+                        <th>Licence</th>
+                        <th>Status</th>
+                    </tr>
+
+                    {% for d in drivers %}
+
+                    <tr>
+
+                        <td>{{ loop.index }}</td>
+
+                        <td>
+                            <strong>{{ d.full_name }}</strong>
+                        </td>
+
+                        <td>{{ d.phone }}</td>
+
+                        <td>{{ d.id_number or "-" }}</td>
+
+                        <td>{{ d.license_number or "-" }}</td>
+
+                        <td>
+                            <span class="status">
+                                {{ d.status }}
+                            </span>
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+
+                        <td colspan="6" class="empty">
+                            No transport drivers registered.
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
