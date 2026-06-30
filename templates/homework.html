@@ -3,7 +3,7 @@
 
 <style>
 .hw-page{
-    max-width:1500px;
+    max-width:1600px;
     margin:0 auto;
 }
 
@@ -71,11 +71,24 @@
     font-size:12px;
     font-weight:900;
     margin-right:5px;
+    margin-bottom:5px;
 }
 
 .due{
     color:#dc2626;
     font-weight:900;
+}
+
+.attachment-link{
+    display:inline-block;
+    margin-top:8px;
+    background:#159947;
+    color:white;
+    padding:8px 11px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+    font-size:13px;
 }
 
 .empty{
@@ -103,7 +116,7 @@
         <div class="hw-card">
             <h3>➕ Add Homework</h3>
 
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <label>Title</label>
                 <input name="title" required placeholder="Example: Mathematics Revision">
 
@@ -123,6 +136,10 @@
                 <label>Description</label>
                 <textarea name="description" rows="6" required
                           placeholder="Write homework instructions here..."></textarea>
+
+                <label>Attachment</label>
+                <input type="file" name="attachment"
+                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
 
                 <button class="btn green" type="submit">
                     Save Homework
@@ -149,6 +166,14 @@
                         <b>Due Date:</b>
                         <span class="due">{{ h.due_date }}</span>
                     </p>
+
+                    {% if h.attachment %}
+                    <a class="attachment-link"
+                       href="{{ url_for('static', filename=h.attachment) }}"
+                       target="_blank">
+                        📎 Open Attachment
+                    </a>
+                    {% endif %}
 
                     <p>
                         <small>
