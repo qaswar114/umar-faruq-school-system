@@ -2,174 +2,214 @@
 {% block content %}
 
 <style>
+.route-page{
+    max-width:1600px;
+    margin:0 auto;
+}
+
 .route-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
+}
+
+.route-hero h2{
+    margin:0;
+    font-size:30px;
+}
+
+.route-hero p{
+    margin:8px 0 0;
+    color:#dbeafe;
+}
+
+.route-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:18px;
+}
+
+.route-card{
     background:white;
     border-radius:18px;
-    padding:30px;
-    display:flex;
-    align-items:center;
-    gap:20px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+    padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
 }
 
-.route-icon{
-    width:80px;
-    height:80px;
-    border-radius:20px;
-    background:#ecfdf5;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:42px;
+.route-card h3{
+    margin-top:0;
+    color:#0b5ed7;
 }
 
-.panel-box{
-    background:white;
-    border-radius:18px;
-    padding:28px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+.route-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:16px;
 }
 
-.section-title{
-    font-size:22px;
-    font-weight:bold;
-    margin-bottom:20px;
-}
-
-.route-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-.route-table th{
+.route-item{
     background:#f8fafc;
-    padding:12px;
-    text-align:left;
-    border-bottom:1px solid #e5e7eb;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
 }
 
-.route-table td{
-    padding:12px;
-    border-bottom:1px solid #f1f5f9;
+.route-item h3{
+    margin:0 0 10px;
+    color:#0f172a;
 }
 
-.fee-badge{
-    background:#eff6ff;
-    color:#2563eb;
-    padding:5px 10px;
+.badge{
+    display:inline-block;
+    padding:6px 10px;
     border-radius:999px;
+    background:#eff6ff;
+    color:#0b5ed7;
     font-size:12px;
     font-weight:bold;
+    margin-bottom:8px;
 }
 
-.delete-link{
-    color:#dc2626;
+.pickup-box{
+    margin-top:10px;
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:12px;
+}
+
+.delete-btn{
+    display:inline-block;
+    margin-top:12px;
+    padding:8px 12px;
+    background:#dc2626;
+    color:white;
+    border-radius:8px;
     text-decoration:none;
     font-weight:bold;
 }
+
+.empty{
+    background:#fff7d6;
+    padding:18px;
+    border-radius:14px;
+}
+
+@media(max-width:1000px){
+    .route-grid{
+        grid-template-columns:1fr;
+    }
+}
 </style>
 
-<div class="route-hero">
-    <div class="route-icon">📍</div>
+<div class="route-page">
 
-    <div>
-        <h2>Transport Routes</h2>
-        <p>Manage transport routes, pickup points and monthly fees.</p>
-    </div>
-</div>
-
-<div class="panel-box">
-
-    <div class="section-title">
-        Add New Route
+    <div class="route-hero">
+        <h2>📍 Transport Routes</h2>
+        <p>Manage school transport routes, pickup points and monthly transport charges.</p>
     </div>
 
-    <form method="post">
+    <div class="route-grid">
 
-        <div class="three">
+        <div class="route-card">
 
-            <div>
+            <h3>➕ Add New Route</h3>
+
+            <form method="post">
+
                 <label>Route Name</label>
-                <input name="route_name" required>
-            </div>
+                <input
+                    name="route_name"
+                    required
+                    placeholder="Example: Mandera Town">
 
-            <div>
-                <label>Monthly Fee</label>
-                <input name="monthly_fee" type="number">
-            </div>
+                <label>Monthly Fee (KES)</label>
+                <input
+                    type="number"
+                    name="monthly_fee"
+                    value="0">
 
-            <div>
                 <label>Pickup Points</label>
-                <input name="pickup_points">
+                <textarea
+                    name="pickup_points"
+                    rows="6"
+                    placeholder="Example:
+
+Neboi Junction
+Town Centre
+Airstrip
+Hospital
+Border Point"></textarea>
+
+                <button class="btn green">
+                    Save Route
+                </button>
+
+                <a class="btn"
+                   href="{{ url_for('transport') }}">
+                    Back
+                </a>
+
+            </form>
+
+        </div>
+
+        <div class="route-card">
+
+            <h3>🛣 Registered Routes</h3>
+
+            <div class="route-list">
+
+                {% for r in routes %}
+
+                <div class="route-item">
+
+                    <h3>{{ r.route_name }}</h3>
+
+                    <span class="badge">
+                        {{ money(r.monthly_fee) }}/Month
+                    </span>
+
+                    <div class="pickup-box">
+
+                        <b>Pickup Points</b>
+
+                        <hr>
+
+                        <div style="white-space:pre-line;">
+                            {{ r.pickup_points }}
+                        </div>
+
+                    </div>
+
+                    <a class="delete-btn"
+                       href="{{ url_for('delete_transport_route', route_id=r.id) }}"
+                       onclick="return confirm('Delete this route?')">
+
+                        Delete Route
+
+                    </a>
+
+                </div>
+
+                {% else %}
+
+                <div class="empty">
+
+                    No transport routes created yet.
+
+                </div>
+
+                {% endfor %}
+
             </div>
 
         </div>
 
-        <br>
-
-        <button class="btn green">
-            Save Route
-        </button>
-
-        <a class="btn" href="{{ url_for('transport') }}">
-            Back
-        </a>
-
-    </form>
-
-</div>
-
-<div class="panel-box">
-
-    <div class="section-title">
-        Active Routes
     </div>
-
-    <table class="route-table">
-
-        <tr>
-            <th>Route</th>
-            <th>Pickup Points</th>
-            <th>Monthly Fee</th>
-            <th>Action</th>
-        </tr>
-
-        {% for r in routes %}
-        <tr>
-
-            <td>{{ r.route_name }}</td>
-
-            <td>{{ r.pickup_points }}</td>
-
-            <td>
-                <span class="fee-badge">
-                    {{ money(r.monthly_fee) }}
-                </span>
-            </td>
-
-            <td>
-                <a class="delete-link"
-                   href="{{ url_for('delete_transport_route', route_id=r.id) }}"
-                   onclick="return confirm('Delete this route?')">
-                    Delete
-                </a>
-            </td>
-
-        </tr>
-
-        {% else %}
-
-        <tr>
-            <td colspan="4">
-                No routes added yet.
-            </td>
-        </tr>
-
-        {% endfor %}
-
-    </table>
 
 </div>
 
