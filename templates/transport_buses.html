@@ -2,207 +2,207 @@
 {% block content %}
 
 <style>
-.bus-hero{
-    background:white;
-    border-radius:18px;
-    padding:30px;
-    display:flex;
-    align-items:center;
-    gap:20px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+.bus-page{
+    max-width:1600px;
+    margin:0 auto;
 }
 
-.bus-icon{
-    width:80px;
-    height:80px;
-    border-radius:20px;
-    background:#eaf2ff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:42px;
+.bus-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
 }
 
 .bus-hero h2{
     margin:0;
-    color:#0f172a;
+    font-size:30px;
 }
 
 .bus-hero p{
-    margin-top:8px;
-    color:#64748b;
+    margin:8px 0 0;
+    color:#dbeafe;
 }
 
-.form-panel,
-.table-panel{
+.bus-grid{
+    display:grid;
+    grid-template-columns:420px 1fr;
+    gap:18px;
+}
+
+.bus-card{
     background:white;
     border-radius:18px;
-    padding:28px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+    padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    margin-bottom:18px;
 }
 
-.form-title{
-    font-size:22px;
-    font-weight:bold;
-    margin-bottom:20px;
+.bus-card h3{
+    margin-top:0;
+    color:#0b5ed7;
+}
+
+.bus-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:14px;
+}
+
+.bus-item{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
+}
+
+.bus-item h3{
+    margin:0 0 8px;
     color:#0f172a;
 }
 
+.badge{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:999px;
+    background:#eff6ff;
+    color:#0b5ed7;
+    font-size:12px;
+    font-weight:900;
+    margin-right:5px;
+}
+
+.driver-box{
+    margin-top:12px;
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:12px;
+}
+
+.driver-box b{
+    color:#0b5ed7;
+}
+
 .action-delete{
-    color:#dc2626;
+    display:inline-block;
+    margin-top:10px;
+    background:#dc2626;
+    color:white;
+    padding:8px 11px;
+    border-radius:9px;
     text-decoration:none;
     font-weight:bold;
+    font-size:13px;
 }
 
-.action-delete:hover{
-    text-decoration:underline;
+.empty{
+    background:#fff7d6;
+    border-radius:14px;
+    padding:16px;
 }
 
-.bus-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-.bus-table th{
-    background:#f8fafc;
-    padding:12px;
-    border-bottom:1px solid #e5e7eb;
-    text-align:left;
-}
-
-.bus-table td{
-    padding:12px;
-    border-bottom:1px solid #f1f5f9;
-}
-
-.capacity-badge{
-    background:#ecfdf5;
-    color:#059669;
-    padding:5px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:bold;
+@media(max-width:1000px){
+    .bus-grid{
+        grid-template-columns:1fr;
+    }
 }
 </style>
 
-<div class="bus-hero">
-    <div class="bus-icon">🚌</div>
+<div class="bus-page">
 
-    <div>
-        <h2>School Buses</h2>
+    <div class="bus-hero">
+        <h2>🚌 School Buses</h2>
         <p>Manage buses, drivers and transport capacity.</p>
     </div>
-</div>
 
-<div class="form-panel">
+    <div class="bus-grid">
 
-    <div class="form-title">
-        Add New Bus
-    </div>
+        <div class="bus-card">
+            <h3>➕ Add New Bus</h3>
 
-    <form method="post">
+            <form method="post">
 
-        <div class="three">
-            <div>
                 <label>Bus Name</label>
-                <input name="bus_name" required placeholder="Bus 1">
-            </div>
+                <input name="bus_name" required placeholder="Example: Bus 1">
 
-            <div>
                 <label>Registration Number</label>
-                <input name="registration_no" required placeholder="KDA 123A">
-            </div>
+                <input name="registration_no" required placeholder="Example: KDA 123A">
 
-            <div>
                 <label>Capacity</label>
-                <input name="capacity" type="number" placeholder="30">
-            </div>
-        </div>
+                <input name="capacity" type="number" value="0" placeholder="Example: 30">
 
-        <div class="two">
-            <div>
-                <label>Driver Name</label>
-                <input name="driver_name">
-            </div>
+                <label>Driver</label>
+                <select name="driver_name" id="driverName">
+                    <option value="">Select Driver</option>
+                    {% for d in drivers %}
+                    <option value="{{ d.full_name }}" data-phone="{{ d.phone }}">
+                        {{ d.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
 
-            <div>
                 <label>Driver Phone</label>
-                <input name="driver_phone">
+                <input name="driver_phone" id="driverPhone" readonly>
+
+                <button class="btn green" type="submit">
+                    Save Bus
+                </button>
+
+                <a class="btn" href="{{ url_for('transport') }}">
+                    Back
+                </a>
+
+            </form>
+        </div>
+
+        <div class="bus-card">
+            <h3>📋 Registered Buses</h3>
+
+            <div class="bus-list">
+                {% for b in buses %}
+                <div class="bus-item">
+                    <h3>{{ b.bus_name }}</h3>
+
+                    <p>
+                        <span class="badge">{{ b.registration_no }}</span>
+                        <span class="badge">{{ b.capacity }} Seats</span>
+                    </p>
+
+                    <div class="driver-box">
+                        <b>Driver:</b> {{ b.driver_name or "-" }}<br>
+                        <b>Phone:</b> {{ b.driver_phone or "-" }}
+                    </div>
+
+                    <a class="action-delete"
+                       href="{{ url_for('delete_bus', bus_id=b.id) }}"
+                       onclick="return confirm('Delete this bus?')">
+                        Delete
+                    </a>
+                </div>
+                {% else %}
+                <div class="empty">
+                    No buses registered yet.
+                </div>
+                {% endfor %}
             </div>
         </div>
 
-        <br>
-
-        <button class="btn green">
-            Save Bus
-        </button>
-
-        <a class="btn" href="{{ url_for('transport') }}">
-            Back
-        </a>
-
-    </form>
-
-</div>
-
-<div class="table-panel">
-
-    <div class="form-title">
-        Registered Buses
     </div>
-
-    <table class="bus-table">
-
-        <tr>
-            <th>Bus Name</th>
-            <th>Registration</th>
-            <th>Capacity</th>
-            <th>Driver</th>
-            <th>Phone</th>
-            <th>Action</th>
-        </tr>
-
-        {% for b in buses %}
-        <tr>
-
-            <td>{{ b.bus_name }}</td>
-
-            <td>{{ b.registration_no }}</td>
-
-            <td>
-                <span class="capacity-badge">
-                    {{ b.capacity }} Seats
-                </span>
-            </td>
-
-            <td>{{ b.driver_name }}</td>
-
-            <td>{{ b.driver_phone }}</td>
-
-            <td>
-                <a class="action-delete"
-                   href="{{ url_for('delete_bus', bus_id=b.id) }}"
-                   onclick="return confirm('Delete this bus?')">
-                    Delete
-                </a>
-            </td>
-
-        </tr>
-
-        {% else %}
-
-        <tr>
-            <td colspan="6">
-                No buses registered yet.
-            </td>
-        </tr>
-
-        {% endfor %}
-
-    </table>
-
 </div>
+
+<script>
+const driverName = document.getElementById("driverName");
+const driverPhone = document.getElementById("driverPhone");
+
+if(driverName && driverPhone){
+    driverName.addEventListener("change", function(){
+        const selected = this.options[this.selectedIndex];
+        driverPhone.value = selected.getAttribute("data-phone") || "";
+    });
+}
+</script>
 
 {% endblock %}
