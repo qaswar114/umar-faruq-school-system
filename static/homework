@@ -1,0 +1,69 @@
+@app.route("/homework", methods=["GET", "POST"])
+def homework():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    role = session.get("role", "").lower()
+
+    if request.method == "POST":
+        title = request.form["title"]
+        subject = request.form["subject"]
+        grade = request.form["grade"]
+        description = request.form["description"]
+
+        due_date = datetime.strptime(
+            request.form["due_date"],
+            "%Y-%m-%d"
+        ).date()
+
+        attachment_path = None
+
+        file = request.files.get("attachment")
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            saved_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+            file.save(os.path.join("static", "homework", saved_name))
+            attachment_path = f"homework/{saved_name}"
+
+        hw = Homework(
+            school_id=school_id,
+            title=title,
+            subject=subject,
+            grade=grade,
+            description=description,
+            due_date=due_date,
+            attachment=attachment_path,
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(hw)
+        db.session.commit()
+
+        flash("Homework added successfully.")
+        return redirect(url_for("homework"))
+
+    if role == "teacher":
+        assigned_grade = session.get("assigned_grade")
+
+        homeworks = Homework.query.filter_by(
+            school_id=school_id,
+            grade=assigned_grade,
+            status="Active"
+        ).order_by(Homework.due_date.desc()).all()
+    else:
+        homeworks = Homework.query.filter_by(
+            school_id=school_id,
+            status="Active"
+        ).order_by(Homework.due_date.desc()).all()
+
+    return render_template(
+        "homework.html",
+        settings=get_settings(),
+        grades=GRADES,
+        homeworks=homeworks
+    )
