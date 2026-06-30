@@ -7734,11 +7734,11 @@ def transport_buses():
     if request.method == "POST":
         bus = SchoolBus(
             school_id=school_id,
-            bus_name=request.form["bus_name"],
-            registration_no=request.form["registration_no"],
+            bus_name=request.form["bus_name"].strip(),
+            registration_no=request.form["registration_no"].strip(),
             capacity=int(request.form.get("capacity") or 0),
-            driver_name=request.form.get("driver_name", ""),
-            driver_phone=request.form.get("driver_phone", "")
+            driver_name=request.form.get("driver_name", "").strip(),
+            driver_phone=request.form.get("driver_phone", "").strip()
         )
 
         db.session.add(bus)
@@ -7750,14 +7750,19 @@ def transport_buses():
     buses = SchoolBus.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(SchoolBus.bus_name).all()
+    ).order_by(SchoolBus.bus_name.asc()).all()
+
+    drivers = TransportDriver.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(TransportDriver.full_name.asc()).all()
 
     return render_template(
         "transport_buses.html",
         settings=get_settings(),
-        buses=buses
+        buses=buses,
+        drivers=drivers
     )
-
 @app.route("/transport_routes", methods=["GET", "POST"])
 def transport_routes():
     if not login_required():
