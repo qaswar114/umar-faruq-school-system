@@ -7777,9 +7777,10 @@ def transport_routes():
     if request.method == "POST":
         route = TransportRoute(
             school_id=school_id,
-            route_name=request.form["route_name"],
-            pickup_points=request.form.get("pickup_points", ""),
-            monthly_fee=float(request.form.get("monthly_fee") or 0)
+            route_name=request.form["route_name"].strip(),
+            pickup_points=request.form.get("pickup_points", "").strip(),
+            monthly_fee=float(request.form.get("monthly_fee") or 0),
+            status="Active"
         )
 
         db.session.add(route)
@@ -7791,7 +7792,7 @@ def transport_routes():
     routes = TransportRoute.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(TransportRoute.route_name).all()
+    ).order_by(TransportRoute.route_name.asc()).all()
 
     return render_template(
         "transport_routes.html",
