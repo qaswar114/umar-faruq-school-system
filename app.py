@@ -7727,11 +7727,19 @@ def transport():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+    if not role_allowed(
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "registrar",
+        "receptionist",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+    role = normalize_role(session.get("role", ""))
 
     total_buses = SchoolBus.query.filter_by(
         school_id=school_id,
@@ -7754,19 +7762,33 @@ def transport():
         status="Active"
     ).count()
 
-    unassigned_pupils = bus_pupils - assigned_pupils
-    if unassigned_pupils < 0:
-        unassigned_pupils = 0
+    unassigned_pupils = max(0, bus_pupils - assigned_pupils)
+
+    assignments = (
+        PupilTransport.query.filter_by(
+            school_id=school_id,
+            status="Active"
+        )
+        .order_by(PupilTransport.id.desc())
+        .all()
+    )
+
+    buses = SchoolBus.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(SchoolBus.bus_name).all()
 
     return render_template(
         "transport.html",
         settings=get_settings(),
+        role=role,
         total_buses=total_buses,
         total_routes=total_routes,
         assigned_pupils=assigned_pupils,
-        unassigned_pupils=unassigned_pupils
+        unassigned_pupils=unassigned_pupils,
+        assignments=assignments,
+        buses=buses
     )
-
 @app.route("/parent_transport")
 def parent_transport():
     if "parent_pupil_id" not in session:
