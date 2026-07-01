@@ -4638,7 +4638,6 @@ def fix_discount_table():
 
     flash("Discount table fixed successfully.")
     return redirect(url_for("discounts"))
-    
 @app.route("/payments", methods=["GET", "POST"])
 def payments():
     if not login_required():
@@ -4714,14 +4713,27 @@ def payments():
             flash(f"Payment failed: {str(e)}")
             return redirect(url_for("payments"))
 
-    pupils = Pupil.query.filter_by(
+    selected_grade = request.args.get("grade", "All")
+
+    pupil_query = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(Pupil.full_name.asc()).all()
+    )
 
-    recent_payments = Payment.query.filter_by(
-        school_id=school_id
-    ).order_by(
+    if selected_grade != "All":
+        pupil_query = pupil_query.filter_by(grade=selected_grade)
+
+    pupils = pupil_query.order_by(Pupil.full_name.asc()).all()
+
+    payment_query = Payment.query.filter_by(school_id=school_id)
+
+    if selected_grade != "All":
+        payment_query = payment_query.join(Pupil, Payment.pupil_id == Pupil.id).filter(
+            Pupil.grade == selected_grade,
+            Pupil.school_id == school_id
+        )
+
+    recent_payments = payment_query.order_by(
         Payment.id.desc()
     ).limit(50).all()
 
@@ -4729,6 +4741,8 @@ def payments():
         "payments.html",
         settings=get_settings(),
         pupils=pupils,
+        grades=GRADES,
+        selected_grade=selected_grade,
         terms=TERMS,
         term_months=TERM_MONTHS,
         year=current_year(),
