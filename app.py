@@ -1526,6 +1526,16 @@ def role_allowed(*roles):
         return True
 
     return current_role in allowed_roles
+
+def management_roles():
+    return (
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "principal",
+        "super admin"
+    )
+    
 def super_admin_required():
     return session.get("role", "").lower() == "super admin"
 
@@ -7462,31 +7472,53 @@ def users():
     if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role", "").lower() != "admin":
+    if not role_allowed("admin", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
+    available_roles = [
+        "Admin",
+        "Headteacher",
+        "Deputy Headteacher",
+        "Bursar",
+        "Registrar",
+        "Receptionist",
+        "Teacher"
+    ]
+
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        role = request.form["role"]
-        assigned_grade = request.form.get("assigned_grade", "")
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
+        role = request.form["role"].strip()
+        assigned_grade = request.form.get("assigned_grade", "").strip()
+        assigned_subjects = request.form.get("assigned_subjects", "").strip()
+
+        if role not in available_roles:
+            flash("Invalid role selected.")
+            return redirect(url_for("users"))
+
+        existing = User.query.filter_by(username=username).first()
+        if existing:
+            flash("Username already exists. Choose another username.")
+            return redirect(url_for("users"))
 
         new_user = User(
             school_id=school_id,
             username=username,
             password_hash=generate_password_hash(password),
             role=role,
-            assigned_grade=assigned_grade
+            assigned_grade=assigned_grade if role == "Teacher" else "",
+            assigned_subjects=assigned_subjects if role == "Teacher" else "",
+            is_active=True
         )
 
         db.session.add(new_user)
         db.session.commit()
 
         save_audit(
-            f"Created user account: {username}",
+            f"Created user account: {username} ({role})",
             "Security"
         )
 
@@ -7495,15 +7527,15 @@ def users():
 
     all_users = User.query.filter_by(
         school_id=school_id
-    ).order_by(User.username).all()
+    ).order_by(User.username.asc()).all()
 
     return render_template(
         "users.html",
         settings=get_settings(),
         users=all_users,
-        grades=GRADES
+        grades=GRADES,
+        available_roles=available_roles
     )
-
 
 @app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
