@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 <head>
@@ -40,12 +39,12 @@
         }
 
         .brand img{
-            width:72px;
-            height:72px;
-            border-radius:18px;
+            width:78px;
+            height:78px;
+            border-radius:20px;
             background:white;
             object-fit:contain;
-            padding:5px;
+            padding:6px;
             margin-bottom:10px;
         }
 
@@ -68,20 +67,20 @@
             color:#93c5fd;
             font-weight:bold;
             letter-spacing:1px;
-            margin:14px 0 6px 8px;
+            margin:15px 0 7px 8px;
         }
 
         .nav a,
         .nav summary{
             display:flex;
             align-items:center;
-            gap:8px;
+            gap:9px;
             color:white;
             text-decoration:none;
-            padding:8px 10px;
-            border-radius:9px;
-            margin-bottom:3px;
-            font-weight:700;
+            padding:9px 10px;
+            border-radius:10px;
+            margin-bottom:4px;
+            font-weight:800;
             font-size:13px;
             cursor:pointer;
         }
@@ -92,7 +91,7 @@
             background:#0b5ed7;
         }
 
-        details{margin-bottom:3px}
+        details{margin-bottom:4px}
         summary{list-style:none}
         summary::-webkit-details-marker{display:none}
 
@@ -100,13 +99,24 @@
             margin-left:18px;
             border-left:1px solid rgba(255,255,255,.18);
             padding-left:8px;
-            margin-bottom:5px;
+            margin-bottom:6px;
         }
 
         .subnav a{
             font-size:12px;
-            padding:6px 8px;
+            padding:7px 8px;
             color:#dbeafe;
+        }
+
+        .logout-link{
+            margin-top:16px!important;
+            background:#dc2626!important;
+            color:white!important;
+            justify-content:center;
+        }
+
+        .logout-link:hover{
+            background:#b91c1c!important;
         }
 
         .main{
@@ -178,9 +188,7 @@
             width:100%;
         }
 
-        input,
-        select,
-        textarea{
+        input,select,textarea{
             width:100%;
             padding:10px;
             border:1px solid #cbd5e1;
@@ -195,8 +203,7 @@
             margin-bottom:5px;
         }
 
-        .btn,
-        button{
+        .btn,button{
             display:inline-block;
             background:#0b5ed7;
             color:white;
@@ -212,30 +219,12 @@
         .btn.red,button.red{background:#dc2626}
         .btn.gray,button.gray{background:#64748b}
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
-
-        th,td{
-            padding:10px;
-            border-bottom:1px solid #e5e7eb;
-            text-align:left;
-        }
-
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
         th{background:#f8fafc}
 
-        .two{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:14px;
-        }
-
-        .three{
-            display:grid;
-            grid-template-columns:1fr 1fr 1fr;
-            gap:14px;
-        }
+        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 
         .flash{
             background:#fff7d6;
@@ -244,43 +233,18 @@
             margin-bottom:12px;
         }
 
-        /* GLOBAL BIG SCREEN FIX */
-        .dashboard-page,
-        .reports-page,
-        .pay-page,
-        .users-page,
-        .fees-page,
-        .fee-page,
-        .discount-page,
-        .def-page,
-        .defaulters-page,
-        .inventory-page,
-        .tx-page,
-        .report-page,
-        .staff-page,
-        .staff-dashboard,
-        .business-page,
-        .teacher-app,
-        .pupils-page,
-        .transport-page,
-        .whatsapp-page,
-        .sms-page,
-        .expense-page,
-        .balance-page,
-        .attendance-page,
-        .exam-page,
-        .timetable-page{
+        .dashboard-page,.reports-page,.pay-page,.users-page,.fees-page,
+        .fee-page,.discount-page,.def-page,.defaulters-page,.inventory-page,
+        .tx-page,.report-page,.staff-page,.staff-dashboard,.business-page,
+        .teacher-app,.pupils-page,.transport-page,.whatsapp-page,.sms-page,
+        .expense-page,.balance-page,.attendance-page,.exam-page,.timetable-page,
+        .homework-page,.bus-page,.route-page,.assign-page{
             max-width:100%!important;
             width:100%!important;
         }
 
-        .pay-card,
-        .discount-card,
-        .inventory-card,
-        .tx-card,
-        .report-card,
-        .users-card,
-        .card{
+        .pay-card,.discount-card,.inventory-card,.tx-card,.report-card,
+        .users-card,.card,.bus-card,.route-card,.assign-card{
             width:100%;
         }
 
@@ -291,9 +255,7 @@
                 height:auto;
             }
 
-            .main{
-                margin-left:0;
-            }
+            .main{margin-left:0}
 
             .topbar{
                 height:auto;
@@ -303,14 +265,8 @@
                 padding:15px;
             }
 
-            .top-user{
-                flex-wrap:wrap;
-            }
-
-            .two,
-            .three{
-                grid-template-columns:1fr;
-            }
+            .top-user{flex-wrap:wrap}
+            .two,.three{grid-template-columns:1fr}
 
             .content{
                 padding:14px;
@@ -319,24 +275,10 @@
         }
 
         @media print{
-            .sidebar,
-            .topbar,
-            .no-print{
-                display:none!important;
-            }
-
-            .main{
-                margin-left:0!important;
-            }
-
-            body{
-                background:white!important;
-            }
-
-            .content{
-                max-width:100%!important;
-                padding:0!important;
-            }
+            .sidebar,.topbar,.no-print{display:none!important}
+            .main{margin-left:0!important}
+            body{background:white!important}
+            .content{max-width:100%!important;padding:0!important}
         }
     </style>
 </head>
@@ -352,8 +294,7 @@
             <small>SaaS Control Panel</small>
 
         {% elif settings and settings.logo %}
-            <img src="{{ url_for('static', filename=settings.logo if settings and settings.logo else 'logo.png') }}"
-                 alt="School Logo"
+            <img src="{{ url_for('static', filename=settings.logo) }}"
                  onerror="this.onerror=null; this.src='{{ url_for('static', filename='logo.png') }}';">
             <h2>{{ settings.school_name if settings else "School System" }}</h2>
             <small>Powered by EduManage</small>
@@ -372,14 +313,18 @@
         <a class="{% if request.path == '/dashboard' %}active{% endif %}" href="/dashboard">🏠 Dashboard</a>
         <a class="{% if request.path == '/business_dashboard' %}active{% endif %}" href="/business_dashboard">🖥️ CEO Dashboard</a>
 
+        {% if session.get("role","")|lower == "teacher" %}
+        <a href="/teacher_dashboard">👨‍🏫 Teacher Portal</a>
+        {% endif %}
+
         {% if session.get("role","")|lower == "super admin" %}
-        <div class="nav-label">SAAS</div>
+        <div class="nav-label">SAAS CONTROL</div>
         <a href="/schools">🏫 Schools</a>
         <a href="/create_school">➕ Add School</a>
         <a href="/platform_sms">📱 Platform SMS</a>
         {% endif %}
 
-        <div class="nav-label">MODULES</div>
+        <div class="nav-label">CORE MODULES</div>
 
         <details open>
             <summary>🎓 Students</summary>
@@ -388,6 +333,19 @@
                 <a href="/attendance">Mark Attendance</a>
                 <a href="/attendance_report">Attendance Report</a>
                 <a href="/transport">Transport</a>
+            </div>
+        </details>
+
+        <details>
+            <summary>💰 Finance</summary>
+            <div class="subnav">
+                <a href="/payments">Payments</a>
+                <a href="/fees">Fee Structure</a>
+                <a href="/discounts">Discounts / Waivers</a>
+                <a href="/balances">Balances</a>
+                <a href="/defaulters_report">Defaulters</a>
+                <a href="/expenses">Expenses</a>
+                <a href="/expense_report">Expense Report</a>
             </div>
         </details>
 
@@ -403,19 +361,6 @@
         </details>
 
         <details>
-            <summary>💰 Finance</summary>
-            <div class="subnav">
-                <a href="/fees">Fee Structure</a>
-                <a href="/payments">Payments</a>
-                <a href="/discounts">Discounts / Waivers</a>
-                <a href="/balances">Balances</a>
-                <a href="/defaulters_report">Defaulters</a>
-                <a href="/expenses">Expenses</a>
-                <a href="/expense_report">Expense Report</a>
-            </div>
-        </details>
-
-        <details>
             <summary>👥 Human Resource</summary>
             <div class="subnav">
                 <a href="/staff_dashboard">Staff Dashboard</a>
@@ -425,6 +370,8 @@
                 <a href="/payroll">Payroll</a>
             </div>
         </details>
+
+        <div class="nav-label">OPERATIONS</div>
 
         <details>
             <summary>💬 Communication</summary>
@@ -450,11 +397,12 @@
 
         <a href="{{ url_for('reports_dashboard') }}">📊 Reports Centre</a>
 
-        <div class="nav-label">SYSTEM</div>
+        <div class="nav-label">ADMINISTRATION</div>
         <a href="/users">👤 Users</a>
         <a href="/audit_logs">🧾 Audit Logs</a>
         <a href="/settings">🎨 Branding</a>
-         <a href="/logout">🚪 Logout</a>
+
+        <a href="/logout" class="logout-link">🚪 Logout</a>
 
     </div>
 </div>
@@ -487,6 +435,10 @@
                 <h1>Payroll</h1>
             {% elif request.path == '/inventory' %}
                 <h1>Inventory / Store</h1>
+            {% elif request.path == '/transport' %}
+                <h1>Transport</h1>
+            {% elif request.path == '/homework' %}
+                <h1>Homework</h1>
             {% elif request.path == '/whatsapp_messages' %}
                 <h1>WhatsApp</h1>
             {% elif request.path == '/whatsapp_outbox' %}
