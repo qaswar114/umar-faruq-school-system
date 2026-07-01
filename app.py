@@ -1856,9 +1856,8 @@ def dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
-    role = session.get("role", "").lower()
+    role = normalize_role(session.get("role", ""))
 
-    # Teachers must never see CEO/Admin dashboard
     if role == "teacher":
         return redirect(url_for("teacher_dashboard"))
 
@@ -1895,54 +1894,8 @@ def dashboard():
 
     school_id = current_school_id()
     today = date.today()
-    current_month = today.month
     current_year_num = today.year
-
-    month_names = {
-        1: "January", 2: "February", 3: "March", 4: "April",
-        5: "May", 6: "June", 7: "July", 8: "August",
-        9: "September", 10: "October", 11: "November", 12: "December"
-    }
-
-    current_month_name = month_names.get(current_month, "May")
-
-    if current_month_name in ["January", "February", "March"]:
-        current_term = "Term 1"
-    elif current_month_name in ["May", "June", "July"]:
-        current_term = "Term 2"
-    elif current_month_name in ["September", "October", "November"]:
-        current_term = "Term 3"
-    else:
-        current_term = "Term 2"
-        current_month_name = "May"
-
-    payments = Payment.query.filter_by(school_id=school_id).all()
-
-    total_collected_raw = sum(
-        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-        for p in payments
-    )
-
-    today_collection_raw = sum(
-        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-        for p in payments
-        if p.payment_date == today
-    )
-
-    month_collection_raw = sum(
-        p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-        for p in payments
-        if p.payment_date and p.payment_date.month == current_month and p.payment_date.year == current_year_num
-    )
-
-    all_expenses = Expense.query.filter_by(school_id=school_id).all()
-
-    month_expenses_raw = sum(
-        e.amount for e in all_expenses
-        if e.expense_date and e.expense_date.month == current_month and e.expense_date.year == current_year_num
-    )
-
-    net_income_raw = month_collection_raw - month_expenses_raw
+    current_month = today.month
 
     active_pupils_list = Pupil.query.filter_by(
         school_id=school_id,
@@ -1962,25 +1915,6 @@ def dashboard():
         status="Active"
     ).count()
 
-    defaulters = 0
-    outstanding_raw = 0
-
-    for pupil in active_pupils_list:
-        bal = (
-            due_until_month(
-                pupil,
-                current_year_num,
-                current_term,
-                current_month_name
-            )
-            - paid_year(pupil.id, current_year_num)
-            - discount_year(pupil.id, current_year_num)
-        )
-
-        if bal > 0:
-            defaulters += 1
-            outstanding_raw += bal
-
     today_attendance = Attendance.query.filter_by(
         school_id=school_id,
         attendance_date=today
@@ -1994,85 +1928,15 @@ def dashboard():
     if total_pupils > 0:
         attendance_rate = round((present_today / total_pupils) * 100, 1)
 
-    pending_sms = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).count()
-
-    sent_sms = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Sent"
-    ).count()
-
-    failed_sms = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).count()
-
-    sms_wallet = SMSWallet.query.filter_by(school_id=school_id).first()
-    sms_balance = sms_wallet.sms_balance if sms_wallet else 0
-
-    pending_attendance_alerts = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Attendance Alert"
-    ).count()
-
-    pending_payment_alerts = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Payment Confirmation"
-    ).count()
-
     new_admissions_month = Pupil.query.filter(
         Pupil.school_id == school_id,
         Pupil.created_at >= date(current_year_num, current_month, 1)
-    ).count()
-
-    total_staff = Staff.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).count()
-
-    total_teachers = Staff.query.filter_by(
-        school_id=school_id,
-        role="Teacher",
-        status="Active"
     ).count()
 
     upcoming_exams = Exam.query.filter_by(
         school_id=school_id,
         status="Active"
     ).order_by(Exam.academic_year.desc()).limit(5).all()
-
-    finance_months = ["May", "June", "July", "September", "October", "November"]
-
-    finance_chart = []
-
-    for m in finance_months:
-        collected = sum(
-            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-            for p in payments
-            if p.academic_year == current_year_num and p.month == m
-        )
-
-        month_no = None
-        for num, name in month_names.items():
-            if name == m:
-                month_no = num
-                break
-
-        expenses = sum(
-            e.amount for e in all_expenses
-            if e.expense_date and e.expense_date.year == current_year_num and e.expense_date.month == month_no
-        )
-
-        finance_chart.append({
-            "month": m[:3],
-            "collected": collected,
-            "expenses": expenses,
-            "net": collected - expenses
-        })
 
     recent_announcements = Announcement.query.filter_by(
         school_id=school_id,
@@ -2081,16 +1945,116 @@ def dashboard():
         Announcement.created_at.desc()
     ).limit(5).all()
 
+    # Finance values only for Admin/Bursar
+    payments = Payment.query.filter_by(school_id=school_id).all()
+    all_expenses = Expense.query.filter_by(school_id=school_id).all()
+
+    total_collected_raw = 0
+    today_collection_raw = 0
+    month_collection_raw = 0
+    month_expenses_raw = 0
+    net_income_raw = 0
+    outstanding_raw = 0
+    defaulters = 0
+    finance_chart = []
+
+    if role in ["admin", "bursar"]:
+        total_collected_raw = sum(
+            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+            for p in payments
+        )
+
+        today_collection_raw = sum(
+            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+            for p in payments
+            if p.payment_date == today
+        )
+
+        month_collection_raw = sum(
+            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+            for p in payments
+            if p.payment_date and p.payment_date.month == current_month and p.payment_date.year == current_year_num
+        )
+
+        month_expenses_raw = sum(
+            e.amount for e in all_expenses
+            if e.expense_date and e.expense_date.month == current_month and e.expense_date.year == current_year_num
+        )
+
+        net_income_raw = month_collection_raw - month_expenses_raw
+
+        month_names = {
+            1: "January", 2: "February", 3: "March", 4: "April",
+            5: "May", 6: "June", 7: "July", 8: "August",
+            9: "September", 10: "October", 11: "November", 12: "December"
+        }
+
+        current_month_name = month_names.get(current_month, "May")
+
+        if current_month_name in ["January", "February", "March"]:
+            current_term = "Term 1"
+        elif current_month_name in ["May", "June", "July"]:
+            current_term = "Term 2"
+        elif current_month_name in ["September", "October", "November"]:
+            current_term = "Term 3"
+        else:
+            current_term = "Term 2"
+            current_month_name = "May"
+
+        for pupil in active_pupils_list:
+            bal = (
+                due_until_month(
+                    pupil,
+                    current_year_num,
+                    current_term,
+                    current_month_name
+                )
+                - paid_year(pupil.id, current_year_num)
+                - discount_year(pupil.id, current_year_num)
+            )
+
+            if bal > 0:
+                defaulters += 1
+                outstanding_raw += bal
+
+        finance_months = ["May", "June", "July", "September", "October", "November"]
+
+        for m in finance_months:
+            collected = sum(
+                p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
+                for p in payments
+                if p.academic_year == current_year_num and p.month == m
+            )
+
+            month_no = None
+            for num, name in month_names.items():
+                if name == m:
+                    month_no = num
+                    break
+
+            expenses = sum(
+                e.amount for e in all_expenses
+                if e.expense_date and e.expense_date.year == current_year_num and e.expense_date.month == month_no
+            )
+
+            finance_chart.append({
+                "month": m[:3],
+                "collected": collected,
+                "expenses": expenses,
+                "net": collected - expenses
+            })
+
     return render_template(
         "dashboard.html",
         settings=get_settings(),
+        dashboard_role=role,
         total_pupils=total_pupils,
         active_pupils=total_pupils,
         inactive_pupils=inactive_pupils,
         bus_pupils=bus_pupils,
         new_admissions_month=new_admissions_month,
         total_collected=money(total_collected_raw),
-        receipts=len(payments),
+        receipts=len(payments) if role in ["admin", "bursar"] else 0,
         today_collection=money(today_collection_raw),
         month_collection=money(month_collection_raw),
         month_expenses=money(month_expenses_raw),
@@ -2101,14 +2065,6 @@ def dashboard():
         absent_today=absent_today,
         late_today=late_today,
         attendance_rate=attendance_rate,
-        pending_sms=pending_sms,
-        sent_sms=sent_sms,
-        failed_sms=failed_sms,
-        sms_balance=sms_balance,
-        pending_attendance_alerts=pending_attendance_alerts,
-        pending_payment_alerts=pending_payment_alerts,
-        total_staff=total_staff,
-        total_teachers=total_teachers,
         upcoming_exams=upcoming_exams,
         recent_announcements=recent_announcements,
         finance_chart=finance_chart
