@@ -354,7 +354,9 @@
                     <a href="/pupils">Admissions</a>
                     <a href="/attendance">Mark Attendance</a>
                     <a href="/attendance_report">Attendance Report</a>
+                    {% if role in ["admin","registrar","receptionist"] %}
                     <a href="/transport">Transport</a>
+                    {% endif %}
                 </div>
             </details>
         {% endif %}
