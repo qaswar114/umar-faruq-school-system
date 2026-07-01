@@ -1809,11 +1809,13 @@ def login():
             flash("Wrong username or password.")
             return redirect(url_for("login"))
 
-           session["username"] = user.username
+        session["username"] = user.username
+
         if user.role.lower() == "principal":
-           session["role"] = "Headteacher"
+            session["role"] = "Headteacher"
         else:
-        session["role"] = user.role
+           session["role"] = user.role
+
         session["assigned_grade"] = user.assigned_grade
         session["school_id"] = user.school_id
         session["school_name"] = school.school_name
