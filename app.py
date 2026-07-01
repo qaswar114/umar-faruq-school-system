@@ -1507,6 +1507,20 @@ def init_database():
         db.session.commit()
     except Exception:
         db.session.rollback()
+
+    # Convert old school leadership roles to new professional role names
+    try:
+        old_principals = User.query.filter_by(role="Principal").all()
+        for u in old_principals:
+            u.role = "Headteacher"
+
+        old_deputies = User.query.filter_by(role="Deputy Principal").all()
+        for u in old_deputies:
+            u.role = "Deputy Headteacher"
+
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
         
 def login_required():
     return "username" in session
