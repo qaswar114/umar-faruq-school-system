@@ -1509,35 +1509,61 @@ def init_database():
         db.session.rollback()
         
 def login_required():
-    if "username" not in session:
-        return False
-    return True
+    return "username" in session
+
+
+def normalize_role(role):
+    role = (role or "").strip().lower()
+
+    if role == "principal":
+        return "headteacher"
+
+    return role
+
 
 def role_allowed(*roles):
-    current_role = session.get("role", "").lower()
-    allowed_roles = [r.lower() for r in roles]
+    current_role = normalize_role(session.get("role", ""))
+    allowed_roles = [normalize_role(r) for r in roles]
 
-    # Super Admin can access everything
     if current_role == "super admin":
         return True
 
-    # Admin can access everything except Super Admin-only areas
     if current_role == "admin":
         return True
 
     return current_role in allowed_roles
 
+
 def management_roles():
-    return (
-        "admin",
-        "headteacher",
-        "deputy headteacher",
-        "principal",
-        "super admin"
-    )
-    
+    return ("admin", "headteacher", "deputy headteacher", "super admin")
+
+
+def finance_roles():
+    return ("admin", "headteacher", "deputy headteacher", "bursar", "super admin")
+
+
+def academic_roles():
+    return ("admin", "headteacher", "deputy headteacher", "teacher", "registrar", "super admin")
+
+
+def student_roles():
+    return ("admin", "headteacher", "deputy headteacher", "registrar", "receptionist", "teacher", "super admin")
+
+
+def communication_roles():
+    return ("admin", "headteacher", "deputy headteacher", "teacher", "registrar", "receptionist", "bursar", "super admin")
+
+
+def hr_roles():
+    return ("admin", "headteacher", "deputy headteacher", "super admin")
+
+
+def transport_roles():
+    return ("admin", "headteacher", "deputy headteacher", "registrar", "receptionist", "bursar", "super admin")
+
+
 def super_admin_required():
-    return session.get("role", "").lower() == "super admin"
+    return normalize_role(session.get("role", "")) == "super admin"
 
 def current_school_id():
     return session.get("school_id", 1)
