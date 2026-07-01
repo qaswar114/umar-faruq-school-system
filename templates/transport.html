@@ -2,108 +2,218 @@
 {% block content %}
 
 <style>
+.transport-page{max-width:1600px;margin:0 auto}
+
 .transport-hero{
-    background:white;
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;
     border-radius:18px;
-    padding:32px;
-    display:flex;
-    align-items:center;
-    gap:22px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
-    margin-bottom:25px;
+    padding:24px;
+    margin-bottom:18px;
 }
-.transport-icon{
-    width:78px;
-    height:78px;
-    border-radius:22px;
-    background:#eaf2ff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:40px;
-}
+
 .transport-hero h2{
     margin:0;
-    font-size:32px;
+    font-size:30px;
 }
+
 .transport-hero p{
     margin:8px 0 0;
-    color:#475569;
+    color:#dbeafe;
 }
+
 .transport-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
+    gap:16px;
+    margin-bottom:18px;
 }
+
 .transport-card{
     background:white;
-    border-radius:16px;
-    padding:25px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    border-radius:18px;
+    padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
 }
+
 .transport-card h3{
     margin:0;
-    color:#475569;
+    color:#64748b;
+    font-size:15px;
 }
+
 .transport-card .num{
-    font-size:40px;
-    font-weight:bold;
-    margin-top:15px;
+    font-size:38px;
+    font-weight:900;
+    margin-top:12px;
+    color:#0b5ed7;
 }
-.quick-panel{
+
+.panel-box{
     background:white;
     border-radius:18px;
-    padding:28px;
-    margin-top:25px;
-    box-shadow:0 8px 25px rgba(15,23,42,0.08);
+    padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    margin-bottom:18px;
 }
+
+.panel-box h3{
+    margin-top:0;
+    color:#0b5ed7;
+}
+
 .quick-links{
     display:flex;
-    gap:14px;
+    gap:12px;
     flex-wrap:wrap;
+}
+
+.view-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:14px;
+}
+
+.view-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:16px;
+}
+
+.view-card h3{
+    margin:0 0 10px;
+    color:#0f172a;
+}
+
+.info{
+    line-height:1.8;
+}
+
+.badge{
+    display:inline-block;
+    background:#eff6ff;
+    color:#0b5ed7;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    margin-right:5px;
+    margin-bottom:5px;
+}
+
+.empty{
+    background:#fff7d6;
+    padding:16px;
+    border-radius:14px;
+    color:#92400e;
 }
 </style>
 
-<div class="transport-hero">
-    <div class="transport-icon">🚌</div>
-    <div>
-        <h2>Transport Management</h2>
-        <p>Manage school buses, transport routes and learner assignments.</p>
-    </div>
-</div>
+<div class="transport-page">
 
-<div class="transport-grid">
-    <div class="transport-card">
-        <h3>Total Buses</h3>
-        <div class="num">{{ total_buses }}</div>
+    <div class="transport-hero">
+        <h2>🚌 Transport Overview</h2>
+        <p>
+            View school buses, routes, drivers and learner transport assignments.
+        </p>
     </div>
 
-    <div class="transport-card">
-        <h3>Total Routes</h3>
-        <div class="num">{{ total_routes }}</div>
+    <div class="transport-grid">
+        <div class="transport-card">
+            <h3>Total Buses</h3>
+            <div class="num">{{ total_buses }}</div>
+        </div>
+
+        <div class="transport-card">
+            <h3>Total Routes</h3>
+            <div class="num">{{ total_routes }}</div>
+        </div>
+
+        <div class="transport-card">
+            <h3>Assigned Pupils</h3>
+            <div class="num">{{ assigned_pupils }}</div>
+        </div>
+
+        <div class="transport-card">
+            <h3>Unassigned Bus Pupils</h3>
+            <div class="num">{{ unassigned_pupils }}</div>
+        </div>
     </div>
 
-    <div class="transport-card">
-        <h3>Assigned Pupils</h3>
-        <div class="num">{{ assigned_pupils }}</div>
+    {% if role in ["admin", "registrar", "receptionist", "bursar"] %}
+    <div class="panel-box">
+        <h3>⚙️ Transport Management</h3>
+
+        <div class="quick-links">
+            <a class="btn green" href="{{ url_for('transport_buses') }}">Manage Buses</a>
+            <a class="btn" href="{{ url_for('transport_drivers') }}">Drivers</a>
+            <a class="btn" href="{{ url_for('transport_routes') }}">Transport Routes</a>
+            <a class="btn" href="{{ url_for('assign_transport') }}">Assign Pupils</a>
+            <a class="btn" href="{{ url_for('transport_reports') }}">Transport Reports</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="panel-box">
+        <h3>🚌 Buses and Drivers</h3>
+
+        <div class="view-grid">
+            {% for b in buses %}
+            <div class="view-card">
+                <h3>{{ b.bus_name }}</h3>
+
+                <p>
+                    <span class="badge">{{ b.registration_no }}</span>
+                    <span class="badge">{{ b.capacity }} Seats</span>
+                </p>
+
+                <div class="info">
+                    <b>Driver:</b> {{ b.driver_name or "-" }}<br>
+                    <b>Driver Phone:</b> {{ b.driver_phone or "-" }}<br>
+                    <b>Status:</b> {{ b.status }}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty">
+                No buses registered yet.
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
-    <div class="transport-card">
-        <h3>Unassigned Bus Pupils</h3>
-        <div class="num">{{ unassigned_pupils }}</div>
+    <div class="panel-box">
+        <h3>👨‍🎓 Learner Transport Assignments</h3>
+
+        <div class="view-grid">
+            {% for a in assignments %}
+            <div class="view-card">
+                <h3>{{ a.pupil.full_name if a.pupil else "-" }}</h3>
+
+                <p>
+                    <span class="badge">{{ a.pupil.admission_no if a.pupil else "-" }}</span>
+                    <span class="badge">{{ a.pupil.grade if a.pupil else "-" }}</span>
+                </p>
+
+                <div class="info">
+                    <b>Bus:</b> {{ a.bus.bus_name if a.bus else "-" }}<br>
+                    <b>Registration:</b> {{ a.bus.registration_no if a.bus else "-" }}<br>
+                    <b>Driver:</b> {{ a.bus.driver_name if a.bus else "-" }}<br>
+                    <b>Driver Phone:</b> {{ a.bus.driver_phone if a.bus else "-" }}<br>
+                    <b>Route:</b> {{ a.route.route_name if a.route else "-" }}<br>
+                    <b>Pickup Point:</b> {{ a.pickup_point or "-" }}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty">
+                No learner transport assignments found.
+            </div>
+            {% endfor %}
+        </div>
     </div>
-</div>
 
-<div class="quick-panel">
-    <h3>Quick Actions</h3>
-
-   <div class="quick-links">
-    <a class="btn green" href="{{ url_for('transport_buses') }}">Manage Buses</a>
-    <a class="btn" href="{{ url_for('transport_drivers') }}">Drivers</a>
-    <a class="btn" href="{{ url_for('transport_routes') }}">Transport Routes</a>
-    <a class="btn" href="{{ url_for('assign_transport') }}">Assign Pupils</a>
-    <a class="btn" href="{{ url_for('transport_reports') }}">Transport Reports</a>
-</div>
 </div>
 
 {% endblock %}
