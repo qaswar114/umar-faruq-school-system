@@ -3,7 +3,7 @@
 
 <style>
 .pay-page{
-    max-width:1150px;
+    max-width:1600px;
     margin:0 auto;
 }
 
@@ -17,11 +17,11 @@
 
 .pay-hero h2{
     margin:0;
-    font-size:27px;
+    font-size:30px;
 }
 
 .pay-hero p{
-    margin:6px 0 0;
+    margin:8px 0 0;
     color:#dbeafe;
 }
 
@@ -45,6 +45,7 @@
 .section-title h3{
     margin:0;
     font-size:20px;
+    color:#0b5ed7;
 }
 
 .muted{
@@ -87,6 +88,14 @@
     font-size:18px;
     font-weight:bold;
     margin-bottom:0;
+}
+
+.filter-box{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:14px;
 }
 
 .pay-actions{
@@ -143,6 +152,17 @@
     white-space:nowrap;
 }
 
+.grade-pill{
+    display:inline-block;
+    background:#ecfdf5;
+    color:#159947;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+    margin-top:5px;
+}
+
 .total-money{
     font-weight:900;
     color:#159947;
@@ -172,22 +192,49 @@
 <div class="pay-page">
 
     <div class="pay-hero">
-        <h2>Collect School Fees</h2>
-        <p>Record payments, generate receipts and queue payment confirmations.</p>
+        <h2>💳 Collect School Fees</h2>
+        <p>Record payments, generate receipts and manage payment history by grade.</p>
     </div>
 
     <div class="pay-card">
         <div class="section-title">
-            <h3>💳 New Payment</h3>
-            <span class="muted">Academic Year {{ year }}</span>
+            <h3>New Payment</h3>
+            <span class="muted">
+                Academic Year {{ year }} |
+                Grade: {{ selected_grade }}
+            </span>
+        </div>
+
+        <div class="filter-box">
+            <form method="get" id="gradeFilterForm">
+                <div class="form-grid-2">
+                    <div>
+                        <label>Filter by Grade</label>
+                        <select name="grade"
+                                onchange="document.getElementById('gradeFilterForm').submit();">
+                            <option value="All" {% if selected_grade == "All" %}selected{% endif %}>
+                                All Grades
+                            </option>
+
+                            {% for g in grades %}
+                            <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
+                                {{ g }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Search Pupil</label>
+                        <input type="text"
+                               id="studentSearch"
+                               placeholder="Type admission number, learner name or grade...">
+                    </div>
+                </div>
+            </form>
         </div>
 
         <form method="post">
-
-            <label>Search Pupil</label>
-            <input type="text"
-                   id="studentSearch"
-                   placeholder="Type admission number, pupil name or grade...">
 
             <label>Pupil</label>
             <select name="pupil_id" required>
@@ -275,7 +322,12 @@
     <div class="pay-card">
         <div class="section-title">
             <h3>🧾 Recent Payments</h3>
-            <span class="muted">Latest {{ payments|length }} records</span>
+            <span class="muted">
+                Latest {{ payments|length }} records
+                {% if selected_grade != "All" %}
+                    for {{ selected_grade }}
+                {% endif %}
+            </span>
         </div>
 
         <div class="table-wrap">
@@ -299,6 +351,10 @@
 
                     <td>
                         <b>{{ p.pupil.full_name if p.pupil else "Deleted / Missing Pupil" }}</b>
+                        {% if p.pupil %}
+                        <br>
+                        <span class="grade-pill">{{ p.pupil.grade }}</span>
+                        {% endif %}
                     </td>
 
                     <td>{{ p.term }}</td>
@@ -319,7 +375,7 @@
                 {% else %}
                 <tr>
                     <td colspan="7" class="empty-row">
-                        No payments recorded yet.
+                        No payments recorded for this selection.
                     </td>
                 </tr>
                 {% endfor %}
