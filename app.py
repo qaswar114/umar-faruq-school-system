@@ -7966,14 +7966,13 @@ def assign_transport():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "principal", "registrar", "receptionist", "bursar"):
+    if not role_allowed("admin", "registrar", "receptionist", "bursar"):
         flash("Access denied.")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("transport"))
 
     school_id = current_school_id()
 
     if request.method == "POST":
-
         pupil_id = int(request.form["pupil_id"])
         bus_id = int(request.form["bus_id"])
         route_id = int(request.form["route_id"])
@@ -8047,7 +8046,8 @@ def assign_transport():
         pupils=pupils,
         buses=buses,
         routes=routes,
-        assignments=assignments
+        assignments=assignments,
+        money=money
     )
     
 
