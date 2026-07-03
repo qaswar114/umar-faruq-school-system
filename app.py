@@ -7901,6 +7901,28 @@ def transport_routes():
         money=money
     )
 
+@app.route("/delete_transport_route/<int:route_id>")
+def delete_transport_route(route_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "registrar", "receptionist", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("transport"))
+
+    school_id = current_school_id()
+
+    route = TransportRoute.query.filter_by(
+        id=route_id,
+        school_id=school_id
+    ).first_or_404()
+
+    route.status = "Deleted"
+    db.session.commit()
+
+    flash("Transport route deleted successfully.")
+    return redirect(url_for("transport_routes"))
+
 @app.route("/transport_drivers", methods=["GET", "POST"])
 def transport_drivers():
     if not login_required():
