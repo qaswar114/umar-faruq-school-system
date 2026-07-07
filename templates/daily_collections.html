@@ -1,54 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <div class="panel">
     <h2>Daily Collection Report</h2>
 
-    <form method="get" class="two">
+    <form method="get" class="three">
         <div>
             <label>Select Date</label>
             <input type="date" name="date" value="{{ selected_date }}">
         </div>
 
         <div>
+            <label>Filter by Grade</label>
+            <select name="grade">
+                <option value="All" {% if selected_grade == "All" %}selected{% endif %}>All Grades</option>
+                {% for g in grades %}
+                <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
             <br>
             <button class="btn">Load Report</button>
             <button type="button" class="btn green" onclick="window.print()">Print</button>
-            <a href="/daily_collections?date={{ selected_date }}&pdf=1" class="btn">Export PDF</a>
+            <a href="/daily_collections?date={{ selected_date }}&grade={{ selected_grade }}&pdf=1" class="btn">
+                Export PDF
+            </a>
         </div>
     </form>
 </div>
 
 <div class="panel">
-    <h3>Collections for {{ selected_date }}</h3>
+    <h3>
+        Collections for {{ selected_date }}
+        {% if selected_grade != "All" %}
+            - {{ selected_grade }}
+        {% endif %}
+    </h3>
+
     <h2>Total Collected: {{ money(total) }}</h2>
+
     <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; margin:25px 0;">
-    <div style="background:#eaf2ff; padding:18px; border-radius:12px;">
-        <b>Tuition Total</b>
-        <h3>{{ money(tuition_total) }}</h3>
-    </div>
+        <div style="background:#eaf2ff; padding:18px; border-radius:12px;">
+            <b>Tuition Total</b>
+            <h3>{{ money(tuition_total) }}</h3>
+        </div>
 
-    <div style="background:#eafff3; padding:18px; border-radius:12px;">
-        <b>Bus Total</b>
-        <h3>{{ money(bus_total) }}</h3>
-    </div>
+        <div style="background:#eafff3; padding:18px; border-radius:12px;">
+            <b>Bus Total</b>
+            <h3>{{ money(bus_total) }}</h3>
+        </div>
 
-    <div style="background:#fff6e6; padding:18px; border-radius:12px;">
-        <b>Exam Total</b>
-        <h3>{{ money(exam_total) }}</h3>
-    </div>
+        <div style="background:#fff6e6; padding:18px; border-radius:12px;">
+            <b>Exam Total</b>
+            <h3>{{ money(exam_total) }}</h3>
+        </div>
 
-    <div style="background:#f3eaff; padding:18px; border-radius:12px;">
-        <b>Admission Total</b>
-        <h3>{{ money(admission_total) }}</h3>
+        <div style="background:#f3eaff; padding:18px; border-radius:12px;">
+            <b>Admission Total</b>
+            <h3>{{ money(admission_total) }}</h3>
+        </div>
     </div>
-</div>
 
     <table>
         <tr>
             <th>No.</th>
             <th>Receipt</th>
             <th>Pupil</th>
+            <th>Grade</th>
             <th>Term</th>
             <th>Month</th>
             <th>Method</th>
@@ -56,26 +77,27 @@
             <th>Amount</th>
         </tr>
 
-      {% for p in payments %}
-<tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ p.receipt_no }}</td>
-    <td>{{ p.pupil.full_name }}</td>
-    <td>{{ p.term }}</td>
-    <td>{{ p.month }}</td>
-    <td>{{ p.payment_method }}</td>
-    <td>{{ p.collected_by }}</td>
-    <td>{{ money(p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) }}</td>
-</tr>
+        {% for p in payments %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.receipt_no }}</td>
+            <td>{{ p.pupil.full_name }}</td>
+            <td>{{ p.pupil.grade }}</td>
+            <td>{{ p.term }}</td>
+            <td>{{ p.month }}</td>
+            <td>{{ p.payment_method }}</td>
+            <td>{{ p.collected_by }}</td>
+            <td>{{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}</td>
+        </tr>
 
-{% else %}
-<tr>
-    <td colspan="8" style="text-align:center; padding:20px;">
-        No collections found for this date.
-    </td>
-</tr>
-
-{% endfor %}
+        {% else %}
+        <tr>
+            <td colspan="9" style="text-align:center; padding:20px;">
+                No collections found for this date and grade.
+            </td>
+        </tr>
+        {% endfor %}
     </table>
 </div>
+
 {% endblock %}
