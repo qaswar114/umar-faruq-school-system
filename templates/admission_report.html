@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.report-page{max-width:1600px;margin:0 auto}
+.report-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;border-radius:18px;padding:24px;margin-bottom:18px
+}
+.report-hero h2{margin:0;font-size:30px}
+.report-hero p{margin:8px 0 0;color:#dbeafe}
+.report-card{
+    background:white;border-radius:18px;padding:20px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 6px 18px rgba(15,23,42,.07);
+    margin-bottom:18px
+}
+.filter-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr auto;
+    gap:12px;align-items:end
+}
+.summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:14px;margin-bottom:18px
+}
+.summary-box{
+    background:#f8fafc;border:1px solid #e5e7eb;
+    border-radius:16px;padding:16px
+}
+.summary-box small{color:#64748b;font-weight:bold}
+.summary-box h2{margin:8px 0 0;color:#0b5ed7}
+.table-wrap{overflow-x:auto}
+.report-table{width:100%;border-collapse:collapse}
+.report-table th{
+    background:#f8fafc;color:#475569;
+    padding:12px;text-align:left
+}
+.report-table td{
+    padding:12px;border-bottom:1px solid #e5e7eb
+}
+.badge{
+    display:inline-block;padding:6px 10px;border-radius:999px;
+    background:#eff6ff;color:#0b5ed7;font-weight:bold;font-size:12px
+}
+.badge.green{background:#ecfdf5;color:#159947}
+.badge.red{background:#fee2e2;color:#dc2626}
+.print-actions{
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:12px
+}
+@media(max-width:900px){
+    .filter-grid{grid-template-columns:1fr}
+}
+@media print{
+    .filter-card,.print-actions{display:none!important}
+}
+</style>
+
+<div class="report-page">
+
+    <div class="report-hero">
+        <h2>🎓 Admission Report</h2>
+        <p>View registered learners by grade, gender and status.</p>
+    </div>
+
+    <div class="report-card filter-card">
+        <form method="get">
+            <div class="filter-grid">
+                <div>
+                    <label>Grade</label>
+                    <select name="grade">
+                        <option value="All" {% if selected_grade=="All" %}selected{% endif %}>All Grades</option>
+                        {% for g in grades %}
+                        <option value="{{ g }}" {% if selected_grade==g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option value="All" {% if selected_gender=="All" %}selected{% endif %}>All</option>
+                        <option value="Male" {% if selected_gender=="Male" %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if selected_gender=="Female" %}selected{% endif %}>Female</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="All" {% if selected_status=="All" %}selected{% endif %}>All</option>
+                        <option value="Active" {% if selected_status=="Active" %}selected{% endif %}>Active</option>
+                        <option value="Inactive" {% if selected_status=="Inactive" %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+
+                <button class="btn green" type="submit">Load Report</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="print-actions">
+        <button class="btn green" onclick="window.print()">Print Report</button>
+        <a class="btn" href="{{ url_for('reports_dashboard') }}">Back to Reports</a>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-box"><small>Total Learners</small><h2>{{ total }}</h2></div>
+        <div class="summary-box"><small>Boys</small><h2>{{ boys }}</h2></div>
+        <div class="summary-box"><small>Girls</small><h2>{{ girls }}</h2></div>
+        <div class="summary-box"><small>Active</small><h2>{{ active }}</h2></div>
+        <div class="summary-box"><small>Inactive</small><h2>{{ inactive }}</h2></div>
+    </div>
+
+    <div class="report-card">
+        <h3>Admission List</h3>
+
+        <div class="table-wrap">
+            <table class="report-table">
+                <tr>
+                    <th>Admission No</th>
+                    <th>Pupil Name</th>
+                    <th>Gender</th>
+                    <th>Grade</th>
+                    <th>Guardian</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                </tr>
+
+                {% for p in pupils %}
+                <tr>
+                    <td><b>{{ p.admission_no }}</b></td>
+                    <td>{{ p.full_name }}</td>
+                    <td>{{ p.gender }}</td>
+                    <td><span class="badge">{{ p.grade }}</span></td>
+                    <td>{{ p.guardian_name }}</td>
+                    <td>{{ p.guardian_phone }}</td>
+                    <td>
+                        {% if p.status == "Active" %}
+                            <span class="badge green">Active</span>
+                        {% else %}
+                            <span class="badge red">{{ p.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">No learners found for this selection.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
