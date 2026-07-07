@@ -901,13 +901,29 @@ class InventoryTransaction(db.Model):
     item = db.relationship("InventoryItem")
 
 def money(n):
-    return "KES {:,.2f}".format(float(n or 0))
+    return "KES {:.2f}".format(float(n or 0))
+
 
 def generate_pdf(html):
     pdf = BytesIO()
     pisa.CreatePDF(html, dest=pdf)
     pdf.seek(0)
     return pdf
+
+
+def normalize_role(role):
+    role = (role or "").strip().lower()
+
+    aliases = {
+        "principal": "headteacher",
+        "head teacher": "headteacher",
+        "deputy principal": "deputy headteacher",
+        "deputy head teacher": "deputy headteacher",
+        "deputy headteacher": "deputy headteacher",
+    }
+
+    return aliases.get(role, role)
+
 
 def current_year():
     return datetime.now().year
