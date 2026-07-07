@@ -8821,6 +8821,20 @@ def admission_report():
         selected_status=status
     )
 
+@app.route("/cash_book")
+def cash_book():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    return render_template(
+        "cash_book.html",
+        settings=get_settings()
+    )
+
 @app.route("/inventory", methods=["GET", "POST"])
 def inventory():
     if not login_required():
