@@ -8759,6 +8759,68 @@ def parent_statement():
         money=money
     )
 
+@app.route("/admission_report")
+def admission_report():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "registrar",
+        "receptionist"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    grade = request.args.get("grade", "All")
+    gender = request.args.get("gender", "All")
+    status = request.args.get("status", "All")
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id
+    )
+
+    if grade != "All":
+        pupils = pupils.filter_by(grade=grade)
+
+    if gender != "All":
+        pupils = pupils.filter_by(gender=gender)
+
+    if status != "All":
+        pupils = pupils.filter_by(status=status)
+
+    pupils = pupils.order_by(
+        Pupil.grade,
+        Pupil.full_name
+    ).all()
+
+    total = len(pupils)
+
+    boys = len([p for p in pupils if p.gender == "Male"])
+    girls = len([p for p in pupils if p.gender == "Female"])
+
+    active = len([p for p in pupils if p.status == "Active"])
+    inactive = len([p for p in pupils if p.status != "Active"])
+
+    return render_template(
+        "admission_report.html",
+        settings=get_settings(),
+        pupils=pupils,
+        grades=GRADES,
+        total=total,
+        boys=boys,
+        girls=girls,
+        active=active,
+        inactive=inactive,
+        selected_grade=grade,
+        selected_gender=gender,
+        selected_status=status
+    )
+
 @app.route("/inventory", methods=["GET", "POST"])
 def inventory():
     if not login_required():
