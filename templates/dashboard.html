@@ -9,7 +9,6 @@
 }
 .hero h2{margin:0;font-size:30px}
 .hero p{margin:8px 0 0;color:#dbeafe}
-
 .card-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -24,7 +23,6 @@
 .stat-card h2{margin:10px 0 0;font-size:28px;color:#0b5ed7}
 .stat-card.green h2{color:#159947}
 .stat-card.red h2{color:#dc2626}
-
 .main-grid{
     display:grid;
     grid-template-columns:1.3fr 1fr;
@@ -37,7 +35,6 @@
     margin-bottom:16px
 }
 .panel-box h3{margin-top:0;color:#0b5ed7}
-
 .quick-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
@@ -50,7 +47,6 @@
 }
 .quick-action span{font-size:28px;display:block;margin-bottom:8px}
 .quick-action small{display:block;color:#64748b;margin-top:5px}
-
 .info-row{
     display:flex;justify-content:space-between;
     background:#f8fafc;border:1px solid #e5e7eb;
@@ -69,289 +65,173 @@
 
 {% if dashboard_role in ["headteacher", "deputy headteacher"] %}
 
-    <div class="hero">
-        <h2>🎓 Academic Dashboard</h2>
-        <p>Monitor learners, attendance, academics and school communication.</p>
+<div class="hero">
+    <h2>🎓 Academic Dashboard</h2>
+    <p>Monitor learners, attendance, academics and school communication.</p>
+</div>
+
+<div class="card-grid">
+    <div class="stat-card"><small>Total Pupils</small><h2>{{ total_pupils }}</h2></div>
+    <div class="stat-card green"><small>Present Today</small><h2>{{ present_today }}</h2></div>
+    <div class="stat-card red"><small>Absent Today</small><h2>{{ absent_today }}</h2></div>
+    <div class="stat-card"><small>Attendance Rate</small><h2>{{ attendance_rate }}%</h2></div>
+    <div class="stat-card"><small>New Admissions This Month</small><h2>{{ new_admissions_month }}</h2></div>
+</div>
+
+<div class="main-grid">
+    <div>
+        <div class="panel-box">
+            <h3>⚡ Quick Actions</h3>
+            <div class="quick-grid">
+                <a class="quick-action" href="/pupils"><span>🎓</span>Admissions<small>Manage learners</small></a>
+                <a class="quick-action" href="/attendance"><span>✅</span>Mark Attendance<small>Daily attendance</small></a>
+                <a class="quick-action" href="/attendance_report"><span>📋</span>Attendance Report<small>Review attendance</small></a>
+                <a class="quick-action" href="/subjects"><span>📚</span>Subjects<small>Academic setup</small></a>
+                <a class="quick-action" href="/homework"><span>📝</span>Homework<small>Assignments</small></a>
+                <a class="quick-action" href="/timetable_dashboard"><span>📅</span>Timetable<small>Class schedule</small></a>
+                <a class="quick-action" href="/exams"><span>🧪</span>Exams<small>Assessment setup</small></a>
+                <a class="quick-action" href="/report_cards"><span>📊</span>Report Cards<small>Learner performance</small></a>
+                <a class="quick-action" href="/transport"><span>🚌</span>Transport<small>School transport</small></a>
+                <a class="quick-action" href="/announcements"><span>📢</span>Announcements<small>School updates</small></a>
+            </div>
+        </div>
     </div>
 
-    <div class="card-grid">
-        <div class="stat-card">
-            <small>Total Pupils</small>
-            <h2>{{ total_pupils }}</h2>
-        </div>
-
-        <div class="stat-card green">
-            <small>Present Today</small>
-            <h2>{{ present_today }}</h2>
-        </div>
-
-        <div class="stat-card red">
-            <small>Absent Today</small>
-            <h2>{{ absent_today }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <small>Attendance Rate</small>
-            <h2>{{ attendance_rate }}%</h2>
-        </div>
-
-        <div class="stat-card">
-            <small>New Admissions This Month</small>
-            <h2>{{ new_admissions_month }}</h2>
+    <div>
+        <div class="panel-box">
+            <h3>👥 Student Overview</h3>
+            <div class="info-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
+            <div class="info-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
+            <div class="info-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
         </div>
     </div>
-
-    <div class="main-grid">
-
-        <div>
-            <div class="panel-box">
-                <h3>⚡ Quick Actions</h3>
-
-                <div class="quick-grid">
-                    <a class="quick-action" href="/pupils">
-                        <span>🎓</span>Admissions
-                        <small>Manage learners</small>
-                    </a>
-
-                    <a class="quick-action" href="/attendance">
-                        <span>✅</span>Mark Attendance
-                        <small>Daily attendance</small>
-                    </a>
-
-                    <a class="quick-action" href="/attendance_report">
-                        <span>📋</span>Attendance Report
-                        <small>Review attendance</small>
-                    </a>
-
-                    <a class="quick-action" href="/subjects">
-                        <span>📚</span>Subjects
-                        <small>Academic setup</small>
-                    </a>
-
-                    <a class="quick-action" href="/homework">
-                        <span>📝</span>Homework
-                        <small>Assignments</small>
-                    </a>
-
-                    <a class="quick-action" href="/timetable_dashboard">
-                        <span>📅</span>Timetable
-                        <small>Class schedule</small>
-                    </a>
-
-                    <a class="quick-action" href="/exams">
-                        <span>🧪</span>Exams
-                        <small>Assessment setup</small>
-                    </a>
-
-                    <a class="quick-action" href="/report_cards">
-                        <span>📊</span>Report Cards
-                        <small>Learner performance</small>
-                    </a>
-
-                    <a class="quick-action" href="/transport">
-                        <span>🚌</span>Transport
-                        <small>School transport</small>
-                    </a>
-
-                    <a class="quick-action" href="/announcements">
-                        <span>📢</span>Announcements
-                        <small>School updates</small>
-                    </a>
-                </div>
-            </div>
-
-            <div class="panel-box">
-                <h3>🧪 Upcoming Exams</h3>
-
-                {% for exam in upcoming_exams %}
-                    <div class="info-row">
-                        <span>{{ exam.exam_name }} - {{ exam.grade }}</span>
-                        <span>{{ exam.term }} {{ exam.academic_year }}</span>
-                    </div>
-                {% else %}
-                    <div class="notice">No upcoming exams found.</div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div>
-            <div class="panel-box">
-                <h3>👥 Student Overview</h3>
-
-                <div class="info-row">
-                    <span>Active Pupils</span>
-                    <span>{{ active_pupils }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span>Inactive Pupils</span>
-                    <span>{{ inactive_pupils }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span>Bus Pupils</span>
-                    <span>{{ bus_pupils }}</span>
-                </div>
-            </div>
-
-            <div class="panel-box">
-                <h3>📢 Recent Announcements</h3>
-
-                {% for a in recent_announcements %}
-                    <div class="notice">
-                        <b>{{ a.title }}</b><br>
-                        {{ a.message }}
-                    </div>
-                {% else %}
-                    <div class="notice">No recent announcements.</div>
-                {% endfor %}
-            </div>
-        </div>
-
-    </div>
+</div>
 
 {% elif dashboard_role == "bursar" %}
 
-    <div class="hero">
-        <h2>💰 Finance Dashboard</h2>
-        <p>Manage school collections, balances, expenses and defaulters.</p>
+<div class="hero">
+    <h2>💰 Finance Dashboard</h2>
+    <p>Current finance position for {{ current_term }} {{ year }}.</p>
+</div>
+
+<div class="card-grid">
+    <div class="stat-card green">
+        <small>Today's Collection</small>
+        <h2>{{ money(today_collection) }}</h2>
     </div>
 
-    <div class="card-grid">
-        <div class="stat-card green">
-            <small>Today's Collection</small>
-            <h2>{{ today_collection }}</h2>
-        </div>
-
-        <div class="stat-card green">
-            <small>This Month Collection</small>
-            <h2>{{ month_collection }}</h2>
-        </div>
-
-        <div class="stat-card red">
-            <small>Outstanding Fees</small>
-            <h2>{{ outstanding }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <small>Defaulters</small>
-            <h2>{{ defaulters }}</h2>
-        </div>
+    <div class="stat-card green">
+        <small>This Month Collection</small>
+        <h2>{{ money(month_collection) }}</h2>
     </div>
 
-    <div class="panel-box">
-        <h3>⚡ Finance Actions</h3>
-
-        <div class="quick-grid">
-            <a class="quick-action" href="/payments"><span>💳</span>Payments<small>Collect fees</small></a>
-            <a class="quick-action" href="/fees"><span>📌</span>Fee Structure<small>Set charges</small></a>
-            <a class="quick-action" href="/balances"><span>📄</span>Balances<small>View balances</small></a>
-            <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Fee arrears</small></a>
-            <a class="quick-action" href="/expenses"><span>🧾</span>Expenses<small>Record costs</small></a>
-            <a class="quick-action" href="/expense_report"><span>📊</span>Expense Report<small>Analyze spending</small></a>
-        </div>
+    <div class="stat-card green">
+        <small>Current Term Collection</small>
+        <h2>{{ money(term_collection) }}</h2>
     </div>
+
+    <div class="stat-card red">
+        <small>Current Term Outstanding</small>
+        <h2>{{ money(outstanding) }}</h2>
+    </div>
+</div>
+
+<div class="panel-box">
+    <h3>⚡ Finance Actions</h3>
+    <div class="quick-grid">
+        <a class="quick-action" href="/payments"><span>💳</span>Payments<small>Collect fees</small></a>
+        <a class="quick-action" href="/fees"><span>📌</span>Fee Structure<small>Set charges</small></a>
+        <a class="quick-action" href="/balances"><span>📄</span>Balances<small>View balances</small></a>
+        <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Fee arrears</small></a>
+        <a class="quick-action" href="/expenses"><span>🧾</span>Expenses<small>Record costs</small></a>
+        <a class="quick-action" href="/expense_report"><span>📊</span>Expense Report<small>Analyze spending</small></a>
+    </div>
+</div>
 
 {% else %}
 
-    <div class="hero">
-        <h2>🏫 School Executive Dashboard</h2>
-        <p>Full school overview for administration, finance, academics and operations.</p>
+<div class="hero">
+    <h2>🏫 School Executive Dashboard</h2>
+    <p>Full school overview for administration, finance, academics and operations.</p>
+</div>
+
+<div class="card-grid">
+    <div class="stat-card green">
+        <small>Today's Collection</small>
+        <h2>{{ money(today_collection) }}</h2>
     </div>
 
-    <div class="card-grid">
-        <div class="stat-card green">
-            <small>Today's Collection</small>
-            <h2>{{ today_collection }}</h2>
+    <div class="stat-card green">
+        <small>This Month Collection</small>
+        <h2>{{ money(month_collection) }}</h2>
+    </div>
+
+    <div class="stat-card green">
+        <small>Current Term Collection</small>
+        <h2>{{ money(term_collection) }}</h2>
+    </div>
+
+    <div class="stat-card red">
+        <small>Current Term Outstanding</small>
+        <h2>{{ money(outstanding) }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <small>Total Pupils</small>
+        <h2>{{ total_pupils }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <small>Attendance Today</small>
+        <h2>{{ present_today }} / {{ total_pupils }}</h2>
+    </div>
+</div>
+
+<div class="main-grid">
+    <div>
+        <div class="panel-box">
+            <h3>📊 Finance Overview</h3>
+            <div class="info-row"><span>This Month Collection</span><span>{{ money(month_collection) }}</span></div>
+            <div class="info-row"><span>Current Term Collection</span><span>{{ money(term_collection) }}</span></div>
+            <div class="info-row"><span>Current Term Outstanding</span><span>{{ money(outstanding) }}</span></div>
+            <div class="info-row"><span>Defaulters</span><span>{{ defaulters }}</span></div>
         </div>
 
-        <div class="stat-card green">
-            <small>This Month Collection</small>
-            <h2>{{ month_collection }}</h2>
-        </div>
-
-        <div class="stat-card red">
-            <small>Outstanding Fees</small>
-            <h2>{{ outstanding }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <small>Total Pupils</small>
-            <h2>{{ total_pupils }}</h2>
-        </div>
-
-        <div class="stat-card">
-            <small>Attendance Today</small>
-            <h2>{{ present_today }} / {{ total_pupils }}</h2>
+        <div class="panel-box">
+            <h3>⚡ Quick Actions</h3>
+            <div class="quick-grid">
+                <a class="quick-action" href="/pupils"><span>🎓</span>Register Pupil<small>Admissions</small></a>
+                <a class="quick-action" href="/payments"><span>💳</span>Collect Fees<small>Payments</small></a>
+                <a class="quick-action" href="/balances"><span>📄</span>Statement<small>Balances</small></a>
+                <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Fee arrears</small></a>
+                <a class="quick-action" href="/attendance"><span>✅</span>Attendance<small>Daily mark</small></a>
+                <a class="quick-action" href="/transport"><span>🚌</span>Transport<small>Bus module</small></a>
+            </div>
         </div>
     </div>
 
-    <div class="main-grid">
-
-        <div>
-            <div class="panel-box">
-                <h3>📊 Finance Overview</h3>
-
-                <div class="info-row">
-                    <span>Total Collected</span>
-                    <span>{{ total_collected }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span>Expenses This Month</span>
-                    <span>{{ month_expenses }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span>Net Income</span>
-                    <span>{{ net_income }}</span>
-                </div>
-
-                <div class="info-row">
-                    <span>Defaulters</span>
-                    <span>{{ defaulters }}</span>
-                </div>
-            </div>
-
-            <div class="panel-box">
-                <h3>⚡ Quick Actions</h3>
-
-                <div class="quick-grid">
-                    <a class="quick-action" href="/pupils"><span>🎓</span>Register Pupil<small>Admissions</small></a>
-                    <a class="quick-action" href="/payments"><span>💳</span>Collect Fees<small>Payments</small></a>
-                    <a class="quick-action" href="/balances"><span>📄</span>Statement<small>Balances</small></a>
-                    <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Fee arrears</small></a>
-                    <a class="quick-action" href="/attendance"><span>✅</span>Attendance<small>Daily mark</small></a>
-                    <a class="quick-action" href="/transport"><span>🚌</span>Transport<small>Bus module</small></a>
-                </div>
-            </div>
+    <div>
+        <div class="panel-box">
+            <h3>👥 Student Overview</h3>
+            <div class="info-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
+            <div class="info-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
+            <div class="info-row"><span>New Admissions This Month</span><span>{{ new_admissions_month }}</span></div>
+            <div class="info-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
         </div>
 
-        <div>
-            <div class="panel-box">
-                <h3>👥 Student Overview</h3>
-
-                <div class="info-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
-                <div class="info-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
-                <div class="info-row"><span>New Admissions This Month</span><span>{{ new_admissions_month }}</span></div>
-                <div class="info-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
-            </div>
-
-            <div class="panel-box">
-                <h3>📢 Recent Announcements</h3>
-
-                {% for a in recent_announcements %}
-                    <div class="notice">
-                        <b>{{ a.title }}</b><br>
-                        {{ a.message }}
-                    </div>
-                {% else %}
-                    <div class="notice">No recent announcements.</div>
-                {% endfor %}
-            </div>
+        <div class="panel-box">
+            <h3>📢 Recent Announcements</h3>
+            {% for a in recent_announcements %}
+                <div class="notice">
+                    <b>{{ a.title }}</b><br>
+                    {{ a.message }}
+                </div>
+            {% else %}
+                <div class="notice">No recent announcements.</div>
+            {% endfor %}
         </div>
-
     </div>
+</div>
 
 {% endif %}
 
