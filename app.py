@@ -1892,23 +1892,44 @@ def dashboard():
     else:
         current_term = "Term 2"
 
-    current_term_months = [m for m in TERM_MONTHS[current_term] if m <= month]
+    current_term_months_int = [
+        m for m in TERM_MONTHS[current_term]
+        if m <= month
+    ]
 
-    total_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").count()
+    if not current_term_months_int:
+        current_term_months_int = TERM_MONTHS[current_term]
+
+    current_term_months = [str(m) for m in current_term_months_int]
+
+    total_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
 
     today_collection = db.session.query(
-        db.func.coalesce(db.func.sum(
-            Payment.tuition_paid + Payment.bus_paid + Payment.exam_paid + Payment.admission_paid
-        ), 0)
+        db.func.coalesce(
+            db.func.sum(
+                Payment.tuition_paid +
+                Payment.bus_paid +
+                Payment.exam_paid +
+                Payment.admission_paid
+            ), 0
+        )
     ).filter(
         Payment.school_id == school_id,
         Payment.payment_date == today
     ).scalar()
 
     month_collection = db.session.query(
-        db.func.coalesce(db.func.sum(
-            Payment.tuition_paid + Payment.bus_paid + Payment.exam_paid + Payment.admission_paid
-        ), 0)
+        db.func.coalesce(
+            db.func.sum(
+                Payment.tuition_paid +
+                Payment.bus_paid +
+                Payment.exam_paid +
+                Payment.admission_paid
+            ), 0
+        )
     ).filter(
         Payment.school_id == school_id,
         Payment.academic_year == year,
@@ -1916,7 +1937,10 @@ def dashboard():
         Payment.month.in_(current_term_months)
     ).scalar()
 
-    active_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").all()
+    active_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).all()
 
     total_expected = 0
 
@@ -1972,6 +1996,7 @@ def dashboard():
         latest_payments=latest_payments,
         announcements=announcements,
         current_term=current_term,
+        current_term_months=current_term_months,
         year=year,
         money=money
     )
