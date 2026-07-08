@@ -8356,6 +8356,119 @@ def whatsapp_outbox():
         selected_category=selected_category
     )
 
+@app.route("/communication_center")
+def communication_center():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "principal",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "bursar",
+        "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+
+    sms_pending = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    sms_sent = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    sms_failed = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
+
+    whatsapp_pending = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    whatsapp_sent = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    whatsapp_failed = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
+
+    sms_today = SMSMessage.query.filter(
+        SMSMessage.school_id == school_id,
+        SMSMessage.created_at >= today_start
+    ).count()
+
+    whatsapp_today = WhatsAppMessage.query.filter(
+        WhatsAppMessage.school_id == school_id,
+        WhatsAppMessage.created_at >= today_start
+    ).count()
+
+    recent_sms = SMSMessage.query.filter_by(
+        school_id=school_id
+    ).order_by(SMSMessage.created_at.desc()).limit(8).all()
+
+    recent_whatsapp = WhatsAppMessage.query.filter_by(
+        school_id=school_id
+    ).order_by(WhatsAppMessage.created_at.desc()).limit(8).all()
+
+    categories = [
+        "General",
+        "Payment Confirmation",
+        "Fees",
+        "Attendance Alert",
+        "Exam Results",
+        "Announcement"
+    ]
+
+    sms_category_counts = {}
+    whatsapp_category_counts = {}
+
+    for c in categories:
+        sms_category_counts[c] = SMSMessage.query.filter_by(
+            school_id=school_id,
+            category=c
+        ).count()
+
+        whatsapp_category_counts[c] = WhatsAppMessage.query.filter_by(
+            school_id=school_id,
+            category=c
+        ).count()
+
+    wallet = get_sms_wallet()
+
+    return render_template(
+        "communication_center.html",
+        settings=get_settings(),
+        wallet=wallet,
+        sms_pending=sms_pending,
+        sms_sent=sms_sent,
+        sms_failed=sms_failed,
+        whatsapp_pending=whatsapp_pending,
+        whatsapp_sent=whatsapp_sent,
+        whatsapp_failed=whatsapp_failed,
+        sms_today=sms_today,
+        whatsapp_today=whatsapp_today,
+        recent_sms=recent_sms,
+        recent_whatsapp=recent_whatsapp,
+        categories=categories,
+        sms_category_counts=sms_category_counts,
+        whatsapp_category_counts=whatsapp_category_counts
+    )
+
 @app.route("/whatsapp_messages", methods=["GET", "POST"])
 def whatsapp_messages():
     if not login_required():
