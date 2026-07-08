@@ -1,153 +1,142 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% set today_amt = today_collection|default(0, true)|float %}
+{% set month_amt = month_collection|default(0, true)|float %}
+{% set term_amt = term_collection|default(0, true)|float %}
+{% set outstanding_amt = outstanding|default(0, true)|float %}
+{% set expense_amt = month_expenses|default(0, true)|float %}
+{% set total_cash = term_amt + outstanding_amt %}
+{% if total_cash <= 0 %}
+    {% set total_cash = 1 %}
+{% endif %}
+
 <style>
-.dashboard-page{max-width:1500px;margin:0 auto}
-
-.top-summary{
-    background:linear-gradient(135deg,#0b5ed7,#16a34a);
-    color:white;border-radius:18px;
-    padding:18px 22px;margin-bottom:14px;
+.dash{max-width:1500px;margin:0 auto;padding-bottom:30px}
+.top{
+    background:linear-gradient(135deg,#071f49,#0b5ed7,#16a34a);
+    color:white;border-radius:20px;padding:18px 22px;
     display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:16px;box-shadow:0 14px 35px rgba(15,23,42,.16)
 }
-.top-summary h2{margin:0;font-size:26px}
-.top-summary small{color:#e0f2fe;font-weight:bold}
+.top h2{margin:0;font-size:26px;font-weight:900}
+.top p{margin:5px 0 0;color:#dbeafe;font-weight:700}
+.badge{background:rgba(255,255,255,.18);padding:8px 13px;border-radius:999px;font-weight:900}
 
-.card-grid{
-    display:grid;
-    grid-template-columns:repeat(6,1fr);
-    gap:12px;margin-bottom:14px
+.cards{
+    display:grid;grid-template-columns:repeat(6,1fr);
+    gap:12px;margin-bottom:16px
 }
-.stat-card{
-    background:white;border-radius:16px;padding:14px;
-    border:1px solid #e5e7eb;
-    box-shadow:0 6px 16px rgba(15,23,42,.06);
-    min-height:95px
+.card{
+    background:white;border:1px solid #e5e7eb;border-radius:18px;
+    padding:15px;box-shadow:0 8px 20px rgba(15,23,42,.07);
+    min-height:105px
 }
-.stat-card small{color:#64748b;font-weight:900;font-size:13px}
-.stat-card h2{margin:10px 0 0;font-size:22px;color:#0b5ed7}
-.green h2{color:#159947}
-.red h2{color:#dc2626}
-.dark h2{color:#0f172a}
+.card small{font-weight:900;color:#64748b}
+.card h2{margin:10px 0 0;font-size:23px;color:#0b5ed7}
+.green h2{color:#159947}.red h2{color:#dc2626}.dark h2{color:#0f172a}.orange h2{color:#d97706}
 
-.main-grid{
-    display:grid;
-    grid-template-columns:1.1fr .9fr;
-    gap:14px
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+.panel{
+    background:white;border:1px solid #e5e7eb;border-radius:20px;
+    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07);
+    margin-bottom:16px
 }
-.panel-box{
-    background:white;border-radius:16px;padding:16px;
-    border:1px solid #e5e7eb;
-    box-shadow:0 6px 16px rgba(15,23,42,.06);
-    margin-bottom:14px
-}
-.panel-box h3{margin:0 0 12px;color:#0b5ed7;font-size:20px}
+.panel h3{margin:0 0 14px;color:#0b5ed7;font-size:22px}
 
-.info-row{
-    display:flex;justify-content:space-between;
-    padding:11px 13px;border-radius:12px;
+.row{
+    display:flex;justify-content:space-between;align-items:center;
     background:#f8fafc;border:1px solid #e5e7eb;
-    margin-bottom:8px;font-weight:900
-}
-
-.quick-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px
-}
-.quick-action{
-    text-decoration:none;color:#0f172a;
-    background:#f8fafc;border:1px solid #e5e7eb;
-    border-radius:14px;padding:13px;
+    padding:12px 14px;border-radius:14px;margin-bottom:9px;
     font-weight:900
 }
-.quick-action span{font-size:24px;display:block;margin-bottom:6px}
-.quick-action small{display:block;color:#64748b;margin-top:4px;font-size:12px}
+.bar-wrap{margin-bottom:14px}
+.bar-title{display:flex;justify-content:space-between;font-weight:900;margin-bottom:7px}
+.bar{height:15px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,#0b5ed7,#16a34a);border-radius:999px}
+.fill.red{background:linear-gradient(90deg,#dc2626,#f97316)}
+.fill.orange{background:linear-gradient(90deg,#f59e0b,#d97706)}
 
-.notice{
-    background:#fff7d6;border-radius:12px;
-    padding:12px;font-weight:700
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.action{
+    text-decoration:none;color:#0f172a;background:#f8fafc;
+    border:1px solid #e5e7eb;border-radius:16px;
+    padding:14px;font-weight:900
 }
+.action span{font-size:26px;display:block;margin-bottom:7px}
+.action small{display:block;color:#64748b;margin-top:4px}
 
-@media(max-width:1200px){
-    .card-grid{grid-template-columns:repeat(3,1fr)}
-}
-@media(max-width:900px){
-    .card-grid,.main-grid,.quick-grid{grid-template-columns:1fr}
-    .top-summary{display:block}
-}
+.notice{background:#fff7d6;border-radius:14px;padding:13px;font-weight:800}
+
+@media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.cards,.grid,.actions{grid-template-columns:1fr}.top{display:block}}
 </style>
 
-<div class="dashboard-page">
+<div class="dash">
 
-<div class="top-summary">
+<div class="top">
     <div>
         <h2>🏫 Executive Dashboard</h2>
-        <small>{{ current_term }} {{ year }} | {{ current_month_name }}</small>
+        <p>{{ current_term|default("Current Term") }} {{ year }} | {{ current_month_name|default("") }}</p>
     </div>
-    <div>
-        <small>EduManage School Overview</small>
-    </div>
+    <div class="badge">EduManage SaaS</div>
 </div>
 
-<div class="card-grid">
-    <div class="stat-card green">
-        <small>Today</small>
-        <h2>{{ money(today_collection) }}</h2>
-    </div>
-
-    <div class="stat-card green">
-        <small>This Month</small>
-        <h2>{{ money(month_collection) }}</h2>
-    </div>
-
-    <div class="stat-card green">
-        <small>Term Collection</small>
-        <h2>{{ money(term_collection) }}</h2>
-    </div>
-
-    <div class="stat-card red">
-        <small>Term Outstanding</small>
-        <h2>{{ money(outstanding) }}</h2>
-    </div>
-
-    <div class="stat-card dark">
-        <small>Pupils</small>
-        <h2>{{ total_pupils }}</h2>
-    </div>
-
-    <div class="stat-card dark">
-        <small>Attendance</small>
-        <h2>{{ present_today }} / {{ total_pupils }}</h2>
-    </div>
+<div class="cards">
+    <div class="card green"><small>Today</small><h2>{{ money(today_amt) }}</h2></div>
+    <div class="card green"><small>This Month</small><h2>{{ money(month_amt) }}</h2></div>
+    <div class="card green"><small>Term Collection</small><h2>{{ money(term_amt) }}</h2></div>
+    <div class="card red"><small>Term Outstanding</small><h2>{{ money(outstanding_amt) }}</h2></div>
+    <div class="card orange"><small>Expenses This Month</small><h2>{{ money(expense_amt) }}</h2></div>
+    <div class="card dark"><small>Pupils</small><h2>{{ total_pupils|default(0,true) }}</h2></div>
 </div>
 
-<div class="main-grid">
+<div class="grid">
 
     <div>
-        <div class="panel-box">
+        <div class="panel">
+            <h3>📊 Finance Graph</h3>
+
+            <div class="bar-wrap">
+                <div class="bar-title"><span>Current Term Collection</span><span>{{ money(term_amt) }}</span></div>
+                <div class="bar"><div class="fill" style="width:{{ (term_amt / total_cash * 100)|round(0) }}%"></div></div>
+            </div>
+
+            <div class="bar-wrap">
+                <div class="bar-title"><span>Current Term Outstanding</span><span>{{ money(outstanding_amt) }}</span></div>
+                <div class="bar"><div class="fill red" style="width:{{ (outstanding_amt / total_cash * 100)|round(0) }}%"></div></div>
+            </div>
+
+            <div class="bar-wrap">
+                <div class="bar-title"><span>Expenses This Month</span><span>{{ money(expense_amt) }}</span></div>
+                <div class="bar"><div class="fill orange" style="width:{{ (expense_amt / total_cash * 100)|round(0) }}%"></div></div>
+            </div>
+        </div>
+
+        <div class="panel">
             <h3>⚡ Quick Actions</h3>
-            <div class="quick-grid">
-                <a class="quick-action" href="/pupils"><span>🎓</span>Register Pupil<small>Admissions</small></a>
-                <a class="quick-action" href="/payments"><span>💳</span>Collect Fees<small>Payments</small></a>
-                <a class="quick-action" href="/balances"><span>📄</span>Balances<small>Statements</small></a>
-                <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Arrears</small></a>
-                <a class="quick-action" href="/attendance"><span>✅</span>Attendance<small>Daily mark</small></a>
-                <a class="quick-action" href="/transport"><span>🚌</span>Transport<small>Bus module</small></a>
+            <div class="actions">
+                <a class="action" href="/pupils"><span>🎓</span>Register Pupil<small>Admissions</small></a>
+                <a class="action" href="/payments"><span>💳</span>Collect Fees<small>Payments</small></a>
+                <a class="action" href="/balances"><span>📄</span>Balances<small>Statements</small></a>
+                <a class="action" href="/defaulters_report"><span>💸</span>Defaulters<small>Arrears</small></a>
+                <a class="action" href="/expenses"><span>🧾</span>Expenses<small>Record costs</small></a>
+                <a class="action" href="/expense_report"><span>📈</span>Expense Report<small>Analyze spending</small></a>
             </div>
         </div>
     </div>
 
     <div>
-        <div class="panel-box">
-            <h3>📊 Summary</h3>
-            <div class="info-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
-            <div class="info-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
-            <div class="info-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
-            <div class="info-row"><span>New Admissions</span><span>{{ new_admissions_month }}</span></div>
+        <div class="panel">
+            <h3>👥 School Summary</h3>
+            <div class="row"><span>Active Pupils</span><span>{{ active_pupils|default(total_pupils,true)|default(0,true) }}</span></div>
+            <div class="row"><span>Inactive Pupils</span><span>{{ inactive_pupils|default(0,true) }}</span></div>
+            <div class="row"><span>Bus Pupils</span><span>{{ bus_pupils|default(0,true) }}</span></div>
+            <div class="row"><span>New Admissions</span><span>{{ new_admissions_month|default(0,true) }}</span></div>
+            <div class="row"><span>Attendance Today</span><span>{{ present_today|default(attendance_today,true)|default(0,true) }} / {{ total_pupils|default(0,true) }}</span></div>
         </div>
 
-        <div class="panel-box">
+        <div class="panel">
             <h3>📢 Announcements</h3>
             {% for a in recent_announcements %}
                 <div class="notice"><b>{{ a.title }}</b><br>{{ a.message }}</div>
