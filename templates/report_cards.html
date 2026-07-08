@@ -1,9 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Report Cards</h2>
+<style>
+.report-page{max-width:1500px;margin:0 auto}
+.report-hero{
+    background:linear-gradient(135deg,#0b5ed7,#16a34a);
+    color:white;border-radius:18px;padding:20px;margin-bottom:15px
+}
+.report-hero h2{margin:0;font-size:28px}
+.report-hero p{margin:6px 0 0;color:#e0f2fe}
 
+.report-panel{
+    background:white;border-radius:18px;padding:18px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 8px 20px rgba(15,23,42,.07);
+    margin-bottom:15px
+}
+.stats{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;margin-top:14px
+}
+.stat{
+    background:#f8fafc;border:1px solid #e5e7eb;
+    border-radius:14px;padding:14px;font-weight:900
+}
+.stat small{display:block;color:#64748b;margin-bottom:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.table-wrap{overflow-x:auto}
+</style>
+
+<div class="report-page">
+
+<div class="report-hero">
+    <h2>📊 Report Cards</h2>
+    <p>View learner report cards and notify parents when results are ready.</p>
+</div>
+
+<div class="report-panel">
     <form method="get">
         <div class="three">
             <div>
@@ -40,57 +73,80 @@
 
             <div>
                 <br>
-                <button class="btn">Load Pupils</button>
+                <button class="btn">Load Report Cards</button>
             </div>
         </div>
     </form>
 
     {% if selected_exam and selected_grade %}
-    <div style="margin-top:15px;">
-        <a class="btn green"
-           href="{{ url_for('send_exam_whatsapp_alerts',
-                            exam_id=selected_exam,
-                            grade=selected_grade) }}"
-           onclick="return confirm('Queue WhatsApp exam result alerts for this grade?');">
-            📱 Send Exam Result Alerts
-        </a>
+    <div class="stats">
+        <div class="stat">
+            <small>Selected Grade</small>
+            {{ selected_grade }}
+        </div>
 
-        <a class="btn"
-           href="{{ url_for('whatsapp_outbox') }}">
-            View WhatsApp Outbox
-        </a>
+        <div class="stat">
+            <small>Total Pupils</small>
+            {{ pupils|length }}
+        </div>
+
+        <div class="stat">
+            <small>Selected Exam</small>
+            {% if selected_exam_obj %}
+                {{ selected_exam_obj.exam_name }}
+            {% else %}
+                Exam ID: {{ selected_exam }}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="actions">
+        <form method="post"
+              action="{{ url_for('notify_exam_results') }}"
+              onsubmit="return confirm('Queue SMS and WhatsApp exam result alerts for this grade?');">
+            <input type="hidden" name="exam_id" value="{{ selected_exam }}">
+            <input type="hidden" name="grade" value="{{ selected_grade }}">
+            <button class="btn green">📢 Notify Parents</button>
+        </form>
+
+        <a class="btn" href="{{ url_for('whatsapp_outbox') }}">📱 WhatsApp Outbox</a>
+        <a class="btn" href="{{ url_for('sms_messages') }}">💬 SMS Outbox</a>
     </div>
     {% endif %}
 </div>
 
 {% if pupils %}
-<div class="panel">
+<div class="report-panel">
     <h3>Pupils for Report Cards</h3>
 
-    <table>
-        <tr>
-            <th>#</th>
-            <th>Pupil</th>
-            <th>Admission No</th>
-            <th>Grade</th>
-            <th>Action</th>
-        </tr>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Pupil</th>
+                <th>Admission No</th>
+                <th>Grade</th>
+                <th>Action</th>
+            </tr>
 
-        {% for p in pupils %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ p.full_name }}</td>
-            <td>{{ p.admission_no }}</td>
-            <td>{{ p.grade }}</td>
-            <td>
-                <a class="btn" href="/report_card/{{ p.id }}/{{ selected_exam }}">
-                    View Report
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            {% for p in pupils %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td><b>{{ p.full_name }}</b></td>
+                <td>{{ p.admission_no }}</td>
+                <td>{{ p.grade }}</td>
+                <td>
+                    <a class="btn" href="/report_card/{{ p.id }}/{{ selected_exam }}">
+                        View Report
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
 {% endif %}
+
+</div>
 
 {% endblock %}
