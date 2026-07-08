@@ -4859,23 +4859,38 @@ def daily_collections():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar"):
+    if not role_allowed("bursar", "admin", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     selected_date = request.args.get("date", str(date.today()))
+    selected_grade = request.args.get("grade", "All Grades")
     export_pdf = request.args.get("pdf")
+
     report_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
 
-    payments = Payment.query.filter_by(
+    grades = GRADES
+
+    query = Payment.query.filter_by(
         school_id=current_school_id(),
         payment_date=report_date
-    ).order_by(Payment.id.desc()).all()
+    )
 
-    tuition_total = sum(p.tuition_paid for p in payments)
-    bus_total = sum(p.bus_paid for p in payments)
-    exam_total = sum(p.exam_paid for p in payments)
-    admission_total = sum(p.admission_paid for p in payments)
+    if selected_grade != "All Grades":
+        pupil_ids = [
+            p.id for p in Pupil.query.filter_by(
+                school_id=current_school_id(),
+                grade=selected_grade
+            ).all()
+        ]
+        query = query.filter(Payment.pupil_id.in_(pupil_ids))
+
+    payments = query.order_by(Payment.id.desc()).all()
+
+    tuition_total = sum(p.tuition_paid or 0 for p in payments)
+    bus_total = sum(p.bus_paid or 0 for p in payments)
+    exam_total = sum(p.exam_paid or 0 for p in payments)
+    admission_total = sum(p.admission_paid or 0 for p in payments)
     total = tuition_total + bus_total + exam_total + admission_total
 
     if export_pdf:
@@ -4884,6 +4899,8 @@ def daily_collections():
             settings=get_settings(),
             payments=payments,
             selected_date=selected_date,
+            selected_grade=selected_grade,
+            grades=grades,
             tuition_total=tuition_total,
             bus_total=bus_total,
             exam_total=exam_total,
@@ -4903,6 +4920,8 @@ def daily_collections():
         settings=get_settings(),
         payments=payments,
         selected_date=selected_date,
+        selected_grade=selected_grade,
+        grades=grades,
         tuition_total=tuition_total,
         bus_total=bus_total,
         exam_total=exam_total,
