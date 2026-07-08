@@ -1883,6 +1883,18 @@ def dashboard():
         "Term 3": [9, 10, 11]
     }
 
+    MONTH_NAMES = {
+        1: "January",
+        2: "February",
+        3: "March",
+        5: "May",
+        6: "June",
+        7: "July",
+        9: "September",
+        10: "October",
+        11: "November"
+    }
+
     if month in [1, 2, 3]:
         current_term = "Term 1"
     elif month in [5, 6, 7]:
@@ -1892,12 +1904,17 @@ def dashboard():
     else:
         current_term = "Term 2"
 
-    current_term_months_int = [m for m in TERM_MONTHS[current_term] if m <= month]
+    current_term_months_int = [
+        m for m in TERM_MONTHS[current_term]
+        if m <= month
+    ]
 
     if not current_term_months_int:
         current_term_months_int = TERM_MONTHS[current_term]
 
-    current_term_months = [str(m) for m in current_term_months_int]
+    current_term_months = [
+        MONTH_NAMES[m] for m in current_term_months_int
+    ]
 
     total_pupils = Pupil.query.filter_by(
         school_id=school_id,
@@ -1924,7 +1941,7 @@ def dashboard():
         Payment.payment_date == today
     ).scalar()
 
-    month_collection = db.session.query(
+    term_collection = db.session.query(
         db.func.coalesce(
             db.func.sum(
                 db.func.coalesce(Payment.tuition_paid, 0) +
@@ -1968,7 +1985,7 @@ def dashboard():
                     if pupil.new_admission == "Yes":
                         total_expected += fee.admission_fee or 0
 
-    outstanding_fees = total_expected - month_collection
+    outstanding_fees = total_expected - term_collection
 
     if outstanding_fees < 0:
         outstanding_fees = 0
@@ -1993,7 +2010,7 @@ def dashboard():
         total_pupils=total_pupils,
         bus_pupils=bus_pupils,
         today_collection=today_collection,
-        month_collection=month_collection,
+        month_collection=term_collection,
         outstanding_fees=outstanding_fees,
         outstanding=outstanding_fees,
         attendance_today=attendance_today,
