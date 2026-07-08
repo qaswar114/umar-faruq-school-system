@@ -8415,6 +8415,10 @@ def communication_center():
                 })
 
         elif recipient_type == "grade":
+            if not grade:
+                flash("Please select a grade.")
+                return redirect(url_for("communication_center"))
+
             pupils = Pupil.query.filter_by(
                 school_id=school_id,
                 grade=grade,
@@ -8444,6 +8448,89 @@ def communication_center():
                         "phone": cleaned
                     })
 
+        elif recipient_type == "new_admissions":
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active",
+                new_admission="Yes"
+            ).all()
+
+            for p in pupils:
+                cleaned = clean_phone_number(p.guardian_phone)
+                if cleaned:
+                    recipients.append({
+                        "name": p.guardian_name or p.full_name,
+                        "phone": cleaned
+                    })
+
+        elif recipient_type == "defaulters":
+            year = current_year()
+            month_number = today.month
+            current_month_name = today.strftime("%B")
+
+            if month_number in [1, 2, 3]:
+                current_term = "Term 1"
+            elif month_number in [5, 6, 7]:
+                current_term = "Term 2"
+            elif month_number in [9, 10, 11]:
+                current_term = "Term 3"
+            else:
+                current_term = "Term 2"
+                current_month_name = "May"
+
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active"
+            ).all()
+
+            for p in pupils:
+                total_due = due_until_month(
+                    p,
+                    year,
+                    current_term,
+                    current_month_name
+                )
+                total_paid = paid_year(p.id, year)
+                discounts = discount_year(p.id, year)
+                balance = total_due - total_paid - discounts
+
+                if balance > 0:
+                    cleaned = clean_phone_number(p.guardian_phone)
+                    if cleaned:
+                        recipients.append({
+                            "name": p.guardian_name or p.full_name,
+                            "phone": cleaned
+                        })
+
+        elif recipient_type == "teachers":
+            staff_rows = Staff.query.filter(
+                Staff.school_id == school_id,
+                Staff.status == "Active",
+                Staff.role.ilike("%teacher%")
+            ).all()
+
+            for s in staff_rows:
+                cleaned = clean_phone_number(s.phone)
+                if cleaned:
+                    recipients.append({
+                        "name": s.full_name,
+                        "phone": cleaned
+                    })
+
+        elif recipient_type == "staff":
+            staff_rows = Staff.query.filter_by(
+                school_id=school_id,
+                status="Active"
+            ).all()
+
+            for s in staff_rows:
+                cleaned = clean_phone_number(s.phone)
+                if cleaned:
+                    recipients.append({
+                        "name": s.full_name,
+                        "phone": cleaned
+                    })
+
         else:
             pupils = Pupil.query.filter_by(
                 school_id=school_id,
@@ -8461,6 +8548,16 @@ def communication_center():
         if not recipients:
             flash("No valid recipients found.")
             return redirect(url_for("communication_center"))
+
+        unique_recipients = []
+        seen_phones = set()
+
+        for r in recipients:
+            if r["phone"] not in seen_phones:
+                unique_recipients.append(r)
+                seen_phones.add(r["phone"])
+
+        recipients = unique_recipients
 
         sms_count = 0
         whatsapp_count = 0
@@ -8499,13 +8596,14 @@ def communication_center():
         db.session.commit()
 
         save_audit(
-            f"Broadcast queued. Channel: {channel}. WhatsApp: {whatsapp_count}. SMS: {sms_count}. Failed SMS: {sms_failed}.",
+            f"Broadcast queued. Recipient group: {recipient_type}. Channel: {channel}. "
+            f"Recipients: {len(recipients)}. WhatsApp: {whatsapp_count}. SMS: {sms_count}. Failed SMS: {sms_failed}.",
             "Communication"
         )
 
         flash(
-            f"Broadcast queued successfully. WhatsApp: {whatsapp_count}, "
-            f"SMS: {sms_count}, SMS failed/not queued: {sms_failed}."
+            f"Broadcast queued successfully. Recipients: {len(recipients)}. "
+            f"WhatsApp: {whatsapp_count}, SMS: {sms_count}, SMS failed/not queued: {sms_failed}."
         )
 
         return redirect(url_for("communication_center"))
@@ -8544,7 +8642,9 @@ def communication_center():
         "Attendance Alert",
         "Exam Results",
         "Homework",
-        "Transport"
+        "Transport",
+        "Staff Notice",
+        "Emergency"
     ]
 
     sms_category_counts = {}
