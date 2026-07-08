@@ -10,284 +10,93 @@
 
     <style>
         *{box-sizing:border-box}
-
-        body{
-            margin:0;
-            font-family:Arial,sans-serif;
-            background:#f4f7fb;
-            color:#0f172a;
-        }
+        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
 
         .sidebar{
-            position:fixed;
-            left:0;
-            top:0;
-            bottom:0;
-            width:270px;
+            position:fixed;left:0;top:0;bottom:0;width:270px;
             background:linear-gradient(180deg,#061b44,#052b61);
-            color:white;
-            padding:16px 13px;
-            overflow-y:auto;
-            z-index:1000;
+            color:white;padding:16px 13px;overflow-y:auto;z-index:1000
         }
 
-        .brand{
-            text-align:center;
-            padding:8px 6px 16px;
-            border-bottom:1px solid rgba(255,255,255,.15);
-            margin-bottom:12px;
-        }
+        .brand{text-align:center;padding:8px 6px 16px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:12px}
+        .brand img{width:78px;height:78px;border-radius:20px;background:white;object-fit:contain;padding:6px;margin-bottom:10px}
+        .brand h2{margin:0;font-size:15px;line-height:1.2;text-transform:uppercase}
+        .brand small{display:block;color:#dbeafe;font-size:11px;margin-top:5px}
 
-        .brand img{
-            width:78px;
-            height:78px;
-            border-radius:20px;
-            background:white;
-            object-fit:contain;
-            padding:6px;
-            margin-bottom:10px;
-        }
+        .nav-label{font-size:10px;color:#93c5fd;font-weight:bold;letter-spacing:1px;margin:15px 0 7px 8px}
 
-        .brand h2{
-            margin:0;
-            font-size:15px;
-            line-height:1.2;
-            text-transform:uppercase;
+        .nav a,.nav summary{
+            display:flex;align-items:center;gap:9px;color:white;text-decoration:none;
+            padding:9px 10px;border-radius:10px;margin-bottom:4px;
+            font-weight:800;font-size:13px;cursor:pointer
         }
-
-        .brand small{
-            display:block;
-            color:#dbeafe;
-            font-size:11px;
-            margin-top:5px;
-        }
-
-        .nav-label{
-            font-size:10px;
-            color:#93c5fd;
-            font-weight:bold;
-            letter-spacing:1px;
-            margin:15px 0 7px 8px;
-        }
-
-        .nav a,
-        .nav summary{
-            display:flex;
-            align-items:center;
-            gap:9px;
-            color:white;
-            text-decoration:none;
-            padding:9px 10px;
-            border-radius:10px;
-            margin-bottom:4px;
-            font-weight:800;
-            font-size:13px;
-            cursor:pointer;
-        }
-
-        .nav a:hover,
-        .nav a.active,
-        .nav summary:hover{
-            background:#0b5ed7;
-        }
+        .nav a:hover,.nav a.active,.nav summary:hover{background:#0b5ed7}
 
         details{margin-bottom:4px}
         summary{list-style:none}
         summary::-webkit-details-marker{display:none}
 
-        .subnav{
-            margin-left:18px;
-            border-left:1px solid rgba(255,255,255,.18);
-            padding-left:8px;
-            margin-bottom:6px;
-        }
+        .subnav{margin-left:18px;border-left:1px solid rgba(255,255,255,.18);padding-left:8px;margin-bottom:6px}
+        .subnav a{font-size:12px;padding:7px 8px;color:#dbeafe}
 
-        .subnav a{
-            font-size:12px;
-            padding:7px 8px;
-            color:#dbeafe;
-        }
+        .logout-link{margin-top:16px!important;background:#dc2626!important;color:white!important;justify-content:center}
+        .logout-link:hover{background:#b91c1c!important}
 
-        .logout-link{
-            margin-top:16px!important;
-            background:#dc2626!important;
-            color:white!important;
-            justify-content:center;
-        }
-
-        .logout-link:hover{
-            background:#b91c1c!important;
-        }
-
-        .main{
-            margin-left:270px;
-            min-height:100vh;
-        }
+        .main{margin-left:270px;min-height:100vh}
 
         .topbar{
-            height:68px;
-            background:white;
-            border-bottom:1px solid #e5e7eb;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 24px;
-            position:sticky;
-            top:0;
-            z-index:500;
+            height:68px;background:white;border-bottom:1px solid #e5e7eb;
+            display:flex;align-items:center;justify-content:space-between;
+            padding:0 24px;position:sticky;top:0;z-index:500
         }
 
-        .top-title h1{
-            margin:0;
-            font-size:22px;
-            color:#07142f;
-        }
-
+        .top-title h1{margin:0;font-size:22px;color:#07142f}
         .top-title small{color:#64748b}
 
-        .top-user{
-            display:flex;
-            align-items:center;
-            gap:12px;
-        }
+        .top-user{display:flex;align-items:center;gap:12px}
+        .pill{background:#f8fafc;border:1px solid #e5e7eb;padding:8px 12px;border-radius:12px;font-weight:bold}
+        .avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:20px}
 
-        .pill{
-            background:#f8fafc;
-            border:1px solid #e5e7eb;
-            padding:8px 12px;
-            border-radius:12px;
-            font-weight:bold;
-        }
+        .content{padding:20px 28px;width:100%;max-width:1800px;margin:0 auto}
 
-        .avatar{
-            width:38px;
-            height:38px;
-            border-radius:50%;
-            background:#dbeafe;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:20px;
-        }
+        .panel{background:white;padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,.07);margin-bottom:18px;width:100%}
 
-        .content{
-            padding:20px 28px;
-            width:100%;
-            max-width:1800px;
-            margin:0 auto;
-        }
+        input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;font-size:15px}
+        label{font-weight:bold;display:block;margin-bottom:5px}
 
-        .panel{
-            background:white;
-            padding:20px;
-            border-radius:14px;
-            box-shadow:0 6px 18px rgba(15,23,42,.07);
-            margin-bottom:18px;
-            width:100%;
-        }
-
-        input,select,textarea{
-            width:100%;
-            padding:10px;
-            border:1px solid #cbd5e1;
-            border-radius:8px;
-            margin-bottom:10px;
-            font-size:15px;
-        }
-
-        label{
-            font-weight:bold;
-            display:block;
-            margin-bottom:5px;
-        }
-
-        .btn,button{
-            display:inline-block;
-            background:#0b5ed7;
-            color:white;
-            padding:10px 15px;
-            border-radius:8px;
-            text-decoration:none;
-            border:none;
-            cursor:pointer;
-            font-size:15px;
-        }
-
+        .btn,button{display:inline-block;background:#0b5ed7;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;border:none;cursor:pointer;font-size:15px}
         .btn.green,button.green{background:#159947}
         .btn.red,button.red{background:#dc2626}
         .btn.gray,button.gray{background:#64748b}
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
-
-        th,td{
-            padding:10px;
-            border-bottom:1px solid #e5e7eb;
-            text-align:left;
-        }
-
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
         th{background:#f8fafc}
 
-        .two{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:14px;
-        }
+        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 
-        .three{
-            display:grid;
-            grid-template-columns:1fr 1fr 1fr;
-            gap:14px;
-        }
-
-        .flash{
-            background:#fff7d6;
-            padding:10px 14px;
-            border-radius:10px;
-            margin-bottom:12px;
-        }
+        .flash{background:#fff7d6;padding:10px 14px;border-radius:10px;margin-bottom:12px}
 
         .dashboard-page,.reports-page,.pay-page,.users-page,.fees-page,
         .fee-page,.discount-page,.def-page,.defaulters-page,.inventory-page,
         .tx-page,.report-page,.staff-page,.staff-dashboard,.business-page,
         .teacher-app,.pupils-page,.transport-page,.whatsapp-page,.sms-page,
         .expense-page,.balance-page,.attendance-page,.exam-page,.timetable-page,
-        .homework-page,.bus-page,.route-page,.assign-page{
-            max-width:100%!important;
-            width:100%!important;
+        .homework-page,.bus-page,.route-page,.assign-page,.comm-page{
+            max-width:100%!important;width:100%!important
         }
 
         .pay-card,.discount-card,.inventory-card,.tx-card,.report-card,
-        .users-card,.card,.bus-card,.route-card,.assign-card{
-            width:100%;
-        }
+        .users-card,.card,.bus-card,.route-card,.assign-card{width:100%}
 
         @media(max-width:800px){
-            .sidebar{
-                position:relative;
-                width:100%;
-                height:auto;
-            }
-
+            .sidebar{position:relative;width:100%;height:auto}
             .main{margin-left:0}
-
-            .topbar{
-                height:auto;
-                flex-direction:column;
-                align-items:flex-start;
-                gap:10px;
-                padding:15px;
-            }
-
+            .topbar{height:auto;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
             .top-user{flex-wrap:wrap}
             .two,.three{grid-template-columns:1fr}
-
-            .content{
-                padding:14px;
-                max-width:100%;
-            }
+            .content{padding:14px;max-width:100%}
         }
 
         @media print{
@@ -304,29 +113,23 @@
 {% set role = session.get("role","")|lower %}
 
 <div class="sidebar">
-
     <div class="brand">
         {% if role == "super admin" %}
             <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
             <h2>EduManage</h2>
             <small>SaaS Control Panel</small>
-
         {% elif settings and settings.logo %}
-            <img src="{{ url_for('static', filename=settings.logo) }}"
-                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='logo.png') }}';">
+            <img src="{{ url_for('static', filename=settings.logo) }}" onerror="this.onerror=null; this.src='{{ url_for('static', filename='logo.png') }}';">
             <h2>{{ settings.school_name if settings else "School System" }}</h2>
             <small>Powered by EduManage</small>
-
         {% else %}
-            <img src="{{ url_for('static', filename='logo.png') }}"
-                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='edumanage_logo.png') }}';">
+            <img src="{{ url_for('static', filename='logo.png') }}" onerror="this.onerror=null; this.src='{{ url_for('static', filename='edumanage_logo.png') }}';">
             <h2>{{ settings.school_name if settings else "School System" }}</h2>
             <small>Powered by EduManage</small>
         {% endif %}
     </div>
 
     <div class="nav">
-
         <div class="nav-label">OVERVIEW</div>
 
         {% if role == "teacher" %}
@@ -405,23 +208,25 @@
             </details>
         {% endif %}
 
-        {% if role in ["admin","headteacher","deputy headteacher"] %}
-            <div class="nav-label">COMMUNICATION</div>
-            <details>
-                <summary>💬 Communication</summary>
+        {% if role in ["admin","headteacher","deputy headteacher","bursar","registrar","receptionist","teacher","super admin"] %}
+            <div class="nav-label">COMMUNICATION CENTER</div>
+            <details open>
+                <summary>📡 Communication Center</summary>
                 <div class="subnav">
-                    <a href="/whatsapp_messages">WhatsApp</a>
-                    <a href="/whatsapp_outbox">WhatsApp Outbox</a>
-                    <a href="/sms_messages">SMS</a>
-                    <a href="/sms_wallet">SMS Wallet</a>
-                    <a href="/announcements">Announcements</a>
+                    <a href="/communication_center">📡 Communication Center</a>
+                    <a href="/sms_messages">💬 SMS Center</a>
+                    <a href="/whatsapp_messages">📱 WhatsApp Center</a>
+                    <a href="/sms_messages">📤 SMS Outbox</a>
+                    <a href="/whatsapp_outbox">📥 WhatsApp Outbox</a>
+                    <a href="/sms_wallet">💰 SMS Wallet</a>
+                    <a href="/fee_reminders">🔔 Fee Reminders</a>
+                    <a href="/announcements">📢 Announcements</a>
                 </div>
             </details>
         {% endif %}
 
         {% if role == "admin" %}
             <div class="nav-label">OPERATIONS</div>
-
             <details>
                 <summary>📦 Inventory / Store</summary>
                 <div class="subnav">
@@ -442,18 +247,26 @@
         {% endif %}
 
         <a href="/logout" class="logout-link">🚪 Logout</a>
-
     </div>
 </div>
 
 <div class="main">
-
     <div class="topbar">
         <div class="top-title">
             {% if request.path == '/dashboard' %}
                 <h1>Dashboard</h1>
             {% elif request.path == '/business_dashboard' %}
                 <h1>CEO Dashboard</h1>
+            {% elif request.path == '/communication_center' %}
+                <h1>Communication Center</h1>
+            {% elif request.path == '/sms_messages' %}
+                <h1>SMS Center</h1>
+            {% elif request.path == '/whatsapp_messages' %}
+                <h1>WhatsApp Center</h1>
+            {% elif request.path == '/whatsapp_outbox' %}
+                <h1>WhatsApp Outbox</h1>
+            {% elif request.path == '/fee_reminders' %}
+                <h1>Fee Reminders</h1>
             {% elif request.path == '/payments' %}
                 <h1>Payments</h1>
             {% elif request.path == '/fees' %}
@@ -480,10 +293,6 @@
                 <h1>Homework</h1>
             {% elif request.path == '/teacher_dashboard' %}
                 <h1>Teacher Portal</h1>
-            {% elif request.path == '/whatsapp_messages' %}
-                <h1>WhatsApp</h1>
-            {% elif request.path == '/whatsapp_outbox' %}
-                <h1>WhatsApp Outbox</h1>
             {% else %}
                 <h1>EduManage</h1>
             {% endif %}
@@ -502,7 +311,6 @@
     </div>
 
     <div class="content">
-
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
@@ -512,7 +320,6 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
-
     </div>
 </div>
 
