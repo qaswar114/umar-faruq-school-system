@@ -8374,19 +8374,14 @@ def whatsapp_outbox():
         selected_category=selected_category
     )
 
-@app.route("/communication_center")
+@app.route("/communication_center", methods=["GET", "POST"])
 def communication_center():
     if not login_required():
         return redirect(url_for("login"))
 
     if not role_allowed(
-        "admin",
-        "principal",
-        "teacher",
-        "registrar",
-        "receptionist",
-        "bursar",
-        "super admin"
+        "admin", "principal", "teacher", "registrar",
+        "receptionist", "bursar", "super admin"
     ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
@@ -8394,36 +8389,134 @@ def communication_center():
     school_id = current_school_id()
     today = date.today()
     today_start = datetime.combine(today, datetime.min.time())
+    wallet = get_sms_wallet()
 
-    sms_pending = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).count()
+    if request.method == "POST":
+        channel = request.form.get("channel", "both")
+        recipient_type = request.form.get("recipient_type", "all")
+        grade = request.form.get("grade", "")
+        category = request.form.get("category", "Announcement")
+        message = request.form.get("message", "").strip()
+        single_phone = request.form.get("phone", "").strip()
+        single_name = request.form.get("recipient_name", "").strip()
 
-    sms_sent = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Sent"
-    ).count()
+        if not message:
+            flash("Please type a message.")
+            return redirect(url_for("communication_center"))
 
-    sms_failed = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).count()
+        recipients = []
 
-    whatsapp_pending = WhatsAppMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).count()
+        if recipient_type == "single":
+            cleaned = clean_phone_number(single_phone)
+            if cleaned:
+                recipients.append({
+                    "name": single_name or "Parent",
+                    "phone": cleaned
+                })
 
-    whatsapp_sent = WhatsAppMessage.query.filter_by(
-        school_id=school_id,
-        status="Sent"
-    ).count()
+        elif recipient_type == "grade":
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                grade=grade,
+                status="Active"
+            ).all()
 
-    whatsapp_failed = WhatsAppMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).count()
+            for p in pupils:
+                cleaned = clean_phone_number(p.guardian_phone)
+                if cleaned:
+                    recipients.append({
+                        "name": p.guardian_name or p.full_name,
+                        "phone": cleaned
+                    })
+
+        elif recipient_type == "bus":
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active",
+                uses_bus="Yes"
+            ).all()
+
+            for p in pupils:
+                cleaned = clean_phone_number(p.guardian_phone)
+                if cleaned:
+                    recipients.append({
+                        "name": p.guardian_name or p.full_name,
+                        "phone": cleaned
+                    })
+
+        else:
+            pupils = Pupil.query.filter_by(
+                school_id=school_id,
+                status="Active"
+            ).all()
+
+            for p in pupils:
+                cleaned = clean_phone_number(p.guardian_phone)
+                if cleaned:
+                    recipients.append({
+                        "name": p.guardian_name or p.full_name,
+                        "phone": cleaned
+                    })
+
+        if not recipients:
+            flash("No valid recipients found.")
+            return redirect(url_for("communication_center"))
+
+        sms_count = 0
+        whatsapp_count = 0
+        sms_failed = 0
+
+        school = get_settings()
+        full_message = f"{school.school_name}\n\n{message}"
+
+        for r in recipients:
+            if channel in ["whatsapp", "both"]:
+                wa = WhatsAppMessage(
+                    school_id=school_id,
+                    recipient_name=r["name"],
+                    phone=r["phone"],
+                    message=full_message,
+                    category=category,
+                    status="Pending",
+                    created_by=session.get("username", "")
+                )
+                db.session.add(wa)
+                whatsapp_count += 1
+
+            if channel in ["sms", "both"]:
+                ok, sms_msg = create_sms(
+                    r["name"],
+                    r["phone"],
+                    full_message,
+                    category
+                )
+
+                if ok:
+                    sms_count += 1
+                else:
+                    sms_failed += 1
+
+        db.session.commit()
+
+        save_audit(
+            f"Broadcast queued. Channel: {channel}. WhatsApp: {whatsapp_count}. SMS: {sms_count}. Failed SMS: {sms_failed}.",
+            "Communication"
+        )
+
+        flash(
+            f"Broadcast queued successfully. WhatsApp: {whatsapp_count}, "
+            f"SMS: {sms_count}, SMS failed/not queued: {sms_failed}."
+        )
+
+        return redirect(url_for("communication_center"))
+
+    sms_pending = SMSMessage.query.filter_by(school_id=school_id, status="Pending").count()
+    sms_sent = SMSMessage.query.filter_by(school_id=school_id, status="Sent").count()
+    sms_failed = SMSMessage.query.filter_by(school_id=school_id, status="Failed").count()
+
+    whatsapp_pending = WhatsAppMessage.query.filter_by(school_id=school_id, status="Pending").count()
+    whatsapp_sent = WhatsAppMessage.query.filter_by(school_id=school_id, status="Sent").count()
+    whatsapp_failed = WhatsAppMessage.query.filter_by(school_id=school_id, status="Failed").count()
 
     sms_today = SMSMessage.query.filter(
         SMSMessage.school_id == school_id,
@@ -8445,11 +8538,13 @@ def communication_center():
 
     categories = [
         "General",
+        "Announcement",
         "Payment Confirmation",
         "Fees",
         "Attendance Alert",
         "Exam Results",
-        "Announcement"
+        "Homework",
+        "Transport"
     ]
 
     sms_category_counts = {}
@@ -8466,12 +8561,11 @@ def communication_center():
             category=c
         ).count()
 
-    wallet = get_sms_wallet()
-
     return render_template(
         "communication_center.html",
         settings=get_settings(),
         wallet=wallet,
+        grades=GRADES,
         sms_pending=sms_pending,
         sms_sent=sms_sent,
         sms_failed=sms_failed,
@@ -8486,7 +8580,6 @@ def communication_center():
         sms_category_counts=sms_category_counts,
         whatsapp_category_counts=whatsapp_category_counts
     )
-
 @app.route("/send_pending_sms")
 def send_pending_sms():
     if not login_required():
