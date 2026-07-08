@@ -8469,6 +8469,238 @@ def communication_center():
         whatsapp_category_counts=whatsapp_category_counts
     )
 
+@app.route("/send_pending_whatsapp")
+def send_pending_whatsapp():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    messages = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).order_by(WhatsAppMessage.created_at.asc()).all()
+
+    sent = 0
+    failed = 0
+
+    for m in messages:
+        ok, response = send_whatsapp_message(m.phone, m.message)
+
+        if ok:
+            m.status = "Sent"
+            m.sent_at = datetime.now()
+            sent += 1
+        else:
+            m.status = "Failed"
+            m.response = response
+            failed += 1
+
+    db.session.commit()
+
+    save_audit(
+        f"Sent pending WhatsApp messages. Sent: {sent}, Failed: {failed}",
+        "Communication"
+    )
+
+    flash(f"WhatsApp sending complete. Sent: {sent}, Failed: {failed}.")
+    return redirect(url_for("communication_center"))
+
+
+@app.route("/retry_failed_whatsapp")
+def retry_failed_whatsapp():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    messages = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).order_by(WhatsAppMessage.created_at.asc()).all()
+
+    sent = 0
+    failed = 0
+
+    for m in messages:
+        ok, response = send_whatsapp_message(m.phone, m.message)
+
+        if ok:
+            m.status = "Sent"
+            m.sent_at = datetime.now()
+            m.response = response
+            sent += 1
+        else:
+            m.status = "Failed"
+            m.response = response
+            failed += 1
+
+    db.session.commit()
+
+    save_audit(
+        f"Retried failed WhatsApp messages. Sent: {sent}, Still failed: {failed}",
+        "Communication"
+    )
+
+    flash(f"WhatsApp retry complete. Sent: {sent}, Still failed: {failed}.")
+    return redirect(url_for("communication_center"))
+
+
+@app.route("/delete_pending_whatsapp")
+def delete_pending_whatsapp():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    deleted = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).delete()
+
+    db.session.commit()
+
+    save_audit(
+        f"Deleted pending WhatsApp messages: {deleted}",
+        "Communication"
+    )
+
+    flash(f"Deleted {deleted} pending WhatsApp messages.")
+    return redirect(url_for("communication_center"))
+
+
+@app.route("/delete_failed_whatsapp")
+def delete_failed_whatsapp():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    deleted = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).delete()
+
+    db.session.commit()
+
+    save_audit(
+        f"Deleted failed WhatsApp messages: {deleted}",
+        "Communication"
+    )
+
+    flash(f"Deleted {deleted} failed WhatsApp messages.")
+    return redirect(url_for("communication_center"))
+
+
+@app.route("/retry_failed_sms")
+def retry_failed_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    messages = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).order_by(SMSMessage.created_at.asc()).all()
+
+    sent = 0
+    failed = 0
+
+    for m in messages:
+        ok, response = send_sms_gateway(m.phone, m.message)
+
+        if ok:
+            m.status = "Sent"
+            sent += 1
+        else:
+            m.status = "Failed"
+            failed += 1
+
+    db.session.commit()
+
+    save_audit(
+        f"Retried failed SMS messages. Sent: {sent}, Still failed: {failed}",
+        "Communication"
+    )
+
+    flash(f"SMS retry complete. Sent: {sent}, Still failed: {failed}.")
+    return redirect(url_for("communication_center"))
+
+
+@app.route("/delete_pending_sms")
+def delete_pending_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    deleted = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).delete()
+
+    db.session.commit()
+
+    save_audit(
+        f"Deleted pending SMS messages: {deleted}",
+        "Communication"
+    )
+
+    flash(f"Deleted {deleted} pending SMS messages.")
+    return redirect(url_for("communication_center"))
+
+
+@app.route("/delete_failed_sms")
+def delete_failed_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    deleted = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).delete()
+
+    db.session.commit()
+
+    save_audit(
+        f"Deleted failed SMS messages: {deleted}",
+        "Communication"
+    )
+
+    flash(f"Deleted {deleted} failed SMS messages.")
+    return redirect(url_for("communication_center"))
+
 @app.route("/whatsapp_messages", methods=["GET", "POST"])
 def whatsapp_messages():
     if not login_required():
