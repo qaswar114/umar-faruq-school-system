@@ -1875,46 +1875,24 @@ def dashboard():
     school_id = current_school_id()
     today = date.today()
     year = today.year
-    month = today.month
+    month_number = today.month
+    current_month_name = today.strftime("%B")
 
-    TERM_MONTHS = {
-        "Term 1": [1, 2, 3],
-        "Term 2": [5, 6, 7],
-        "Term 3": [9, 10, 11]
-    }
-
-    MONTH_NAMES = {
-        1: "January",
-        2: "February",
-        3: "March",
-        5: "May",
-        6: "June",
-        7: "July",
-        9: "September",
-        10: "October",
-        11: "November"
-    }
-
-    if month in [1, 2, 3]:
+    if month_number in [1, 2, 3]:
         current_term = "Term 1"
-    elif month in [5, 6, 7]:
+    elif month_number in [5, 6, 7]:
         current_term = "Term 2"
-    elif month in [9, 10, 11]:
+    elif month_number in [9, 10, 11]:
         current_term = "Term 3"
     else:
         current_term = "Term 2"
 
-    current_term_months_int = [
-        m for m in TERM_MONTHS[current_term]
-        if m <= month
-    ]
+    term_all_months = term_months(current_term)
 
-    if not current_term_months_int:
-        current_term_months_int = TERM_MONTHS[current_term]
-
-    current_term_months = [
-        MONTH_NAMES[m] for m in current_term_months_int
-    ]
+    if current_month_name in term_all_months:
+        current_term_months = term_all_months[:term_all_months.index(current_month_name) + 1]
+    else:
+        current_term_months = term_all_months
 
     total_pupils = Pupil.query.filter_by(
         school_id=school_id,
@@ -1934,11 +1912,25 @@ def dashboard():
                 db.func.coalesce(Payment.bus_paid, 0) +
                 db.func.coalesce(Payment.exam_paid, 0) +
                 db.func.coalesce(Payment.admission_paid, 0)
-            ), 0
-        )
+            ), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.payment_date == today
+    ).scalar()
+
+    month_collection = db.session.query(
+        db.func.coalesce(
+            db.func.sum(
+                db.func.coalesce(Payment.tuition_paid, 0) +
+                db.func.coalesce(Payment.bus_paid, 0) +
+                db.func.coalesce(Payment.exam_paid, 0) +
+                db.func.coalesce(Payment.admission_paid, 0)
+            ), 0)
+    ).filter(
+        Payment.school_id == school_id,
+        Payment.academic_year == year,
+        Payment.term == current_term,
+        Payment.month == current_month_name
     ).scalar()
 
     term_collection = db.session.query(
@@ -1948,8 +1940,7 @@ def dashboard():
                 db.func.coalesce(Payment.bus_paid, 0) +
                 db.func.coalesce(Payment.exam_paid, 0) +
                 db.func.coalesce(Payment.admission_paid, 0)
-            ), 0
-        )
+            ), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.academic_year == year,
@@ -1965,21 +1956,31 @@ def dashboard():
     total_expected = 0
 
     for pupil in active_pupils:
-        fee = FeeStructure.query.filter_by(
-            school_id=school_id,
-            academic_year=year,
-            grade=pupil.grade,
-            term=current_term
-        ).first()
+        for month_name in current_term_months:
+            fee = FeeStructure.query.filter_by(
+                school_id=school_id,
+                academic_year=year,
+                grade=pupil.grade,
+                term=current_term,
+                month=month_name
+            ).first()
 
-        if fee:
-            for m in current_term_months:
+            if not fee:
+                fee = FeeStructure.query.filter_by(
+                    school_id=school_id,
+                    academic_year=year,
+                    grade=pupil.grade,
+                    term=current_term,
+                    month=None
+                ).first()
+
+            if fee:
                 total_expected += fee.tuition_fee or 0
 
                 if pupil.uses_bus == "Yes":
                     total_expected += fee.bus_fee or 0
 
-                if m == current_term_months[0]:
+                if month_name == current_term_months[0]:
                     total_expected += fee.exam_fee or 0
 
                     if pupil.new_admission == "Yes":
@@ -2010,7 +2011,8 @@ def dashboard():
         total_pupils=total_pupils,
         bus_pupils=bus_pupils,
         today_collection=today_collection,
-        month_collection=term_collection,
+        month_collection=month_collection,
+        term_collection=term_collection,
         outstanding_fees=outstanding_fees,
         outstanding=outstanding_fees,
         attendance_today=attendance_today,
@@ -2018,6 +2020,7 @@ def dashboard():
         announcements=announcements,
         current_term=current_term,
         current_term_months=current_term_months,
+        current_month_name=current_month_name,
         year=year,
         money=money
     )
