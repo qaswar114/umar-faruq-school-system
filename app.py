@@ -1872,218 +1872,146 @@ def dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
-    role = normalize_role(session.get("role", ""))
-
-    if role == "teacher":
-        return redirect(url_for("teacher_dashboard"))
-
-    if role == "super admin":
-        total_schools = School.query.count()
-        active_schools = School.query.filter_by(is_active=True).count()
-        trial_schools = School.query.filter_by(subscription_status="trial").count()
-        expired_schools = School.query.filter_by(subscription_status="expired").count()
-
-        total_pupils = Pupil.query.count()
-        total_staff = Staff.query.count()
-        total_sms = SMSMessage.query.count()
-
-        total_collected = sum(
-            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-            for p in Payment.query.all()
-        )
-
-        recent_schools = School.query.order_by(School.created_at.desc()).all()
-
-        return render_template(
-            "super_dashboard.html",
-            settings=get_settings(),
-            total_schools=total_schools,
-            active_schools=active_schools,
-            trial_schools=trial_schools,
-            expired_schools=expired_schools,
-            total_pupils=total_pupils,
-            total_staff=total_staff,
-            total_sms=total_sms,
-            total_collected=money(total_collected),
-            recent_schools=recent_schools
-        )
-
     school_id = current_school_id()
     today = date.today()
-    current_year_num = today.year
-    current_month = today.month
+    year = today.year
+    month = today.month
 
-    active_pupils_list = Pupil.query.filter_by(
+    TERM_MONTHS = {
+        "Term 1": [1, 2, 3],
+        "Term 2": [5, 6, 7],
+        "Term 3": [9, 10, 11]
+    }
+
+    if month in [1, 2, 3]:
+        current_term = "Term 1"
+    elif month in [5, 6, 7]:
+        current_term = "Term 2"
+    elif month in [9, 10, 11]:
+        current_term = "Term 3"
+    else:
+        current_term = "Term 2"
+
+    current_term_months = [
+        m for m in TERM_MONTHS[current_term]
+        if m <= month
+    ]
+
+    if not current_term_months:
+        current_term_months = TERM_MONTHS[current_term]
+
+    total_pupils = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).all()
-
-    total_pupils = len(active_pupils_list)
-
-    inactive_pupils = Pupil.query.filter(
-        Pupil.school_id == school_id,
-        Pupil.status != "Active"
     ).count()
 
     bus_pupils = Pupil.query.filter_by(
         school_id=school_id,
-        uses_bus="Yes",
-        status="Active"
+        status="Active",
+        uses_bus="Yes"
     ).count()
 
-    today_attendance = Attendance.query.filter_by(
+    today_collection = db.session.query(
+        db.func.coalesce(
+            db.func.sum(
+                Payment.tuition_paid +
+                Payment.bus_paid +
+                Payment.exam_paid +
+                Payment.admission_paid
+            ), 0)
+    ).filter(
+        Payment.school_id == school_id,
+        Payment.payment_date == today
+    ).scalar()
+
+    month_collection = db.session.query(
+        db.func.coalesce(
+            db.func.sum(
+                Payment.tuition_paid +
+                Payment.bus_paid +
+                Payment.exam_paid +
+                Payment.admission_paid
+            ), 0)
+    ).filter(
+        Payment.school_id == school_id,
+        Payment.academic_year == year,
+        Payment.term == current_term,
+        Payment.month.in_(current_term_months)
+    ).scalar()
+
+    active_pupils = Pupil.query.filter_by(
         school_id=school_id,
-        attendance_date=today
+        status="Active"
     ).all()
 
-    present_today = sum(1 for r in today_attendance if r.status == "Present")
-    absent_today = sum(1 for r in today_attendance if r.status == "Absent")
-    late_today = sum(1 for r in today_attendance if r.status == "Late")
+    total_expected = 0
 
-    attendance_rate = 0
-    if total_pupils > 0:
-        attendance_rate = round((present_today / total_pupils) * 100, 1)
+    for pupil in active_pupils:
+        fee = FeeStructure.query.filter_by(
+            school_id=school_id,
+            academic_year=year,
+            grade=pupil.grade,
+            term=current_term
+        ).first()
 
-    new_admissions_month = Pupil.query.filter(
-        Pupil.school_id == school_id,
-        Pupil.created_at >= date(current_year_num, current_month, 1)
+        if fee:
+            for m in current_term_months:
+                total_expected += fee.tuition_fee or 0
+
+                if pupil.uses_bus == "Yes":
+                    total_expected += fee.bus_fee or 0
+
+                if m == current_term_months[0]:
+                    total_expected += fee.exam_fee or 0
+
+                    if pupil.new_admission == "Yes":
+                        total_expected += fee.admission_fee or 0
+
+    total_paid = month_collection
+
+    total_discounts = db.session.query(
+        db.func.coalesce(db.func.sum(Discount.amount), 0)
+    ).filter(
+        Discount.school_id == school_id,
+        Discount.academic_year == year,
+        Discount.term.in_([current_term, "All Year"])
+    ).scalar()
+
+    outstanding_fees = total_expected - total_paid - total_discounts
+
+    if outstanding_fees < 0:
+        outstanding_fees = 0
+
+    attendance_today = Attendance.query.filter_by(
+        school_id=school_id,
+        date=today,
+        status="Present"
     ).count()
 
-    upcoming_exams = Exam.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).order_by(Exam.academic_year.desc()).limit(5).all()
+    latest_payments = Payment.query.filter_by(
+        school_id=school_id
+    ).order_by(Payment.id.desc()).limit(5).all()
 
-    recent_announcements = Announcement.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).order_by(
-        Announcement.created_at.desc()
-    ).limit(5).all()
-
-    # Finance values only for Admin/Bursar
-    payments = Payment.query.filter_by(school_id=school_id).all()
-    all_expenses = Expense.query.filter_by(school_id=school_id).all()
-
-    total_collected_raw = 0
-    today_collection_raw = 0
-    month_collection_raw = 0
-    month_expenses_raw = 0
-    net_income_raw = 0
-    outstanding_raw = 0
-    defaulters = 0
-    finance_chart = []
-
-    if role in ["admin", "bursar"]:
-        total_collected_raw = sum(
-            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-            for p in payments
-        )
-
-        today_collection_raw = sum(
-            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-            for p in payments
-            if p.payment_date == today
-        )
-
-        month_collection_raw = sum(
-            p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-            for p in payments
-            if p.payment_date and p.payment_date.month == current_month and p.payment_date.year == current_year_num
-        )
-
-        month_expenses_raw = sum(
-            e.amount for e in all_expenses
-            if e.expense_date and e.expense_date.month == current_month and e.expense_date.year == current_year_num
-        )
-
-        net_income_raw = month_collection_raw - month_expenses_raw
-
-        month_names = {
-            1: "January", 2: "February", 3: "March", 4: "April",
-            5: "May", 6: "June", 7: "July", 8: "August",
-            9: "September", 10: "October", 11: "November", 12: "December"
-        }
-
-        current_month_name = month_names.get(current_month, "May")
-
-        if current_month_name in ["January", "February", "March"]:
-            current_term = "Term 1"
-        elif current_month_name in ["May", "June", "July"]:
-            current_term = "Term 2"
-        elif current_month_name in ["September", "October", "November"]:
-            current_term = "Term 3"
-        else:
-            current_term = "Term 2"
-            current_month_name = "May"
-
-        for pupil in active_pupils_list:
-            bal = (
-                due_until_month(
-                    pupil,
-                    current_year_num,
-                    current_term,
-                    current_month_name
-                )
-                - paid_year(pupil.id, current_year_num)
-                - discount_year(pupil.id, current_year_num)
-            )
-
-            if bal > 0:
-                defaulters += 1
-                outstanding_raw += bal
-
-        finance_months = ["May", "June", "July", "September", "October", "November"]
-
-        for m in finance_months:
-            collected = sum(
-                p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid
-                for p in payments
-                if p.academic_year == current_year_num and p.month == m
-            )
-
-            month_no = None
-            for num, name in month_names.items():
-                if name == m:
-                    month_no = num
-                    break
-
-            expenses = sum(
-                e.amount for e in all_expenses
-                if e.expense_date and e.expense_date.year == current_year_num and e.expense_date.month == month_no
-            )
-
-            finance_chart.append({
-                "month": m[:3],
-                "collected": collected,
-                "expenses": expenses,
-                "net": collected - expenses
-            })
+    announcements = Announcement.query.filter_by(
+        school_id=school_id
+    ).order_by(Announcement.id.desc()).limit(5).all()
 
     return render_template(
         "dashboard.html",
         settings=get_settings(),
-        dashboard_role=role,
         total_pupils=total_pupils,
-        active_pupils=total_pupils,
-        inactive_pupils=inactive_pupils,
         bus_pupils=bus_pupils,
-        new_admissions_month=new_admissions_month,
-        total_collected=money(total_collected_raw),
-        receipts=len(payments) if role in ["admin", "bursar"] else 0,
-        today_collection=money(today_collection_raw),
-        month_collection=money(month_collection_raw),
-        month_expenses=money(month_expenses_raw),
-        net_income=money(net_income_raw),
-        defaulters=defaulters,
-        outstanding=money(outstanding_raw),
-        present_today=present_today,
-        absent_today=absent_today,
-        late_today=late_today,
-        attendance_rate=attendance_rate,
-        upcoming_exams=upcoming_exams,
-        recent_announcements=recent_announcements,
-        finance_chart=finance_chart
+        today_collection=today_collection,
+        month_collection=month_collection,
+        outstanding_fees=outstanding_fees,
+        outstanding=outstanding_fees,
+        attendance_today=attendance_today,
+        latest_payments=latest_payments,
+        announcements=announcements,
+        current_term=current_term,
+        current_term_months=current_term_months,
+        year=year,
+        money=money
     )
     
 @app.route("/business_dashboard")
