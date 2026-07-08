@@ -4836,13 +4836,25 @@ def payments():
             db.session.add(pay)
             db.session.commit()
 
+            total_due = due_until_month(pupil, year, term, month)
+            total_paid = paid_year(pupil.id, year)
+            discounts = discount_year(pupil.id, year)
+            balance = total_due - total_paid - discounts
+
+            if balance < 0:
+                balance = 0
+
             school = get_settings()
 
             confirmation_message = (
-                f"Dear Parent, payment of {money(amount_paid)} has been received "
-                f"for {pupil.full_name} for {month} {year}. "
-                f"Receipt No: {receipt_number}. "
-                f"Thank you. {school.school_name}"
+                f"{school.school_name}\n\n"
+                f"PAYMENT CONFIRMATION\n\n"
+                f"Dear Parent,\n"
+                f"We have received {money(amount_paid)} for {pupil.full_name}.\n"
+                f"Receipt No: {receipt_number}\n"
+                f"Period: {term}, {month} {year}\n"
+                f"Balance: {money(balance)}\n\n"
+                f"Thank you."
             )
 
             whatsapp_queued = False
@@ -4852,19 +4864,20 @@ def payments():
             if pupil.guardian_phone:
                 wa = WhatsAppMessage(
                     school_id=school_id,
-                    recipient_name=pupil.guardian_name,
+                    recipient_name=pupil.guardian_name or pupil.full_name,
                     phone=pupil.guardian_phone,
                     message=confirmation_message,
                     category="Payment Confirmation",
                     status="Pending",
                     created_by=session.get("username", "")
                 )
+
                 db.session.add(wa)
                 db.session.commit()
                 whatsapp_queued = True
 
                 sms_ok, sms_msg = create_sms(
-                    pupil.guardian_name,
+                    pupil.guardian_name or pupil.full_name,
                     pupil.guardian_phone,
                     confirmation_message,
                     "Payment Confirmation"
@@ -4884,6 +4897,11 @@ def payments():
                 flash_message += " SMS confirmation queued."
             elif sms_note:
                 flash_message += f" SMS not queued: {sms_note}"
+
+            save_audit(
+                f"Payment recorded for {pupil.full_name}: {money(amount_paid)}. Receipt: {receipt_number}",
+                "Finance"
+            )
 
             flash(flash_message)
             return redirect(url_for("receipt", payment_id=pay.id))
