@@ -1894,38 +1894,33 @@ def dashboard():
     else:
         current_term_months = term_all_months
 
-    total_pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        status="Active"
+    total_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").count()
+    active_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").all()
+    inactive_pupils = Pupil.query.filter_by(school_id=school_id, status="Inactive").count()
+    bus_pupils = Pupil.query.filter_by(school_id=school_id, status="Active", uses_bus="Yes").count()
+
+    new_admissions_month = Pupil.query.filter(
+        Pupil.school_id == school_id,
+        Pupil.status == "Active",
+        Pupil.new_admission == "Yes"
     ).count()
 
-    bus_pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        status="Active",
-        uses_bus="Yes"
-    ).count()
+    total_paid_expr = (
+        db.func.coalesce(Payment.tuition_paid, 0) +
+        db.func.coalesce(Payment.bus_paid, 0) +
+        db.func.coalesce(Payment.exam_paid, 0) +
+        db.func.coalesce(Payment.admission_paid, 0)
+    )
 
     today_collection = db.session.query(
-        db.func.coalesce(
-            db.func.sum(
-                db.func.coalesce(Payment.tuition_paid, 0) +
-                db.func.coalesce(Payment.bus_paid, 0) +
-                db.func.coalesce(Payment.exam_paid, 0) +
-                db.func.coalesce(Payment.admission_paid, 0)
-            ), 0)
+        db.func.coalesce(db.func.sum(total_paid_expr), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.payment_date == today
     ).scalar()
 
     month_collection = db.session.query(
-        db.func.coalesce(
-            db.func.sum(
-                db.func.coalesce(Payment.tuition_paid, 0) +
-                db.func.coalesce(Payment.bus_paid, 0) +
-                db.func.coalesce(Payment.exam_paid, 0) +
-                db.func.coalesce(Payment.admission_paid, 0)
-            ), 0)
+        db.func.coalesce(db.func.sum(total_paid_expr), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.academic_year == year,
@@ -1934,24 +1929,13 @@ def dashboard():
     ).scalar()
 
     term_collection = db.session.query(
-        db.func.coalesce(
-            db.func.sum(
-                db.func.coalesce(Payment.tuition_paid, 0) +
-                db.func.coalesce(Payment.bus_paid, 0) +
-                db.func.coalesce(Payment.exam_paid, 0) +
-                db.func.coalesce(Payment.admission_paid, 0)
-            ), 0)
+        db.func.coalesce(db.func.sum(total_paid_expr), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.academic_year == year,
         Payment.term == current_term,
         Payment.month.in_(current_term_months)
     ).scalar()
-
-    active_pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).all()
 
     total_expected = 0
 
@@ -1987,9 +1971,20 @@ def dashboard():
                         total_expected += fee.admission_fee or 0
 
     outstanding_fees = total_expected - term_collection
-
     if outstanding_fees < 0:
         outstanding_fees = 0
+
+    month_start = today.replace(day=1)
+
+    month_expenses = db.session.query(
+        db.func.coalesce(db.func.sum(Expense.amount), 0)
+    ).filter(
+        Expense.school_id == school_id,
+        Expense.expense_date >= month_start,
+        Expense.expense_date <= today
+    ).scalar()
+
+    net_income = month_collection - month_expenses
 
     attendance_today = Attendance.query.filter_by(
         school_id=school_id,
@@ -2009,15 +2004,22 @@ def dashboard():
         "dashboard.html",
         settings=get_settings(),
         total_pupils=total_pupils,
+        active_pupils=total_pupils,
+        inactive_pupils=inactive_pupils,
         bus_pupils=bus_pupils,
+        new_admissions_month=new_admissions_month,
         today_collection=today_collection,
         month_collection=month_collection,
         term_collection=term_collection,
         outstanding_fees=outstanding_fees,
         outstanding=outstanding_fees,
+        month_expenses=month_expenses,
+        net_income=net_income,
         attendance_today=attendance_today,
+        present_today=attendance_today,
         latest_payments=latest_payments,
         announcements=announcements,
+        recent_announcements=announcements,
         current_term=current_term,
         current_term_months=current_term_months,
         current_month_name=current_month_name,
