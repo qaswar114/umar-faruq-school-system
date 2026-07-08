@@ -8469,6 +8469,47 @@ def communication_center():
         whatsapp_category_counts=whatsapp_category_counts
     )
 
+@app.route("/send_pending_sms")
+def send_pending_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    messages = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).order_by(SMSMessage.created_at.asc()).all()
+
+    sent = 0
+    failed = 0
+    last_error = ""
+
+    for m in messages:
+        ok, response = send_sms_gateway(m.phone, m.message)
+
+        if ok:
+            m.status = "Sent"
+            sent += 1
+        else:
+            m.status = "Failed"
+            failed += 1
+            last_error = str(response)
+
+    db.session.commit()
+
+    save_audit(
+        f"Sent pending SMS messages. Sent: {sent}, Failed: {failed}",
+        "Communication"
+    )
+
+    flash(f"SMS sending complete. Sent: {sent}, Failed: {failed}. {last_error}")
+    return redirect(url_for("communication_center"))
+
 @app.route("/retry_failed_whatsapp")
 def retry_failed_whatsapp():
     if not login_required():
