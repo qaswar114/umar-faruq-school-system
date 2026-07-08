@@ -2,60 +2,154 @@
 {% block content %}
 
 <style>
-.dashboard-page{max-width:1600px;margin:0 auto}
-.hero{
-    background:linear-gradient(135deg,#0b5ed7,#16a34a);
-    color:white;border-radius:18px;padding:22px;margin-bottom:16px
+.dashboard-page{
+    max-width:1600px;
+    margin:0 auto;
+    padding-bottom:30px;
 }
-.hero h2{margin:0;font-size:30px}
-.hero p{margin:8px 0 0;color:#dbeafe}
+
+.hero{
+    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:24px;
+    padding:28px;
+    margin-bottom:22px;
+    box-shadow:0 18px 40px rgba(15,23,42,.18);
+}
+.hero h2{
+    margin:0;
+    font-size:34px;
+    font-weight:900;
+}
+.hero p{
+    margin:10px 0 0;
+    color:#e0f2fe;
+    font-size:16px;
+}
+
 .card-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:16px;margin-bottom:16px
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:18px;
+    margin-bottom:22px;
 }
+
 .stat-card{
-    background:white;border-radius:18px;padding:18px;
+    background:white;
+    border-radius:22px;
+    padding:22px;
     border:1px solid #e5e7eb;
-    box-shadow:0 6px 18px rgba(15,23,42,.07)
+    box-shadow:0 14px 30px rgba(15,23,42,.08);
+    min-height:130px;
 }
-.stat-card small{color:#64748b;font-weight:bold}
-.stat-card h2{margin:10px 0 0;font-size:28px;color:#0b5ed7}
+.stat-card small{
+    color:#64748b;
+    font-weight:900;
+    font-size:14px;
+}
+.stat-card h2{
+    margin:16px 0 0;
+    font-size:30px;
+    color:#0b5ed7;
+    font-weight:900;
+}
 .stat-card.green h2{color:#159947}
 .stat-card.red h2{color:#dc2626}
+.stat-card.dark h2{color:#0f172a}
+
 .main-grid{
     display:grid;
-    grid-template-columns:1.3fr 1fr;
-    gap:16px
+    grid-template-columns:1.25fr .9fr;
+    gap:22px;
 }
+
 .panel-box{
-    background:white;border-radius:18px;padding:18px;
+    background:white;
+    border-radius:24px;
+    padding:24px;
     border:1px solid #e5e7eb;
-    box-shadow:0 6px 18px rgba(15,23,42,.07);
-    margin-bottom:16px
+    box-shadow:0 14px 30px rgba(15,23,42,.08);
+    margin-bottom:22px;
 }
-.panel-box h3{margin-top:0;color:#0b5ed7}
+.panel-box h3{
+    margin:0 0 18px;
+    color:#0b5ed7;
+    font-size:24px;
+    font-weight:900;
+}
+
+.info-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    padding:16px 18px;
+    border-radius:16px;
+    margin-bottom:12px;
+    font-weight:900;
+}
+.info-row span:last-child{
+    color:#0f172a;
+}
+
 .quick-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-    gap:12px
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:16px;
 }
 .quick-action{
-    display:block;text-decoration:none;color:#0f172a;
-    background:#f8fafc;border:1px solid #e5e7eb;
-    border-radius:14px;padding:16px;font-weight:900
+    display:block;
+    text-decoration:none;
+    color:#0f172a;
+    background:linear-gradient(180deg,#ffffff,#f8fafc);
+    border:1px solid #e5e7eb;
+    border-radius:20px;
+    padding:22px;
+    font-weight:900;
+    min-height:125px;
+    transition:.2s ease;
 }
-.quick-action span{font-size:28px;display:block;margin-bottom:8px}
-.quick-action small{display:block;color:#64748b;margin-top:5px}
-.info-row{
-    display:flex;justify-content:space-between;
-    background:#f8fafc;border:1px solid #e5e7eb;
-    padding:13px;border-radius:12px;margin-bottom:10px;
-    font-weight:bold
+.quick-action:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 30px rgba(15,23,42,.12);
+    border-color:#0b5ed7;
 }
+.quick-action span{
+    font-size:34px;
+    display:block;
+    margin-bottom:14px;
+}
+.quick-action small{
+    display:block;
+    color:#64748b;
+    margin-top:8px;
+    font-size:14px;
+}
+
 .notice{
-    background:#fff7d6;border-radius:12px;padding:14px;margin-bottom:10px
+    background:#fff7d6;
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:12px;
+    font-weight:700;
 }
+
+.badge-line{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.badge{
+    background:rgba(255,255,255,.18);
+    border:1px solid rgba(255,255,255,.25);
+    padding:8px 12px;
+    border-radius:999px;
+    font-weight:800;
+    font-size:13px;
+}
+
 @media(max-width:1000px){
     .main-grid{grid-template-columns:1fr}
 }
@@ -63,96 +157,14 @@
 
 <div class="dashboard-page">
 
-{% if dashboard_role in ["headteacher", "deputy headteacher"] %}
-
-<div class="hero">
-    <h2>🎓 Academic Dashboard</h2>
-    <p>Monitor learners, attendance, academics and school communication.</p>
-</div>
-
-<div class="card-grid">
-    <div class="stat-card"><small>Total Pupils</small><h2>{{ total_pupils }}</h2></div>
-    <div class="stat-card green"><small>Present Today</small><h2>{{ present_today }}</h2></div>
-    <div class="stat-card red"><small>Absent Today</small><h2>{{ absent_today }}</h2></div>
-    <div class="stat-card"><small>Attendance Rate</small><h2>{{ attendance_rate }}%</h2></div>
-    <div class="stat-card"><small>New Admissions This Month</small><h2>{{ new_admissions_month }}</h2></div>
-</div>
-
-<div class="main-grid">
-    <div>
-        <div class="panel-box">
-            <h3>⚡ Quick Actions</h3>
-            <div class="quick-grid">
-                <a class="quick-action" href="/pupils"><span>🎓</span>Admissions<small>Manage learners</small></a>
-                <a class="quick-action" href="/attendance"><span>✅</span>Mark Attendance<small>Daily attendance</small></a>
-                <a class="quick-action" href="/attendance_report"><span>📋</span>Attendance Report<small>Review attendance</small></a>
-                <a class="quick-action" href="/subjects"><span>📚</span>Subjects<small>Academic setup</small></a>
-                <a class="quick-action" href="/homework"><span>📝</span>Homework<small>Assignments</small></a>
-                <a class="quick-action" href="/timetable_dashboard"><span>📅</span>Timetable<small>Class schedule</small></a>
-                <a class="quick-action" href="/exams"><span>🧪</span>Exams<small>Assessment setup</small></a>
-                <a class="quick-action" href="/report_cards"><span>📊</span>Report Cards<small>Learner performance</small></a>
-                <a class="quick-action" href="/transport"><span>🚌</span>Transport<small>School transport</small></a>
-                <a class="quick-action" href="/announcements"><span>📢</span>Announcements<small>School updates</small></a>
-            </div>
-        </div>
-    </div>
-
-    <div>
-        <div class="panel-box">
-            <h3>👥 Student Overview</h3>
-            <div class="info-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
-            <div class="info-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
-            <div class="info-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
-        </div>
-    </div>
-</div>
-
-{% elif dashboard_role == "bursar" %}
-
-<div class="hero">
-    <h2>💰 Finance Dashboard</h2>
-    <p>Current finance position for {{ current_term }} {{ year }}.</p>
-</div>
-
-<div class="card-grid">
-    <div class="stat-card green">
-        <small>Today's Collection</small>
-        <h2>{{ money(today_collection) }}</h2>
-    </div>
-
-    <div class="stat-card green">
-        <small>This Month Collection</small>
-        <h2>{{ money(month_collection) }}</h2>
-    </div>
-
-    <div class="stat-card green">
-        <small>Current Term Collection</small>
-        <h2>{{ money(term_collection) }}</h2>
-    </div>
-
-    <div class="stat-card red">
-        <small>Current Term Outstanding</small>
-        <h2>{{ money(outstanding) }}</h2>
-    </div>
-</div>
-
-<div class="panel-box">
-    <h3>⚡ Finance Actions</h3>
-    <div class="quick-grid">
-        <a class="quick-action" href="/payments"><span>💳</span>Payments<small>Collect fees</small></a>
-        <a class="quick-action" href="/fees"><span>📌</span>Fee Structure<small>Set charges</small></a>
-        <a class="quick-action" href="/balances"><span>📄</span>Balances<small>View balances</small></a>
-        <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Fee arrears</small></a>
-        <a class="quick-action" href="/expenses"><span>🧾</span>Expenses<small>Record costs</small></a>
-        <a class="quick-action" href="/expense_report"><span>📊</span>Expense Report<small>Analyze spending</small></a>
-    </div>
-</div>
-
-{% else %}
-
 <div class="hero">
     <h2>🏫 School Executive Dashboard</h2>
-    <p>Full school overview for administration, finance, academics and operations.</p>
+    <p>Professional overview of finance, learners, attendance and daily operations.</p>
+    <div class="badge-line">
+        <div class="badge">{{ current_term }} {{ year }}</div>
+        <div class="badge">Current Month: {{ current_month_name }}</div>
+        <div class="badge">EduManage SaaS</div>
+    </div>
 </div>
 
 <div class="card-grid">
@@ -176,36 +188,83 @@
         <h2>{{ money(outstanding) }}</h2>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card dark">
         <small>Total Pupils</small>
         <h2>{{ total_pupils }}</h2>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card dark">
         <small>Attendance Today</small>
         <h2>{{ present_today }} / {{ total_pupils }}</h2>
     </div>
 </div>
 
 <div class="main-grid">
+
     <div>
         <div class="panel-box">
             <h3>📊 Finance Overview</h3>
-            <div class="info-row"><span>This Month Collection</span><span>{{ money(month_collection) }}</span></div>
-            <div class="info-row"><span>Current Term Collection</span><span>{{ money(term_collection) }}</span></div>
-            <div class="info-row"><span>Current Term Outstanding</span><span>{{ money(outstanding) }}</span></div>
-            <div class="info-row"><span>Defaulters</span><span>{{ defaulters }}</span></div>
+
+            <div class="info-row">
+                <span>This Month Collection</span>
+                <span>{{ money(month_collection) }}</span>
+            </div>
+
+            <div class="info-row">
+                <span>Current Term Collection</span>
+                <span>{{ money(term_collection) }}</span>
+            </div>
+
+            <div class="info-row">
+                <span>Current Term Outstanding</span>
+                <span>{{ money(outstanding) }}</span>
+            </div>
+
+            <div class="info-row">
+                <span>Defaulters</span>
+                <span>{{ defaulters }}</span>
+            </div>
         </div>
 
         <div class="panel-box">
             <h3>⚡ Quick Actions</h3>
+
             <div class="quick-grid">
-                <a class="quick-action" href="/pupils"><span>🎓</span>Register Pupil<small>Admissions</small></a>
-                <a class="quick-action" href="/payments"><span>💳</span>Collect Fees<small>Payments</small></a>
-                <a class="quick-action" href="/balances"><span>📄</span>Statement<small>Balances</small></a>
-                <a class="quick-action" href="/defaulters_report"><span>💸</span>Defaulters<small>Fee arrears</small></a>
-                <a class="quick-action" href="/attendance"><span>✅</span>Attendance<small>Daily mark</small></a>
-                <a class="quick-action" href="/transport"><span>🚌</span>Transport<small>Bus module</small></a>
+                <a class="quick-action" href="/pupils">
+                    <span>🎓</span>
+                    Register Pupil
+                    <small>Admissions and learner records</small>
+                </a>
+
+                <a class="quick-action" href="/payments">
+                    <span>💳</span>
+                    Collect Fees
+                    <small>Record school payments</small>
+                </a>
+
+                <a class="quick-action" href="/balances">
+                    <span>📄</span>
+                    Balances
+                    <small>View pupil balances</small>
+                </a>
+
+                <a class="quick-action" href="/defaulters_report">
+                    <span>💸</span>
+                    Defaulters
+                    <small>Fee arrears report</small>
+                </a>
+
+                <a class="quick-action" href="/attendance">
+                    <span>✅</span>
+                    Attendance
+                    <small>Daily attendance marking</small>
+                </a>
+
+                <a class="quick-action" href="/transport">
+                    <span>🚌</span>
+                    Transport
+                    <small>School bus management</small>
+                </a>
             </div>
         </div>
     </div>
@@ -213,14 +272,31 @@
     <div>
         <div class="panel-box">
             <h3>👥 Student Overview</h3>
-            <div class="info-row"><span>Active Pupils</span><span>{{ active_pupils }}</span></div>
-            <div class="info-row"><span>Inactive Pupils</span><span>{{ inactive_pupils }}</span></div>
-            <div class="info-row"><span>New Admissions This Month</span><span>{{ new_admissions_month }}</span></div>
-            <div class="info-row"><span>Bus Pupils</span><span>{{ bus_pupils }}</span></div>
+
+            <div class="info-row">
+                <span>Active Pupils</span>
+                <span>{{ active_pupils }}</span>
+            </div>
+
+            <div class="info-row">
+                <span>Inactive Pupils</span>
+                <span>{{ inactive_pupils }}</span>
+            </div>
+
+            <div class="info-row">
+                <span>New Admissions This Month</span>
+                <span>{{ new_admissions_month }}</span>
+            </div>
+
+            <div class="info-row">
+                <span>Bus Pupils</span>
+                <span>{{ bus_pupils }}</span>
+            </div>
         </div>
 
         <div class="panel-box">
             <h3>📢 Recent Announcements</h3>
+
             {% for a in recent_announcements %}
                 <div class="notice">
                     <b>{{ a.title }}</b><br>
@@ -231,9 +307,8 @@
             {% endfor %}
         </div>
     </div>
-</div>
 
-{% endif %}
+</div>
 
 </div>
 
