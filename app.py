@@ -1892,46 +1892,23 @@ def dashboard():
     else:
         current_term = "Term 2"
 
-    current_term_months = [
-        m for m in TERM_MONTHS[current_term]
-        if m <= month
-    ]
+    current_term_months = [m for m in TERM_MONTHS[current_term] if m <= month]
 
-    if not current_term_months:
-        current_term_months = TERM_MONTHS[current_term]
-
-    total_pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).count()
-
-    bus_pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        status="Active",
-        uses_bus="Yes"
-    ).count()
+    total_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").count()
 
     today_collection = db.session.query(
-        db.func.coalesce(
-            db.func.sum(
-                Payment.tuition_paid +
-                Payment.bus_paid +
-                Payment.exam_paid +
-                Payment.admission_paid
-            ), 0)
+        db.func.coalesce(db.func.sum(
+            Payment.tuition_paid + Payment.bus_paid + Payment.exam_paid + Payment.admission_paid
+        ), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.payment_date == today
     ).scalar()
 
     month_collection = db.session.query(
-        db.func.coalesce(
-            db.func.sum(
-                Payment.tuition_paid +
-                Payment.bus_paid +
-                Payment.exam_paid +
-                Payment.admission_paid
-            ), 0)
+        db.func.coalesce(db.func.sum(
+            Payment.tuition_paid + Payment.bus_paid + Payment.exam_paid + Payment.admission_paid
+        ), 0)
     ).filter(
         Payment.school_id == school_id,
         Payment.academic_year == year,
@@ -1939,10 +1916,7 @@ def dashboard():
         Payment.month.in_(current_term_months)
     ).scalar()
 
-    active_pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        status="Active"
-    ).all()
+    active_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").all()
 
     total_expected = 0
 
@@ -1967,17 +1941,7 @@ def dashboard():
                     if pupil.new_admission == "Yes":
                         total_expected += fee.admission_fee or 0
 
-    total_paid = month_collection
-
-    total_discounts = db.session.query(
-        db.func.coalesce(db.func.sum(Discount.amount), 0)
-    ).filter(
-        Discount.school_id == school_id,
-        Discount.academic_year == year,
-        Discount.term.in_([current_term, "All Year"])
-    ).scalar()
-
-    outstanding_fees = total_expected - total_paid - total_discounts
+    outstanding_fees = total_expected - month_collection
 
     if outstanding_fees < 0:
         outstanding_fees = 0
@@ -2000,7 +1964,6 @@ def dashboard():
         "dashboard.html",
         settings=get_settings(),
         total_pupils=total_pupils,
-        bus_pupils=bus_pupils,
         today_collection=today_collection,
         month_collection=month_collection,
         outstanding_fees=outstanding_fees,
@@ -2009,7 +1972,6 @@ def dashboard():
         latest_payments=latest_payments,
         announcements=announcements,
         current_term=current_term,
-        current_term_months=current_term_months,
         year=year,
         money=money
     )
