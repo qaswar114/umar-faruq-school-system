@@ -1892,10 +1892,7 @@ def dashboard():
     else:
         current_term = "Term 2"
 
-    current_term_months_int = [
-        m for m in TERM_MONTHS[current_term]
-        if m <= month
-    ]
+    current_term_months_int = [m for m in TERM_MONTHS[current_term] if m <= month]
 
     if not current_term_months_int:
         current_term_months_int = TERM_MONTHS[current_term]
@@ -1907,13 +1904,19 @@ def dashboard():
         status="Active"
     ).count()
 
+    bus_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active",
+        uses_bus="Yes"
+    ).count()
+
     today_collection = db.session.query(
         db.func.coalesce(
             db.func.sum(
-                Payment.tuition_paid +
-                Payment.bus_paid +
-                Payment.exam_paid +
-                Payment.admission_paid
+                db.func.coalesce(Payment.tuition_paid, 0) +
+                db.func.coalesce(Payment.bus_paid, 0) +
+                db.func.coalesce(Payment.exam_paid, 0) +
+                db.func.coalesce(Payment.admission_paid, 0)
             ), 0
         )
     ).filter(
@@ -1924,10 +1927,10 @@ def dashboard():
     month_collection = db.session.query(
         db.func.coalesce(
             db.func.sum(
-                Payment.tuition_paid +
-                Payment.bus_paid +
-                Payment.exam_paid +
-                Payment.admission_paid
+                db.func.coalesce(Payment.tuition_paid, 0) +
+                db.func.coalesce(Payment.bus_paid, 0) +
+                db.func.coalesce(Payment.exam_paid, 0) +
+                db.func.coalesce(Payment.admission_paid, 0)
             ), 0
         )
     ).filter(
@@ -1972,7 +1975,7 @@ def dashboard():
 
     attendance_today = Attendance.query.filter_by(
         school_id=school_id,
-        date=today,
+        attendance_date=today,
         status="Present"
     ).count()
 
@@ -1988,6 +1991,7 @@ def dashboard():
         "dashboard.html",
         settings=get_settings(),
         total_pupils=total_pupils,
+        bus_pupils=bus_pupils,
         today_collection=today_collection,
         month_collection=month_collection,
         outstanding_fees=outstanding_fees,
