@@ -2889,6 +2889,8 @@ def attendance():
         ).all()
 
         whatsapp_count = 0
+        sms_count = 0
+        skipped = 0
 
         attendance_day = datetime.strptime(
             attendance_date,
@@ -2949,21 +2951,48 @@ def attendance():
                         status="Pending",
                         created_by=session.get("username", "")
                     )
-
                     db.session.add(wa)
                     whatsapp_count += 1
+
+                cleaned_phone = clean_phone_number(pupil.guardian_phone)
+
+                duplicate_sms = None
+                if cleaned_phone:
+                    duplicate_sms = SMSMessage.query.filter(
+                        SMSMessage.school_id == school_id,
+                        SMSMessage.phone == cleaned_phone,
+                        SMSMessage.category == "Attendance Alert",
+                        SMSMessage.message.ilike(f"%{pupil.full_name}%"),
+                        SMSMessage.message.ilike(f"%{attendance_date}%")
+                    ).first()
+
+                if cleaned_phone and not duplicate_sms:
+                    ok, sms_msg = create_sms(
+                        pupil.guardian_name or pupil.full_name,
+                        pupil.guardian_phone,
+                        message,
+                        "Attendance Alert"
+                    )
+
+                    if ok:
+                        sms_count += 1
+
+            elif status == "Absent" and not pupil.guardian_phone:
+                skipped += 1
 
         db.session.commit()
 
         save_audit(
             f"Saved attendance for {selected_grade} on {attendance_date}. "
-            f"WhatsApp alerts queued: {whatsapp_count}.",
+            f"WhatsApp alerts queued: {whatsapp_count}. SMS alerts queued: {sms_count}. Skipped: {skipped}.",
             "Attendance"
         )
 
         flash(
             f"Attendance saved successfully. "
-            f"WhatsApp alerts queued: {whatsapp_count}."
+            f"WhatsApp alerts queued: {whatsapp_count}. "
+            f"SMS alerts queued: {sms_count}. "
+            f"Skipped/no phone: {skipped}."
         )
 
         return redirect(url_for(
@@ -3097,12 +3126,13 @@ def send_absent_whatsapp_alerts():
             attendance_date=attendance_date
         )
     )
+    
 @app.route("/report_cards")
 def report_cards():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "teacher"):
+    if not role_allowed("admin", "teacher", "headteacher", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -3129,7 +3159,14 @@ def report_cards():
         status="Active"
     ).order_by(Exam.academic_year.desc()).all()
 
+    selected_exam_obj = None
     pupils = []
+
+    if selected_exam:
+        selected_exam_obj = Exam.query.filter_by(
+            id=int(selected_exam),
+            school_id=school_id
+        ).first()
 
     if selected_exam and selected_grade:
         pupils = Pupil.query.filter_by(
@@ -3145,9 +3182,132 @@ def report_cards():
         grades=GRADES,
         pupils=pupils,
         selected_exam=selected_exam,
+        selected_exam_obj=selected_exam_obj,
         selected_grade=selected_grade
     )
 
+@app.route("/notify_exam_results", methods=["POST"])
+def notify_exam_results():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "headteacher", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    exam_id = int(request.form.get("exam_id"))
+    grade = request.form.get("grade")
+
+    exam = Exam.query.filter_by(
+        id=exam_id,
+        school_id=school_id,
+        status="Active"
+    ).first()
+
+    if not exam:
+        flash("Invalid exam selected.")
+        return redirect(url_for("report_cards"))
+
+    pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        grade=grade,
+        status="Active"
+    ).order_by(Pupil.full_name).all()
+
+    school = get_settings()
+    sms_count = 0
+    whatsapp_count = 0
+    skipped = 0
+
+    for pupil in pupils:
+        if not pupil.guardian_phone:
+            skipped += 1
+            continue
+
+        marks_count = Mark.query.filter_by(
+            school_id=school_id,
+            pupil_id=pupil.id,
+            exam_id=exam.id
+        ).count()
+
+        if marks_count == 0:
+            skipped += 1
+            continue
+
+        message = (
+            f"{school.school_name}\n\n"
+            f"EXAM RESULTS NOTICE\n\n"
+            f"Dear Parent,\n\n"
+            f"The {exam.exam_name} results for {pupil.full_name} "
+            f"({exam.term}, {exam.academic_year}) are now available.\n\n"
+            f"Kindly visit the school or use the parent portal to view the report card.\n\n"
+            f"Thank you."
+        )
+
+        duplicate_whatsapp = WhatsAppMessage.query.filter(
+            WhatsAppMessage.school_id == school_id,
+            WhatsAppMessage.phone == pupil.guardian_phone,
+            WhatsAppMessage.category == "Exam Results",
+            WhatsAppMessage.message.ilike(f"%{pupil.full_name}%"),
+            WhatsAppMessage.message.ilike(f"%{exam.exam_name}%")
+        ).first()
+
+        if not duplicate_whatsapp:
+            wa = WhatsAppMessage(
+                school_id=school_id,
+                recipient_name=pupil.guardian_name or pupil.full_name,
+                phone=pupil.guardian_phone,
+                message=message,
+                category="Exam Results",
+                status="Pending",
+                created_by=session.get("username", "")
+            )
+            db.session.add(wa)
+            whatsapp_count += 1
+
+        cleaned_phone = clean_phone_number(pupil.guardian_phone)
+
+        duplicate_sms = None
+        if cleaned_phone:
+            duplicate_sms = SMSMessage.query.filter(
+                SMSMessage.school_id == school_id,
+                SMSMessage.phone == cleaned_phone,
+                SMSMessage.category == "Exam Results",
+                SMSMessage.message.ilike(f"%{pupil.full_name}%"),
+                SMSMessage.message.ilike(f"%{exam.exam_name}%")
+            ).first()
+
+        if cleaned_phone and not duplicate_sms:
+            ok, sms_msg = create_sms(
+                pupil.guardian_name or pupil.full_name,
+                pupil.guardian_phone,
+                message,
+                "Exam Results"
+            )
+
+            if ok:
+                sms_count += 1
+
+    db.session.commit()
+
+    save_audit(
+        f"Queued exam result alerts for {grade}. WhatsApp: {whatsapp_count}, SMS: {sms_count}, Skipped: {skipped}",
+        "Communication"
+    )
+
+    flash(
+        f"Exam result alerts queued. WhatsApp: {whatsapp_count}, "
+        f"SMS: {sms_count}, Skipped: {skipped}."
+    )
+
+    return redirect(url_for(
+        "report_cards",
+        exam_id=exam_id,
+        grade=grade
+    ))
+    
 @app.route("/send_report_whatsapp_alerts")
 def send_report_whatsapp_alerts():
     if not login_required():
@@ -4606,6 +4766,7 @@ def fix_discount_table():
 
     flash("Discount table fixed successfully.")
     return redirect(url_for("discounts"))
+    
 @app.route("/payments", methods=["GET", "POST"])
 def payments():
     if not login_required():
@@ -4654,9 +4815,11 @@ def payments():
                 "%Y-%m-%d"
             ).date()
 
+            receipt_number = unique_receipt_no(year, term, school_id)
+
             pay = Payment(
                 school_id=school_id,
-                receipt_no=unique_receipt_no(year, term, school_id),
+                receipt_no=receipt_number,
                 pupil_id=pupil.id,
                 academic_year=year,
                 term=term,
@@ -4673,7 +4836,56 @@ def payments():
             db.session.add(pay)
             db.session.commit()
 
-            flash("Payment recorded successfully.")
+            school = get_settings()
+
+            confirmation_message = (
+                f"Dear Parent, payment of {money(amount_paid)} has been received "
+                f"for {pupil.full_name} for {month} {year}. "
+                f"Receipt No: {receipt_number}. "
+                f"Thank you. {school.school_name}"
+            )
+
+            whatsapp_queued = False
+            sms_queued = False
+            sms_note = ""
+
+            if pupil.guardian_phone:
+                wa = WhatsAppMessage(
+                    school_id=school_id,
+                    recipient_name=pupil.guardian_name,
+                    phone=pupil.guardian_phone,
+                    message=confirmation_message,
+                    category="Payment Confirmation",
+                    status="Pending",
+                    created_by=session.get("username", "")
+                )
+                db.session.add(wa)
+                db.session.commit()
+                whatsapp_queued = True
+
+                sms_ok, sms_msg = create_sms(
+                    pupil.guardian_name,
+                    pupil.guardian_phone,
+                    confirmation_message,
+                    "Payment Confirmation"
+                )
+
+                if sms_ok:
+                    sms_queued = True
+                else:
+                    sms_note = sms_msg
+
+            flash_message = "Payment recorded successfully."
+
+            if whatsapp_queued:
+                flash_message += " WhatsApp confirmation queued."
+
+            if sms_queued:
+                flash_message += " SMS confirmation queued."
+            elif sms_note:
+                flash_message += f" SMS not queued: {sms_note}"
+
+            flash(flash_message)
             return redirect(url_for("receipt", payment_id=pay.id))
 
         except Exception as e:
@@ -5705,7 +5917,7 @@ def fee_reminders():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar"):
+    if not role_allowed("admin", "bursar", "principal", "super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -5714,7 +5926,7 @@ def fee_reminders():
 
     year = int(request.args.get("year", current_year()))
     selected_grade = request.args.get("grade", "")
-    selected_term = request.args.get("term", "Term 1")
+    selected_term = request.args.get("term", "Term 2")
     selected_month = request.args.get("month", "May")
 
     rows = []
@@ -5743,97 +5955,81 @@ def fee_reminders():
             })
 
     if request.method == "POST":
-        eligible_rows = []
+        sms_count = 0
+        whatsapp_count = 0
+        skipped = 0
 
         for row in rows:
             p = row["pupil"]
             balance = row["balance"]
 
             if not p.guardian_phone:
+                skipped += 1
                 continue
-
-            duplicate_sms = SMSMessage.query.filter(
-                SMSMessage.school_id == school_id,
-                SMSMessage.phone == p.guardian_phone,
-                SMSMessage.category == "Fees",
-                SMSMessage.status == "Pending",
-                SMSMessage.message.ilike(f"%{p.full_name}%"),
-                SMSMessage.message.ilike(f"%KES {balance:,.2f}%")
-            ).first()
-
-            if not duplicate_sms:
-                eligible_rows.append(row)
-
-        required_sms = len(eligible_rows)
-        wallet = get_sms_wallet()
-
-        if required_sms == 0:
-            flash("No new fee reminder SMS to send. All may be duplicates or missing phone numbers.")
-            return redirect(url_for(
-                "fee_reminders",
-                year=year,
-                grade=selected_grade,
-                term=selected_term,
-                month=selected_month
-            ))
-
-        if not wallet.sms_enabled:
-            flash("SMS service is disabled for this school.")
-            return redirect(url_for(
-                "fee_reminders",
-                year=year,
-                grade=selected_grade,
-                term=selected_term,
-                month=selected_month
-            ))
-
-        if wallet.sms_balance < required_sms:
-            flash(
-                f"Insufficient SMS balance. You need {required_sms} SMS, "
-                f"but your balance is {wallet.sms_balance}."
-            )
-            return redirect(url_for(
-                "fee_reminders",
-                year=year,
-                grade=selected_grade,
-                term=selected_term,
-                month=selected_month
-            ))
-
-        count = 0
-        failed = 0
-
-        for row in eligible_rows:
-            p = row["pupil"]
-            balance = row["balance"]
 
             message = (
                 f"{school.school_name}\n\n"
                 f"FEE REMINDER\n\n"
                 f"Dear Parent, {p.full_name} has an outstanding fee balance "
-                f"of KES {balance:,.2f} for {selected_term}, {selected_month} {year}.\n\n"
+                f"of {money(balance)} for {selected_term}, {selected_month} {year}.\n\n"
                 f"Kindly clear the balance or contact the school accounts office.\n\n"
                 f"Thank you."
             )
 
-            ok, sms_msg = create_sms(
-                p.guardian_name,
-                p.guardian_phone,
-                message,
-                "Fees"
-            )
+            duplicate_whatsapp = WhatsAppMessage.query.filter(
+                WhatsAppMessage.school_id == school_id,
+                WhatsAppMessage.phone == p.guardian_phone,
+                WhatsAppMessage.category == "Fees",
+                WhatsAppMessage.status == "Pending",
+                WhatsAppMessage.message.ilike(f"%{p.full_name}%"),
+                WhatsAppMessage.message.ilike(f"%{selected_month}%")
+            ).first()
 
-            if ok:
-                count += 1
-            else:
-                failed += 1
+            if not duplicate_whatsapp:
+                wa = WhatsAppMessage(
+                    school_id=school_id,
+                    recipient_name=p.guardian_name,
+                    phone=p.guardian_phone,
+                    message=message,
+                    category="Fees",
+                    status="Pending",
+                    created_by=session.get("username", "")
+                )
+                db.session.add(wa)
+                whatsapp_count += 1
+
+            duplicate_sms = SMSMessage.query.filter(
+                SMSMessage.school_id == school_id,
+                SMSMessage.phone == clean_phone_number(p.guardian_phone),
+                SMSMessage.category == "Fees",
+                SMSMessage.status == "Pending",
+                SMSMessage.message.ilike(f"%{p.full_name}%"),
+                SMSMessage.message.ilike(f"%{selected_month}%")
+            ).first()
+
+            if not duplicate_sms:
+                ok, sms_msg = create_sms(
+                    p.guardian_name,
+                    p.guardian_phone,
+                    message,
+                    "Fees"
+                )
+
+                if ok:
+                    sms_count += 1
+
+        db.session.commit()
 
         save_audit(
-            f"Created fee reminder SMS for {count} parents. Failed: {failed}",
+            f"Created fee reminders. WhatsApp: {whatsapp_count}, SMS: {sms_count}, Skipped: {skipped}",
             "Communication"
         )
 
-        flash(f"{count} fee reminder SMS saved. {count} SMS deducted. {failed} failed.")
+        flash(
+            f"Fee reminders queued. WhatsApp: {whatsapp_count}, "
+            f"SMS: {sms_count}, Skipped/no phone: {skipped}."
+        )
+
         return redirect(url_for(
             "fee_reminders",
             year=year,
@@ -5855,21 +6051,6 @@ def fee_reminders():
         selected_month=selected_month,
         money=money
     )
-
-    return render_template(
-        "fee_reminders.html",
-        settings=get_settings(),
-        grades=GRADES,
-        terms=TERMS,
-        term_months=TERM_MONTHS,
-        rows=rows,
-        year=year,
-        selected_grade=selected_grade,
-        selected_term=selected_term,
-        selected_month=selected_month,
-        money=money
-    )
-
 @app.route("/bulk_sms", methods=["GET", "POST"])
 def bulk_sms():
     if not login_required():
