@@ -11,6 +11,7 @@
 .comm-top h2{margin:0;font-size:28px}
 .comm-top p{margin:6px 0 0;color:#dbeafe}
 .badge{background:rgba(255,255,255,.18);padding:9px 14px;border-radius:999px;font-weight:900}
+
 .cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
 .card{
     background:white;border:1px solid #e5e7eb;border-radius:18px;
@@ -19,7 +20,23 @@
 .card small{font-weight:900;color:#64748b}
 .card h2{margin:10px 0 0;font-size:24px;color:#0b5ed7}
 .green h2{color:#16a34a}.red h2{color:#dc2626}.orange h2{color:#d97706}
-.actions,.queue-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+
+.panel{
+    background:white;border:1px solid #e5e7eb;border-radius:20px;
+    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07);
+    margin-bottom:16px
+}
+.panel h3{margin:0 0 14px;color:#0b5ed7;font-size:22px}
+
+.wizard-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:14px
+}
+.queue-grid,.actions{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:12px;margin-bottom:16px
+}
 .action,.queue-btn{
     display:block;text-decoration:none;color:#0f172a;
     background:#f8fafc;border:1px solid #e5e7eb;
@@ -30,13 +47,8 @@
 .queue-btn.green{background:#ecfdf5;border-color:#bbf7d0}
 .queue-btn.orange{background:#fff7ed;border-color:#fed7aa}
 .queue-btn.red{background:#fef2f2;border-color:#fecaca}
+
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.panel{
-    background:white;border:1px solid #e5e7eb;border-radius:20px;
-    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07);
-    margin-bottom:16px
-}
-.panel h3{margin:0 0 14px;color:#0b5ed7;font-size:22px}
 .row{
     display:flex;justify-content:space-between;
     background:#f8fafc;border:1px solid #e5e7eb;
@@ -55,12 +67,14 @@
 .status.Sent{background:#dcfce7;color:#166534}
 .status.Pending{background:#fef3c7;color:#92400e}
 .status.Failed{background:#fee2e2;color:#991b1b}
+textarea{min-height:110px}
+
 @media(max-width:1200px){
     .cards{grid-template-columns:repeat(3,1fr)}
-    .actions,.queue-grid{grid-template-columns:repeat(2,1fr)}
+    .actions,.queue-grid,.wizard-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:900px){
-    .cards,.grid,.actions,.queue-grid{grid-template-columns:1fr}
+    .cards,.grid,.actions,.queue-grid,.wizard-grid{grid-template-columns:1fr}
     .comm-top{display:block}
 }
 </style>
@@ -70,7 +84,7 @@
 <div class="comm-top">
     <div>
         <h2>📡 Communication Center</h2>
-        <p>Manage SMS, WhatsApp, parent alerts, reminders and delivery queues.</p>
+        <p>Broadcast, monitor, retry and manage all school communications.</p>
     </div>
     <div class="badge">SMS Balance: {{ wallet.sms_balance }}</div>
 </div>
@@ -85,63 +99,100 @@
 </div>
 
 <div class="panel">
+    <h3>📢 Broadcast Wizard</h3>
+
+    <form method="post" onsubmit="return confirm('Queue this broadcast message?');">
+        <div class="wizard-grid">
+            <div>
+                <label>Channel</label>
+                <select name="channel">
+                    <option value="both">SMS + WhatsApp</option>
+                    <option value="sms">SMS Only</option>
+                    <option value="whatsapp">WhatsApp Only</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Recipients</label>
+                <select name="recipient_type">
+                    <option value="all">All Active Pupils</option>
+                    <option value="grade">One Grade</option>
+                    <option value="bus">Bus Pupils</option>
+                    <option value="single">Single Parent</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Category</label>
+                <select name="category">
+                    {% for c in categories %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Grade</label>
+                <select name="grade">
+                    <option value="">Select Grade if needed</option>
+                    {% for g in grades %}
+                    <option value="{{ g }}">{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Single Parent Name</label>
+                <input name="recipient_name" placeholder="Optional">
+            </div>
+
+            <div>
+                <label>Single Parent Phone</label>
+                <input name="phone" placeholder="07xxxxxxxx">
+            </div>
+        </div>
+
+        <label>Message</label>
+        <textarea name="message" required placeholder="Type message here..."></textarea>
+
+        <button class="btn green">Queue Broadcast</button>
+    </form>
+</div>
+
+<div class="panel">
     <h3>⚙️ Queue Manager</h3>
 
     <div class="queue-grid">
-        <a class="queue-btn green"
-           href="{{ url_for('send_pending_sms') }}"
-           onclick="return confirm('Send all pending SMS now?');">
-            <span>✅</span>Send Pending SMS
-            <small>Process SMS queue</small>
+        <a class="queue-btn green" href="{{ url_for('send_pending_sms') }}" onclick="return confirm('Send all pending SMS now?');">
+            <span>✅</span>Send Pending SMS<small>Process SMS queue</small>
         </a>
 
-        <a class="queue-btn orange"
-           href="{{ url_for('retry_failed_sms') }}"
-           onclick="return confirm('Retry all failed SMS?');">
-            <span>🔄</span>Retry Failed SMS
-            <small>Resend failed messages</small>
+        <a class="queue-btn orange" href="{{ url_for('retry_failed_sms') }}" onclick="return confirm('Retry all failed SMS?');">
+            <span>🔄</span>Retry Failed SMS<small>Resend failed messages</small>
         </a>
 
-        <a class="queue-btn red"
-           href="{{ url_for('delete_pending_sms') }}"
-           onclick="return confirm('Delete all pending SMS? This cannot be undone.');">
-            <span>🗑</span>Delete Pending SMS
-            <small>Clear SMS queue</small>
+        <a class="queue-btn red" href="{{ url_for('delete_pending_sms') }}" onclick="return confirm('Delete all pending SMS? This cannot be undone.');">
+            <span>🗑</span>Delete Pending SMS<small>Clear SMS queue</small>
         </a>
 
-        <a class="queue-btn red"
-           href="{{ url_for('delete_failed_sms') }}"
-           onclick="return confirm('Delete all failed SMS? This cannot be undone.');">
-            <span>🧹</span>Delete Failed SMS
-            <small>Clean failed SMS</small>
+        <a class="queue-btn red" href="{{ url_for('delete_failed_sms') }}" onclick="return confirm('Delete all failed SMS? This cannot be undone.');">
+            <span>🧹</span>Delete Failed SMS<small>Clean failed SMS</small>
         </a>
 
-        <a class="queue-btn green"
-           href="{{ url_for('send_pending_whatsapp') }}"
-           onclick="return confirm('Send all pending WhatsApp messages now?');">
-            <span>✅</span>Send Pending WhatsApp
-            <small>Process WhatsApp queue</small>
+        <a class="queue-btn green" href="{{ url_for('send_pending_whatsapp') }}" onclick="return confirm('Send all pending WhatsApp messages now?');">
+            <span>✅</span>Send Pending WhatsApp<small>Process WhatsApp queue</small>
         </a>
 
-        <a class="queue-btn orange"
-           href="{{ url_for('retry_failed_whatsapp') }}"
-           onclick="return confirm('Retry all failed WhatsApp messages?');">
-            <span>🔄</span>Retry Failed WhatsApp
-            <small>Resend failed WhatsApp</small>
+        <a class="queue-btn orange" href="{{ url_for('retry_failed_whatsapp') }}" onclick="return confirm('Retry all failed WhatsApp messages?');">
+            <span>🔄</span>Retry Failed WhatsApp<small>Resend failed WhatsApp</small>
         </a>
 
-        <a class="queue-btn red"
-           href="{{ url_for('delete_pending_whatsapp') }}"
-           onclick="return confirm('Delete all pending WhatsApp messages? This cannot be undone.');">
-            <span>🗑</span>Delete Pending WhatsApp
-            <small>Clear WhatsApp queue</small>
+        <a class="queue-btn red" href="{{ url_for('delete_pending_whatsapp') }}" onclick="return confirm('Delete all pending WhatsApp messages? This cannot be undone.');">
+            <span>🗑</span>Delete Pending WhatsApp<small>Clear WhatsApp queue</small>
         </a>
 
-        <a class="queue-btn red"
-           href="{{ url_for('delete_failed_whatsapp') }}"
-           onclick="return confirm('Delete all failed WhatsApp messages? This cannot be undone.');">
-            <span>🧹</span>Delete Failed WhatsApp
-            <small>Clean failed WhatsApp</small>
+        <a class="queue-btn red" href="{{ url_for('delete_failed_whatsapp') }}" onclick="return confirm('Delete all failed WhatsApp messages? This cannot be undone.');">
+            <span>🧹</span>Delete Failed WhatsApp<small>Clean failed WhatsApp</small>
         </a>
     </div>
 </div>
