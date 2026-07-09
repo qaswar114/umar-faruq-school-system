@@ -2,113 +2,132 @@
 <html>
 <head>
     <title>Receipt</title>
+
     <style>
-        * {
-            box-sizing: border-box;
+        *{box-sizing:border-box}
+
+        html,body{
+            margin:0;
+            padding:0;
+            font-family:Arial,sans-serif;
+            background:#eef1f5;
+            color:#000;
         }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background: #eef1f5;
+        .receipt-box{
+            width:76mm;
+            margin:10px auto;
+            padding:3mm;
+            background:#fff;
+            font-size:11px;
         }
 
-        .receipt-box {
-            width: 76mm;
-            margin: 10px auto;
-            padding: 3mm;
-            background: #fff;
-            color: #000;
-            font-size: 11px;
+        .logo{
+            width:60px;
+            height:60px;
+            object-fit:contain;
+            display:block;
+            margin:0 auto 6px;
         }
 
-        .logo {
-            width: 38px;
-            height: auto;
-            display: block;
-            margin: 0 auto 3px;
+        h2{
+            text-align:center;
+            font-size:13px;
+            margin:2px 0;
+            text-transform:uppercase;
         }
 
-        h2 {
-            text-align: center;
-            font-size: 13px;
-            margin: 2px 0;
+        h3{
+            text-align:center;
+            font-size:11px;
+            margin:2px 0 5px;
         }
 
-        h3 {
-            text-align: center;
-            font-size: 11px;
-            margin: 2px 0 5px;
+        p{
+            margin:3px 0;
+            line-height:1.25;
         }
 
-        p {
-            margin: 3px 0;
-            line-height: 1.25;
+        hr{
+            border:none;
+            border-top:1px solid #000;
+            margin:5px 0;
         }
 
-        hr {
-            border: none;
-            border-top: 1px solid #000;
-            margin: 5px 0;
+        table{
+            width:100%;
+            border-collapse:collapse;
+            font-size:10.5px;
+            margin:5px 0;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 10.5px;
-            margin: 5px 0;
+        th,td{
+            border:1px solid #000;
+            padding:3px;
+            text-align:left;
         }
 
-        th, td {
-            border: 1px solid #000;
-            padding: 3px;
-            text-align: left;
+        .center{text-align:center}
+        .bold{font-weight:bold}
+
+        .footer-note{
+            text-align:center;
+            font-weight:bold;
+            margin-top:5px;
         }
 
-        .center {
-            text-align: center;
+        .signature-row{
+            display:flex;
+            justify-content:space-between;
+            gap:6px;
+            margin-top:8px;
+            font-size:10px;
         }
 
-        .no-print {
-            text-align: center;
-            margin-top: 10px;
+        .signature-box{
+            width:50%;
+            border-top:1px solid #000;
+            padding-top:3px;
+            text-align:center;
         }
 
-        .print-btn {
-            background: green;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
+        .no-print{
+            text-align:center;
+            margin-top:10px;
         }
 
-        @media print {
-            @page {
-                size: 80mm 100mm;
-                margin: 0;
+        .print-btn{
+            background:green;
+            color:white;
+            border:none;
+            padding:10px 25px;
+            font-size:16px;
+            border-radius:6px;
+            cursor:pointer;
+        }
+
+        @media print{
+            @page{
+                size:80mm 100mm;
+                margin:0;
             }
 
-            html, body {
-                width: 80mm;
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                overflow: hidden !important;
+            html,body{
+                width:80mm;
+                margin:0!important;
+                padding:0!important;
+                background:white!important;
+                overflow:hidden!important;
             }
 
-            .receipt-box {
-                width: 76mm !important;
-                margin: 0 !important;
-                padding: 2mm !important;
-                background: white !important;
+            .receipt-box{
+                width:76mm!important;
+                margin:0!important;
+                padding:2mm!important;
+                background:white!important;
             }
 
-            .no-print {
-                display: none !important;
-            }
+            .no-print{display:none!important}
         }
     </style>
 </head>
@@ -118,12 +137,12 @@
 <div class="receipt-box">
 
     {% if settings and settings.logo %}
-    <img src="{{ url_for('static', filename=settings.logo) }}"
-         style="width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 8px;"
-         onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+        <img class="logo"
+             src="{{ url_for('static', filename=settings.logo) }}"
+             onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
     {% else %}
-    <img src="{{ url_for('static', filename='logo.png') }}"
-         style="width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 8px;">
+        <img class="logo"
+             src="{{ url_for('static', filename='logo.png') }}">
     {% endif %}
 
     <h2>{{ settings.school_name }}</h2>
@@ -133,31 +152,45 @@
 
     <p><b>Receipt No:</b> {{ p.receipt_no }}</p>
     <p><b>Date:</b> {{ p.payment_date }}</p>
+
     <p><b>Pupil:</b> {{ pupil.full_name }}</p>
     <p><b>Admission No:</b> {{ pupil.admission_no }}</p>
-    <p><b>Year:</b> {{ p.academic_year }} | <b>Term:</b> {{ p.term }} | <b>Month:</b> {{ p.month }}</p>
+    <p><b>Grade/Class:</b> {{ pupil.grade }}</p>
+
+    <p>
+        <b>Academic Year:</b> {{ p.academic_year }}
+        |
+        <b>Term:</b> {{ p.term }}
+        |
+        <b>Month:</b> {{ p.month }}
+    </p>
 
     <table>
         <tr>
             <th>Item</th>
             <th>Paid Now</th>
         </tr>
+
         <tr>
             <td>Tuition</td>
             <td>{{ money(p.tuition_paid or 0) }}</td>
         </tr>
+
         <tr>
             <td>Bus</td>
             <td>{{ money(p.bus_paid or 0) }}</td>
         </tr>
+
         <tr>
             <td>Exam</td>
             <td>{{ money(p.exam_paid or 0) }}</td>
         </tr>
+
         <tr>
             <td>Admission</td>
             <td>{{ money(p.admission_paid or 0) }}</td>
         </tr>
+
         <tr>
             <th>Total Paid</th>
             <th>{{ money((p.tuition_paid or 0) + (p.bus_paid or 0) + (p.exam_paid or 0) + (p.admission_paid or 0)) }}</th>
@@ -169,6 +202,13 @@
     <p><b>Closing Balance:</b> {{ money(closing or 0) }}</p>
     <p><b>Method:</b> {{ p.payment_method }}</p>
     <p><b>Collected By:</b> {{ p.collected_by }}</p>
+
+    <p class="footer-note">Received with thanks</p>
+
+    <div class="signature-row">
+        <div class="signature-box">Bursar</div>
+        <div class="signature-box">School Stamp</div>
+    </div>
 
     <hr>
 
