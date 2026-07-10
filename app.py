@@ -661,14 +661,31 @@ class Attendance(db.Model):
 class Discount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
-    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
-    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
+
+    pupil_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pupil.id"),
+        nullable=False
+    )
 
     academic_year = db.Column(db.Integer, nullable=False)
 
-    discount_type = db.Column(db.String(30), default="Monthly")
-    # Monthly OR Free
+    # Monthly, Term, or Free
+    discount_type = db.Column(
+        db.String(30),
+        default="Monthly",
+        nullable=False
+    )
 
+    # Used only for Term discounts
+    term = db.Column(db.String(30), nullable=True)
+
+    # Used only for Monthly and Free scholarship records
     month = db.Column(db.String(20), nullable=True)
 
     amount = db.Column(db.Float, default=0)
@@ -682,10 +699,15 @@ class Discount(db.Model):
     status = db.Column(db.String(20), default="Active")
 
     created_by = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    pupil = db.relationship("Pupil", backref="discounts")
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
 
-
+    pupil = db.relationship(
+        "Pupil",
+        backref="discounts"
+    )
 
 def get_pupil_discount(pupil_id, academic_year, month):
     school_id = current_school_id()
@@ -4612,96 +4634,294 @@ def discounts():
     school_id = current_school_id()
     year = current_year()
 
+    all_school_months = [
+        month_name
+        for term_name in TERMS
+        for month_name in TERM_MONTHS.get(term_name, [])
+    ]
+
     if request.method == "POST":
-        pupil_id = int(request.form["pupil_id"])
-        academic_year = int(request.form["academic_year"])
-        discount_type = request.form["discount_type"]
-        term = request.form.get("term", "")
-        month = request.form.get("month", "")
-        amount = float(request.form.get("amount") or 0)
-        reason = request.form.get("reason", "").strip()
+        try:
+            pupil_id = int(request.form["pupil_id"])
+            academic_year = int(request.form["academic_year"])
+            discount_type = request.form["discount_type"]
+            term = request.form.get("term", "").strip()
+            month = request.form.get("month", "").strip()
+            reason = request.form.get("reason", "").strip()
 
-        pupil = Pupil.query.filter_by(
-            id=pupil_id,
-            school_id=school_id,
-            status="Active"
-        ).first()
-
-        if not pupil:
-            flash("Invalid pupil selected.")
-            return redirect(url_for("discounts"))
-
-        if amount <= 0 and discount_type != "Free":
-            flash("Enter a valid discount amount.")
-            return redirect(url_for("discounts"))
-
-        months_to_apply = []
-
-        if discount_type == "Monthly":
-            if month == "All Months":
-                months_to_apply = ["May", "June", "July", "September", "October", "November"]
-            else:
-                months_to_apply = [month]
-
-        elif discount_type == "Term":
-            months_to_apply = TERM_MONTHS.get(term, [])
-
-        elif discount_type == "Free":
-            months_to_apply = ["May", "June", "July", "September", "October", "November"]
-
-        else:
-            months_to_apply = [month]
-
-        created = 0
-
-        for m in months_to_apply:
-            existing = Discount.query.filter_by(
+            pupil = Pupil.query.filter_by(
+                id=pupil_id,
                 school_id=school_id,
-                pupil_id=pupil.id,
-                academic_year=academic_year,
-                discount_type=discount_type,
-                month=m,
                 status="Active"
             ).first()
 
-            if existing:
-                existing.amount = amount
-                existing.reason = reason
-                existing.apply_tuition = True
-            else:
-                d = Discount(
+            if not pupil:
+                flash("Invalid pupil selected.")
+                return redirect(url_for("discounts"))
+
+            created_count = 0
+            updated_count = 0
+            total_waived = 0
+
+            # =================================================
+            # MONTHLY DISCOUNT
+            # =================================================
+
+            if discount_type == "Monthly":
+                amount = float(request.form.get("amount") or 0)
+
+                if not month or month == "All Months":
+                    flash("Please select one specific month.")
+                    return redirect(url_for("discounts"))
+
+                if month not in all_school_months:
+                    flash("Invalid month selected.")
+                    return redirect(url_for("discounts"))
+
+                if amount <= 0:
+                    flash("Enter a valid monthly discount amount.")
+                    return redirect(url_for("discounts"))
+
+                existing = Discount.query.filter_by(
                     school_id=school_id,
                     pupil_id=pupil.id,
                     academic_year=academic_year,
-                    discount_type=discount_type,
-                    month=m,
-                    amount=amount,
-                    apply_tuition=True,
-                    apply_bus=False,
-                    apply_exam=False,
-                    apply_admission=False,
-                    reason=reason,
-                    status="Active",
-                    created_by=session.get("username", "")
-                )
+                    discount_type="Monthly",
+                    month=month,
+                    status="Active"
+                ).first()
 
-                db.session.add(d)
-                created += 1
+                if existing:
+                    existing.term = None
+                    existing.amount = amount
+                    existing.reason = reason
+                    existing.apply_tuition = True
+                    existing.apply_bus = False
+                    existing.apply_exam = False
+                    existing.apply_admission = False
+                    existing.created_by = session.get("username", "")
+                    updated_count += 1
+                else:
+                    discount = Discount(
+                        school_id=school_id,
+                        pupil_id=pupil.id,
+                        academic_year=academic_year,
+                        discount_type="Monthly",
+                        term=None,
+                        month=month,
+                        amount=amount,
+                        apply_tuition=True,
+                        apply_bus=False,
+                        apply_exam=False,
+                        apply_admission=False,
+                        reason=reason,
+                        status="Active",
+                        created_by=session.get("username", "")
+                    )
 
-        db.session.commit()
+                    db.session.add(discount)
+                    created_count += 1
 
-        save_audit(
-            f"Added {discount_type} discount for {pupil.full_name}: KES {amount:,.2f}",
-            "Finance"
-        )
+                total_waived = amount
 
-        flash("Discount / waiver saved successfully.")
-        return redirect(url_for("discounts"))
+            # =================================================
+            # TERM DISCOUNT
+            # =================================================
+
+            elif discount_type == "Term":
+                amount = float(request.form.get("amount") or 0)
+
+                if term not in TERMS:
+                    flash("Please select a valid term.")
+                    return redirect(url_for("discounts"))
+
+                if amount <= 0:
+                    flash("Enter a valid term discount amount.")
+                    return redirect(url_for("discounts"))
+
+                existing = Discount.query.filter_by(
+                    school_id=school_id,
+                    pupil_id=pupil.id,
+                    academic_year=academic_year,
+                    discount_type="Term",
+                    term=term,
+                    status="Active"
+                ).first()
+
+                if existing:
+                    existing.month = None
+                    existing.amount = amount
+                    existing.reason = reason
+                    existing.apply_tuition = True
+                    existing.apply_bus = False
+                    existing.apply_exam = False
+                    existing.apply_admission = False
+                    existing.created_by = session.get("username", "")
+                    updated_count += 1
+                else:
+                    discount = Discount(
+                        school_id=school_id,
+                        pupil_id=pupil.id,
+                        academic_year=academic_year,
+                        discount_type="Term",
+                        term=term,
+                        month=None,
+                        amount=amount,
+                        apply_tuition=True,
+                        apply_bus=False,
+                        apply_exam=False,
+                        apply_admission=False,
+                        reason=reason,
+                        status="Active",
+                        created_by=session.get("username", "")
+                    )
+
+                    db.session.add(discount)
+                    created_count += 1
+
+                total_waived = amount
+
+            # =================================================
+            # FULL SCHOLARSHIP / FREE
+            # =================================================
+
+            elif discount_type == "Free":
+                for term_name in TERMS:
+                    term_month_list = TERM_MONTHS.get(term_name, [])
+
+                    for month_index, month_name in enumerate(term_month_list):
+                        fee = FeeStructure.query.filter_by(
+                            school_id=school_id,
+                            academic_year=academic_year,
+                            grade=pupil.grade,
+                            term=term_name,
+                            month=month_name
+                        ).first()
+
+                        if not fee:
+                            fee = FeeStructure.query.filter_by(
+                                school_id=school_id,
+                                academic_year=academic_year,
+                                grade=pupil.grade,
+                                term=term_name,
+                                month=None
+                            ).first()
+
+                        if not fee:
+                            continue
+
+                        tuition_waived = fee.tuition_fee or 0
+
+                        bus_waived = 0
+                        if pupil.uses_bus == "Yes":
+                            bus_waived = fee.bus_fee or 0
+
+                        exam_waived = 0
+                        admission_waived = 0
+
+                        # Exam and admission are charged once,
+                        # in the first month of the term.
+                        if month_index == 0:
+                            exam_waived = fee.exam_fee or 0
+
+                            if pupil.new_admission == "Yes":
+                                admission_waived = fee.admission_fee or 0
+
+                        month_waived_amount = (
+                            tuition_waived
+                            + bus_waived
+                            + exam_waived
+                            + admission_waived
+                        )
+
+                        if month_waived_amount <= 0:
+                            continue
+
+                        existing = Discount.query.filter_by(
+                            school_id=school_id,
+                            pupil_id=pupil.id,
+                            academic_year=academic_year,
+                            discount_type="Free",
+                            term=term_name,
+                            month=month_name,
+                            status="Active"
+                        ).first()
+
+                        if existing:
+                            existing.amount = month_waived_amount
+                            existing.reason = reason
+                            existing.apply_tuition = tuition_waived > 0
+                            existing.apply_bus = bus_waived > 0
+                            existing.apply_exam = exam_waived > 0
+                            existing.apply_admission = admission_waived > 0
+                            existing.created_by = session.get("username", "")
+                            updated_count += 1
+                        else:
+                            discount = Discount(
+                                school_id=school_id,
+                                pupil_id=pupil.id,
+                                academic_year=academic_year,
+                                discount_type="Free",
+                                term=term_name,
+                                month=month_name,
+                                amount=month_waived_amount,
+                                apply_tuition=tuition_waived > 0,
+                                apply_bus=bus_waived > 0,
+                                apply_exam=exam_waived > 0,
+                                apply_admission=admission_waived > 0,
+                                reason=reason,
+                                status="Active",
+                                created_by=session.get("username", "")
+                            )
+
+                            db.session.add(discount)
+                            created_count += 1
+
+                        total_waived += month_waived_amount
+
+                if created_count == 0 and updated_count == 0:
+                    flash(
+                        "No applicable fee structure was found for this pupil's "
+                        "grade and academic year."
+                    )
+                    return redirect(url_for("discounts"))
+
+            else:
+                flash("Invalid discount type selected.")
+                return redirect(url_for("discounts"))
+
+            db.session.commit()
+
+            save_audit(
+                f"Saved {discount_type} fee arrangement for "
+                f"{pupil.full_name}. Total waived: KES {total_waived:,.2f}. "
+                f"Created: {created_count}, Updated: {updated_count}.",
+                "Finance"
+            )
+
+            flash(
+                f"Discount / waiver saved successfully. "
+                f"Total waived: KES {total_waived:,.2f}."
+            )
+
+            return redirect(url_for("discounts"))
+
+        except (TypeError, ValueError):
+            db.session.rollback()
+            flash("Please enter valid discount information.")
+            return redirect(url_for("discounts"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Unable to save discount / waiver: {str(e)}")
+            return redirect(url_for("discounts"))
 
     pupils = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(Pupil.full_name.asc()).all()
+    ).order_by(
+        Pupil.full_name.asc()
+    ).all()
 
     discount_list = Discount.query.filter_by(
         school_id=school_id,
@@ -4718,9 +4938,9 @@ def discounts():
         year=year,
         terms=TERMS,
         term_months=TERM_MONTHS,
+        all_school_months=all_school_months,
         money=money
     )
-
 @app.route("/delete_discount/<int:discount_id>", methods=["POST"])
 def delete_discount(discount_id):
     if not login_required():
