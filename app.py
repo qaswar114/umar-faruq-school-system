@@ -1771,7 +1771,14 @@ def paid_year(pupil_id, year):
         academic_year=year
     ).all()
 
-    return sum((p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) for p in rows)
+    return sum(
+        (p.tuition_paid or 0) +
+        (p.bus_paid or 0) +
+        (p.exam_paid or 0) +
+        (p.admission_paid or 0)
+        for p in rows
+    )
+
 
 def paid_month(pupil_id, year, term, month):
     rows = Payment.query.filter_by(
@@ -1782,17 +1789,188 @@ def paid_month(pupil_id, year, term, month):
         month=month
     ).all()
 
-    return sum((p.tuition_paid + p.bus_paid + p.exam_paid + p.admission_paid) for p in rows)
-
-def discount_year(pupil_id, year):
     return sum(
-        d.amount for d in Discount.query.filter_by(
-            school_id=current_school_id(),
-            pupil_id=pupil_id,
-            academic_year=year
-        ).all()
+        (p.tuition_paid or 0) +
+        (p.bus_paid or 0) +
+        (p.exam_paid or 0) +
+        (p.admission_paid or 0)
+        for p in rows
     )
 
+
+def discount_month(pupil_id, year, term, month):
+    """
+    Returns all active discounts applicable to one specific month.
+
+    Monthly:
+        Applies only to its selected month.
+
+    Term:
+        The full term discount is counted once, in the first month
+        of that term.
+
+    Free:
+        Each scholarship record contains the automatically calculated
+        waived amount for its specific term and month.
+    """
+
+    school_id = current_school_id()
+    total_discount = 0
+
+    discounts = Discount.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil_id,
+        academic_year=year,
+        status="Active"
+    ).all()
+
+    first_month = None
+    term_month_list = term_months(term)
+
+    if term_month_list:
+        first_month = term_month_list[0]
+
+    for discount in discounts:
+        amount = discount.amount or 0
+
+        if discount.discount_type == "Monthly":
+            if discount.month == month:
+                total_discount += amount
+
+        elif discount.discount_type == "Term":
+            if discount.term == term and month == first_month:
+                total_discount += amount
+
+        elif discount.discount_type == "Free":
+            if discount.term == term and discount.month == month:
+                total_discount += amount
+
+    return total_discount
+
+
+def discount_until_month(pupil_id, year, selected_term, selected_month):
+    """
+    Returns all active discounts applicable from the beginning of the
+    billing year up to the selected term and month.
+    """
+
+    if year < 2026:
+        return 0
+
+    total_discount = 0
+    started = year > 2026
+
+    for term in TERMS:
+        for month in term_months(term):
+
+            # EduManage billing began in May 2026.
+            if year == 2026 and month == "May":
+                started = True
+
+            if started:
+                total_discount += discount_month(
+                    pupil_id,
+                    year,
+                    term,
+                    month
+                )
+
+            if term == selected_term and month == selected_month:
+                return total_discount
+
+    return total_discount
+
+
+def discount_year(pupil_id, year):
+    """
+    Returns the total value of all active discounts for the academic year.
+    """
+
+    school_id = current_school_id()
+
+    discounts = Discount.query.filter_by(
+        school_id=school_id,
+        pupil_id=pupil_id,
+        academic_year=year,
+        status="Active"
+    ).all()
+
+    return sum(d.amount or 0 for d in discounts)
+
+
+def due_until_month(pupil, year, selected_term, selected_month):
+    """
+    Returns fees due from the start of EduManage billing up to the
+    selected term and month.
+
+    Discounts are not deducted here. Use:
+
+        due_until_month(...)
+        - paid_year(...)
+        - discount_until_month(...)
+    """
+
+    if year < 2026:
+        return 0
+
+    total_due = 0
+    started = year > 2026
+
+    for term in TERMS:
+        for month in term_months(term):
+
+            # EduManage live billing started in May 2026.
+            if year == 2026 and month == "May":
+                started = True
+
+            if started:
+                monthly_charges = monthly_due(
+                    pupil,
+                    year,
+                    term,
+                    month
+                )
+
+                total_due += sum(
+                    value or 0
+                    for value in monthly_charges.values()
+                )
+
+            if term == selected_term and month == selected_month:
+                return total_due
+
+    return total_due
+
+
+def balance_until_month(pupil, year, selected_term, selected_month):
+    """
+    Central balance calculation for dashboards, balances, statements,
+    defaulters, fee reminders and payment confirmations.
+    """
+
+    total_due = due_until_month(
+        pupil,
+        year,
+        selected_term,
+        selected_month
+    )
+
+    total_paid = paid_year(
+        pupil.id,
+        year
+    )
+
+    total_discount = discount_until_month(
+        pupil.id,
+        year,
+        selected_term,
+        selected_month
+    )
+
+    balance = total_due - total_paid - total_discount
+
+    return max(0, balance)
+    
 def opening_arrears(pupil, year):
     if year <= 2026:
         return 0
@@ -1804,26 +1982,7 @@ def opening_arrears(pupil, year):
     arrears = previous_year_due - previous_year_paid - previous_year_discount
 
     return max(0, arrears)
-def due_until_month(pupil, year, selected_term, selected_month):
-    if year < 2026:
-        return 0
-
-    total = 0
-    started = False
-
-    for term in TERMS:
-        for month in term_months(term):
-            if year == 2026 and month == "May":
-                started = True
-
-            if started:
-                d = monthly_due(pupil, year, term, month)
-                total += sum(d.values())
-
-            if term == selected_term and month == selected_month:
-                return total
-
-    return total
+    
 
 @app.before_request
 def setup_once():
