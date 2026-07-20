@@ -10596,6 +10596,50 @@ def kitchen_categories():
         settings=get_settings(),
         categories=categories
     )
+
+@app.route("/kitchen/items", methods=["GET", "POST"])
+def kitchen_items():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("admin", "bursar", "storekeeper", "principal", "super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        item = KitchenItem(
+            school_id=school_id,
+            category_id=request.form["category_id"],
+            name=request.form["name"],
+            unit=request.form["unit"],
+            minimum_stock=float(request.form.get("minimum_stock", 0)),
+            current_stock=float(request.form.get("current_stock", 0)),
+            reorder_level=float(request.form.get("reorder_level", 0)),
+            active=True,
+            created_by=session.get("username")
+        )
+
+        db.session.add(item)
+        db.session.commit()
+
+        flash("Kitchen item added successfully.")
+        return redirect(url_for("kitchen_items"))
+
+    categories = KitchenCategory.query.filter_by(
+        school_id=school_id
+    ).order_by(KitchenCategory.name).all()
+
+    items = KitchenItem.query.filter_by(
+        school_id=school_id
+    ).order_by(KitchenItem.name).all()
+
+    return render_template(
+        "kitchen/items.html",
+        categories=categories,
+        items=items
+    )
     
 
 # =====================================================
