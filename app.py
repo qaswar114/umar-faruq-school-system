@@ -10640,6 +10640,85 @@ def kitchen_items():
         categories=categories,
         items=items
     )
+
+@app.route("/kitchen/issues", methods=["GET", "POST"])
+def kitchen_issues():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "principal",
+        "bursar",
+        "storekeeper",
+        "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        kitchen_item_id = int(request.form["kitchen_item_id"])
+        quantity = float(request.form.get("quantity") or 0)
+        issued_by = request.form.get("issued_by", "").strip()
+        received_by = request.form.get("received_by", "").strip()
+        reference = request.form.get("reference", "").strip()
+        remarks = request.form.get("remarks", "").strip()
+
+        item = KitchenItem.query.filter_by(
+            id=kitchen_item_id,
+            school_id=school_id,
+            active=True
+        ).first()
+
+        if not item:
+            flash("Invalid kitchen item selected.")
+            return redirect(url_for("kitchen_issues"))
+
+        if quantity <= 0:
+            flash("Enter a valid quantity.")
+            return redirect(url_for("kitchen_issues"))
+
+        issue = KitchenIssue(
+            school_id=school_id,
+            kitchen_item_id=item.id,
+            quantity=quantity,
+            issued_by=issued_by or session.get("username", ""),
+            received_by=received_by,
+            reference=reference,
+            remarks=remarks
+        )
+
+        item.current_stock = (item.current_stock or 0) + quantity
+
+        db.session.add(issue)
+        db.session.commit()
+
+        save_audit(
+            f"Issued {quantity} {item.unit} of {item.name} to Kitchen",
+            "Kitchen"
+        )
+
+        flash("Kitchen stock issue recorded successfully.")
+        return redirect(url_for("kitchen_issues"))
+
+    items = KitchenItem.query.filter_by(
+        school_id=school_id,
+        active=True
+    ).order_by(KitchenItem.name.asc()).all()
+
+    issues = KitchenIssue.query.filter_by(
+        school_id=school_id
+    ).order_by(KitchenIssue.created_at.desc()).all()
+
+    return render_template(
+        "kitchen/issues.html",
+        settings=get_settings(),
+        items=items,
+        issues=issues,
+        today=date.today()
+    )
     
 
 # =====================================================
