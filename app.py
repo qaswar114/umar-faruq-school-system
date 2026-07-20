@@ -10507,16 +10507,30 @@ def kitchen_dashboard():
 
     school_id = current_school_id()
 
-    categories = KitchenCategory.query.count()
-    items = KitchenItem.query.count()
-    suppliers = KitchenSupplier.query.count()
+    categories = KitchenCategory.query.filter_by(
+        school_id=school_id
+    ).count()
+
+    items = KitchenItem.query.filter_by(
+        school_id=school_id,
+        active=True
+    ).count()
+
+    issued = KitchenIssue.query.filter_by(
+        school_id=school_id
+    ).count()
+
+    menus = MealMenu.query.filter_by(
+        school_id=school_id
+    ).count()
 
     return render_template(
         "kitchen/dashboard.html",
         settings=get_settings(),
         categories=categories,
         items=items,
-        suppliers=suppliers
+        issued=issued,
+        menus=menus
     )
     
 
