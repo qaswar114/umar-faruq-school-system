@@ -1,38 +1,329 @@
 {% extends "base.html" %}
 
+{% block title %}Kitchen Management{% endblock %}
+
 {% block content %}
 
 <div class="container-fluid">
 
-    <h2>🍽 Kitchen Management Dashboard</h2>
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold">
+                <i class="fas fa-utensils text-success"></i>
+                Kitchen Management
+            </h2>
+            <p class="text-muted mb-0">
+                Manage school feeding, menu planning and kitchen operations.
+            </p>
+        </div>
 
-    <div class="row mt-4">
+        <div>
+            <a href="{{ url_for('kitchen_categories') }}" class="btn btn-success">
+                <i class="fas fa-tags"></i> Food Categories
+            </a>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm">
+            <a href="{{ url_for('kitchen_items') }}" class="btn btn-primary">
+                <i class="fas fa-box"></i> Food Items
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Statistics -->
+
+    <div class="row">
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Food Categories
+                    </h6>
+
+                    <h2 class="fw-bold text-success">
+                        {{ categories }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Food Items
+                    </h6>
+
+                    <h2 class="fw-bold text-primary">
+                        {{ items }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Stock Issues
+                    </h6>
+
+                    <h2 class="fw-bold text-warning">
+                        {{ issued }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Menu Plans
+                    </h6>
+
+                    <h2 class="fw-bold text-danger">
+                        {{ menus }}
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- Kitchen Modules -->
+
+    <div class="row mt-3">
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-tags fa-3x text-success mb-3"></i>
+
                     <h5>Food Categories</h5>
-                    <h2>{{ categories }}</h2>
+
+                    <p class="text-muted">
+                        Manage food categories.
+                    </p>
+
+                    <a href="{{ url_for('kitchen_categories') }}"
+                       class="btn btn-success w-100">
+                        Open
+                    </a>
+
                 </div>
+
             </div>
+
         </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5>Kitchen Items</h5>
-                    <h2>{{ items }}</h2>
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-box-open fa-3x text-primary mb-3"></i>
+
+                    <h5>Food Items</h5>
+
+                    <p class="text-muted">
+                        Manage kitchen food items.
+                    </p>
+
+                    <a href="{{ url_for('kitchen_items') }}"
+                       class="btn btn-primary w-100">
+                        Open
+                    </a>
+
                 </div>
+
             </div>
+
         </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5>Suppliers</h5>
-                    <h2>{{ suppliers }}</h2>
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-dolly fa-3x text-warning mb-3"></i>
+
+                    <h5>Kitchen Issues</h5>
+
+                    <p class="text-muted">
+                        Receive stock from Inventory.
+                    </p>
+
+                    <a href="{{ url_for('kitchen_issues') }}"
+                       class="btn btn-warning w-100">
+                        Open
+                    </a>
+
                 </div>
+
             </div>
+
+        </div>
+
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-utensils fa-3x text-danger mb-3"></i>
+
+                    <h5>Meal Menu</h5>
+
+                    <p class="text-muted">
+                        Create breakfast, lunch and supper menus.
+                    </p>
+
+                    <a href="{{ url_for('meal_menu') }}"
+                       class="btn btn-danger w-100">
+                        Open
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="row">
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-chart-pie fa-3x text-info mb-3"></i>
+
+                    <h5>Consumption</h5>
+
+                    <p class="text-muted">
+                        Record food consumed.
+                    </p>
+
+                    <a href="{{ url_for('kitchen_consumption') }}"
+                       class="btn btn-info w-100">
+                        Open
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-users fa-3x text-secondary mb-3"></i>
+
+                    <h5>Meal Serving</h5>
+
+                    <p class="text-muted">
+                        Record meals served.
+                    </p>
+
+                    <a href="{{ url_for('meal_serving') }}"
+                       class="btn btn-secondary w-100">
+                        Open
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-trash fa-3x text-dark mb-3"></i>
+
+                    <h5>Kitchen Waste</h5>
+
+                    <p class="text-muted">
+                        Record damaged and wasted food.
+                    </p>
+
+                    <a href="{{ url_for('kitchen_waste') }}"
+                       class="btn btn-dark w-100">
+                        Open
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="col-lg-3 col-md-6 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body text-center">
+
+                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+
+                    <h5>Reports</h5>
+
+                    <p class="text-muted">
+                        Kitchen reports and analytics.
+                    </p>
+
+                    <a href="{{ url_for('kitchen_reports') }}"
+                       class="btn btn-success w-100">
+                        Open
+                    </a>
+
+                </div>
+
+            </div>
+
         </div>
 
     </div>
