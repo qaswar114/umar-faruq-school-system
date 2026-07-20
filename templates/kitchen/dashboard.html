@@ -1,329 +1,663 @@
 {% extends "base.html" %}
 
-{% block title %}Kitchen Management{% endblock %}
-
 {% block content %}
 
-<div class="container-fluid">
+<style>
+    .kitchen-dashboard {
+        max-width: 1500px;
+        margin: 0 auto;
+    }
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold">
-                <i class="fas fa-utensils text-success"></i>
-                Kitchen Management
-            </h2>
-            <p class="text-muted mb-0">
-                Manage school feeding, menu planning and kitchen operations.
-            </p>
+    .kitchen-hero {
+        background: linear-gradient(135deg, #071b3d 0%, #0969da 52%, #16a34a 100%);
+        border-radius: 22px;
+        padding: 25px 28px;
+        color: white;
+        margin-bottom: 18px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.13);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .kitchen-hero-left {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .kitchen-hero-icon {
+        width: 66px;
+        height: 66px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.17);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 34px;
+        flex-shrink: 0;
+    }
+
+    .kitchen-hero h2 {
+        margin: 0;
+        font-size: 31px;
+        line-height: 1.1;
+        color: white;
+    }
+
+    .kitchen-hero p {
+        margin: 8px 0 0;
+        color: #e0f2fe;
+        font-size: 15px;
+    }
+
+    .kitchen-hero-badge {
+        background: rgba(255, 255, 255, 0.17);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .kitchen-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .kitchen-stat {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kitchen-stat::after {
+        content: "";
+        position: absolute;
+        right: -28px;
+        top: -28px;
+        width: 85px;
+        height: 85px;
+        border-radius: 50%;
+        background: #eff6ff;
+    }
+
+    .kitchen-stat.orange::after {
+        background: #fff7ed;
+    }
+
+    .kitchen-stat.green::after {
+        background: #f0fdf4;
+    }
+
+    .kitchen-stat.purple::after {
+        background: #faf5ff;
+    }
+
+    .stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        z-index: 2;
+    }
+
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #dbeafe;
+        font-size: 23px;
+    }
+
+    .orange .stat-icon {
+        background: #ffedd5;
+    }
+
+    .green .stat-icon {
+        background: #dcfce7;
+    }
+
+    .purple .stat-icon {
+        background: #f3e8ff;
+    }
+
+    .stat-label {
+        margin-top: 13px;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 800;
+        position: relative;
+        z-index: 2;
+    }
+
+    .stat-value {
+        margin-top: 5px;
+        color: #0f172a;
+        font-size: 30px;
+        font-weight: 950;
+        position: relative;
+        z-index: 2;
+    }
+
+    .kitchen-section {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        padding: 20px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        margin-bottom: 18px;
+    }
+
+    .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 16px;
+    }
+
+    .section-heading h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 22px;
+    }
+
+    .section-heading p {
+        margin: 5px 0 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .module-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 17px;
+        background: #f8fafc;
+        min-height: 185px;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .module-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(15, 23, 42, 0.10);
+        border-color: #bfdbfe;
+    }
+
+    .module-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 25px;
+        margin-bottom: 13px;
+    }
+
+    .blue-icon {
+        background: #dbeafe;
+    }
+
+    .green-icon {
+        background: #dcfce7;
+    }
+
+    .orange-icon {
+        background: #ffedd5;
+    }
+
+    .red-icon {
+        background: #fee2e2;
+    }
+
+    .purple-icon {
+        background: #f3e8ff;
+    }
+
+    .cyan-icon {
+        background: #cffafe;
+    }
+
+    .gray-icon {
+        background: #e2e8f0;
+    }
+
+    .yellow-icon {
+        background: #fef3c7;
+    }
+
+    .module-card h4 {
+        margin: 0 0 7px;
+        font-size: 17px;
+        color: #0f172a;
+    }
+
+    .module-card p {
+        margin: 0 0 15px;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+        flex: 1;
+    }
+
+    .module-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        border-radius: 11px;
+        padding: 10px 13px;
+        background: #0b5ed7;
+        color: white;
+        font-weight: 900;
+        font-size: 14px;
+    }
+
+    .module-link:hover {
+        background: #084db4;
+        color: white;
+    }
+
+    .module-link.green {
+        background: #16a34a;
+    }
+
+    .module-link.green:hover {
+        background: #15803d;
+    }
+
+    .module-link.orange {
+        background: #ea580c;
+    }
+
+    .module-link.orange:hover {
+        background: #c2410c;
+    }
+
+    .module-link.red {
+        background: #dc2626;
+    }
+
+    .module-link.red:hover {
+        background: #b91c1c;
+    }
+
+    .module-link.purple {
+        background: #7e22ce;
+    }
+
+    .module-link.purple:hover {
+        background: #6b21a8;
+    }
+
+    .module-link.dark {
+        background: #334155;
+    }
+
+    .module-link.dark:hover {
+        background: #1e293b;
+    }
+
+    .kitchen-bottom-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 18px;
+    }
+
+    .workflow-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .workflow-row {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 12px 14px;
+    }
+
+    .workflow-number {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 950;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .workflow-row strong {
+        display: block;
+        color: #0f172a;
+    }
+
+    .workflow-row small {
+        color: #64748b;
+    }
+
+    .status-box {
+        background: linear-gradient(135deg, #f0fdf4, #ecfeff);
+        border: 1px solid #bbf7d0;
+        border-radius: 17px;
+        padding: 18px;
+    }
+
+    .status-box h4 {
+        margin: 0 0 8px;
+        color: #166534;
+        font-size: 18px;
+    }
+
+    .status-box p {
+        margin: 0;
+        color: #475569;
+        line-height: 1.55;
+        font-size: 14px;
+    }
+
+    @media (max-width: 1200px) {
+        .module-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .kitchen-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 850px) {
+        .kitchen-hero {
+            display: block;
+        }
+
+        .kitchen-hero-badge {
+            display: inline-block;
+            margin-top: 16px;
+        }
+
+        .kitchen-bottom-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 650px) {
+        .module-grid,
+        .kitchen-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kitchen-hero-left {
+            align-items: flex-start;
+        }
+
+        .kitchen-hero h2 {
+            font-size: 25px;
+        }
+    }
+</style>
+
+<div class="kitchen-dashboard">
+
+    <div class="kitchen-hero">
+        <div class="kitchen-hero-left">
+            <div class="kitchen-hero-icon">🍽️</div>
+
+            <div>
+                <h2>Kitchen Management</h2>
+                <p>
+                    Manage food stock, menus, consumption, meal serving,
+                    wastage and kitchen reports.
+                </p>
+            </div>
         </div>
 
-        <div>
-            <a href="{{ url_for('kitchen_categories') }}" class="btn btn-success">
-                <i class="fas fa-tags"></i> Food Categories
-            </a>
-
-            <a href="{{ url_for('kitchen_items') }}" class="btn btn-primary">
-                <i class="fas fa-box"></i> Food Items
-            </a>
+        <div class="kitchen-hero-badge">
+            School Feeding Centre
         </div>
     </div>
 
+    <div class="kitchen-stats">
 
-    <!-- Statistics -->
-
-    <div class="row">
-
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Food Categories
-                    </h6>
-
-                    <h2 class="fw-bold text-success">
-                        {{ categories }}
-                    </h2>
-
-                </div>
+        <div class="kitchen-stat">
+            <div class="stat-top">
+                <div class="stat-icon">🏷️</div>
             </div>
+            <div class="stat-label">Food Categories</div>
+            <div class="stat-value">{{ categories or 0 }}</div>
         </div>
 
-
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Food Items
-                    </h6>
-
-                    <h2 class="fw-bold text-primary">
-                        {{ items }}
-                    </h2>
-
-                </div>
+        <div class="kitchen-stat green">
+            <div class="stat-top">
+                <div class="stat-icon">📦</div>
             </div>
+            <div class="stat-label">Food Items</div>
+            <div class="stat-value">{{ items or 0 }}</div>
         </div>
 
-
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Stock Issues
-                    </h6>
-
-                    <h2 class="fw-bold text-warning">
-                        {{ issued }}
-                    </h2>
-
-                </div>
+        <div class="kitchen-stat orange">
+            <div class="stat-top">
+                <div class="stat-icon">🚚</div>
             </div>
+            <div class="stat-label">Stock Issues</div>
+            <div class="stat-value">{{ issued or 0 }}</div>
         </div>
 
-
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Menu Plans
-                    </h6>
-
-                    <h2 class="fw-bold text-danger">
-                        {{ menus }}
-                    </h2>
-
-                </div>
+        <div class="kitchen-stat purple">
+            <div class="stat-top">
+                <div class="stat-icon">📅</div>
             </div>
+            <div class="stat-label">Menu Plans</div>
+            <div class="stat-value">{{ menus or 0 }}</div>
         </div>
 
     </div>
 
+    <div class="kitchen-section">
 
-    <!-- Kitchen Modules -->
+        <div class="section-heading">
+            <div>
+                <h3>Kitchen Operations</h3>
+                <p>Select a module to manage the school feeding programme.</p>
+            </div>
+        </div>
 
-    <div class="row mt-3">
+        <div class="module-grid">
 
-        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="module-card">
+                <div class="module-icon green-icon">🏷️</div>
+                <h4>Food Categories</h4>
+                <p>
+                    Organize kitchen items into cereals, vegetables,
+                    beverages, proteins and other categories.
+                </p>
+                <a href="{{ url_for('kitchen_categories') }}"
+                   class="module-link green">
+                    Open Categories
+                </a>
+            </div>
 
-            <div class="card shadow-sm h-100">
+            <div class="module-card">
+                <div class="module-icon blue-icon">📦</div>
+                <h4>Food Items</h4>
+                <p>
+                    Register rice, beans, flour, oil, milk and other
+                    food items used by the kitchen.
+                </p>
+                <a href="{{ url_for('kitchen_items') }}"
+                   class="module-link">
+                    Open Food Items
+                </a>
+            </div>
 
-                <div class="card-body text-center">
+            <div class="module-card">
+                <div class="module-icon orange-icon">🚚</div>
+                <h4>Kitchen Issues</h4>
+                <p>
+                    Record food stock received by the kitchen from
+                    the central inventory store.
+                </p>
+                <a href="{{ url_for('kitchen_issues') }}"
+                   class="module-link orange">
+                    Open Stock Issues
+                </a>
+            </div>
 
-                    <i class="fas fa-tags fa-3x text-success mb-3"></i>
+            <div class="module-card">
+                <div class="module-icon red-icon">🍲</div>
+                <h4>Daily Meal Menu</h4>
+                <p>
+                    Plan breakfast, lunch, snacks and supper for each
+                    school day.
+                </p>
+                <a href="{{ url_for('meal_menu') }}"
+                   class="module-link red">
+                    Open Meal Menu
+                </a>
+            </div>
 
-                    <h5>Food Categories</h5>
+            <div class="module-card">
+                <div class="module-icon cyan-icon">📊</div>
+                <h4>Consumption</h4>
+                <p>
+                    Record quantities of food items used during
+                    meal preparation.
+                </p>
+                <a href="{{ url_for('kitchen_consumption') }}"
+                   class="module-link">
+                    Open Consumption
+                </a>
+            </div>
 
-                    <p class="text-muted">
-                        Manage food categories.
-                    </p>
+            <div class="module-card">
+                <div class="module-icon purple-icon">👥</div>
+                <h4>Meal Serving</h4>
+                <p>
+                    Record the number of pupils, staff and visitors
+                    served during each meal.
+                </p>
+                <a href="{{ url_for('meal_serving') }}"
+                   class="module-link purple">
+                    Open Meal Serving
+                </a>
+            </div>
 
-                    <a href="{{ url_for('kitchen_categories') }}"
-                       class="btn btn-success w-100">
-                        Open
-                    </a>
+            <div class="module-card">
+                <div class="module-icon gray-icon">🗑️</div>
+                <h4>Kitchen Waste</h4>
+                <p>
+                    Track spoiled, damaged, expired or wasted food
+                    and deduct it from kitchen stock.
+                </p>
+                <a href="{{ url_for('kitchen_waste') }}"
+                   class="module-link dark">
+                    Open Waste Records
+                </a>
+            </div>
 
-                </div>
-
+            <div class="module-card">
+                <div class="module-icon yellow-icon">📈</div>
+                <h4>Kitchen Reports</h4>
+                <p>
+                    View stock balances, low-stock items, consumption,
+                    waste and meal-serving summaries.
+                </p>
+                <a href="{{ url_for('kitchen_reports') }}"
+                   class="module-link green">
+                    Open Reports
+                </a>
             </div>
 
         </div>
-
-
-
-        <div class="col-lg-3 col-md-6 mb-3">
-
-            <div class="card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <i class="fas fa-box-open fa-3x text-primary mb-3"></i>
-
-                    <h5>Food Items</h5>
-
-                    <p class="text-muted">
-                        Manage kitchen food items.
-                    </p>
-
-                    <a href="{{ url_for('kitchen_items') }}"
-                       class="btn btn-primary w-100">
-                        Open
-                    </a>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="col-lg-3 col-md-6 mb-3">
-
-            <div class="card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <i class="fas fa-dolly fa-3x text-warning mb-3"></i>
-
-                    <h5>Kitchen Issues</h5>
-
-                    <p class="text-muted">
-                        Receive stock from Inventory.
-                    </p>
-
-                    <a href="{{ url_for('kitchen_issues') }}"
-                       class="btn btn-warning w-100">
-                        Open
-                    </a>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="col-lg-3 col-md-6 mb-3">
-
-            <div class="card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <i class="fas fa-utensils fa-3x text-danger mb-3"></i>
-
-                    <h5>Meal Menu</h5>
-
-                    <p class="text-muted">
-                        Create breakfast, lunch and supper menus.
-                    </p>
-
-                    <a href="{{ url_for('meal_menu') }}"
-                       class="btn btn-danger w-100">
-                        Open
-                    </a>
-
-                </div>
-
-            </div>
-
-        </div>
-
     </div>
 
+    <div class="kitchen-bottom-grid">
 
+        <div class="kitchen-section">
+            <div class="section-heading">
+                <div>
+                    <h3>Kitchen Workflow</h3>
+                    <p>How food moves through the system.</p>
+                </div>
+            </div>
 
-    <div class="row">
+            <div class="workflow-list">
 
-        <div class="col-lg-3 col-md-6 mb-3">
+                <div class="workflow-row">
+                    <div class="workflow-number">1</div>
+                    <div>
+                        <strong>Inventory issues stock</strong>
+                        <small>Food is transferred from the central store to the kitchen.</small>
+                    </div>
+                </div>
 
-            <div class="card shadow-sm h-100">
+                <div class="workflow-row">
+                    <div class="workflow-number">2</div>
+                    <div>
+                        <strong>Kitchen plans the menu</strong>
+                        <small>Breakfast, lunch, snacks and supper are scheduled.</small>
+                    </div>
+                </div>
 
-                <div class="card-body text-center">
+                <div class="workflow-row">
+                    <div class="workflow-number">3</div>
+                    <div>
+                        <strong>Food consumption is recorded</strong>
+                        <small>Used quantities are deducted from kitchen stock.</small>
+                    </div>
+                </div>
 
-                    <i class="fas fa-chart-pie fa-3x text-info mb-3"></i>
-
-                    <h5>Consumption</h5>
-
-                    <p class="text-muted">
-                        Record food consumed.
-                    </p>
-
-                    <a href="{{ url_for('kitchen_consumption') }}"
-                       class="btn btn-info w-100">
-                        Open
-                    </a>
-
+                <div class="workflow-row">
+                    <div class="workflow-number">4</div>
+                    <div>
+                        <strong>Meals and waste are reported</strong>
+                        <small>Serving numbers and wastage are captured for analysis.</small>
+                    </div>
                 </div>
 
             </div>
-
         </div>
 
-
-
-        <div class="col-lg-3 col-md-6 mb-3">
-
-            <div class="card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <i class="fas fa-users fa-3x text-secondary mb-3"></i>
-
-                    <h5>Meal Serving</h5>
-
-                    <p class="text-muted">
-                        Record meals served.
-                    </p>
-
-                    <a href="{{ url_for('meal_serving') }}"
-                       class="btn btn-secondary w-100">
-                        Open
-                    </a>
-
+        <div class="kitchen-section">
+            <div class="section-heading">
+                <div>
+                    <h3>Module Status</h3>
+                    <p>Kitchen management readiness.</p>
                 </div>
-
             </div>
 
-        </div>
-
-
-
-        <div class="col-lg-3 col-md-6 mb-3">
-
-            <div class="card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <i class="fas fa-trash fa-3x text-dark mb-3"></i>
-
-                    <h5>Kitchen Waste</h5>
-
-                    <p class="text-muted">
-                        Record damaged and wasted food.
-                    </p>
-
-                    <a href="{{ url_for('kitchen_waste') }}"
-                       class="btn btn-dark w-100">
-                        Open
-                    </a>
-
-                </div>
-
+            <div class="status-box">
+                <h4>✅ Kitchen Module Connected</h4>
+                <p>
+                    All main dashboard routes are now connected. Start by
+                    creating food categories, then register the food items
+                    used by this school.
+                </p>
             </div>
-
-        </div>
-
-
-
-        <div class="col-lg-3 col-md-6 mb-3">
-
-            <div class="card shadow-sm h-100">
-
-                <div class="card-body text-center">
-
-                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
-
-                    <h5>Reports</h5>
-
-                    <p class="text-muted">
-                        Kitchen reports and analytics.
-                    </p>
-
-                    <a href="{{ url_for('kitchen_reports') }}"
-                       class="btn btn-success w-100">
-                        Open
-                    </a>
-
-                </div>
-
-            </div>
-
         </div>
 
     </div>
