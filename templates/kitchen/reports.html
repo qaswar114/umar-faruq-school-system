@@ -1,1 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
 
+<style>
+.report-page{max-width:1450px;margin:0 auto}
+.hero{
+    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
+    color:white;border-radius:20px;padding:22px 24px;margin-bottom:18px;
+    display:flex;justify-content:space-between;align-items:center
+}
+.hero h2{margin:0;font-size:28px}
+.hero p{margin:6px 0 0;color:#dbeafe}
+.back{
+    color:white;text-decoration:none;background:rgba(255,255,255,.18);
+    padding:10px 14px;border-radius:12px;font-weight:900
+}
+.cards{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px
+}
+.card{
+    background:white;border:1px solid #e5e7eb;border-radius:18px;
+    padding:16px;box-shadow:0 8px 20px rgba(15,23,42,.07)
+}
+.card small{font-weight:900;color:#64748b}
+.card h2{margin:10px 0 0;color:#0b5ed7}
+.panel{
+    background:white;border:1px solid #e5e7eb;border-radius:20px;
+    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07);
+    margin-bottom:18px
+}
+.panel h3{margin:0 0 15px;color:#0b5ed7}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left}
+th{background:#f8fafc;color:#475569}
+.badge{
+    display:inline-block;padding:5px 9px;border-radius:999px;
+    background:#fee2e2;color:#991b1b;font-weight:900;font-size:12px
+}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards{grid-template-columns:1fr}.hero{display:block}.back{display:inline-block;margin-top:12px}}
+</style>
+
+<div class="report-page">
+
+    <div class="hero">
+        <div>
+            <h2>📈 Kitchen Reports</h2>
+            <p>Monitor kitchen stock, consumption, waste and meals served.</p>
+        </div>
+
+        <a href="{{ url_for('kitchen_dashboard') }}" class="back">
+            ← Kitchen Dashboard
+        </a>
+    </div>
+
+    <div class="cards">
+        <div class="card">
+            <small>Food Items</small>
+            <h2>{{ total_items }}</h2>
+        </div>
+
+        <div class="card">
+            <small>Total Stock Issued</small>
+            <h2>{{ "%.2f"|format(total_issued or 0) }}</h2>
+        </div>
+
+        <div class="card">
+            <small>Total Consumed</small>
+            <h2>{{ "%.2f"|format(total_consumed or 0) }}</h2>
+        </div>
+
+        <div class="card">
+            <small>Total Wasted</small>
+            <h2>{{ "%.2f"|format(total_waste or 0) }}</h2>
+        </div>
+
+        <div class="card">
+            <small>Total Meals Served</small>
+            <h2>{{ total_meals_served }}</h2>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>⚠️ Low Stock Items</h3>
+
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Reorder Level</th>
+                    <th>Status</th>
+                </tr>
+
+                {% for item in low_stock_items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.category.name if item.category else "-" }}</td>
+                    <td>{{ item.current_stock or 0 }} {{ item.unit }}</td>
+                    <td>{{ item.reorder_level or 0 }} {{ item.unit }}</td>
+                    <td><span class="badge">Low Stock</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No low-stock items found.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>📦 Current Kitchen Stock</h3>
+
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Unit</th>
+                    <th>Current Stock</th>
+                    <th>Minimum Stock</th>
+                </tr>
+
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.category.name if item.category else "-" }}</td>
+                    <td>{{ item.unit }}</td>
+                    <td>{{ "%.2f"|format(item.current_stock or 0) }}</td>
+                    <td>{{ "%.2f"|format(item.minimum_stock or 0) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No kitchen food items found.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
