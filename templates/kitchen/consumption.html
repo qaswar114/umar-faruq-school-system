@@ -1,1 +1,168 @@
+{% extends "base.html" %}
+{% block content %}
 
+<style>
+.kitchen-page{max-width:1450px;margin:0 auto}
+.hero{
+    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
+    color:white;border-radius:20px;padding:22px 24px;margin-bottom:18px;
+    display:flex;justify-content:space-between;align-items:center
+}
+.hero h2{margin:0;font-size:28px}
+.hero p{margin:6px 0 0;color:#dbeafe}
+.back{
+    color:white;text-decoration:none;background:rgba(255,255,255,.18);
+    padding:10px 14px;border-radius:12px;font-weight:900
+}
+.grid{display:grid;grid-template-columns:390px 1fr;gap:18px}
+.panel{
+    background:white;border:1px solid #e5e7eb;border-radius:20px;
+    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07)
+}
+.panel h3{margin:0 0 15px;color:#0b5ed7}
+.form-group{margin-bottom:14px}
+label{display:block;font-weight:900;margin-bottom:6px}
+input,select,textarea{
+    width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:12px
+}
+textarea{min-height:90px}
+.btn{
+    border:none;border-radius:12px;padding:11px 16px;font-weight:900;cursor:pointer
+}
+.btn.green{background:#16a34a;color:white}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left}
+th{color:#475569;background:#f8fafc}
+.badge{
+    display:inline-block;padding:5px 9px;border-radius:999px;
+    background:#dbeafe;color:#1d4ed8;font-weight:900;font-size:12px
+}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.hero{display:block}.back{display:inline-block;margin-top:12px}}
+</style>
+
+<div class="kitchen-page">
+
+    <div class="hero">
+        <div>
+            <h2>📊 Kitchen Consumption</h2>
+            <p>Record food items used during meal preparation.</p>
+        </div>
+
+        <a href="{{ url_for('kitchen_dashboard') }}" class="back">
+            ← Kitchen Dashboard
+        </a>
+    </div>
+
+    <div class="grid">
+
+        <div class="panel">
+            <h3>➖ Record Consumption</h3>
+
+            <form method="post">
+
+                <div class="form-group">
+                    <label>Food Item</label>
+                    <select name="kitchen_item_id" required>
+                        <option value="">Select Item</option>
+
+                        {% for item in items %}
+                        <option value="{{ item.id }}">
+                            {{ item.name }} — {{ item.current_stock or 0 }} {{ item.unit }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Related Menu</label>
+                    <select name="menu_id">
+                        <option value="">Not Linked to Menu</option>
+
+                        {% for menu in menus %}
+                        <option value="{{ menu.id }}">
+                            {{ menu.menu_date }} — {{ menu.meal_type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Consumption Date</label>
+                    <input
+                        type="date"
+                        name="consumption_date"
+                        value="{{ today }}"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Quantity Used</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        min="0.01"
+                        step="0.01"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <textarea name="remarks"></textarea>
+                </div>
+
+                <button class="btn green">Save Consumption</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3>📋 Consumption History</h3>
+
+            <div class="table-wrap">
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Menu</th>
+                        <th>Recorded By</th>
+                    </tr>
+
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record.consumption_date }}</td>
+
+                        <td>
+                            {{ record.kitchen_item.name }}
+                        </td>
+
+                        <td>
+                            <span class="badge">
+                                {{ record.quantity }} {{ record.unit or record.kitchen_item.unit }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if record.menu %}
+                                {{ record.menu.menu_date }} — {{ record.menu.meal_type }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>{{ record.created_by or "-" }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">No consumption records found.</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
