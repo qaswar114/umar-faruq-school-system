@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <h2>Kitchen Stock Issues</h2>
+
+    <form method="post">
+        <label>Kitchen Item</label>
+        <select name="kitchen_item_id" required>
+            <option value="">Select Item</option>
+            {% for item in items %}
+            <option value="{{ item.id }}">
+                {{ item.name }} — {{ item.current_stock or 0 }} {{ item.unit }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label>Quantity Issued</label>
+        <input type="number" name="quantity" step="0.01" min="0.01" required>
+
+        <label>Issued By</label>
+        <input name="issued_by">
+
+        <label>Received By</label>
+        <input name="received_by" required>
+
+        <label>Reference</label>
+        <input name="reference" placeholder="Example: Store Issue Voucher 001">
+
+        <label>Remarks</label>
+        <input name="remarks">
+
+        <button class="btn green">Save Kitchen Issue</button>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Issue History</h3>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Issued By</th>
+            <th>Received By</th>
+            <th>Reference</th>
+        </tr>
+
+        {% for issue in issues %}
+        <tr>
+            <td>{{ issue.issue_date }}</td>
+            <td>{{ issue.kitchen_item.name }}</td>
+            <td>{{ issue.quantity }} {{ issue.kitchen_item.unit }}</td>
+            <td>{{ issue.issued_by }}</td>
+            <td>{{ issue.received_by }}</td>
+            <td>{{ issue.reference or "-" }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6">No kitchen stock issues found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
