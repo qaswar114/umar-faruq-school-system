@@ -158,6 +158,17 @@ class Exam(db.Model):
     grade = db.Column(db.String(50), nullable=False)
     total_marks = db.Column(db.Float, default=100)
     status = db.Column(db.String(20), default="Active")
+
+class KitchenCategory(db.Model):
+    __tablename__ = "kitchen_categories"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship("KitchenItem", backref="category", lazy=True)
+    
 class Mark(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
