@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.kitchen-page{
+    max-width:1500px;
+    margin:0 auto;
+}
+
+.kitchen-hero{
+    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
+    color:white;
+    border-radius:20px;
+    padding:22px 24px;
+    margin-bottom:18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+}
+
+.kitchen-hero h2{
+    margin:0;
+    font-size:28px;
+}
+
+.kitchen-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.back-btn{
+    display:inline-block;
+    background:rgba(255,255,255,.18);
+    color:white;
+    text-decoration:none;
+    padding:10px 15px;
+    border-radius:12px;
+    font-weight:900;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:18px;
+}
+
+.panel{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 8px 20px rgba(15,23,42,.07);
+    margin-bottom:18px;
+}
+
+.panel h3{
+    margin:0 0 15px;
+    color:#0b5ed7;
+    font-size:21px;
+}
+
+.form-group{
+    margin-bottom:14px;
+}
+
+label{
+    display:block;
+    font-weight:900;
+    color:#0f172a;
+    margin-bottom:6px;
+}
+
+input,select{
+    width:100%;
+    border:1px solid #cbd5e1;
+    border-radius:12px;
+    padding:11px 12px;
+    font-size:15px;
+    background:white;
+}
+
+input:focus,select:focus{
+    outline:none;
+    border-color:#0b5ed7;
+    box-shadow:0 0 0 3px rgba(11,94,215,.12);
+}
+
+.btn{
+    border:none;
+    border-radius:12px;
+    padding:11px 16px;
+    font-weight:900;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-block;
+}
+
+.btn.green{
+    background:#16a34a;
+    color:white;
+}
+
+.btn.red{
+    background:#dc2626;
+    color:white;
+}
+
+.notice{
+    background:#eff6ff;
+    color:#1d4ed8;
+    border:1px solid #bfdbfe;
+    padding:12px 14px;
+    border-radius:14px;
+    margin-bottom:15px;
+    font-weight:800;
+}
+
+.filters{
+    display:grid;
+    grid-template-columns:1fr 220px;
+    gap:12px;
+    margin-bottom:15px;
+}
+
+.table-wrap{
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 10px;
+}
+
+th{
+    text-align:left;
+    color:#475569;
+    font-size:13px;
+    padding:0 10px 7px;
+}
+
+td{
+    background:#f8fafc;
+    border-top:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    padding:13px 10px;
+    vertical-align:middle;
+}
+
+tr td:first-child{
+    border-left:1px solid #e5e7eb;
+    border-radius:14px 0 0 14px;
+}
+
+tr td:last-child{
+    border-right:1px solid #e5e7eb;
+    border-radius:0 14px 14px 0;
+}
+
+.item-name{
+    font-weight:900;
+    color:#0f172a;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
+}
+
+.badge{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+}
+
+.badge.green{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.badge.orange{
+    background:#ffedd5;
+    color:#9a3412;
+}
+
+.badge.red{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.empty{
+    background:#f8fafc;
+    border:1px dashed #cbd5e1;
+    padding:30px;
+    border-radius:16px;
+    text-align:center;
+    color:#64748b;
+    font-weight:800;
+}
+
+@media(max-width:1050px){
+    .grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+    .kitchen-hero{
+        display:block;
+    }
+
+    .back-btn{
+        margin-top:14px;
+    }
+
+    .filters{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="kitchen-page">
+
+    <div class="kitchen-hero">
+        <div>
+            <h2>🍚 Kitchen Food Items</h2>
+            <p>Add and manage food items used by the school kitchen.</p>
+        </div>
+
+        <a href="{{ url_for('kitchen_dashboard') }}" class="back-btn">
+            ← Kitchen Dashboard
+        </a>
+    </div>
+
+    <div class="grid">
+
+        <div>
+            <div class="panel">
+                <h3>➕ Add Food Item</h3>
+
+                {% if not categories %}
+                <div class="notice">
+                    Create at least one food category before adding an item.
+                </div>
+                {% endif %}
+
+                <form method="post">
+
+                    <div class="form-group">
+                        <label>Food Category</label>
+                        <select name="category_id" required>
+                            <option value="">Select Category</option>
+
+                            {% for c in categories %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            placeholder="Example: Rice"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Unit of Measurement</label>
+                        <select name="unit" required>
+                            <option value="">Select Unit</option>
+                            <option value="Kg">Kilograms (Kg)</option>
+                            <option value="Grams">Grams</option>
+                            <option value="Litres">Litres</option>
+                            <option value="Millilitres">Millilitres</option>
+                            <option value="Bags">Bags</option>
+                            <option value="Packets">Packets</option>
+                            <option value="Pieces">Pieces</option>
+                            <option value="Crates">Crates</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Opening Kitchen Stock</label>
+                        <input
+                            type="number"
+                            name="current_stock"
+                            min="0"
+                            step="0.01"
+                            value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Minimum Stock Level</label>
+                        <input
+                            type="number"
+                            name="minimum_stock"
+                            min="0"
+                            step="0.01"
+                            value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Reorder Level</label>
+                        <input
+                            type="number"
+                            name="reorder_level"
+                            min="0"
+                            step="0.01"
+                            value="0">
+                    </div>
+
+                    <button
+                        class="btn green"
+                        {% if not categories %}disabled{% endif %}>
+                        Save Food Item
+                    </button>
+
+                </form>
+            </div>
+        </div>
+
+        <div>
+            <div class="panel">
+                <h3>📦 Food Item Register</h3>
+
+                <div class="filters">
+                    <input
+                        type="text"
+                        id="itemSearch"
+                        placeholder="Search food item..."
+                        onkeyup="filterItems()">
+
+                    <select id="categoryFilter" onchange="filterItems()">
+                        <option value="">All Categories</option>
+
+                        {% for c in categories %}
+                        <option value="{{ c.name|lower }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if items %}
+                <div class="table-wrap">
+                    <table id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Unit</th>
+                                <th>Current Stock</th>
+                                <th>Minimum</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in items %}
+                            <tr
+                                data-name="{{ item.name|lower }}"
+                                data-category="{{ item.category.name|lower if item.category else '' }}">
+
+                                <td>
+                                    <div class="item-name">{{ item.name }}</div>
+                                    <div class="muted">
+                                        Added by {{ item.created_by or "-" }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {{ item.category.name if item.category else "-" }}
+                                </td>
+
+                                <td>{{ item.unit }}</td>
+
+                                <td>
+                                    {{ "%.2f"|format(item.current_stock or 0) }}
+                                </td>
+
+                                <td>
+                                    {{ "%.2f"|format(item.minimum_stock or 0) }}
+                                </td>
+
+                                <td>
+                                    {% if (item.current_stock or 0) <= 0 %}
+                                        <span class="badge red">Out of Stock</span>
+
+                                    {% elif (item.current_stock or 0) <= (item.reorder_level or 0) %}
+                                        <span class="badge orange">Reorder</span>
+
+                                    {% else %}
+                                        <span class="badge green">Available</span>
+                                    {% endif %}
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                <div class="empty">
+                    No kitchen food items have been added yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function filterItems() {
+    const searchValue =
+        document.getElementById("itemSearch").value.toLowerCase();
+
+    const categoryValue =
+        document.getElementById("categoryFilter").value.toLowerCase();
+
+    const rows =
+        document.querySelectorAll("#itemsTable tbody tr");
+
+    rows.forEach(function(row) {
+        const itemName = row.dataset.name || "";
+        const categoryName = row.dataset.category || "";
+
+        const matchesSearch =
+            itemName.includes(searchValue);
+
+        const matchesCategory =
+            !categoryValue || categoryName === categoryValue;
+
+        row.style.display =
+            matchesSearch && matchesCategory ? "" : "none";
+    });
+}
+</script>
+
+{% endblock %}
