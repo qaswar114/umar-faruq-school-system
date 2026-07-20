@@ -189,13 +189,34 @@ class SMSPackage(db.Model):
 class SMSTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
-    school_id = db.Column(db.Integer, default=1)
+    purchase_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sms_purchase.id"),
+        unique=True,
+        nullable=True
+    )
 
-    sms_count = db.Column(db.Integer, nullable=False)
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
 
-    amount = db.Column(db.Float, nullable=False)
+    sms_count = db.Column(
+        db.Integer,
+        nullable=False
+    )
 
-    purchased_by = db.Column(db.String(100), default="")
+    amount = db.Column(
+        db.Float,
+        nullable=False,
+        default=0
+    )
+
+    purchased_by = db.Column(
+        db.String(100),
+        default=""
+    )
 
     purchase_date = db.Column(
         db.DateTime,
@@ -205,6 +226,14 @@ class SMSTransaction(db.Model):
     status = db.Column(
         db.String(20),
         default="Completed"
+    )
+
+    purchase = db.relationship(
+        "SMSPurchase",
+        backref=db.backref(
+            "sms_transaction",
+            uselist=False
+        )
     )
     
 class SMSPurchase(db.Model):
@@ -7394,7 +7423,10 @@ def platform_sms():
     )
 
 
-@app.route("/approve_sms_purchase/<int:purchase_id>", methods=["POST"])
+@app.route(
+    "/approve_sms_purchase/<int:purchase_id>",
+    methods=["POST"]
+)
 def approve_sms_purchase(purchase_id):
     if not login_required():
         return redirect(url_for("login"))
@@ -7404,7 +7436,6 @@ def approve_sms_purchase(purchase_id):
         return redirect(url_for("dashboard"))
 
     try:
-        # Lock the purchase row until this transaction finishes.
         purchase = (
             db.session.query(SMSPurchase)
             .filter(SMSPurchase.id == purchase_id)
@@ -7418,16 +7449,30 @@ def approve_sms_purchase(purchase_id):
 
         if purchase.status != "Pending":
             flash(
-                f"This SMS purchase cannot be approved because "
-                f"its current status is {purchase.status}."
+                f"This purchase cannot be approved because its "
+                f"current status is {purchase.status}."
             )
             return redirect(url_for("platform_sms"))
 
-        if not purchase.package_sms or purchase.package_sms <= 0:
+        quantity = int(purchase.package_sms or 0)
+
+        if quantity <= 0:
             flash("Invalid SMS purchase quantity.")
             return redirect(url_for("platform_sms"))
 
-        # Lock the platform pool as well.
+        existing_transaction = (
+            SMSTransaction.query.filter_by(
+                purchase_id=purchase.id
+            ).first()
+        )
+
+        if existing_transaction:
+            flash(
+                "This SMS purchase has already been credited. "
+                "The school wallet was not credited again."
+            )
+            return redirect(url_for("platform_sms"))
+
         pool = (
             db.session.query(PlatformSMSPool)
             .order_by(PlatformSMSPool.id.asc())
@@ -7439,17 +7484,18 @@ def approve_sms_purchase(purchase_id):
             flash("Platform SMS pool has not been created.")
             return redirect(url_for("platform_sms"))
 
-        if (pool.sms_balance or 0) < purchase.package_sms:
+        if (pool.sms_balance or 0) < quantity:
             flash(
                 "Not enough SMS in the platform pool. "
                 "Please procure and load more SMS first."
             )
             return redirect(url_for("platform_sms"))
 
-        # Lock the school's wallet if it already exists.
         wallet = (
             db.session.query(SMSWallet)
-            .filter(SMSWallet.school_id == purchase.school_id)
+            .filter(
+                SMSWallet.school_id == purchase.school_id
+            )
             .with_for_update()
             .first()
         )
@@ -7463,55 +7509,61 @@ def approve_sms_purchase(purchase_id):
                 sms_low_alert=100,
                 sms_enabled=True
             )
+
             db.session.add(wallet)
             db.session.flush()
 
-        # Prevent duplicate transaction records for this purchase.
-        existing_transaction = SMSTransaction.query.filter_by(
-            school_id=purchase.school_id,
-            sms_count=purchase.package_sms,
-            amount=purchase.amount,
-            purchased_by=purchase.requested_by,
-            status="Completed"
-        ).first()
+        pool.sms_balance = (
+            pool.sms_balance or 0
+        ) - quantity
 
-        if existing_transaction:
-            flash(
-                "A matching completed SMS transaction already exists. "
-                "The wallet was not credited again."
-            )
-            return redirect(url_for("platform_sms"))
+        pool.sms_sold = (
+            pool.sms_sold or 0
+        ) + quantity
 
-        quantity = int(purchase.package_sms)
+        wallet.sms_balance = (
+            wallet.sms_balance or 0
+        ) + quantity
 
-        pool.sms_balance = (pool.sms_balance or 0) - quantity
-        pool.sms_sold = (pool.sms_sold or 0) + quantity
+        wallet.sms_loaded = (
+            wallet.sms_loaded or 0
+        ) + quantity
 
-        wallet.sms_balance = (wallet.sms_balance or 0) + quantity
-        wallet.sms_loaded = (wallet.sms_loaded or 0) + quantity
         wallet.last_loaded = datetime.now()
-        wallet.last_loaded_by = session.get("username", "")
+        wallet.last_loaded_by = session.get(
+            "username",
+            ""
+        )
 
         purchase.status = "Completed"
         purchase.paid_at = datetime.now()
 
         transaction = SMSTransaction(
+            purchase_id=purchase.id,
             school_id=purchase.school_id,
             sms_count=quantity,
             amount=purchase.amount or 0,
-            purchased_by=purchase.requested_by,
+            purchased_by=purchase.requested_by or "",
             status="Completed"
         )
 
         db.session.add(transaction)
         db.session.commit()
 
-        save_audit(
-            f"Approved SMS purchase ID {purchase.id}: "
-            f"{quantity} SMS credited to school ID {purchase.school_id}. "
-            f"Platform balance now {pool.sms_balance}.",
-            "Communication"
-        )
+        try:
+            save_audit(
+                f"Approved SMS purchase ID {purchase.id}: "
+                f"{quantity} SMS credited to school ID "
+                f"{purchase.school_id}. Platform balance now "
+                f"{pool.sms_balance}.",
+                "Communication"
+            )
+        except Exception as audit_error:
+            print(
+                "SMS APPROVAL AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
 
         flash(
             f"SMS purchase approved successfully. "
@@ -7520,17 +7572,19 @@ def approve_sms_purchase(purchase_id):
 
     except Exception as e:
         db.session.rollback()
+
         print(
-            f"SMS PURCHASE APPROVAL ERROR: {str(e)}",
+            "SMS PURCHASE APPROVAL ERROR:",
+            str(e),
             flush=True
         )
+
         flash(
             "The SMS purchase could not be approved. "
-            "No balance was changed."
+            "No SMS balance was changed."
         )
 
     return redirect(url_for("platform_sms"))
-
 @app.route("/staff_dashboard")
 def staff_dashboard():
     if not login_required():
