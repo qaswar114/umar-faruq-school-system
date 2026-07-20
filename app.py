@@ -10719,6 +10719,75 @@ def kitchen_issues():
         issues=issues,
         today=date.today()
     )
+
+@app.route("/kitchen/menu", methods=["GET", "POST"])
+def meal_menu():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "principal",
+        "bursar",
+        "storekeeper",
+        "teacher",
+        "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        menu_date_text = request.form.get("menu_date", "").strip()
+        meal_type = request.form.get("meal_type", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not menu_date_text or not meal_type or not description:
+            flash("Menu date, meal type and description are required.")
+            return redirect(url_for("meal_menu"))
+
+        try:
+            menu_date = datetime.strptime(
+                menu_date_text,
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            flash("Invalid menu date.")
+            return redirect(url_for("meal_menu"))
+
+        menu = MealMenu(
+            school_id=school_id,
+            menu_date=menu_date,
+            meal_type=meal_type,
+            description=description,
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(menu)
+        db.session.commit()
+
+        save_audit(
+            f"Added kitchen menu for {menu_date}: {meal_type}",
+            "Kitchen"
+        )
+
+        flash("Meal menu added successfully.")
+        return redirect(url_for("meal_menu"))
+
+    menus = MealMenu.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        MealMenu.menu_date.desc(),
+        MealMenu.meal_type.asc()
+    ).all()
+
+    return render_template(
+        "kitchen/menu.html",
+        settings=get_settings(),
+        menus=menus,
+        today=date.today()
+    )
     
 
 # =====================================================
