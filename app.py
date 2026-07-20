@@ -922,6 +922,137 @@ class InventoryTransaction(db.Model):
 
     item = db.relationship("InventoryItem")
 
+class KitchenCategory(db.Model):
+    __tablename__ = "kitchen_categories"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship("KitchenItem", backref="category", lazy=True)
+
+class KitchenItem(db.Model):
+    __tablename__ = "kitchen_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey("kitchen_categories.id"), nullable=False)
+
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    unit = db.Column(db.String(30), nullable=False)      # Kg, Litres, Bags, Pieces...
+    minimum_stock = db.Column(db.Float, default=0)
+    current_stock = db.Column(db.Float, default=0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class KitchenPurchase(db.Model):
+    __tablename__ = "kitchen_purchases"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    item_id = db.Column(db.Integer, db.ForeignKey("kitchen_items.id"), nullable=False)
+    supplier = db.Column(db.String(150))
+    quantity = db.Column(db.Float, nullable=False)
+    unit_price = db.Column(db.Float, nullable=False)
+    total_cost = db.Column(db.Float, nullable=False)
+
+    purchase_date = db.Column(db.Date, default=date.today)
+    invoice_no = db.Column(db.String(100))
+    remarks = db.Column(db.String(255))
+
+    item = db.relationship("KitchenItem", backref="purchases")
+
+class KitchenStockMovement(db.Model):
+    __tablename__ = "kitchen_stock_movements"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    item_id = db.Column(db.Integer, db.ForeignKey("kitchen_items.id"), nullable=False)
+
+    movement_type = db.Column(db.String(20), nullable=False)   # IN or OUT
+    quantity = db.Column(db.Float, nullable=False)
+
+    reference = db.Column(db.String(100))      # Purchase, Meal, Adjustment, Waste
+    remarks = db.Column(db.String(255))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    item = db.relationship("KitchenItem", backref="stock_movements")
+
+class KitchenSupplier(db.Model):
+    __tablename__ = "kitchen_suppliers"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.String(150), nullable=False)
+    contact_person = db.Column(db.String(100))
+    phone = db.Column(db.String(30))
+    email = db.Column(db.String(100))
+    address = db.Column(db.String(255))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MealMenu(db.Model):
+    __tablename__ = "meal_menus"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+
+    menu_date = db.Column(db.Date, nullable=False)
+
+    meal_type = db.Column(
+        db.String(20),
+        nullable=False
+    )  # Breakfast, Lunch, Supper, Snack
+
+    description = db.Column(db.String(255), nullable=False)
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MealServing(db.Model):
+    __tablename__ = "meal_servings"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+
+    serving_date = db.Column(db.Date, default=date.today)
+
+    meal_type = db.Column(db.String(20), nullable=False)
+
+    students_served = db.Column(db.Integer, default=0)
+    staff_served = db.Column(db.Integer, default=0)
+    visitors_served = db.Column(db.Integer, default=0)
+
+    remarks = db.Column(db.String(255))
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class KitchenWaste(db.Model):
+    __tablename__ = "kitchen_waste"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("kitchen_items.id"),
+        nullable=False
+    )
+
+    waste_date = db.Column(db.Date, default=date.today)
+
+    quantity = db.Column(db.Float, nullable=False)
+
+    reason = db.Column(db.String(255))
+
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    item = db.relationship("KitchenItem", backref="waste_records")
+
 def money(n):
     return "KES {:.2f}".format(float(n or 0))
 
@@ -10252,6 +10383,35 @@ def inventory_reports():
         stock_in_total=stock_in_total,
         stock_out_total=stock_out_total,
         money=money
+    )
+
+@app.route("/kitchen")
+def kitchen_dashboard():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "principal",
+        "bursar",
+        "storekeeper",
+        "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    categories = KitchenCategory.query.count()
+    items = KitchenItem.query.count()
+    suppliers = KitchenSupplier.query.count()
+
+    return render_template(
+        "kitchen/dashboard.html",
+        settings=get_settings(),
+        categories=categories,
+        items=items,
+        suppliers=suppliers
     )
     
 
