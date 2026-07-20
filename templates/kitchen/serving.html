@@ -1,1 +1,177 @@
+{% extends "base.html" %}
+{% block content %}
 
+<style>
+.kitchen-page{max-width:1450px;margin:0 auto}
+.hero{
+    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
+    color:white;border-radius:20px;padding:22px 24px;margin-bottom:18px;
+    display:flex;justify-content:space-between;align-items:center
+}
+.hero h2{margin:0;font-size:28px}
+.hero p{margin:6px 0 0;color:#dbeafe}
+.back{
+    color:white;text-decoration:none;background:rgba(255,255,255,.18);
+    padding:10px 14px;border-radius:12px;font-weight:900
+}
+.grid{display:grid;grid-template-columns:390px 1fr;gap:18px}
+.panel{
+    background:white;border:1px solid #e5e7eb;border-radius:20px;
+    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07)
+}
+.panel h3{margin:0 0 15px;color:#0b5ed7}
+.form-group{margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{display:block;font-weight:900;margin-bottom:6px}
+input,select,textarea{
+    width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:12px
+}
+textarea{min-height:80px}
+.btn{
+    border:none;border-radius:12px;padding:11px 16px;font-weight:900;cursor:pointer
+}
+.btn.green{background:#16a34a;color:white}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left}
+th{background:#f8fafc;color:#475569}
+.total{
+    font-weight:900;color:#16a34a
+}
+@media(max-width:900px){
+    .grid{grid-template-columns:1fr}
+    .form-row{grid-template-columns:1fr}
+    .hero{display:block}
+    .back{display:inline-block;margin-top:12px}
+}
+</style>
+
+<div class="kitchen-page">
+
+    <div class="hero">
+        <div>
+            <h2>👥 Meal Serving</h2>
+            <p>Record the number of pupils, staff and visitors served.</p>
+        </div>
+
+        <a href="{{ url_for('kitchen_dashboard') }}" class="back">
+            ← Kitchen Dashboard
+        </a>
+    </div>
+
+    <div class="grid">
+
+        <div class="panel">
+            <h3>➕ Record Meal Serving</h3>
+
+            <form method="post">
+
+                <div class="form-group">
+                    <label>Meal Menu</label>
+                    <select name="menu_id" required>
+                        <option value="">Select Menu</option>
+
+                        {% for menu in menus %}
+                        <option value="{{ menu.id }}">
+                            {{ menu.menu_date }} — {{ menu.meal_type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Serving Date</label>
+                    <input
+                        type="date"
+                        name="serving_date"
+                        value="{{ today }}"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Meal Type</label>
+                    <select name="meal_type">
+                        <option value="">Use Menu Meal Type</option>
+                        <option>Breakfast</option>
+                        <option>Morning Snack</option>
+                        <option>Lunch</option>
+                        <option>Afternoon Snack</option>
+                        <option>Supper</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label>Pupils Served</label>
+                        <input
+                            type="number"
+                            name="students_served"
+                            min="0"
+                            value="0">
+                    </div>
+
+                    <div>
+                        <label>Staff Served</label>
+                        <input
+                            type="number"
+                            name="staff_served"
+                            min="0"
+                            value="0">
+                    </div>
+
+                    <div>
+                        <label>Visitors Served</label>
+                        <input
+                            type="number"
+                            name="visitors_served"
+                            min="0"
+                            value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <textarea name="remarks"></textarea>
+                </div>
+
+                <button class="btn green">Save Serving Record</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3>📋 Serving History</h3>
+
+            <div class="table-wrap">
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Meal</th>
+                        <th>Pupils</th>
+                        <th>Staff</th>
+                        <th>Visitors</th>
+                        <th>Total</th>
+                    </tr>
+
+                    {% for serving in servings %}
+                    <tr>
+                        <td>{{ serving.serving_date }}</td>
+                        <td>{{ serving.meal_type }}</td>
+                        <td>{{ serving.students_served }}</td>
+                        <td>{{ serving.staff_served }}</td>
+                        <td>{{ serving.visitors_served }}</td>
+                        <td class="total">{{ serving.total_served }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">No meal serving records found.</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
