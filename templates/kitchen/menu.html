@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.menu-page{
+    max-width:1400px;
+    margin:0 auto;
+}
+
+.menu-hero{
+    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
+    color:white;
+    padding:22px 24px;
+    border-radius:20px;
+    margin-bottom:18px;
+}
+
+.menu-hero h2{
+    margin:0;
+    font-size:28px;
+}
+
+.menu-hero p{
+    margin:6px 0 0;
+    color:#dbeafe;
+}
+
+.menu-grid{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:18px;
+}
+
+.panel{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 8px 20px rgba(15,23,42,.07);
+}
+
+.panel h3{
+    margin:0 0 15px;
+    color:#0b5ed7;
+}
+
+.form-group{
+    margin-bottom:14px;
+}
+
+label{
+    display:block;
+    font-weight:900;
+    margin-bottom:6px;
+}
+
+input, select, textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid #cbd5e1;
+    border-radius:12px;
+}
+
+textarea{
+    min-height:110px;
+    resize:vertical;
+}
+
+.btn{
+    border:none;
+    border-radius:12px;
+    padding:11px 16px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+.btn.green{
+    background:#16a34a;
+    color:white;
+}
+
+.menu-card{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:15px;
+    padding:14px;
+    margin-bottom:10px;
+}
+
+.menu-card strong{
+    color:#0f172a;
+}
+
+.menu-type{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:999px;
+    background:#dbeafe;
+    color:#1d4ed8;
+    font-weight:900;
+    font-size:12px;
+    margin-bottom:7px;
+}
+
+.muted{
+    color:#64748b;
+    font-size:13px;
+}
+
+@media(max-width:900px){
+    .menu-grid{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+<div class="menu-page">
+
+    <div class="menu-hero">
+        <h2>🍽 Daily Meal Menu</h2>
+        <p>Plan breakfast, lunch, snacks and supper for the school.</p>
+    </div>
+
+    <div class="menu-grid">
+
+        <div class="panel">
+            <h3>➕ Add Menu</h3>
+
+            <form method="post">
+
+                <div class="form-group">
+                    <label>Menu Date</label>
+                    <input
+                        type="date"
+                        name="menu_date"
+                        value="{{ today }}"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Meal Type</label>
+                    <select name="meal_type" required>
+                        <option value="">Select Meal</option>
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Morning Snack">Morning Snack</option>
+                        <option value="Lunch">Lunch</option>
+                        <option value="Afternoon Snack">Afternoon Snack</option>
+                        <option value="Supper">Supper</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Menu Description</label>
+                    <textarea
+                        name="description"
+                        placeholder="Example: Rice, beans, vegetables and fruit"
+                        required></textarea>
+                </div>
+
+                <button class="btn green">
+                    Save Menu
+                </button>
+
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3>📅 Menu History</h3>
+
+            {% for menu in menus %}
+            <div class="menu-card">
+
+                <span class="menu-type">
+                    {{ menu.meal_type }}
+                </span>
+
+                <div>
+                    <strong>{{ menu.menu_date }}</strong>
+                </div>
+
+                <p>{{ menu.description }}</p>
+
+                <div class="muted">
+                    Created by {{ menu.created_by or "-" }}
+                </div>
+
+            </div>
+            {% else %}
+            <div class="menu-card">
+                No meal menus have been created yet.
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
