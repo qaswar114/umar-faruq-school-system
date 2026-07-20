@@ -1141,22 +1141,38 @@ class KitchenWaste(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    item_id = db.Column(
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
+
+    kitchen_item_id = db.Column(
         db.Integer,
         db.ForeignKey("kitchen_items.id"),
         nullable=False
     )
 
-    waste_date = db.Column(db.Date, default=date.today)
+    waste_date = db.Column(
+        db.Date,
+        default=date.today,
+        nullable=False
+    )
 
     quantity = db.Column(db.Float, nullable=False)
 
     reason = db.Column(db.String(255))
 
     created_by = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
 
-    item = db.relationship("KitchenItem", backref="waste_records")
+    kitchen_item = db.relationship(
+        "KitchenItem",
+        backref="waste_records"
+    )
 
 def money(n):
     return "KES {:.2f}".format(float(n or 0))
@@ -10726,12 +10742,8 @@ def meal_menu():
         return redirect(url_for("login"))
 
     if not role_allowed(
-        "admin",
-        "principal",
-        "bursar",
-        "storekeeper",
-        "teacher",
-        "super admin"
+        "admin", "principal", "bursar",
+        "storekeeper", "teacher", "super admin"
     ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
@@ -10768,7 +10780,7 @@ def meal_menu():
         db.session.commit()
 
         save_audit(
-            f"Added kitchen menu for {menu_date}: {meal_type}",
+            f"Added kitchen menu: {meal_type} for {menu_date}",
             "Kitchen"
         )
 
@@ -10788,6 +10800,406 @@ def meal_menu():
         menus=menus,
         today=date.today()
     )
+
+
+@app.route("/kitchen/consumption", methods=["GET", "POST"])
+def kitchen_consumption():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin", "principal", "bursar",
+        "storekeeper", "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        kitchen_item_id = int(request.form["kitchen_item_id"])
+        menu_id_text = request.form.get("menu_id", "").strip()
+        consumption_date_text = request.form.get(
+            "consumption_date",
+            ""
+        ).strip()
+
+        quantity = float(request.form.get("quantity") or 0)
+        remarks = request.form.get("remarks", "").strip()
+
+        item = KitchenItem.query.filter_by(
+            id=kitchen_item_id,
+            school_id=school_id,
+            active=True
+        ).first()
+
+        if not item:
+            flash("Invalid kitchen item selected.")
+            return redirect(url_for("kitchen_consumption"))
+
+        if quantity <= 0:
+            flash("Enter a valid quantity consumed.")
+            return redirect(url_for("kitchen_consumption"))
+
+        if quantity > (item.current_stock or 0):
+            flash(
+                f"Insufficient kitchen stock. Available: "
+                f"{item.current_stock or 0} {item.unit}."
+            )
+            return redirect(url_for("kitchen_consumption"))
+
+        try:
+            consumption_date = datetime.strptime(
+                consumption_date_text,
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            flash("Invalid consumption date.")
+            return redirect(url_for("kitchen_consumption"))
+
+        menu_id = int(menu_id_text) if menu_id_text else None
+
+        if menu_id:
+            valid_menu = MealMenu.query.filter_by(
+                id=menu_id,
+                school_id=school_id
+            ).first()
+
+            if not valid_menu:
+                flash("Invalid menu selected.")
+                return redirect(url_for("kitchen_consumption"))
+
+        record = KitchenConsumption(
+            school_id=school_id,
+            kitchen_item_id=item.id,
+            menu_id=menu_id,
+            consumption_date=consumption_date,
+            quantity=quantity,
+            unit=item.unit,
+            remarks=remarks,
+            created_by=session.get("username", "")
+        )
+
+        item.current_stock = (item.current_stock or 0) - quantity
+
+        db.session.add(record)
+        db.session.commit()
+
+        save_audit(
+            f"Recorded kitchen consumption: "
+            f"{quantity} {item.unit} of {item.name}",
+            "Kitchen"
+        )
+
+        flash("Kitchen consumption recorded successfully.")
+        return redirect(url_for("kitchen_consumption"))
+
+    items = KitchenItem.query.filter_by(
+        school_id=school_id,
+        active=True
+    ).order_by(KitchenItem.name.asc()).all()
+
+    menus = MealMenu.query.filter_by(
+        school_id=school_id
+    ).order_by(MealMenu.menu_date.desc()).limit(100).all()
+
+    records = KitchenConsumption.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        KitchenConsumption.created_at.desc()
+    ).limit(200).all()
+
+    return render_template(
+        "kitchen/consumption.html",
+        settings=get_settings(),
+        items=items,
+        menus=menus,
+        records=records,
+        today=date.today()
+    )
+
+
+@app.route("/kitchen/serving", methods=["GET", "POST"])
+def meal_serving():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin", "principal", "bursar",
+        "storekeeper", "teacher", "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        menu_id = int(request.form["menu_id"])
+        serving_date_text = request.form.get(
+            "serving_date",
+            ""
+        ).strip()
+
+        meal_type = request.form.get("meal_type", "").strip()
+        students_served = int(
+            request.form.get("students_served") or 0
+        )
+        staff_served = int(
+            request.form.get("staff_served") or 0
+        )
+        visitors_served = int(
+            request.form.get("visitors_served") or 0
+        )
+        remarks = request.form.get("remarks", "").strip()
+
+        menu = MealMenu.query.filter_by(
+            id=menu_id,
+            school_id=school_id
+        ).first()
+
+        if not menu:
+            flash("Invalid meal menu selected.")
+            return redirect(url_for("meal_serving"))
+
+        try:
+            serving_date = datetime.strptime(
+                serving_date_text,
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            flash("Invalid serving date.")
+            return redirect(url_for("meal_serving"))
+
+        if (
+            students_served < 0
+            or staff_served < 0
+            or visitors_served < 0
+        ):
+            flash("Serving numbers cannot be negative.")
+            return redirect(url_for("meal_serving"))
+
+        total_served = (
+            students_served
+            + staff_served
+            + visitors_served
+        )
+
+        serving = MealServing(
+            school_id=school_id,
+            menu_id=menu.id,
+            serving_date=serving_date,
+            meal_type=meal_type or menu.meal_type,
+            students_served=students_served,
+            staff_served=staff_served,
+            visitors_served=visitors_served,
+            total_served=total_served,
+            remarks=remarks,
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(serving)
+        db.session.commit()
+
+        save_audit(
+            f"Recorded {total_served} meals served "
+            f"for {serving.meal_type}",
+            "Kitchen"
+        )
+
+        flash("Meal serving recorded successfully.")
+        return redirect(url_for("meal_serving"))
+
+    menus = MealMenu.query.filter_by(
+        school_id=school_id
+    ).order_by(MealMenu.menu_date.desc()).limit(100).all()
+
+    servings = MealServing.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        MealServing.created_at.desc()
+    ).limit(200).all()
+
+    return render_template(
+        "kitchen/serving.html",
+        settings=get_settings(),
+        menus=menus,
+        servings=servings,
+        today=date.today()
+    )
+
+
+@app.route("/kitchen/waste", methods=["GET", "POST"])
+def kitchen_waste():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin", "principal", "bursar",
+        "storekeeper", "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+        kitchen_item_id = int(request.form["kitchen_item_id"])
+        waste_date_text = request.form.get(
+            "waste_date",
+            ""
+        ).strip()
+
+        quantity = float(request.form.get("quantity") or 0)
+        reason = request.form.get("reason", "").strip()
+
+        item = KitchenItem.query.filter_by(
+            id=kitchen_item_id,
+            school_id=school_id,
+            active=True
+        ).first()
+
+        if not item:
+            flash("Invalid kitchen item selected.")
+            return redirect(url_for("kitchen_waste"))
+
+        if quantity <= 0:
+            flash("Enter a valid waste quantity.")
+            return redirect(url_for("kitchen_waste"))
+
+        if quantity > (item.current_stock or 0):
+            flash(
+                f"Waste quantity exceeds available stock. "
+                f"Available: {item.current_stock or 0} {item.unit}."
+            )
+            return redirect(url_for("kitchen_waste"))
+
+        try:
+            waste_date = datetime.strptime(
+                waste_date_text,
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            flash("Invalid waste date.")
+            return redirect(url_for("kitchen_waste"))
+
+        record = KitchenWaste(
+            school_id=school_id,
+            kitchen_item_id=item.id,
+            waste_date=waste_date,
+            quantity=quantity,
+            reason=reason,
+            created_by=session.get("username", "")
+        )
+
+        item.current_stock = (item.current_stock or 0) - quantity
+
+        db.session.add(record)
+        db.session.commit()
+
+        save_audit(
+            f"Recorded kitchen waste: "
+            f"{quantity} {item.unit} of {item.name}",
+            "Kitchen"
+        )
+
+        flash("Kitchen waste recorded successfully.")
+        return redirect(url_for("kitchen_waste"))
+
+    items = KitchenItem.query.filter_by(
+        school_id=school_id,
+        active=True
+    ).order_by(KitchenItem.name.asc()).all()
+
+    waste_records = KitchenWaste.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        KitchenWaste.created_at.desc()
+    ).limit(200).all()
+
+    return render_template(
+        "kitchen/waste.html",
+        settings=get_settings(),
+        items=items,
+        waste_records=waste_records,
+        today=date.today()
+    )
+
+
+@app.route("/kitchen/reports")
+def kitchen_reports():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin", "principal", "bursar",
+        "storekeeper", "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    items = KitchenItem.query.filter_by(
+        school_id=school_id,
+        active=True
+    ).order_by(KitchenItem.name.asc()).all()
+
+    issues = KitchenIssue.query.filter_by(
+        school_id=school_id
+    ).all()
+
+    consumptions = KitchenConsumption.query.filter_by(
+        school_id=school_id
+    ).all()
+
+    waste_records = KitchenWaste.query.filter_by(
+        school_id=school_id
+    ).all()
+
+    servings = MealServing.query.filter_by(
+        school_id=school_id
+    ).all()
+
+    total_items = len(items)
+
+    low_stock_items = [
+        item for item in items
+        if (item.current_stock or 0)
+        <= (item.reorder_level or 0)
+    ]
+
+    total_issued = sum(
+        issue.quantity or 0
+        for issue in issues
+    )
+
+    total_consumed = sum(
+        record.quantity or 0
+        for record in consumptions
+    )
+
+    total_waste = sum(
+        record.quantity or 0
+        for record in waste_records
+    )
+
+    total_meals_served = sum(
+        serving.total_served or 0
+        for serving in servings
+    )
+
+    return render_template(
+        "kitchen/reports.html",
+        settings=get_settings(),
+        items=items,
+        low_stock_items=low_stock_items,
+        total_items=total_items,
+        total_issued=total_issued,
+        total_consumed=total_consumed,
+        total_waste=total_waste,
+        total_meals_served=total_meals_served
+    )
+
     
 
 # =====================================================
