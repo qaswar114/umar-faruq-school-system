@@ -10532,6 +10532,70 @@ def kitchen_dashboard():
         issued=issued,
         menus=menus
     )
+
+@app.route("/kitchen/categories", methods=["GET", "POST"])
+def kitchen_categories():
+
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "principal",
+        "bursar",
+        "storekeeper",
+        "super admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if request.method == "POST":
+
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not name:
+            flash("Category name is required.")
+            return redirect(url_for("kitchen_categories"))
+
+        existing = KitchenCategory.query.filter_by(
+            school_id=school_id,
+            name=name
+        ).first()
+
+        if existing:
+            flash("Category already exists.")
+            return redirect(url_for("kitchen_categories"))
+
+        category = KitchenCategory(
+            school_id=school_id,
+            name=name,
+            description=description,
+            created_by=session.get("username", "")
+        )
+
+        db.session.add(category)
+        db.session.commit()
+
+        save_audit(
+            f"Added kitchen category: {name}",
+            "Kitchen"
+        )
+
+        flash("Kitchen category added successfully.")
+        return redirect(url_for("kitchen_categories"))
+
+    categories = KitchenCategory.query.filter_by(
+        school_id=school_id
+    ).order_by(KitchenCategory.name.asc()).all()
+
+    return render_template(
+        "kitchen/categories.html",
+        settings=get_settings(),
+        categories=categories
+    )
     
 
 # =====================================================
