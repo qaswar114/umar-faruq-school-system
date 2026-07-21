@@ -1,0 +1,1066 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.platform-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+.platform-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    border-radius: 23px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 54%,
+        #16a34a 100%
+    );
+    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
+}
+
+.platform-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 30px;
+}
+
+.platform-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.hero-badge {
+    flex-shrink: 0;
+    padding: 12px 17px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    color: white;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.privacy-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 13px 15px;
+    margin-bottom: 18px;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.alert-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 13px 15px;
+    margin-bottom: 18px;
+    border: 1px solid #facc15;
+    border-radius: 14px;
+    background: #fef9c3;
+    color: #854d0e;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 800;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.metric-card {
+    position: relative;
+    min-height: 145px;
+    padding: 18px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 19px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+
+.metric-card::after {
+    content: "";
+    position: absolute;
+    right: -34px;
+    top: -34px;
+    width: 95px;
+    height: 95px;
+    border-radius: 50%;
+    background: #eff6ff;
+}
+
+.metric-card.green::after {
+    background: #ecfdf5;
+}
+
+.metric-card.orange::after {
+    background: #fff7ed;
+}
+
+.metric-card.red::after {
+    background: #fef2f2;
+}
+
+.metric-card.purple::after {
+    background: #faf5ff;
+}
+
+.metric-icon {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: #dbeafe;
+    font-size: 22px;
+}
+
+.metric-card.green .metric-icon {
+    background: #dcfce7;
+}
+
+.metric-card.orange .metric-icon {
+    background: #ffedd5;
+}
+
+.metric-card.red .metric-icon {
+    background: #fee2e2;
+}
+
+.metric-card.purple .metric-icon {
+    background: #f3e8ff;
+}
+
+.metric-label {
+    position: relative;
+    z-index: 2;
+    margin-top: 13px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.metric-value {
+    position: relative;
+    z-index: 2;
+    margin-top: 5px;
+    color: #0f172a;
+    font-size: 27px;
+    font-weight: 950;
+}
+
+.metric-note {
+    position: relative;
+    z-index: 2;
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.platform-panel {
+    padding: 20px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 21px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+
+.panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.panel-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.panel-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 12px;
+}
+
+.action-card {
+    display: block;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: #0f172a;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+}
+
+.action-icon {
+    font-size: 25px;
+}
+
+.action-title {
+    margin-top: 10px;
+    font-weight: 900;
+}
+
+.action-note {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.summary-list {
+    display: grid;
+    gap: 10px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.summary-row span {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.summary-row strong {
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.platform-table {
+    width: 100%;
+    min-width: 1150px;
+    border-collapse: separate;
+    border-spacing: 0 9px;
+}
+
+.platform-table th {
+    padding: 0 10px 7px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: left;
+}
+
+.platform-table td {
+    padding: 12px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.platform-table tr td:first-child {
+    border-left: 1px solid #e5e7eb;
+    border-radius: 13px 0 0 13px;
+}
+
+.platform-table tr td:last-child {
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 13px 13px 0;
+}
+
+.school-name {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.school-id {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-warning {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.status-neutral {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 11px;
+    border-radius: 10px;
+    background: #0b5ed7;
+    color: white;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.view-btn:hover {
+    background: #084db4;
+    color: white;
+}
+
+.rank-list {
+    display: grid;
+    gap: 10px;
+}
+
+.rank-row {
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    gap: 11px;
+    align-items: center;
+    padding: 12px 13px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.rank-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 950;
+}
+
+.rank-name {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.rank-note {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.rank-value {
+    color: #0f172a;
+    font-size: 17px;
+    font-weight: 950;
+}
+
+.empty-state {
+    padding: 27px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    font-weight: 800;
+}
+
+@media (max-width: 1150px) {
+    .metric-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .action-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .metric-grid,
+    .action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .platform-hero {
+        display: block;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        margin-top: 16px;
+    }
+}
+</style>
+
+<div class="platform-page">
+
+    <div class="platform-hero">
+        <div>
+            <h2>Platform Communication Overview</h2>
+
+            <p>
+                Monitor SMS stock, school wallets, purchase requests,
+                WhatsApp availability and communication volume without
+                accessing private school messages.
+            </p>
+        </div>
+
+        <div class="hero-badge">
+            Super Admin
+        </div>
+    </div>
+
+    <div class="privacy-note">
+        <span>🔒</span>
+
+        <div>
+            This page shows only platform totals and service status.
+            It does not display parent names, pupil names, phone numbers,
+            message text, grades, fee reminders or individual school
+            communication content.
+        </div>
+    </div>
+
+    {% if platform_balance_low %}
+    <div class="alert-note">
+        <span>⚠️</span>
+
+        <div>
+            The platform SMS balance is low.
+            Current balance: {{ platform_sms_balance or 0 }} SMS.
+            Alert level: {{ platform_low_alert or 0 }} SMS.
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <div class="metric-icon">📦</div>
+            <div class="metric-label">Platform SMS Loaded</div>
+            <div class="metric-value">
+                {{ "{:,}".format(platform_sms_loaded or 0) }}
+            </div>
+            <div class="metric-note">
+                Total SMS procured by EduManage
+            </div>
+        </div>
+
+        <div class="metric-card green">
+            <div class="metric-icon">💳</div>
+            <div class="metric-label">Platform SMS Sold</div>
+            <div class="metric-value">
+                {{ "{:,}".format(platform_sms_sold or 0) }}
+            </div>
+            <div class="metric-note">
+                SMS transferred to schools
+            </div>
+        </div>
+
+        <div class="metric-card orange">
+            <div class="metric-icon">📱</div>
+            <div class="metric-label">Platform SMS Balance</div>
+            <div class="metric-value">
+                {{ "{:,}".format(platform_sms_balance or 0) }}
+            </div>
+            <div class="metric-note">
+                SMS still available for sale
+            </div>
+        </div>
+
+        <div class="metric-card purple">
+            <div class="metric-icon">💰</div>
+            <div class="metric-label">SMS Sales Revenue</div>
+            <div class="metric-value">
+                {% if money is defined %}
+                    {{ money(total_sms_sales_revenue or 0) }}
+                {% else %}
+                    KES {{ "{:,.2f}".format(
+                        total_sms_sales_revenue or 0
+                    ) }}
+                {% endif %}
+            </div>
+            <div class="metric-note">
+                Completed school SMS purchases
+            </div>
+        </div>
+
+        <div class="metric-card green">
+            <div class="metric-icon">⬇️</div>
+            <div class="metric-label">School SMS Loaded</div>
+            <div class="metric-value">
+                {{ "{:,}".format(total_school_sms_loaded or 0) }}
+            </div>
+            <div class="metric-note">
+                Total credited to school wallets
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">✅</div>
+            <div class="metric-label">School SMS Used</div>
+            <div class="metric-value">
+                {{ "{:,}".format(total_school_sms_used or 0) }}
+            </div>
+            <div class="metric-note">
+                Combined wallet usage
+            </div>
+        </div>
+
+        <div class="metric-card orange">
+            <div class="metric-icon">🪪</div>
+            <div class="metric-label">School SMS Balances</div>
+            <div class="metric-value">
+                {{ "{:,}".format(total_school_sms_balance or 0) }}
+            </div>
+            <div class="metric-note">
+                SMS remaining across all schools
+            </div>
+        </div>
+
+        <div class="metric-card red">
+            <div class="metric-icon">⏳</div>
+            <div class="metric-label">Pending Purchases</div>
+            <div class="metric-value">
+                {{ pending_sms_purchases or 0 }}
+            </div>
+            <div class="metric-note">
+                Awaiting platform approval
+            </div>
+        </div>
+
+    </div>
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <div class="metric-icon">💬</div>
+            <div class="metric-label">Total SMS Messages</div>
+            <div class="metric-value">
+                {{ "{:,}".format(total_sms_messages or 0) }}
+            </div>
+            <div class="metric-note">
+                Count only
+            </div>
+        </div>
+
+        <div class="metric-card orange">
+            <div class="metric-icon">⏳</div>
+            <div class="metric-label">SMS Pending</div>
+            <div class="metric-value">
+                {{ sms_pending or 0 }}
+            </div>
+            <div class="metric-note">
+                Messages waiting in queues
+            </div>
+        </div>
+
+        <div class="metric-card green">
+            <div class="metric-icon">✅</div>
+            <div class="metric-label">SMS Sent</div>
+            <div class="metric-value">
+                {{ sms_sent or 0 }}
+            </div>
+            <div class="metric-note">
+                Successfully processed
+            </div>
+        </div>
+
+        <div class="metric-card red">
+            <div class="metric-icon">❌</div>
+            <div class="metric-label">SMS Failed</div>
+            <div class="metric-value">
+                {{ sms_failed or 0 }}
+            </div>
+            <div class="metric-note">
+                Failed SMS count
+            </div>
+        </div>
+
+        <div class="metric-card purple">
+            <div class="metric-icon">🟢</div>
+            <div class="metric-label">WhatsApp Messages</div>
+            <div class="metric-value">
+                {{ "{:,}".format(total_whatsapp_messages or 0) }}
+            </div>
+            <div class="metric-note">
+                Count only
+            </div>
+        </div>
+
+        <div class="metric-card orange">
+            <div class="metric-icon">⏳</div>
+            <div class="metric-label">WhatsApp Pending</div>
+            <div class="metric-value">
+                {{ whatsapp_pending or 0 }}
+            </div>
+            <div class="metric-note">
+                Waiting to be sent
+            </div>
+        </div>
+
+        <div class="metric-card green">
+            <div class="metric-icon">✅</div>
+            <div class="metric-label">WhatsApp Sent</div>
+            <div class="metric-value">
+                {{ whatsapp_sent or 0 }}
+            </div>
+            <div class="metric-note">
+                Successfully sent
+            </div>
+        </div>
+
+        <div class="metric-card red">
+            <div class="metric-icon">❌</div>
+            <div class="metric-label">WhatsApp Failed</div>
+            <div class="metric-value">
+                {{ whatsapp_failed or 0 }}
+            </div>
+            <div class="metric-note">
+                Failed WhatsApp count
+            </div>
+        </div>
+
+    </div>
+
+    <div class="content-grid">
+
+        <div class="platform-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>⚡ Platform Actions</h3>
+
+                    <p>
+                        Open communication administration pages without
+                        entering private school messaging screens.
+                    </p>
+                </div>
+            </div>
+
+            <div class="action-grid">
+
+                <a href="/platform_sms"
+                   class="action-card">
+
+                    <div class="action-icon">📱</div>
+                    <div class="action-title">Platform SMS</div>
+                    <div class="action-note">
+                        Procure SMS and approve school purchases.
+                    </div>
+                </a>
+
+                <a href="/schools"
+                   class="action-card">
+
+                    <div class="action-icon">🏫</div>
+                    <div class="action-title">Manage Schools</div>
+                    <div class="action-note">
+                        Review school status and services.
+                    </div>
+                </a>
+
+                <a href="/super_admin_dashboard"
+                   class="action-card">
+
+                    <div class="action-icon">📊</div>
+                    <div class="action-title">Platform Dashboard</div>
+                    <div class="action-note">
+                        Return to the SaaS control center.
+                    </div>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="platform-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h3>📊 Communication Health</h3>
+
+                    <p>
+                        General service status across the platform.
+                    </p>
+                </div>
+
+                <span class="panel-badge">
+                    {{ total_schools or 0 }} Schools
+                </span>
+            </div>
+
+            <div class="summary-list">
+
+                <div class="summary-row">
+                    <span>SMS-enabled schools</span>
+                    <strong>{{ sms_enabled_schools or 0 }}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Low SMS balance schools</span>
+                    <strong>{{ low_sms_balance_schools or 0 }}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>WhatsApp-enabled schools</span>
+                    <strong>{{ whatsapp_enabled_schools or 0 }}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>WhatsApp-disabled schools</span>
+                    <strong>{{ whatsapp_disabled_schools or 0 }}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Completed SMS purchases</span>
+                    <strong>{{ completed_sms_purchases or 0 }}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Total SMS purchase requests</span>
+                    <strong>{{ total_sms_purchase_requests or 0 }}</strong>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="content-grid">
+
+        <div class="platform-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h3>🏆 Highest SMS Users</h3>
+
+                    <p>
+                        Schools ranked using total wallet usage only.
+                    </p>
+                </div>
+            </div>
+
+            {% if top_sms_schools %}
+
+            <div class="rank-list">
+
+                {% for row in top_sms_schools %}
+
+                <div class="rank-row">
+                    <div class="rank-number">
+                        {{ loop.index }}
+                    </div>
+
+                    <div>
+                        <div class="rank-name">
+                            {{ row.school.school_name }}
+                        </div>
+
+                        <div class="rank-note">
+                            Balance:
+                            {{ "{:,}".format(row.sms_balance or 0) }}
+                            SMS
+                        </div>
+                    </div>
+
+                    <div class="rank-value">
+                        {{ "{:,}".format(row.sms_used or 0) }}
+                    </div>
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                No school SMS wallet activity is available.
+            </div>
+
+            {% endif %}
+        </div>
+
+        <div class="platform-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h3>🧾 Recent Purchase Requests</h3>
+
+                    <p>
+                        Latest school SMS purchases and approval status.
+                    </p>
+                </div>
+
+                <span class="panel-badge">
+                    {{ recent_purchase_requests|length }} Recent
+                </span>
+            </div>
+
+            {% if recent_purchase_requests %}
+
+            <div class="summary-list">
+
+                {% for purchase in recent_purchase_requests %}
+
+                <div class="summary-row">
+                    <span>
+                        School ID {{ purchase.school_id }}
+                        · {{ purchase.package_sms or 0 }} SMS
+                    </span>
+
+                    <strong>
+                        {{ purchase.status or "Pending" }}
+                    </strong>
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                No SMS purchase requests are available.
+            </div>
+
+            {% endif %}
+        </div>
+
+    </div>
+
+    <div class="platform-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>🏫 School Communication Summary</h3>
+
+                <p>
+                    Platform-level balances, purchase counts and service
+                    status. No message text or recipient details are shown.
+                </p>
+            </div>
+
+            <span class="panel-badge">
+                {{ school_rows|length }} Schools
+            </span>
+        </div>
+
+        {% if school_rows %}
+
+        <div class="table-wrap">
+
+            <table class="platform-table">
+
+                <thead>
+                    <tr>
+                        <th>School</th>
+                        <th>SMS Loaded</th>
+                        <th>SMS Used</th>
+                        <th>Balance</th>
+                        <th>SMS Service</th>
+                        <th>SMS Activity</th>
+                        <th>WhatsApp</th>
+                        <th>WhatsApp Activity</th>
+                        <th>Pending Purchases</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for row in school_rows %}
+
+                    <tr>
+
+                        <td>
+                            <div class="school-name">
+                                {{ row.school.school_name }}
+                            </div>
+
+                            <div class="school-id">
+                                School ID: {{ row.school.id }}
+                            </div>
+                        </td>
+
+                        <td>
+                            {{ "{:,}".format(row.sms_loaded or 0) }}
+                        </td>
+
+                        <td>
+                            {{ "{:,}".format(row.sms_used or 0) }}
+                        </td>
+
+                        <td>
+                            <span class="status-badge
+                                {% if row.low_balance %}
+                                    status-warning
+                                {% else %}
+                                    status-active
+                                {% endif %}">
+
+                                {{ "{:,}".format(row.sms_balance or 0) }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if row.sms_enabled %}
+                                <span class="status-badge status-active">
+                                    Enabled
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-inactive">
+                                    Disabled
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ "{:,}".format(row.sms_messages or 0) }}
+                        </td>
+
+                        <td>
+                            {% if row.whatsapp_enabled %}
+                                <span class="status-badge status-active">
+                                    Enabled
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-inactive">
+                                    Disabled
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ "{:,}".format(
+                                row.whatsapp_messages or 0
+                            ) }}
+                        </td>
+
+                        <td>
+                            {% if row.pending_purchases %}
+                                <span class="status-badge status-warning">
+                                    {{ row.pending_purchases }}
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-neutral">
+                                    0
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a href="/school_overview/{{ row.school.id }}"
+                               class="view-btn">
+                                View
+                            </a>
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+            No schools are registered on the platform.
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}
