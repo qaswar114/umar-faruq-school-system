@@ -2680,6 +2680,121 @@ def super_admin_dashboard():
 
         recent_schools=recent_schools
     )
+
+@app.route("/delete_school/<int:school_id>", methods=["POST"])
+def delete_school(school_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school = School.query.get_or_404(school_id)
+
+    # Prevent deletion of the currently selected school.
+    if session.get("school_id") == school.id:
+        flash(
+            "You cannot delete the school currently being managed. "
+            "Switch to another school first."
+        )
+        return redirect(url_for("super_admin_dashboard"))
+
+    school_name = school.school_name
+
+    try:
+        # Delete school-linked records.
+        SMSMessage.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        WhatsAppMessage.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        SMSPurchase.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        SMSTransaction.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        SMSWallet.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Payment.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Expense.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Discount.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Attendance.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Announcement.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Pupil.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        Staff.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        User.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        FeeStructure.query.filter_by(
+            school_id=school.id
+        ).delete(synchronize_session=False)
+
+        db.session.delete(school)
+        db.session.commit()
+
+        try:
+            save_audit(
+                f"Deleted school: {school_name} "
+                f"(School ID {school_id}).",
+                "Platform Administration"
+            )
+        except Exception as audit_error:
+            print(
+                "DELETE SCHOOL AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        flash(
+            f"{school_name} and its linked records were deleted."
+        )
+
+    except Exception as e:
+        db.session.rollback()
+
+        print(
+            "DELETE SCHOOL ERROR:",
+            str(e),
+            flush=True
+        )
+
+        flash(
+            "The school could not be deleted because some linked "
+            "records still exist. No changes were saved."
+        )
+
+    return redirect(url_for("super_admin_dashboard"))
     
 @app.route("/business_dashboard")
 def business_dashboard():
