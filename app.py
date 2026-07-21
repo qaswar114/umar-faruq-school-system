@@ -7,6 +7,7 @@ from xhtml2pdf import pisa
 from io import BytesIO
 from sqlalchemy import text
 from flask import jsonify
+from flask import request
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import africastalking
 import os
@@ -7931,6 +7932,80 @@ def sms_messages():
         selected_status=selected_status,
         selected_category=selected_category
     )
+
+@app.route("/sms_delivery_callback", methods=["POST"])
+def sms_delivery_callback():
+    try:
+
+        message_id = (
+            request.form.get("id")
+            or request.form.get("messageId")
+            or request.form.get("message_id")
+            or ""
+        ).strip()
+
+        status = (
+            request.form.get("status")
+            or "Unknown"
+        ).strip()
+
+        phone = (
+            request.form.get("phoneNumber")
+            or request.form.get("phone")
+            or ""
+        ).strip()
+
+        network = (
+            request.form.get("networkCode")
+            or ""
+        ).strip()
+
+        failure_reason = (
+            request.form.get("failureReason")
+            or request.form.get("failure_reason")
+            or ""
+        ).strip()
+
+        sms = SMSMessage.query.filter_by(
+            provider_message_id=message_id
+        ).first()
+
+        if sms:
+
+            sms.delivery_status = status
+
+            sms.delivery_phone = phone
+
+            sms.delivery_network_code = network
+
+            sms.delivery_failure_reason = failure_reason
+
+            sms.delivery_report = str(request.form)
+
+            sms.delivery_checked_at = datetime.now()
+
+            if status.lower() in [
+                "success",
+                "delivered"
+            ]:
+                sms.delivered_at = datetime.now()
+
+            db.session.commit()
+
+        return "OK", 200
+
+    except Exception as e:
+
+        print(
+            "SMS DELIVERY CALLBACK ERROR:",
+            str(e),
+            flush=True
+        )
+
+        db.session.rollback()
+
+        return "ERROR", 500
+
     
 @app.route("/cleanup_invalid_sms", methods=["POST"])
 def cleanup_invalid_sms():
