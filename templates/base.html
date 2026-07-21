@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
 
@@ -40,6 +41,7 @@
         /* =====================================================
            SIDEBAR
         ====================================================== */
+
         .sidebar {
             position: fixed;
             left: 0;
@@ -52,7 +54,7 @@
             overflow-y: auto;
             z-index: 1000;
             scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,.25) transparent;
+            scrollbar-color: rgba(255, 255, 255, .25) transparent;
         }
 
         .sidebar::-webkit-scrollbar {
@@ -60,14 +62,14 @@
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,.22);
+            background: rgba(255, 255, 255, .22);
             border-radius: 999px;
         }
 
         .brand {
             text-align: center;
             padding: 8px 6px 16px;
-            border-bottom: 1px solid rgba(255,255,255,.15);
+            border-bottom: 1px solid rgba(255, 255, 255, .15);
             margin-bottom: 12px;
         }
 
@@ -143,7 +145,7 @@
 
         .subnav {
             margin-left: 18px;
-            border-left: 1px solid rgba(255,255,255,.18);
+            border-left: 1px solid rgba(255, 255, 255, .18);
             padding-left: 8px;
             margin-bottom: 6px;
         }
@@ -166,8 +168,9 @@
         }
 
         /* =====================================================
-           MAIN AREA
+           MAIN LAYOUT
         ====================================================== */
+
         .main {
             margin-left: 270px;
             min-height: 100vh;
@@ -231,11 +234,12 @@
         /* =====================================================
            GLOBAL COMPONENTS
         ====================================================== */
+
         .panel {
             background: white;
             padding: 20px;
             border-radius: 14px;
-            box-shadow: 0 6px 18px rgba(15,23,42,.07);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, .07);
             margin-bottom: 18px;
             width: 100%;
         }
@@ -258,7 +262,7 @@
         textarea:focus {
             outline: none;
             border-color: #0b5ed7;
-            box-shadow: 0 0 0 3px rgba(11,94,215,.10);
+            box-shadow: 0 0 0 3px rgba(11, 94, 215, .10);
         }
 
         label {
@@ -385,6 +389,7 @@
         /* =====================================================
            RESPONSIVE
         ====================================================== */
+
         @media (max-width: 800px) {
             .sidebar {
                 position: relative;
@@ -423,6 +428,7 @@
         /* =====================================================
            PRINT
         ====================================================== */
+
         @media print {
             .sidebar,
             .topbar,
@@ -451,11 +457,12 @@
 {% set role = session.get("role", "")|lower %}
 {% set endpoint = request.endpoint or "" %}
 
+<!-- =========================================================
+     SIDEBAR
+========================================================= -->
+
 <div class="sidebar">
 
-    <!-- =====================================================
-         BRAND
-    ====================================================== -->
     <div class="brand">
 
         {% if role == "super admin" %}
@@ -500,76 +507,83 @@
     <div class="nav">
 
         <!-- =================================================
-             SUPER ADMIN NAVIGATION
+             SUPER ADMIN MENU
         ================================================== -->
+
         {% if role == "super admin" %}
 
             <div class="nav-label">OVERVIEW</div>
 
-            <a href="{{ url_for('super_admin_dashboard') }}"
+            <a href="/super_admin_dashboard"
                class="{% if endpoint == 'super_admin_dashboard' %}active{% endif %}">
                 🏠 Dashboard
             </a>
 
             <div class="nav-label">SAAS CONTROL</div>
 
-            <a href="{{ url_for('schools') if 'schools' in current_app.view_functions else '/schools' }}"
+            <a href="/schools"
                class="{% if endpoint == 'schools' %}active{% endif %}">
                 🏫 Schools
             </a>
 
-            <a href="{{ url_for('create_school') if 'create_school' in current_app.view_functions else '/create_school' }}"
+            <a href="/create_school"
                class="{% if endpoint == 'create_school' %}active{% endif %}">
                 ➕ Add School
             </a>
 
-            <a href="{{ url_for('platform_sms') }}"
+            <a href="/platform_sms"
                class="{% if endpoint == 'platform_sms' %}active{% endif %}">
                 📱 Platform SMS
             </a>
 
             <div class="nav-label">PLATFORM COMMUNICATION</div>
 
-            <a href="{{ url_for('communication_center') }}"
+            <a href="/communication_center"
                class="{% if endpoint == 'communication_center' %}active{% endif %}">
                 📡 Communication Overview
             </a>
 
-            <a href="{{ url_for('sms_messages') }}"
+            <a href="/sms_messages"
                class="{% if endpoint == 'sms_messages' %}active{% endif %}">
-                💬 Platform SMS Activity
+                💬 SMS Activity
             </a>
 
-            <a href="{{ url_for('whatsapp_outbox') }}"
+            <a href="/whatsapp_outbox"
                class="{% if endpoint == 'whatsapp_outbox' %}active{% endif %}">
                 📥 WhatsApp Activity
             </a>
 
+            <a href="/announcements"
+               class="{% if endpoint == 'announcements' %}active{% endif %}">
+                📢 Announcements
+            </a>
+
             <div class="nav-label">PLATFORM ADMINISTRATION</div>
 
-            <a href="{{ url_for('users') if 'users' in current_app.view_functions else '/users' }}"
+            <a href="/users"
                class="{% if endpoint == 'users' %}active{% endif %}">
                 👤 Users
             </a>
 
-            <a href="{{ url_for('audit_logs') if 'audit_logs' in current_app.view_functions else '/audit_logs' }}"
+            <a href="/audit_logs"
                class="{% if endpoint == 'audit_logs' %}active{% endif %}">
                 🧾 Audit Logs
             </a>
 
-            <a href="{{ url_for('settings') if 'settings' in current_app.view_functions else '/settings' }}"
+            <a href="/settings"
                class="{% if endpoint == 'settings' %}active{% endif %}">
                 ⚙️ Platform Settings
             </a>
 
         <!-- =================================================
-             TEACHER NAVIGATION
+             TEACHER MENU
         ================================================== -->
+
         {% elif role == "teacher" %}
 
             <div class="nav-label">OVERVIEW</div>
 
-            <a href="{{ url_for('teacher_dashboard') }}"
+            <a href="/teacher_dashboard"
                class="{% if endpoint == 'teacher_dashboard' %}active{% endif %}">
                 👨‍🏫 Teacher Portal
             </a>
@@ -603,25 +617,34 @@
             </details>
 
         <!-- =================================================
-             SCHOOL USER NAVIGATION
+             SCHOOL USER MENU
         ================================================== -->
+
         {% else %}
 
             <div class="nav-label">OVERVIEW</div>
 
-            <a href="{{ url_for('dashboard') }}"
+            <a href="/dashboard"
                class="{% if endpoint == 'dashboard' %}active{% endif %}">
                 🏠 Dashboard
             </a>
 
-            {% if role in ["admin", "principal", "headteacher", "bursar"] %}
-                <a href="{{ url_for('business_dashboard') }}"
+            {% if role in [
+                "admin",
+                "principal",
+                "headteacher",
+                "bursar"
+            ] %}
+
+                <a href="/business_dashboard"
                    class="{% if endpoint == 'business_dashboard' %}active{% endif %}">
                     📊 Business Dashboard
                 </a>
+
             {% endif %}
 
             <!-- STUDENTS -->
+
             {% if role in [
                 "admin",
                 "principal",
@@ -654,6 +677,7 @@
             {% endif %}
 
             <!-- ACADEMICS -->
+
             {% if role in [
                 "admin",
                 "principal",
@@ -678,6 +702,7 @@
             {% endif %}
 
             <!-- FINANCE -->
+
             {% if role in ["admin", "bursar"] %}
 
                 <div class="nav-label">FINANCE</div>
@@ -699,6 +724,7 @@
             {% endif %}
 
             <!-- HUMAN RESOURCE -->
+
             {% if role == "admin" %}
 
                 <div class="nav-label">HUMAN RESOURCE</div>
@@ -720,6 +746,7 @@
             {% endif %}
 
             <!-- COMMUNICATION -->
+
             {% if role in [
                 "admin",
                 "principal",
@@ -769,6 +796,7 @@
             {% endif %}
 
             <!-- OPERATIONS -->
+
             {% if role == "admin" %}
 
                 <div class="nav-label">OPERATIONS</div>
@@ -789,53 +817,39 @@
                     <summary>🍽️ Kitchen</summary>
 
                     <div class="subnav">
-                        <a href="{{ url_for('kitchen_dashboard') }}">
-                            Kitchen Dashboard
-                        </a>
-
-                        <a href="{{ url_for('kitchen_categories') }}">
-                            Food Categories
-                        </a>
-
-                        <a href="{{ url_for('kitchen_items') }}">
-                            Food Items
-                        </a>
-
-                        <a href="{{ url_for('kitchen_issues') }}">
-                            Kitchen Issues
-                        </a>
-
-                        <a href="{{ url_for('meal_menu') }}">
-                            Meal Menu
-                        </a>
-
-                        <a href="{{ url_for('kitchen_consumption') }}">
-                            Consumption
-                        </a>
-
-                        <a href="{{ url_for('meal_serving') }}">
-                            Meal Serving
-                        </a>
-
-                        <a href="{{ url_for('kitchen_waste') }}">
-                            Kitchen Waste
-                        </a>
-
-                        <a href="{{ url_for('kitchen_reports') }}">
-                            Kitchen Reports
-                        </a>
+                        <a href="/kitchen">Kitchen Dashboard</a>
+                        <a href="/kitchen/categories">Food Categories</a>
+                        <a href="/kitchen/items">Food Items</a>
+                        <a href="/kitchen/issues">Kitchen Issues</a>
+                        <a href="/kitchen/menu">Meal Menu</a>
+                        <a href="/kitchen/consumption">Consumption</a>
+                        <a href="/kitchen/serving">Meal Serving</a>
+                        <a href="/kitchen/waste">Kitchen Waste</a>
+                        <a href="/kitchen/reports">Kitchen Reports</a>
                     </div>
                 </details>
 
-                <a href="{{ url_for('reports_dashboard') }}">
+                <a href="/reports_dashboard"
+                   class="{% if endpoint == 'reports_dashboard' %}active{% endif %}">
                     📊 Reports Centre
                 </a>
 
                 <div class="nav-label">ADMINISTRATION</div>
 
-                <a href="/users">👤 Users</a>
-                <a href="/audit_logs">🧾 Audit Logs</a>
-                <a href="/settings">🎨 Branding</a>
+                <a href="/users"
+                   class="{% if endpoint == 'users' %}active{% endif %}">
+                    👤 Users
+                </a>
+
+                <a href="/audit_logs"
+                   class="{% if endpoint == 'audit_logs' %}active{% endif %}">
+                    🧾 Audit Logs
+                </a>
+
+                <a href="/settings"
+                   class="{% if endpoint == 'settings' %}active{% endif %}">
+                    🎨 Branding
+                </a>
 
             {% endif %}
 
@@ -851,6 +865,7 @@
 <!-- =========================================================
      MAIN CONTENT
 ========================================================= -->
+
 <div class="main">
 
     <div class="topbar">
@@ -904,6 +919,9 @@
 
             {% elif endpoint == "attendance" %}
                 <h1>Attendance</h1>
+
+            {% elif endpoint == "attendance_report" %}
+                <h1>Attendance Report</h1>
 
             {% elif endpoint == "defaulters_report" %}
                 <h1>Defaulters Report</h1>
@@ -963,13 +981,12 @@
                 <h1>Audit Logs</h1>
 
             {% elif endpoint == "settings" %}
-                <h1>
-                    {% if role == "super admin" %}
-                        Platform Settings
-                    {% else %}
-                        School Branding
-                    {% endif %}
-                </h1>
+
+                {% if role == "super admin" %}
+                    <h1>Platform Settings</h1>
+                {% else %}
+                    <h1>School Branding</h1>
+                {% endif %}
 
             {% else %}
                 <h1>EduManage</h1>
@@ -984,7 +1001,7 @@
         <div class="top-user">
 
             <div class="pill">
-                📅 {{ current_year() if current_year is defined else 2026 }}
+                📅 2026
             </div>
 
             <div class="avatar">
@@ -1006,13 +1023,19 @@
     <div class="content">
 
         {% with messages = get_flashed_messages() %}
+
             {% if messages %}
+
                 {% for message in messages %}
+
                     <div class="flash">
                         {{ message }}
                     </div>
+
                 {% endfor %}
+
             {% endif %}
+
         {% endwith %}
 
         {% block content %}{% endblock %}
