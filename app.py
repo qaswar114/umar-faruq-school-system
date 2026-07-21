@@ -513,15 +513,99 @@ class Announcement(db.Model):
     status = db.Column(db.String(20), default="Active")
 
 class SMSMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
-    recipient_name = db.Column(db.String(200), default="")
-    phone = db.Column(db.String(80), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    category = db.Column(db.String(50), default="General")
-    status = db.Column(db.String(30), default="Pending")
-    created_by = db.Column(db.String(80), default="")
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    __tablename__ = "sms_message"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False,
+        default=1,
+        index=True
+    )
+
+    recipient_name = db.Column(
+        db.String(200),
+        default=""
+    )
+
+    phone = db.Column(
+        db.String(80),
+        nullable=False,
+        index=True
+    )
+
+    message = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    category = db.Column(
+        db.String(50),
+        default="General",
+        index=True
+    )
+
+    status = db.Column(
+        db.String(30),
+        default="Pending",
+        index=True
+    )
+
+    provider = db.Column(
+        db.String(50),
+        default="AfricasTalking"
+    )
+
+    provider_message_id = db.Column(
+        db.String(200),
+        default=""
+    )
+
+    provider_status = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    provider_response = db.Column(
+        db.Text,
+        default=""
+    )
+
+    cost = db.Column(
+        db.String(50),
+        default=""
+    )
+
+    retry_count = db.Column(
+        db.Integer,
+        default=0
+    )
+
+    created_by = db.Column(
+        db.String(80),
+        default=""
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now,
+        index=True
+    )
+
+    sent_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    failed_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
 
 class WhatsAppMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1335,42 +1419,88 @@ def send_sms_gateway(phone, message):
         if not phone:
             return False, "Invalid phone number"
 
-        if not message:
+        if not message or not message.strip():
             return False, "Message cannot be empty"
 
-        username = os.environ.get("AT_USERNAME", "sandbox")
-        api_key = os.environ.get("AT_API_KEY", "")
-        sender_id = os.environ.get("AT_SENDER_ID", "").strip()
+        username = os.environ.get(
+            "AT_USERNAME",
+            "sandbox"
+        )
+
+        api_key = os.environ.get(
+            "AT_API_KEY",
+            ""
+        )
+
+        sender_id = os.environ.get(
+            "AT_SENDER_ID",
+            ""
+        ).strip()
 
         if not api_key:
-            return False, "Africa's Talking API key missing"
+            return False, (
+                "Africa's Talking API key is missing."
+            )
 
-        africastalking.initialize(username, api_key)
+        africastalking.initialize(
+            username,
+            api_key
+        )
+
         sms_service = africastalking.SMS
 
         if sender_id:
-            response = sms_service.send(message, [phone], sender_id=sender_id)
+            response = sms_service.send(
+                message.strip(),
+                [phone],
+                sender_id=sender_id
+            )
         else:
-            response = sms_service.send(message, [phone])
+            response = sms_service.send(
+                message.strip(),
+                [phone]
+            )
 
-        print("AFRICASTALKING RESPONSE:", response, flush=True)
+        print(
+            "AFRICASTALKING RESPONSE:",
+            response,
+            flush=True
+        )
 
-        recipients = response.get("SMSMessageData", {}).get("Recipients", [])
+        recipients = (
+            response
+            .get("SMSMessageData", {})
+            .get("Recipients", [])
+        )
 
         if not recipients:
             return False, str(response)
 
         recipient = recipients[0]
-        status = recipient.get("status", "")
 
-        if status in ["Success", "Sent"]:
+        status = str(
+            recipient.get("status", "")
+        ).strip().lower()
+
+        accepted_statuses = {
+            "success",
+            "sent",
+            "queued"
+        }
+
+        if status in accepted_statuses:
             return True, str(response)
 
         return False, str(response)
 
-    except Exception as e:
-        print("AFRICASTALKING ERROR:", str(e), flush=True)
-        return False, str(e)
+    except Exception as error:
+        print(
+            "AFRICASTALKING ERROR:",
+            str(error),
+            flush=True
+        )
+
+        return False, str(error)
 
 def send_whatsapp_message(phone, message):
     try:
@@ -10640,45 +10770,144 @@ def communication_center():
         sms_category_counts=sms_category_counts,
         whatsapp_category_counts=whatsapp_category_counts
     )
-@app.route("/send_pending_sms")
+@app.route("/send_pending_sms", methods=["POST"])
 def send_pending_sms():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+    if not role_allowed(
+        "admin",
+        "principal",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
-    messages = SMSMessage.query.filter_by(
+    wallet = SMSWallet.query.filter_by(
+        school_id=school_id
+    ).first()
+
+    if not wallet:
+        flash(
+            "This school does not have an SMS wallet. "
+            "Please purchase SMS first."
+        )
+        return redirect(url_for("communication_center"))
+
+    if not wallet.sms_enabled:
+        flash("SMS service is disabled for this school.")
+        return redirect(url_for("communication_center"))
+
+    pending_messages = SMSMessage.query.filter_by(
         school_id=school_id,
         status="Pending"
-    ).order_by(SMSMessage.created_at.asc()).all()
+    ).order_by(
+        SMSMessage.created_at.asc()
+    ).all()
 
+    if not pending_messages:
+        flash("There are no pending SMS messages.")
+        return redirect(url_for("communication_center"))
+
+    if int(wallet.sms_balance or 0) <= 0:
+        flash(
+            "Your SMS wallet is empty. "
+            "Please purchase more SMS."
+        )
+        return redirect(url_for("sms_wallet"))
+
+    attempted = 0
     sent = 0
     failed = 0
-    last_error = ""
+    skipped = 0
+    last_provider_response = ""
 
-    for m in messages:
-        ok, response = send_sms_gateway(m.phone, m.message)
+    try:
+        for message_record in pending_messages:
 
-        if ok:
-            m.status = "Sent"
-            sent += 1
-        else:
-            m.status = "Failed"
-            failed += 1
-            last_error = str(response)
+            if int(wallet.sms_balance or 0) <= 0:
+                skipped += 1
+                continue
 
-    db.session.commit()
+            attempted += 1
 
-    save_audit(
-        f"Sent pending SMS messages. Sent: {sent}, Failed: {failed}",
-        "Communication"
-    )
+            ok, gateway_response = send_sms_gateway(
+                message_record.phone,
+                message_record.message
+            )
 
-    flash(f"SMS sending complete. Sent: {sent}, Failed: {failed}. {last_error}")
+            if ok:
+                message_record.status = "Sent"
+
+                wallet.sms_balance = (
+                    int(wallet.sms_balance or 0) - 1
+                )
+
+                wallet.sms_used = (
+                    int(wallet.sms_used or 0) + 1
+                )
+
+                sent += 1
+
+            else:
+                message_record.status = "Failed"
+                failed += 1
+                last_provider_response = str(
+                    gateway_response
+                )
+
+            db.session.commit()
+
+        try:
+            save_audit(
+                f"Processed pending SMS for school ID {school_id}. "
+                f"Attempted: {attempted}, Sent: {sent}, "
+                f"Failed: {failed}, Skipped: {skipped}, "
+                f"Wallet balance: {wallet.sms_balance}.",
+                "Communication"
+            )
+        except Exception as audit_error:
+            print(
+                "SEND PENDING SMS AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        result_message = (
+            f"SMS processing completed. "
+            f"Attempted: {attempted}, "
+            f"Sent: {sent}, "
+            f"Failed: {failed}, "
+            f"Not sent because of insufficient balance: {skipped}. "
+            f"Remaining balance: {wallet.sms_balance or 0}."
+        )
+
+        if last_provider_response:
+            result_message += (
+                f" Last provider response: "
+                f"{last_provider_response}"
+            )
+
+        flash(result_message)
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "SEND PENDING SMS ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "SMS processing stopped because of an unexpected error."
+        )
+
     return redirect(url_for("communication_center"))
 
 @app.route("/retry_failed_whatsapp")
@@ -10985,32 +11214,74 @@ def delete_pending_sms():
     return redirect(url_for("communication_center"))
 
 
-@app.route("/delete_failed_sms")
+@app.route("/delete_failed_sms", methods=["POST"])
 def delete_failed_sms():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar", "super admin"):
+    if not role_allowed(
+        "admin",
+        "principal",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
-    deleted = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).delete()
+    try:
+        failed_messages = SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Failed"
+        ).all()
 
-    db.session.commit()
+        deleted_count = len(failed_messages)
 
-    save_audit(
-        f"Deleted failed SMS messages: {deleted}",
-        "Communication"
-    )
+        if deleted_count == 0:
+            flash("There are no failed SMS messages to delete.")
+            return redirect(url_for("communication_center"))
 
-    flash(f"Deleted {deleted} failed SMS messages.")
+        for message_record in failed_messages:
+            db.session.delete(message_record)
+
+        db.session.commit()
+
+        try:
+            save_audit(
+                f"Deleted {deleted_count} failed SMS message(s) "
+                f"for school ID {school_id}.",
+                "Communication"
+            )
+        except Exception as audit_error:
+            print(
+                "DELETE FAILED SMS AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        flash(
+            f"{deleted_count} failed SMS message(s) "
+            f"were deleted successfully."
+        )
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "DELETE FAILED SMS ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "Failed SMS messages could not be deleted. "
+            "No changes were saved."
+        )
+
     return redirect(url_for("communication_center"))
-
 @app.route("/whatsapp_messages", methods=["GET", "POST"])
 def whatsapp_messages():
     if not login_required():
