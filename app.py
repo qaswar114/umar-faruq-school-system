@@ -2624,106 +2624,61 @@ def super_admin_dashboard():
         is_active=True
     ).count()
 
-    suspended_schools = School.query.filter_by(
-        is_active=False
+    trial_schools = School.query.filter(
+        db.func.lower(
+            db.func.coalesce(
+                School.subscription_status,
+                ""
+            )
+        ) == "trial"
     ).count()
 
-    total_users = User.query.count()
+    expired_schools = School.query.filter(
+        db.func.lower(
+            db.func.coalesce(
+                School.subscription_status,
+                ""
+            )
+        ) == "expired"
+    ).count()
 
     total_pupils = Pupil.query.count()
+    total_staff = Staff.query.count()
+    total_sms = SMSMessage.query.count()
 
-    pool = PlatformSMSPool.query.first()
-
-    platform_sms_balance = (
-        pool.sms_balance if pool else 0
+    payment_total = (
+        db.func.coalesce(Payment.tuition_paid, 0)
+        + db.func.coalesce(Payment.bus_paid, 0)
+        + db.func.coalesce(Payment.exam_paid, 0)
+        + db.func.coalesce(Payment.admission_paid, 0)
     )
 
-    platform_sms_loaded = (
-        pool.sms_loaded if pool else 0
-    )
-
-    platform_sms_sold = (
-        pool.sms_sold if pool else 0
-    )
-
-    pending_sms_purchases = SMSPurchase.query.filter_by(
-        status="Pending"
-    ).count()
-
-    total_sms_revenue = db.session.query(
+    total_collected = db.session.query(
         db.func.coalesce(
-            db.func.sum(SMSPurchase.amount),
+            db.func.sum(payment_total),
             0
         )
-    ).filter(
-        SMSPurchase.status == "Completed"
     ).scalar() or 0
-
-    sms_sent = SMSMessage.query.filter_by(
-        status="Sent"
-    ).count()
-
-    sms_pending = SMSMessage.query.filter_by(
-        status="Pending"
-    ).count()
-
-    sms_failed = SMSMessage.query.filter_by(
-        status="Failed"
-    ).count()
-
-    whatsapp_sent = WhatsAppMessage.query.filter_by(
-        status="Sent"
-    ).count()
-
-    whatsapp_pending = WhatsAppMessage.query.filter_by(
-        status="Pending"
-    ).count()
 
     recent_schools = School.query.order_by(
         School.created_at.desc()
-    ).limit(8).all()
-
-    recent_sms_purchases = SMSPurchase.query.order_by(
-        SMSPurchase.request_date.desc()
-    ).limit(8).all()
-
-    schools = School.query.order_by(
-        School.school_name.asc()
-    ).all()
-
-    schools_dict = {
-        school.id: school.school_name
-        for school in schools
-    }
+    ).limit(10).all()
 
     return render_template(
-        "super_admin_dashboard.html",
+        "super_dashboard.html",
         settings=get_settings(),
 
         total_schools=total_schools,
         active_schools=active_schools,
-        suspended_schools=suspended_schools,
-        total_users=total_users,
+        trial_schools=trial_schools,
+        expired_schools=expired_schools,
+
         total_pupils=total_pupils,
+        total_staff=total_staff,
+        total_sms=total_sms,
+        total_collected=total_collected,
 
-        platform_sms_balance=platform_sms_balance,
-        platform_sms_loaded=platform_sms_loaded,
-        platform_sms_sold=platform_sms_sold,
-        pending_sms_purchases=pending_sms_purchases,
-        total_sms_revenue=total_sms_revenue,
-
-        sms_sent=sms_sent,
-        sms_pending=sms_pending,
-        sms_failed=sms_failed,
-
-        whatsapp_sent=whatsapp_sent,
-        whatsapp_pending=whatsapp_pending,
-
-        recent_schools=recent_schools,
-        recent_sms_purchases=recent_sms_purchases,
-        schools_dict=schools_dict,
-
-        money=money
+        recent_schools=recent_schools
     )
     
 @app.route("/business_dashboard")
