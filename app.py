@@ -550,6 +550,7 @@ class SMSMessage(db.Model):
         index=True
     )
 
+    # Pending, Sent, Failed
     status = db.Column(
         db.String(30),
         default="Pending",
@@ -563,7 +564,8 @@ class SMSMessage(db.Model):
 
     provider_message_id = db.Column(
         db.String(200),
-        default=""
+        default="",
+        index=True
     )
 
     provider_status = db.Column(
@@ -584,6 +586,43 @@ class SMSMessage(db.Model):
     retry_count = db.Column(
         db.Integer,
         default=0
+    )
+
+    # Final delivery information received from Africa's Talking.
+    delivery_status = db.Column(
+        db.String(100),
+        default="Pending",
+        index=True
+    )
+
+    delivery_phone = db.Column(
+        db.String(80),
+        default=""
+    )
+
+    delivery_network_code = db.Column(
+        db.String(50),
+        default=""
+    )
+
+    delivery_failure_reason = db.Column(
+        db.String(255),
+        default=""
+    )
+
+    delivery_report = db.Column(
+        db.Text,
+        default=""
+    )
+
+    delivery_checked_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    delivered_at = db.Column(
+        db.DateTime,
+        nullable=True
     )
 
     created_by = db.Column(
