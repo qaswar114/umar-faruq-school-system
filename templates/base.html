@@ -1,338 +1,1036 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <title>{{ settings.school_name if settings else "EduManage" }}</title>
+    <meta charset="utf-8">
+
+    <title>
+        {% if session.get("role", "")|lower == "super admin" %}
+            EduManage SaaS
+        {% else %}
+            {{ settings.school_name if settings else "EduManage" }}
+        {% endif %}
+    </title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="manifest"
+          href="{{ url_for('static', filename='manifest.json') }}">
+
     <meta name="theme-color" content="#0b5ed7">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='edumanage_logo.png') }}">
+
+    <link rel="apple-touch-icon"
+          href="{{ url_for('static', filename='edumanage_logo.png') }}">
 
     <style>
-        *{box-sizing:border-box}
-        body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#0f172a}
-
-        .sidebar{
-            position:fixed;left:0;top:0;bottom:0;width:270px;
-            background:linear-gradient(180deg,#061b44,#052b61);
-            color:white;padding:16px 13px;overflow-y:auto;z-index:1000
+        * {
+            box-sizing: border-box;
         }
 
-        .brand{text-align:center;padding:8px 6px 16px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:12px}
-        .brand img{width:78px;height:78px;border-radius:20px;background:white;object-fit:contain;padding:6px;margin-bottom:10px}
-        .brand h2{margin:0;font-size:15px;line-height:1.2;text-transform:uppercase}
-        .brand small{display:block;color:#dbeafe;font-size:11px;margin-top:5px}
-
-        .nav-label{font-size:10px;color:#93c5fd;font-weight:bold;letter-spacing:1px;margin:15px 0 7px 8px}
-
-        .nav a,.nav summary{
-            display:flex;align-items:center;gap:9px;color:white;text-decoration:none;
-            padding:9px 10px;border-radius:10px;margin-bottom:4px;
-            font-weight:800;font-size:13px;cursor:pointer
-        }
-        .nav a:hover,.nav a.active,.nav summary:hover{background:#0b5ed7}
-
-        details{margin-bottom:4px}
-        summary{list-style:none}
-        summary::-webkit-details-marker{display:none}
-
-        .subnav{margin-left:18px;border-left:1px solid rgba(255,255,255,.18);padding-left:8px;margin-bottom:6px}
-        .subnav a{font-size:12px;padding:7px 8px;color:#dbeafe}
-
-        .logout-link{margin-top:16px!important;background:#dc2626!important;color:white!important;justify-content:center}
-        .logout-link:hover{background:#b91c1c!important}
-
-        .main{margin-left:270px;min-height:100vh}
-
-        .topbar{
-            height:68px;background:white;border-bottom:1px solid #e5e7eb;
-            display:flex;align-items:center;justify-content:space-between;
-            padding:0 24px;position:sticky;top:0;z-index:500
+        html {
+            scroll-behavior: smooth;
         }
 
-        .top-title h1{margin:0;font-size:22px;color:#07142f}
-        .top-title small{color:#64748b}
-
-        .top-user{display:flex;align-items:center;gap:12px}
-        .pill{background:#f8fafc;border:1px solid #e5e7eb;padding:8px 12px;border-radius:12px;font-weight:bold}
-        .avatar{width:38px;height:38px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:20px}
-
-        .content{padding:20px 28px;width:100%;max-width:1800px;margin:0 auto}
-
-        .panel{background:white;padding:20px;border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,.07);margin-bottom:18px;width:100%}
-
-        input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;font-size:15px}
-        label{font-weight:bold;display:block;margin-bottom:5px}
-
-        .btn,button{display:inline-block;background:#0b5ed7;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;border:none;cursor:pointer;font-size:15px}
-        .btn.green,button.green{background:#159947}
-        .btn.red,button.red{background:#dc2626}
-        .btn.gray,button.gray{background:#64748b}
-
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
-        th{background:#f8fafc}
-
-        .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-        .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-
-        .flash{background:#fff7d6;padding:10px 14px;border-radius:10px;margin-bottom:12px}
-
-        .dashboard-page,.reports-page,.pay-page,.users-page,.fees-page,
-        .fee-page,.discount-page,.def-page,.defaulters-page,.inventory-page,
-        .tx-page,.report-page,.staff-page,.staff-dashboard,.business-page,
-        .teacher-app,.pupils-page,.transport-page,.whatsapp-page,.sms-page,
-        .expense-page,.balance-page,.attendance-page,.exam-page,.timetable-page,
-        .homework-page,.bus-page,.route-page,.assign-page,.comm-page{
-            max-width:100%!important;width:100%!important
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #0f172a;
         }
 
-        .pay-card,.discount-card,.inventory-card,.tx-card,.report-card,
-        .users-card,.card,.bus-card,.route-card,.assign-card{width:100%}
-
-        @media(max-width:800px){
-            .sidebar{position:relative;width:100%;height:auto}
-            .main{margin-left:0}
-            .topbar{height:auto;flex-direction:column;align-items:flex-start;gap:10px;padding:15px}
-            .top-user{flex-wrap:wrap}
-            .two,.three{grid-template-columns:1fr}
-            .content{padding:14px;max-width:100%}
+        /* =====================================================
+           SIDEBAR
+        ====================================================== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 270px;
+            background: linear-gradient(180deg, #061b44, #052b61);
+            color: white;
+            padding: 16px 13px;
+            overflow-y: auto;
+            z-index: 1000;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,.25) transparent;
         }
 
-        @media print{
-            .sidebar,.topbar,.no-print{display:none!important}
-            .main{margin-left:0!important}
-            body{background:white!important}
-            .content{max-width:100%!important;padding:0!important}
+        .sidebar::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,.22);
+            border-radius: 999px;
+        }
+
+        .brand {
+            text-align: center;
+            padding: 8px 6px 16px;
+            border-bottom: 1px solid rgba(255,255,255,.15);
+            margin-bottom: 12px;
+        }
+
+        .brand img {
+            width: 82px;
+            height: 82px;
+            border-radius: 20px;
+            background: white;
+            object-fit: contain;
+            padding: 6px;
+            margin-bottom: 10px;
+        }
+
+        .brand h2 {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.25;
+            text-transform: uppercase;
+        }
+
+        .brand small {
+            display: block;
+            color: #dbeafe;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            color: #93c5fd;
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin: 16px 0 7px 8px;
+        }
+
+        .nav a,
+        .nav summary {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: white;
+            text-decoration: none;
+            padding: 9px 10px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background .16s ease, transform .16s ease;
+        }
+
+        .nav a:hover,
+        .nav a.active,
+        .nav summary:hover {
+            background: #0b5ed7;
+        }
+
+        .nav a:hover {
+            transform: translateX(2px);
+        }
+
+        details {
+            margin-bottom: 4px;
+        }
+
+        summary {
+            list-style: none;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .subnav {
+            margin-left: 18px;
+            border-left: 1px solid rgba(255,255,255,.18);
+            padding-left: 8px;
+            margin-bottom: 6px;
+        }
+
+        .subnav a {
+            font-size: 12px;
+            padding: 7px 8px;
+            color: #dbeafe;
+        }
+
+        .logout-link {
+            margin-top: 18px !important;
+            background: #dc2626 !important;
+            color: white !important;
+            justify-content: center;
+        }
+
+        .logout-link:hover {
+            background: #b91c1c !important;
+        }
+
+        /* =====================================================
+           MAIN AREA
+        ====================================================== */
+        .main {
+            margin-left: 270px;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            min-height: 68px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 500;
+        }
+
+        .top-title h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #07142f;
+        }
+
+        .top-title small {
+            color: #64748b;
+        }
+
+        .top-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #dbeafe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .content {
+            padding: 20px 28px;
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* =====================================================
+           GLOBAL COMPONENTS
+        ====================================================== */
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(15,23,42,.07);
+            margin-bottom: 18px;
+            width: 100%;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 15px;
+            background: white;
+            color: #0f172a;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #0b5ed7;
+            box-shadow: 0 0 0 3px rgba(11,94,215,.10);
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .btn,
+        button {
+            display: inline-block;
+            background: #0b5ed7;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .btn.green,
+        button.green {
+            background: #159947;
+        }
+
+        .btn.red,
+        button.red {
+            background: #dc2626;
+        }
+
+        .btn.gray,
+        button.gray {
+            background: #64748b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        .two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .three {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+        }
+
+        .flash {
+            background: #fff7d6;
+            border: 1px solid #fde68a;
+            color: #854d0e;
+            padding: 11px 14px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .dashboard-page,
+        .reports-page,
+        .pay-page,
+        .users-page,
+        .fees-page,
+        .fee-page,
+        .discount-page,
+        .def-page,
+        .defaulters-page,
+        .inventory-page,
+        .tx-page,
+        .report-page,
+        .staff-page,
+        .staff-dashboard,
+        .business-page,
+        .teacher-app,
+        .pupils-page,
+        .transport-page,
+        .whatsapp-page,
+        .sms-page,
+        .expense-page,
+        .balance-page,
+        .attendance-page,
+        .exam-page,
+        .timetable-page,
+        .homework-page,
+        .bus-page,
+        .route-page,
+        .assign-page,
+        .comm-page,
+        .platform-sms-page,
+        .kitchen-dashboard {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .pay-card,
+        .discount-card,
+        .inventory-card,
+        .tx-card,
+        .report-card,
+        .users-card,
+        .card,
+        .bus-card,
+        .route-card,
+        .assign-card {
+            width: 100%;
+        }
+
+        /* =====================================================
+           RESPONSIVE
+        ====================================================== */
+        @media (max-width: 800px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                min-height: auto;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 15px;
+                position: relative;
+            }
+
+            .top-user {
+                flex-wrap: wrap;
+            }
+
+            .two,
+            .three {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 14px;
+                max-width: 100%;
+            }
+        }
+
+        /* =====================================================
+           PRINT
+        ====================================================== */
+        @media print {
+            .sidebar,
+            .topbar,
+            .no-print {
+                display: none !important;
+            }
+
+            .main {
+                margin-left: 0 !important;
+            }
+
+            body {
+                background: white !important;
+            }
+
+            .content {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
         }
     </style>
 </head>
 
 <body>
 
-{% set role = session.get("role","")|lower %}
+{% set role = session.get("role", "")|lower %}
+{% set endpoint = request.endpoint or "" %}
 
 <div class="sidebar">
+
+    <!-- =====================================================
+         BRAND
+    ====================================================== -->
     <div class="brand">
+
         {% if role == "super admin" %}
-            <img src="{{ url_for('static', filename='edumanage_logo.png') }}">
+
+            <img
+                src="{{ url_for('static', filename='edumanage_logo.png') }}"
+                alt="EduManage">
+
             <h2>EduManage</h2>
             <small>SaaS Control Panel</small>
+
         {% elif settings and settings.logo %}
-            <img src="{{ url_for('static', filename=settings.logo) }}" onerror="this.onerror=null; this.src='{{ url_for('static', filename='logo.png') }}';">
-            <h2>{{ settings.school_name if settings else "School System" }}</h2>
+
+            <img
+                src="{{ url_for('static', filename=settings.logo) }}"
+                alt="{{ settings.school_name }}"
+                onerror="this.onerror=null;this.src='{{ url_for('static', filename='logo.png') }}';">
+
+            <h2>
+                {{ settings.school_name if settings else "School System" }}
+            </h2>
+
             <small>Powered by EduManage</small>
+
         {% else %}
-            <img src="{{ url_for('static', filename='logo.png') }}" onerror="this.onerror=null; this.src='{{ url_for('static', filename='edumanage_logo.png') }}';">
-            <h2>{{ settings.school_name if settings else "School System" }}</h2>
+
+            <img
+                src="{{ url_for('static', filename='logo.png') }}"
+                alt="School Logo"
+                onerror="this.onerror=null;this.src='{{ url_for('static', filename='edumanage_logo.png') }}';">
+
+            <h2>
+                {{ settings.school_name if settings else "School System" }}
+            </h2>
+
             <small>Powered by EduManage</small>
+
         {% endif %}
+
     </div>
 
     <div class="nav">
-        <div class="nav-label">OVERVIEW</div>
 
-        {% if role == "teacher" %}
-            <a href="/teacher_dashboard">👨‍🏫 Teacher Portal</a>
-        {% else %}
-            <a class="{% if request.path == '/dashboard' %}active{% endif %}" href="/dashboard">🏠 Dashboard</a>
-        {% endif %}
-
-        {% if role in ["admin","super admin"] %}
-            <a class="{% if request.path == '/business_dashboard' %}active{% endif %}" href="/business_dashboard">🖥️ CEO Dashboard</a>
-        {% endif %}
-
+        <!-- =================================================
+             SUPER ADMIN NAVIGATION
+        ================================================== -->
         {% if role == "super admin" %}
+
+            <div class="nav-label">OVERVIEW</div>
+
+            <a href="{{ url_for('super_admin_dashboard') }}"
+               class="{% if endpoint == 'super_admin_dashboard' %}active{% endif %}">
+                🏠 Dashboard
+            </a>
+
             <div class="nav-label">SAAS CONTROL</div>
-            <a href="/schools">🏫 Schools</a>
-            <a href="/create_school">➕ Add School</a>
-            <a href="/platform_sms">📱 Platform SMS</a>
-        {% endif %}
 
-        {% if role in ["admin","headteacher","deputy headteacher","registrar","receptionist"] %}
-            <div class="nav-label">STUDENTS</div>
-            <details open>
-                <summary>🎓 Students</summary>
-                <div class="subnav">
-                    <a href="/pupils">Admissions</a>
-                    <a href="/attendance">Mark Attendance</a>
-                    <a href="/attendance_report">Attendance Report</a>
-                    {% if role in ["admin","registrar","receptionist"] %}
-                    <a href="/transport">Transport</a>
-                    {% endif %}
-                </div>
-            </details>
-        {% endif %}
+            <a href="{{ url_for('schools') if 'schools' in current_app.view_functions else '/schools' }}"
+               class="{% if endpoint == 'schools' %}active{% endif %}">
+                🏫 Schools
+            </a>
 
-        {% if role in ["admin","headteacher","deputy headteacher","teacher"] %}
-            <div class="nav-label">ACADEMICS</div>
+            <a href="{{ url_for('create_school') if 'create_school' in current_app.view_functions else '/create_school' }}"
+               class="{% if endpoint == 'create_school' %}active{% endif %}">
+                ➕ Add School
+            </a>
+
+            <a href="{{ url_for('platform_sms') }}"
+               class="{% if endpoint == 'platform_sms' %}active{% endif %}">
+                📱 Platform SMS
+            </a>
+
+            <div class="nav-label">PLATFORM COMMUNICATION</div>
+
+            <a href="{{ url_for('communication_center') }}"
+               class="{% if endpoint == 'communication_center' %}active{% endif %}">
+                📡 Communication Overview
+            </a>
+
+            <a href="{{ url_for('sms_messages') }}"
+               class="{% if endpoint == 'sms_messages' %}active{% endif %}">
+                💬 Platform SMS Activity
+            </a>
+
+            <a href="{{ url_for('whatsapp_outbox') }}"
+               class="{% if endpoint == 'whatsapp_outbox' %}active{% endif %}">
+                📥 WhatsApp Activity
+            </a>
+
+            <div class="nav-label">PLATFORM ADMINISTRATION</div>
+
+            <a href="{{ url_for('users') if 'users' in current_app.view_functions else '/users' }}"
+               class="{% if endpoint == 'users' %}active{% endif %}">
+                👤 Users
+            </a>
+
+            <a href="{{ url_for('audit_logs') if 'audit_logs' in current_app.view_functions else '/audit_logs' }}"
+               class="{% if endpoint == 'audit_logs' %}active{% endif %}">
+                🧾 Audit Logs
+            </a>
+
+            <a href="{{ url_for('settings') if 'settings' in current_app.view_functions else '/settings' }}"
+               class="{% if endpoint == 'settings' %}active{% endif %}">
+                ⚙️ Platform Settings
+            </a>
+
+        <!-- =================================================
+             TEACHER NAVIGATION
+        ================================================== -->
+        {% elif role == "teacher" %}
+
+            <div class="nav-label">OVERVIEW</div>
+
+            <a href="{{ url_for('teacher_dashboard') }}"
+               class="{% if endpoint == 'teacher_dashboard' %}active{% endif %}">
+                👨‍🏫 Teacher Portal
+            </a>
+
+            <div class="nav-label">TEACHING</div>
+
             <details open>
                 <summary>📚 Academics</summary>
+
                 <div class="subnav">
                     <a href="/subjects">Subjects</a>
                     <a href="/homework">Homework</a>
                     <a href="/timetable_dashboard">Timetable</a>
+                    <a href="/attendance">Mark Attendance</a>
                     <a href="/exams">Exams</a>
                     <a href="/report_cards">Report Cards</a>
                 </div>
             </details>
-        {% endif %}
 
-        {% if role in ["admin","bursar"] %}
-            <div class="nav-label">FINANCE</div>
-            <details open>
-                <summary>💰 Finance</summary>
-                <div class="subnav">
-                    <a href="/payments">Payments</a>
-                    <a href="/fees">Fee Structure</a>
-                    <a href="/discounts">Discounts / Waivers</a>
-                    <a href="/balances">Balances</a>
-                    <a href="/defaulters_report">Defaulters</a>
-                    <a href="/expenses">Expenses</a>
-                    <a href="/expense_report">Expense Report</a>
-                </div>
-            </details>
-        {% endif %}
+            <div class="nav-label">COMMUNICATION</div>
 
-        {% if role == "admin" %}
-            <div class="nav-label">HUMAN RESOURCE</div>
             <details>
-                <summary>👥 Human Resource</summary>
-                <div class="subnav">
-                    <a href="/staff_dashboard">Staff Dashboard</a>
-                    <a href="/staff">Staff Directory</a>
-                    <a href="/staff_attendance">Staff Attendance</a>
-                    <a href="/staff_attendance_report">Staff Attendance Report</a>
-                    <a href="/payroll">Payroll</a>
-                </div>
-            </details>
-        {% endif %}
-
-        {% if role in ["admin","headteacher","deputy headteacher","bursar","registrar","receptionist","teacher","super admin"] %}
-            <div class="nav-label">COMMUNICATION CENTER</div>
-            <details open>
                 <summary>📡 Communication Center</summary>
+
                 <div class="subnav">
-                    <a href="/communication_center">📡 Communication Center</a>
-                    <a href="/sms_messages">💬 SMS Center</a>
-                    <a href="/whatsapp_messages">📱 WhatsApp Center</a>
-                    <a href="/sms_messages">📤 SMS Outbox</a>
-                    <a href="/whatsapp_outbox">📥 WhatsApp Outbox</a>
-                    <a href="/sms_wallet">💰 SMS Wallet</a>
-                    <a href="/fee_reminders">🔔 Fee Reminders</a>
-                    <a href="/announcements">📢 Announcements</a>
+                    <a href="/communication_center">Overview</a>
+                    <a href="/sms_messages">SMS Center</a>
+                    <a href="/whatsapp_messages">WhatsApp Center</a>
+                    <a href="/announcements">Announcements</a>
                 </div>
             </details>
+
+        <!-- =================================================
+             SCHOOL USER NAVIGATION
+        ================================================== -->
+        {% else %}
+
+            <div class="nav-label">OVERVIEW</div>
+
+            <a href="{{ url_for('dashboard') }}"
+               class="{% if endpoint == 'dashboard' %}active{% endif %}">
+                🏠 Dashboard
+            </a>
+
+            {% if role in ["admin", "principal", "headteacher", "bursar"] %}
+                <a href="{{ url_for('business_dashboard') }}"
+                   class="{% if endpoint == 'business_dashboard' %}active{% endif %}">
+                    📊 Business Dashboard
+                </a>
+            {% endif %}
+
+            <!-- STUDENTS -->
+            {% if role in [
+                "admin",
+                "principal",
+                "headteacher",
+                "deputy headteacher",
+                "registrar",
+                "receptionist"
+            ] %}
+
+                <div class="nav-label">STUDENTS</div>
+
+                <details open>
+                    <summary>🎓 Students</summary>
+
+                    <div class="subnav">
+                        <a href="/pupils">Admissions</a>
+                        <a href="/attendance">Mark Attendance</a>
+                        <a href="/attendance_report">Attendance Report</a>
+
+                        {% if role in [
+                            "admin",
+                            "registrar",
+                            "receptionist"
+                        ] %}
+                            <a href="/transport">Transport</a>
+                        {% endif %}
+                    </div>
+                </details>
+
+            {% endif %}
+
+            <!-- ACADEMICS -->
+            {% if role in [
+                "admin",
+                "principal",
+                "headteacher",
+                "deputy headteacher"
+            ] %}
+
+                <div class="nav-label">ACADEMICS</div>
+
+                <details open>
+                    <summary>📚 Academics</summary>
+
+                    <div class="subnav">
+                        <a href="/subjects">Subjects</a>
+                        <a href="/homework">Homework</a>
+                        <a href="/timetable_dashboard">Timetable</a>
+                        <a href="/exams">Exams</a>
+                        <a href="/report_cards">Report Cards</a>
+                    </div>
+                </details>
+
+            {% endif %}
+
+            <!-- FINANCE -->
+            {% if role in ["admin", "bursar"] %}
+
+                <div class="nav-label">FINANCE</div>
+
+                <details open>
+                    <summary>💰 Finance</summary>
+
+                    <div class="subnav">
+                        <a href="/payments">Payments</a>
+                        <a href="/fees">Fee Structure</a>
+                        <a href="/discounts">Discounts / Waivers</a>
+                        <a href="/balances">Balances</a>
+                        <a href="/defaulters_report">Defaulters</a>
+                        <a href="/expenses">Expenses</a>
+                        <a href="/expense_report">Expense Report</a>
+                    </div>
+                </details>
+
+            {% endif %}
+
+            <!-- HUMAN RESOURCE -->
+            {% if role == "admin" %}
+
+                <div class="nav-label">HUMAN RESOURCE</div>
+
+                <details>
+                    <summary>👥 Human Resource</summary>
+
+                    <div class="subnav">
+                        <a href="/staff_dashboard">Staff Dashboard</a>
+                        <a href="/staff">Staff Directory</a>
+                        <a href="/staff_attendance">Staff Attendance</a>
+                        <a href="/staff_attendance_report">
+                            Staff Attendance Report
+                        </a>
+                        <a href="/payroll">Payroll</a>
+                    </div>
+                </details>
+
+            {% endif %}
+
+            <!-- COMMUNICATION -->
+            {% if role in [
+                "admin",
+                "principal",
+                "headteacher",
+                "deputy headteacher",
+                "bursar",
+                "registrar",
+                "receptionist"
+            ] %}
+
+                <div class="nav-label">COMMUNICATION CENTER</div>
+
+                <details>
+                    <summary>📡 Communication Center</summary>
+
+                    <div class="subnav">
+                        <a href="/communication_center">
+                            Communication Overview
+                        </a>
+
+                        <a href="/sms_messages">
+                            SMS Center
+                        </a>
+
+                        <a href="/whatsapp_messages">
+                            WhatsApp Center
+                        </a>
+
+                        <a href="/whatsapp_outbox">
+                            WhatsApp Outbox
+                        </a>
+
+                        <a href="/sms_wallet">
+                            SMS Wallet
+                        </a>
+
+                        <a href="/fee_reminders">
+                            Fee Reminders
+                        </a>
+
+                        <a href="/announcements">
+                            Announcements
+                        </a>
+                    </div>
+                </details>
+
+            {% endif %}
+
+            <!-- OPERATIONS -->
+            {% if role == "admin" %}
+
+                <div class="nav-label">OPERATIONS</div>
+
+                <details>
+                    <summary>📦 Inventory / Store</summary>
+
+                    <div class="subnav">
+                        <a href="/inventory">Inventory Dashboard</a>
+                        <a href="/stock_in">Stock In</a>
+                        <a href="/stock_out">Stock Out</a>
+                        <a href="/inventory_transactions">Stock History</a>
+                        <a href="/inventory_reports">Inventory Reports</a>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>🍽️ Kitchen</summary>
+
+                    <div class="subnav">
+                        <a href="{{ url_for('kitchen_dashboard') }}">
+                            Kitchen Dashboard
+                        </a>
+
+                        <a href="{{ url_for('kitchen_categories') }}">
+                            Food Categories
+                        </a>
+
+                        <a href="{{ url_for('kitchen_items') }}">
+                            Food Items
+                        </a>
+
+                        <a href="{{ url_for('kitchen_issues') }}">
+                            Kitchen Issues
+                        </a>
+
+                        <a href="{{ url_for('meal_menu') }}">
+                            Meal Menu
+                        </a>
+
+                        <a href="{{ url_for('kitchen_consumption') }}">
+                            Consumption
+                        </a>
+
+                        <a href="{{ url_for('meal_serving') }}">
+                            Meal Serving
+                        </a>
+
+                        <a href="{{ url_for('kitchen_waste') }}">
+                            Kitchen Waste
+                        </a>
+
+                        <a href="{{ url_for('kitchen_reports') }}">
+                            Kitchen Reports
+                        </a>
+                    </div>
+                </details>
+
+                <a href="{{ url_for('reports_dashboard') }}">
+                    📊 Reports Centre
+                </a>
+
+                <div class="nav-label">ADMINISTRATION</div>
+
+                <a href="/users">👤 Users</a>
+                <a href="/audit_logs">🧾 Audit Logs</a>
+                <a href="/settings">🎨 Branding</a>
+
+            {% endif %}
+
         {% endif %}
 
-        {% if role == "admin" %}
-            <div class="nav-label">OPERATIONS</div>
-            <details>
-                <summary>📦 Inventory / Store</summary>
-                <div class="subnav">
-                    <a href="/inventory">Inventory Dashboard</a>
-                    <a href="/stock_in">Stock In</a>
-                    <a href="/stock_out">Stock Out</a>
-                    <a href="/inventory_transactions">Stock History</a>
-                    <a href="/inventory_reports">Inventory Reports</a>
-                </div>
-            </details>
-         <li>
-                    <a href="{{ url_for('kitchen_dashboard') }}">
-                  <i class="fas fa-utensils"></i>
-               <span>Kitchen</span>
-             </a>
-         </li>
+        <a href="/logout" class="logout-link">
+            🚪 Logout
+        </a>
 
-            <a href="{{ url_for('reports_dashboard') }}">📊 Reports Centre</a>
-
-            <div class="nav-label">ADMINISTRATION</div>
-            <a href="/users">👤 Users</a>
-            <a href="/audit_logs">🧾 Audit Logs</a>
-            <a href="/settings">🎨 Branding</a>
-        {% endif %}
-
-        <a href="/logout" class="logout-link">🚪 Logout</a>
     </div>
 </div>
 
+<!-- =========================================================
+     MAIN CONTENT
+========================================================= -->
 <div class="main">
+
     <div class="topbar">
+
         <div class="top-title">
-            {% if request.path == '/dashboard' %}
+
+            {% if endpoint == "super_admin_dashboard" %}
+                <h1>Super Admin Dashboard</h1>
+
+            {% elif endpoint == "dashboard" %}
                 <h1>Dashboard</h1>
-            {% elif request.path == '/business_dashboard' %}
-                <h1>CEO Dashboard</h1>
-            {% elif request.path == '/communication_center' %}
+
+            {% elif endpoint == "business_dashboard" %}
+                <h1>Business Dashboard</h1>
+
+            {% elif endpoint == "platform_sms" %}
+                <h1>Platform SMS</h1>
+
+            {% elif endpoint == "schools" %}
+                <h1>Schools Management</h1>
+
+            {% elif endpoint == "create_school" %}
+                <h1>Add School</h1>
+
+            {% elif endpoint == "communication_center" %}
                 <h1>Communication Center</h1>
-            {% elif request.path == '/sms_messages' %}
+
+            {% elif endpoint == "sms_messages" %}
                 <h1>SMS Center</h1>
-            {% elif request.path == '/whatsapp_messages' %}
+
+            {% elif endpoint == "whatsapp_messages" %}
                 <h1>WhatsApp Center</h1>
-            {% elif request.path == '/whatsapp_outbox' %}
+
+            {% elif endpoint == "whatsapp_outbox" %}
                 <h1>WhatsApp Outbox</h1>
-            {% elif request.path == '/fee_reminders' %}
+
+            {% elif endpoint == "fee_reminders" %}
                 <h1>Fee Reminders</h1>
-            {% elif request.path == '/payments' %}
+
+            {% elif endpoint == "payments" %}
                 <h1>Payments</h1>
-            {% elif request.path == '/fees' %}
+
+            {% elif endpoint == "fees" %}
                 <h1>Fee Structure</h1>
-            {% elif request.path == '/discounts' %}
+
+            {% elif endpoint == "discounts" %}
                 <h1>Discounts / Waivers</h1>
-            {% elif request.path == '/pupils' %}
+
+            {% elif endpoint == "pupils" %}
                 <h1>Admissions</h1>
-            {% elif request.path == '/attendance' %}
+
+            {% elif endpoint == "attendance" %}
                 <h1>Attendance</h1>
-            {% elif request.path == '/defaulters_report' %}
+
+            {% elif endpoint == "defaulters_report" %}
                 <h1>Defaulters Report</h1>
-            {% elif request.path == '/reports_dashboard' %}
+
+            {% elif endpoint == "reports_dashboard" %}
                 <h1>Reports Centre</h1>
-            {% elif request.path == '/staff_dashboard' %}
+
+            {% elif endpoint == "staff_dashboard" %}
                 <h1>Human Resource</h1>
-            {% elif request.path == '/payroll' %}
+
+            {% elif endpoint == "payroll" %}
                 <h1>Payroll</h1>
-            {% elif request.path == '/inventory' %}
+
+            {% elif endpoint == "inventory" %}
                 <h1>Inventory / Store</h1>
-            {% elif request.path == '/transport' %}
+
+            {% elif endpoint == "transport" %}
                 <h1>Transport</h1>
-            {% elif request.path == '/homework' %}
+
+            {% elif endpoint == "homework" %}
                 <h1>Homework</h1>
-            {% elif request.path == '/teacher_dashboard' %}
+
+            {% elif endpoint == "teacher_dashboard" %}
                 <h1>Teacher Portal</h1>
+
+            {% elif endpoint == "kitchen_dashboard" %}
+                <h1>Kitchen Management</h1>
+
+            {% elif endpoint == "kitchen_categories" %}
+                <h1>Kitchen Food Categories</h1>
+
+            {% elif endpoint == "kitchen_items" %}
+                <h1>Kitchen Food Items</h1>
+
+            {% elif endpoint == "kitchen_issues" %}
+                <h1>Kitchen Stock Issues</h1>
+
+            {% elif endpoint == "meal_menu" %}
+                <h1>Meal Menu</h1>
+
+            {% elif endpoint == "kitchen_consumption" %}
+                <h1>Kitchen Consumption</h1>
+
+            {% elif endpoint == "meal_serving" %}
+                <h1>Meal Serving</h1>
+
+            {% elif endpoint == "kitchen_waste" %}
+                <h1>Kitchen Waste</h1>
+
+            {% elif endpoint == "kitchen_reports" %}
+                <h1>Kitchen Reports</h1>
+
+            {% elif endpoint == "users" %}
+                <h1>Users</h1>
+
+            {% elif endpoint == "audit_logs" %}
+                <h1>Audit Logs</h1>
+
+            {% elif endpoint == "settings" %}
+                <h1>
+                    {% if role == "super admin" %}
+                        Platform Settings
+                    {% else %}
+                        School Branding
+                    {% endif %}
+                </h1>
+
             {% else %}
                 <h1>EduManage</h1>
             {% endif %}
 
-            <small>Welcome back, {{ session.get("username") }}</small>
+            <small>
+                Welcome back, {{ session.get("username") }}
+            </small>
+
         </div>
 
         <div class="top-user">
-            <div class="pill">📅 2026</div>
-            <div class="avatar">👤</div>
+
+            <div class="pill">
+                📅 {{ current_year() if current_year is defined else 2026 }}
+            </div>
+
+            <div class="avatar">
+                👤
+            </div>
+
             <div>
                 <b>{{ session.get("username") }}</b><br>
-                <small>{{ session.get("role") }}</small>
+
+                <small>
+                    {{ session.get("role") }}
+                </small>
             </div>
+
         </div>
+
     </div>
 
     <div class="content">
+
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
-                    <div class="flash">{{ message }}</div>
+                    <div class="flash">
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
+
     </div>
 </div>
 
 <script>
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-        navigator.serviceWorker.register("/static/service-worker.js");
+    window.addEventListener("load", function () {
+        navigator.serviceWorker.register(
+            "/static/service-worker.js"
+        ).catch(function (error) {
+            console.log(
+                "Service worker registration failed:",
+                error
+            );
+        });
     });
 }
 </script>
