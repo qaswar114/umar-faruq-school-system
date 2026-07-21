@@ -10915,30 +10915,73 @@ def retry_failed_sms():
 
     return redirect(url_for("communication_center"))
 
-@app.route("/delete_pending_sms")
+@app.route("/delete_pending_sms", methods=["POST"])
 def delete_pending_sms():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar", "super admin"):
+    if not role_allowed(
+        "admin",
+        "principal",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
-    deleted = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).delete()
+    try:
+        pending_messages = SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending"
+        ).all()
 
-    db.session.commit()
+        deleted_count = len(pending_messages)
 
-    save_audit(
-        f"Deleted pending SMS messages: {deleted}",
-        "Communication"
-    )
+        if deleted_count == 0:
+            flash("There are no pending SMS messages to delete.")
+            return redirect(url_for("communication_center"))
 
-    flash(f"Deleted {deleted} pending SMS messages.")
+        for message_record in pending_messages:
+            db.session.delete(message_record)
+
+        db.session.commit()
+
+        try:
+            save_audit(
+                f"Deleted {deleted_count} pending SMS message(s) "
+                f"for school ID {school_id}.",
+                "Communication"
+            )
+        except Exception as audit_error:
+            print(
+                "DELETE PENDING SMS AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        flash(
+            f"{deleted_count} pending SMS message(s) "
+            f"were deleted successfully."
+        )
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "DELETE PENDING SMS ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "Pending SMS messages could not be deleted. "
+            "No changes were saved."
+        )
+
     return redirect(url_for("communication_center"))
 
 
