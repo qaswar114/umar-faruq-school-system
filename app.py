@@ -7830,6 +7830,296 @@ def sms_wallet():
         today=date.today(),
         money=money
     )
+
+@app.route("/platform_communication")
+def platform_communication():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    role = (session.get("role") or "").strip().lower()
+
+    if role != "super admin":
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    # ---------------------------------------------------------
+    # PLATFORM SMS POOL
+    # ---------------------------------------------------------
+    platform_pool = PlatformSMSPool.query.first()
+
+    platform_sms_balance = (
+        int(platform_pool.sms_balance or 0)
+        if platform_pool else 0
+    )
+
+    platform_sms_loaded = (
+        int(platform_pool.sms_loaded or 0)
+        if platform_pool else 0
+    )
+
+    platform_sms_sold = (
+        int(platform_pool.sms_sold or 0)
+        if platform_pool else 0
+    )
+
+    platform_low_alert = (
+        int(platform_pool.low_alert_level or 0)
+        if platform_pool else 0
+    )
+
+    platform_balance_low = (
+        platform_sms_balance <= platform_low_alert
+        if platform_pool else False
+    )
+
+    # ---------------------------------------------------------
+    # SCHOOL SMS WALLETS
+    # ---------------------------------------------------------
+    wallets = SMSWallet.query.all()
+
+    total_school_sms_loaded = sum(
+        int(wallet.sms_loaded or 0)
+        for wallet in wallets
+    )
+
+    total_school_sms_used = sum(
+        int(wallet.sms_used or 0)
+        for wallet in wallets
+    )
+
+    total_school_sms_balance = sum(
+        int(wallet.sms_balance or 0)
+        for wallet in wallets
+    )
+
+    sms_enabled_schools = sum(
+        1
+        for wallet in wallets
+        if bool(wallet.sms_enabled)
+    )
+
+    # ---------------------------------------------------------
+    # SMS PURCHASE REQUESTS
+    # ---------------------------------------------------------
+    pending_sms_purchases = SMSPurchase.query.filter(
+        SMSPurchase.status != "Completed"
+    ).count()
+
+    completed_sms_purchases = SMSPurchase.query.filter_by(
+        status="Completed"
+    ).count()
+
+    total_sms_purchase_requests = SMSPurchase.query.count()
+
+    total_sms_sales_revenue = db.session.query(
+        db.func.coalesce(
+            db.func.sum(SMSPurchase.amount),
+            0
+        )
+    ).filter(
+        SMSPurchase.status == "Completed"
+    ).scalar() or 0
+
+    recent_purchase_requests = SMSPurchase.query.order_by(
+        SMSPurchase.id.desc()
+    ).limit(10).all()
+
+    # ---------------------------------------------------------
+    # PLATFORM COMMUNICATION COUNTS
+    # Counts only — no parent details or message content.
+    # ---------------------------------------------------------
+    total_sms_messages = SMSMessage.query.count()
+    total_whatsapp_messages = WhatsAppMessage.query.count()
+
+    sms_pending = SMSMessage.query.filter_by(
+        status="Pending"
+    ).count()
+
+    sms_sent = SMSMessage.query.filter_by(
+        status="Sent"
+    ).count()
+
+    sms_failed = SMSMessage.query.filter_by(
+        status="Failed"
+    ).count()
+
+    whatsapp_pending = WhatsAppMessage.query.filter_by(
+        status="Pending"
+    ).count()
+
+    whatsapp_sent = WhatsAppMessage.query.filter_by(
+        status="Sent"
+    ).count()
+
+    whatsapp_failed = WhatsAppMessage.query.filter_by(
+        status="Failed"
+    ).count()
+
+    # ---------------------------------------------------------
+    # SCHOOL-BY-SCHOOL PLATFORM SUMMARY
+    # Only general counts and service status are exposed.
+    # ---------------------------------------------------------
+    schools = School.query.order_by(
+        School.school_name.asc()
+    ).all()
+
+    school_rows = []
+
+    low_sms_balance_schools = 0
+    whatsapp_enabled_schools = 0
+
+    for school in schools:
+        wallet = SMSWallet.query.filter_by(
+            school_id=school.id
+        ).first()
+
+        school_sms_loaded = (
+            int(wallet.sms_loaded or 0)
+            if wallet else 0
+        )
+
+        school_sms_used = (
+            int(wallet.sms_used or 0)
+            if wallet else 0
+        )
+
+        school_sms_balance = (
+            int(wallet.sms_balance or 0)
+            if wallet else 0
+        )
+
+        school_sms_low_alert = (
+            int(wallet.sms_low_alert or 0)
+            if wallet else 0
+        )
+
+        school_sms_enabled = (
+            bool(wallet.sms_enabled)
+            if wallet else False
+        )
+
+        school_low_balance = (
+            school_sms_balance <= school_sms_low_alert
+            if wallet else False
+        )
+
+        if school_low_balance:
+            low_sms_balance_schools += 1
+
+        school_whatsapp_enabled = bool(
+            getattr(
+                school,
+                "whatsapp_enabled",
+                False
+            )
+        )
+
+        if school_whatsapp_enabled:
+            whatsapp_enabled_schools += 1
+
+        school_sms_messages = SMSMessage.query.filter_by(
+            school_id=school.id
+        ).count()
+
+        school_whatsapp_messages = WhatsAppMessage.query.filter_by(
+            school_id=school.id
+        ).count()
+
+        school_pending_purchases = SMSPurchase.query.filter(
+            SMSPurchase.school_id == school.id,
+            SMSPurchase.status != "Completed"
+        ).count()
+
+        school_completed_purchases = SMSPurchase.query.filter_by(
+            school_id=school.id,
+            status="Completed"
+        ).count()
+
+        school_rows.append({
+            "school": school,
+
+            "sms_loaded": school_sms_loaded,
+            "sms_used": school_sms_used,
+            "sms_balance": school_sms_balance,
+            "sms_low_alert": school_sms_low_alert,
+            "sms_enabled": school_sms_enabled,
+            "low_balance": school_low_balance,
+
+            "sms_messages": school_sms_messages,
+            "whatsapp_messages": school_whatsapp_messages,
+
+            "whatsapp_enabled": school_whatsapp_enabled,
+            "whatsapp_number": getattr(
+                school,
+                "whatsapp_business_number",
+                ""
+            ),
+
+            "pending_purchases": school_pending_purchases,
+            "completed_purchases": school_completed_purchases
+        })
+
+    # Highest SMS users first.
+    top_sms_schools = sorted(
+        school_rows,
+        key=lambda row: row["sms_used"],
+        reverse=True
+    )[:5]
+
+    total_schools = len(schools)
+
+    whatsapp_disabled_schools = max(
+        0,
+        total_schools - whatsapp_enabled_schools
+    )
+
+    # ---------------------------------------------------------
+    # RENDER SAFE SUPER ADMIN PAGE
+    # ---------------------------------------------------------
+    return render_template(
+        "platform_communication.html",
+
+        settings=get_settings(),
+
+        platform_pool=platform_pool,
+        platform_sms_balance=platform_sms_balance,
+        platform_sms_loaded=platform_sms_loaded,
+        platform_sms_sold=platform_sms_sold,
+        platform_low_alert=platform_low_alert,
+        platform_balance_low=platform_balance_low,
+
+        total_school_sms_loaded=total_school_sms_loaded,
+        total_school_sms_used=total_school_sms_used,
+        total_school_sms_balance=total_school_sms_balance,
+        sms_enabled_schools=sms_enabled_schools,
+
+        total_sms_purchase_requests=total_sms_purchase_requests,
+        pending_sms_purchases=pending_sms_purchases,
+        completed_sms_purchases=completed_sms_purchases,
+        total_sms_sales_revenue=total_sms_sales_revenue,
+        recent_purchase_requests=recent_purchase_requests,
+
+        total_sms_messages=total_sms_messages,
+        sms_pending=sms_pending,
+        sms_sent=sms_sent,
+        sms_failed=sms_failed,
+
+        total_whatsapp_messages=total_whatsapp_messages,
+        whatsapp_pending=whatsapp_pending,
+        whatsapp_sent=whatsapp_sent,
+        whatsapp_failed=whatsapp_failed,
+
+        total_schools=total_schools,
+        low_sms_balance_schools=low_sms_balance_schools,
+        whatsapp_enabled_schools=whatsapp_enabled_schools,
+        whatsapp_disabled_schools=whatsapp_disabled_schools,
+
+        school_rows=school_rows,
+        top_sms_schools=top_sms_schools,
+
+        money=money
+    )
+    
 @app.route("/platform_sms", methods=["GET", "POST"])
 def platform_sms():
     if not login_required():
