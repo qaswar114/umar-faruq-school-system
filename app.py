@@ -6195,74 +6195,224 @@ def daily_collections():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar", "admin", "principal", "super admin"):
+    if not role_allowed(
+        "bursar",
+        "admin",
+        "principal",
+        "super admin"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    selected_date = request.args.get("date", str(date.today()))
-    selected_grade = request.args.get("grade", "All Grades")
+    school_id = current_school_id()
+
+    # ---------------------------------------------------------
+    # FILTER VALUES
+    # ---------------------------------------------------------
+    selected_date = request.args.get(
+        "date",
+        date.today().isoformat()
+    ).strip()
+
+    selected_grade = request.args.get(
+        "grade",
+        "All Grades"
+    ).strip()
+
     export_pdf = request.args.get("pdf")
 
-    report_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+    # Accept every possible value representing all grades.
+    all_grade_values = {
+        "",
+        "All",
+        "All Grades",
+        "all",
+        "all grades"
+    }
+
+    # Use one standard value in the template.
+    if selected_grade in all_grade_values:
+        selected_grade = "All Grades"
+
+    try:
+        report_date = datetime.strptime(
+            selected_date,
+            "%Y-%m-%d"
+        ).date()
+
+    except (ValueError, TypeError):
+        report_date = date.today()
+        selected_date = report_date.isoformat()
+
+        flash(
+            "Invalid report date. Today's date has been loaded."
+        )
 
     grades = GRADES
 
-    query = Payment.query.filter_by(
-        school_id=current_school_id(),
-        payment_date=report_date
+    # ---------------------------------------------------------
+    # PAYMENT QUERY
+    # ---------------------------------------------------------
+    query = Payment.query.filter(
+        Payment.school_id == school_id,
+        Payment.payment_date == report_date
     )
 
+    # Apply grade filter only when an actual grade is selected.
     if selected_grade != "All Grades":
+
         pupil_ids = [
-            p.id for p in Pupil.query.filter_by(
-                school_id=current_school_id(),
-                grade=selected_grade
+            pupil.id
+            for pupil in Pupil.query.filter(
+                Pupil.school_id == school_id,
+                Pupil.grade == selected_grade
             ).all()
         ]
-        query = query.filter(Payment.pupil_id.in_(pupil_ids))
 
-    payments = query.order_by(Payment.id.desc()).all()
+        if pupil_ids:
+            query = query.filter(
+                Payment.pupil_id.in_(pupil_ids)
+            )
+        else:
+            # No pupils belong to the selected grade.
+            query = query.filter(
+                Payment.id == -1
+            )
 
-    tuition_total = sum(p.tuition_paid or 0 for p in payments)
-    bus_total = sum(p.bus_paid or 0 for p in payments)
-    exam_total = sum(p.exam_paid or 0 for p in payments)
-    admission_total = sum(p.admission_paid or 0 for p in payments)
-    total = tuition_total + bus_total + exam_total + admission_total
+    payments = query.order_by(
+        Payment.id.desc()
+    ).all()
 
+    # ---------------------------------------------------------
+    # COLLECTION TOTALS
+    # ---------------------------------------------------------
+    tuition_total = sum(
+        float(payment.tuition_paid or 0)
+        for payment in payments
+    )
+
+    bus_total = sum(
+        float(payment.bus_paid or 0)
+        for payment in payments
+    )
+
+    exam_total = sum(
+        float(payment.exam_paid or 0)
+        for payment in payments
+    )
+
+    admission_total = sum(
+        float(payment.admission_paid or 0)
+        for payment in payments
+    )
+
+    total = (
+        tuition_total
+        + bus_total
+        + exam_total
+        + admission_total
+    )
+
+    # ---------------------------------------------------------
+    # OPTIONAL PAYMENT-METHOD TOTALS
+    # ---------------------------------------------------------
+    cash_total = sum(
+        (
+            float(payment.tuition_paid or 0)
+            + float(payment.bus_paid or 0)
+            + float(payment.exam_paid or 0)
+            + float(payment.admission_paid or 0)
+        )
+        for payment in payments
+        if (payment.payment_method or "").strip().lower() == "cash"
+    )
+
+    mpesa_total = sum(
+        (
+            float(payment.tuition_paid or 0)
+            + float(payment.bus_paid or 0)
+            + float(payment.exam_paid or 0)
+            + float(payment.admission_paid or 0)
+        )
+        for payment in payments
+        if (payment.payment_method or "").strip().lower()
+        in {"mpesa", "m-pesa", "m pesa"}
+    )
+
+    bank_total = sum(
+        (
+            float(payment.tuition_paid or 0)
+            + float(payment.bus_paid or 0)
+            + float(payment.exam_paid or 0)
+            + float(payment.admission_paid or 0)
+        )
+        for payment in payments
+        if (payment.payment_method or "").strip().lower()
+        in {"bank", "bank transfer", "transfer"}
+    )
+
+    # ---------------------------------------------------------
+    # PDF EXPORT
+    # ---------------------------------------------------------
     if export_pdf:
+
         html = render_template(
             "daily_collections_pdf.html",
             settings=get_settings(),
             payments=payments,
             selected_date=selected_date,
+            report_date=report_date,
             selected_grade=selected_grade,
             grades=grades,
+
             tuition_total=tuition_total,
             bus_total=bus_total,
             exam_total=exam_total,
             admission_total=admission_total,
             total=total,
+
+            cash_total=cash_total,
+            mpesa_total=mpesa_total,
+            bank_total=bank_total,
+
             money=money
         )
 
         pdf = generate_pdf(html)
+
         response = make_response(pdf.read())
+
         response.headers["Content-Type"] = "application/pdf"
-        response.headers["Content-Disposition"] = "attachment; filename=daily_collections.pdf"
+
+        response.headers["Content-Disposition"] = (
+            f"attachment; "
+            f"filename=daily_collections_{selected_date}.pdf"
+        )
+
         return response
 
+    # ---------------------------------------------------------
+    # NORMAL PAGE
+    # ---------------------------------------------------------
     return render_template(
         "daily_collections.html",
         settings=get_settings(),
         payments=payments,
         selected_date=selected_date,
+        report_date=report_date,
         selected_grade=selected_grade,
         grades=grades,
+
         tuition_total=tuition_total,
         bus_total=bus_total,
         exam_total=exam_total,
         admission_total=admission_total,
         total=total,
+
+        cash_total=cash_total,
+        mpesa_total=mpesa_total,
+        bank_total=bank_total,
+
         money=money
     )
    
