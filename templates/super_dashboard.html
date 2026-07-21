@@ -8,54 +8,55 @@
     margin: 0 auto;
 }
 
-.managing-notice {
-    background: #fff7d6;
-    border: 1px solid #f5d66d;
-    color: #854d0e;
-    border-radius: 14px;
-    padding: 13px 17px;
-    margin-bottom: 15px;
-    font-weight: 900;
-}
+/* =========================================================
+   HERO
+========================================================= */
 
 .super-hero {
-    background: linear-gradient(
-        135deg,
-        #071a3d 0%,
-        #0b5ed7 54%,
-        #16a34a 100%
-    );
-    color: white;
-    border-radius: 24px;
-    padding: 26px 28px;
-    margin-bottom: 18px;
-    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 24px;
+    padding: 27px 30px;
+    margin-bottom: 18px;
+    border-radius: 24px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 53%,
+        #16a34a 100%
+    );
+    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
 }
 
 .super-hero h2 {
     margin: 0;
     color: white;
-    font-size: 30px;
+    font-size: 31px;
 }
 
 .super-hero p {
-    margin: 8px 0 0;
+    margin: 9px 0 0;
     color: #dbeafe;
     font-size: 15px;
+    line-height: 1.6;
 }
 
 .hero-badge {
-    background: rgba(255,255,255,.16);
-    border: 1px solid rgba(255,255,255,.25);
+    flex-shrink: 0;
+    padding: 12px 18px;
     border-radius: 999px;
-    padding: 11px 17px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    background: rgba(255, 255, 255, .16);
+    color: white;
     font-weight: 900;
     white-space: nowrap;
 }
+
+/* =========================================================
+   METRIC CARDS
+========================================================= */
 
 .metric-grid {
     display: grid;
@@ -65,24 +66,24 @@
 }
 
 .metric-card {
+    position: relative;
+    min-height: 145px;
+    padding: 18px;
+    overflow: hidden;
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 19px;
-    padding: 18px;
-    min-height: 145px;
-    position: relative;
-    overflow: hidden;
     box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
 }
 
 .metric-card::after {
     content: "";
-    width: 95px;
-    height: 95px;
-    border-radius: 50%;
     position: absolute;
-    right: -35px;
-    top: -35px;
+    right: -34px;
+    top: -34px;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
     background: #eff6ff;
 }
 
@@ -103,59 +104,63 @@
 }
 
 .metric-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
-    background: #dbeafe;
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 13px;
+    background: #dbeafe;
     font-size: 22px;
-    position: relative;
-    z-index: 2;
 }
 
-.green .metric-icon {
+.metric-card.green .metric-icon {
     background: #dcfce7;
 }
 
-.orange .metric-icon {
+.metric-card.orange .metric-icon {
     background: #ffedd5;
 }
 
-.red .metric-icon {
+.metric-card.red .metric-icon {
     background: #fee2e2;
 }
 
-.purple .metric-icon {
+.metric-card.purple .metric-icon {
     background: #f3e8ff;
 }
 
 .metric-label {
+    position: relative;
+    z-index: 2;
     margin-top: 13px;
     color: #64748b;
     font-size: 13px;
     font-weight: 900;
-    position: relative;
-    z-index: 2;
 }
 
 .metric-value {
+    position: relative;
+    z-index: 2;
     margin-top: 5px;
     color: #0f172a;
     font-size: 28px;
     font-weight: 950;
-    position: relative;
-    z-index: 2;
 }
 
 .metric-note {
-    color: #94a3b8;
-    margin-top: 5px;
-    font-size: 12px;
     position: relative;
     z-index: 2;
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 12px;
 }
+
+/* =========================================================
+   CONTENT PANELS
+========================================================= */
 
 .dashboard-grid {
     display: grid;
@@ -165,10 +170,10 @@
 }
 
 .super-panel {
+    padding: 20px;
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 21px;
-    padding: 20px;
     box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
 }
 
@@ -190,37 +195,44 @@
     margin: 5px 0 0;
     color: #64748b;
     font-size: 13px;
+    line-height: 1.5;
 }
 
 .panel-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
     background: #eff6ff;
     color: #1d4ed8;
-    border-radius: 999px;
-    padding: 7px 11px;
     font-size: 12px;
     font-weight: 900;
     white-space: nowrap;
 }
 
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
 .quick-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
 }
 
 .quick-card {
-    border: 1px solid #e5e7eb;
-    background: #f8fafc;
-    border-radius: 16px;
+    display: block;
     padding: 15px;
-    text-decoration: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #f8fafc;
     color: #0f172a;
+    text-decoration: none;
     transition: transform .15s ease, box-shadow .15s ease;
 }
 
 .quick-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(15,23,42,.08);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
 }
 
 .quick-icon {
@@ -228,16 +240,20 @@
 }
 
 .quick-title {
-    font-weight: 900;
     margin-top: 10px;
+    font-weight: 900;
 }
 
 .quick-note {
+    margin-top: 5px;
     color: #64748b;
     font-size: 12px;
-    margin-top: 5px;
-    line-height: 1.4;
+    line-height: 1.45;
 }
+
+/* =========================================================
+   PLATFORM SUMMARY
+========================================================= */
 
 .summary-list {
     display: grid;
@@ -245,14 +261,14 @@
 }
 
 .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 14px;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
-    padding: 13px 14px;
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: center;
 }
 
 .summary-row span {
@@ -266,6 +282,24 @@
     font-size: 14px;
 }
 
+/* =========================================================
+   SCHOOL TABLE
+========================================================= */
+
+.privacy-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 15px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 13px;
+    color: #1e3a8a;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -273,28 +307,28 @@
 
 .school-table {
     width: 100%;
+    min-width: 980px;
     border-collapse: separate;
     border-spacing: 0 9px;
-    min-width: 980px;
 }
 
 .school-table th {
-    text-align: left;
     padding: 0 11px 7px;
+    border: none;
+    background: transparent;
     color: #64748b;
     font-size: 12px;
     font-weight: 900;
-    background: transparent;
-    border: none;
+    text-align: left;
 }
 
 .school-table td {
-    background: #f8fafc;
+    padding: 13px 11px;
     border-top: 1px solid #e5e7eb;
     border-bottom: 1px solid #e5e7eb;
-    padding: 13px 11px;
-    font-size: 13px;
+    background: #f8fafc;
     color: #334155;
+    font-size: 13px;
     vertical-align: middle;
 }
 
@@ -309,20 +343,20 @@
 }
 
 .school-name {
-    font-weight: 900;
     color: #0f172a;
+    font-weight: 900;
 }
 
 .school-id {
+    margin-top: 4px;
     color: #64748b;
     font-size: 12px;
-    margin-top: 4px;
 }
 
 .status-badge {
     display: inline-block;
-    border-radius: 999px;
     padding: 5px 9px;
+    border-radius: 999px;
     font-size: 11px;
     font-weight: 900;
 }
@@ -350,31 +384,31 @@
 }
 
 .school-actions form {
-    padding: 0;
     margin: 0;
+    padding: 0;
 }
 
-.open-btn,
+.view-btn,
 .delete-school-btn {
-    min-width: 67px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 72px;
+    padding: 8px 11px;
+    border: none;
     border-radius: 10px;
     color: white;
-    padding: 8px 11px;
-    text-decoration: none;
-    font-weight: 900;
     font-size: 12px;
-    border: none;
+    font-weight: 900;
+    text-decoration: none;
     cursor: pointer;
 }
 
-.open-btn {
+.view-btn {
     background: #0b5ed7;
 }
 
-.open-btn:hover {
+.view-btn:hover {
     background: #084db4;
     color: white;
 }
@@ -388,22 +422,26 @@
 }
 
 .empty-state {
-    text-align: center;
-    border: 1px dashed #cbd5e1;
-    background: #f8fafc;
-    border-radius: 15px;
     padding: 28px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 15px;
     color: #64748b;
     font-weight: 800;
+    text-align: center;
 }
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 
 @media (max-width: 1150px) {
     .metric-grid {
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .quick-grid {
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -432,22 +470,14 @@
 
 <div class="super-page">
 
-    {% if session.get("school_id") %}
-    <div class="managing-notice">
-        Now managing
-        {{ settings.school_name if settings else
-           "the selected school" }}.
-        To delete this school, switch to another school first.
-    </div>
-    {% endif %}
-
     <div class="super-hero">
         <div>
             <h2>EduManage SaaS Control Center</h2>
 
             <p>
-                Monitor schools, pupils, staff, communication activity
-                and platform performance from one dashboard.
+                Monitor subscriptions, school status, SMS usage and
+                general platform activity without accessing private
+                school operational data.
             </p>
         </div>
 
@@ -456,14 +486,21 @@
         </div>
     </div>
 
+    <!-- PLATFORM METRICS -->
+
     <div class="metric-grid">
 
         <div class="metric-card">
             <div class="metric-icon">🏫</div>
-            <div class="metric-label">Total Schools</div>
+
+            <div class="metric-label">
+                Total Schools
+            </div>
+
             <div class="metric-value">
                 {{ total_schools or 0 }}
             </div>
+
             <div class="metric-note">
                 All registered schools
             </div>
@@ -471,32 +508,47 @@
 
         <div class="metric-card green">
             <div class="metric-icon">✅</div>
-            <div class="metric-label">Active Schools</div>
+
+            <div class="metric-label">
+                Active Schools
+            </div>
+
             <div class="metric-value">
                 {{ active_schools or 0 }}
             </div>
+
             <div class="metric-note">
-                Currently operating
+                Currently active
             </div>
         </div>
 
         <div class="metric-card orange">
             <div class="metric-icon">🧪</div>
-            <div class="metric-label">Trial Schools</div>
+
+            <div class="metric-label">
+                Trial Schools
+            </div>
+
             <div class="metric-value">
                 {{ trial_schools or 0 }}
             </div>
+
             <div class="metric-note">
-                On trial access
+                Using trial access
             </div>
         </div>
 
         <div class="metric-card red">
             <div class="metric-icon">⛔</div>
-            <div class="metric-label">Expired Schools</div>
+
+            <div class="metric-label">
+                Expired Schools
+            </div>
+
             <div class="metric-value">
                 {{ expired_schools or 0 }}
             </div>
+
             <div class="metric-note">
                 Need subscription action
             </div>
@@ -504,95 +556,128 @@
 
         <div class="metric-card purple">
             <div class="metric-icon">🎓</div>
-            <div class="metric-label">Total Pupils</div>
+
+            <div class="metric-label">
+                Platform Pupils
+            </div>
+
             <div class="metric-value">
                 {{ "{:,}".format(total_pupils or 0) }}
             </div>
+
             <div class="metric-note">
-                Across all schools
+                Count only; no pupil details
             </div>
         </div>
 
         <div class="metric-card green">
             <div class="metric-icon">👥</div>
-            <div class="metric-label">Total Staff</div>
+
+            <div class="metric-label">
+                Platform Staff
+            </div>
+
             <div class="metric-value">
                 {{ "{:,}".format(total_staff or 0) }}
             </div>
+
             <div class="metric-note">
-                Registered staff members
+                Count only; no payroll details
             </div>
         </div>
 
         <div class="metric-card">
             <div class="metric-icon">💬</div>
-            <div class="metric-label">SMS Messages</div>
+
+            <div class="metric-label">
+                SMS Messages
+            </div>
+
             <div class="metric-value">
                 {{ "{:,}".format(total_sms or 0) }}
             </div>
+
             <div class="metric-note">
-                Lifetime SMS activity
+                Platform communication volume
             </div>
         </div>
 
         <div class="metric-card orange">
-            <div class="metric-icon">💰</div>
-            <div class="metric-label">School Collections</div>
-            <div class="metric-value">
-                {% if money is defined %}
-                    {{ money(total_collected or 0) }}
-                {% else %}
-                    KES {{ "{:,.2f}".format(total_collected or 0) }}
-                {% endif %}
+            <div class="metric-icon">📱</div>
+
+            <div class="metric-label">
+                Platform SMS Control
             </div>
+
+            <div class="metric-value">
+                Manage
+            </div>
+
             <div class="metric-note">
-                Across all schools
+                Purchases, balances and requests
             </div>
         </div>
 
     </div>
 
+    <!-- QUICK ACTIONS AND SUMMARY -->
+
     <div class="dashboard-grid">
 
         <div class="super-panel">
+
             <div class="panel-heading">
                 <div>
-                    <h3>⚡ Quick Actions</h3>
+                    <h3>⚡ Platform Actions</h3>
+
                     <p>
-                        Open the most important platform controls.
+                        Manage schools and SaaS services without opening
+                        their private dashboards.
                     </p>
                 </div>
             </div>
 
             <div class="quick-grid">
 
-                <a href="{{ url_for('create_school') }}"
+                <a href="/create_school"
                    class="quick-card">
 
                     <div class="quick-icon">➕</div>
-                    <div class="quick-title">Create School</div>
+
+                    <div class="quick-title">
+                        Create School
+                    </div>
+
                     <div class="quick-note">
                         Register a new school on EduManage.
                     </div>
                 </a>
 
-                <a href="{{ url_for('schools') }}"
+                <a href="/schools"
                    class="quick-card">
 
                     <div class="quick-icon">🏫</div>
-                    <div class="quick-title">Manage Schools</div>
+
+                    <div class="quick-title">
+                        Manage Schools
+                    </div>
+
                     <div class="quick-note">
-                        View, edit, open, suspend or delete schools.
+                        Edit, activate, suspend or remove schools.
                     </div>
                 </a>
 
-                <a href="{{ url_for('platform_sms') }}"
+                <a href="/platform_sms"
                    class="quick-card">
 
                     <div class="quick-icon">📱</div>
-                    <div class="quick-title">Platform SMS</div>
+
+                    <div class="quick-title">
+                        Platform SMS
+                    </div>
+
                     <div class="quick-note">
-                        Manage SMS stock and school requests.
+                        Manage SMS stock and school purchases.
                     </div>
                 </a>
 
@@ -600,19 +685,27 @@
                    class="quick-card">
 
                     <div class="quick-icon">📡</div>
-                    <div class="quick-title">Communication</div>
+
+                    <div class="quick-title">
+                        Communication
+                    </div>
+
                     <div class="quick-note">
-                        Review SMS and WhatsApp activity.
+                        View platform-level communication totals.
                     </div>
                 </a>
 
-                <a href="{{ url_for('audit_logs') }}"
+                <a href="/audit_logs"
                    class="quick-card">
 
                     <div class="quick-icon">🧾</div>
-                    <div class="quick-title">Audit Logs</div>
+
+                    <div class="quick-title">
+                        Audit Logs
+                    </div>
+
                     <div class="quick-note">
-                        Review important platform actions.
+                        Review administrative platform activity.
                     </div>
                 </a>
 
@@ -620,9 +713,13 @@
                    class="quick-card">
 
                     <div class="quick-icon">⚙️</div>
-                    <div class="quick-title">Platform Settings</div>
+
+                    <div class="quick-title">
+                        Platform Settings
+                    </div>
+
                     <div class="quick-note">
-                        Manage global platform configuration.
+                        Manage EduManage platform configuration.
                     </div>
                 </a>
 
@@ -630,11 +727,13 @@
         </div>
 
         <div class="super-panel">
+
             <div class="panel-heading">
                 <div>
                     <h3>📊 Platform Summary</h3>
+
                     <p>
-                        Current EduManage platform overview.
+                        General non-private SaaS information.
                     </p>
                 </div>
 
@@ -699,6 +798,7 @@
 
                 <div class="summary-row">
                     <span>Total SMS activity</span>
+
                     <strong>
                         {{ "{:,}".format(total_sms or 0) }}
                     </strong>
@@ -709,26 +809,39 @@
 
     </div>
 
+    <!-- SCHOOL LIST -->
+
     <div class="super-panel">
 
         <div class="panel-heading">
             <div>
-                <h3>🏫 Recent Schools</h3>
+                <h3>🏫 Registered Schools</h3>
 
                 <p>
-                    Open schools for management or permanently remove
-                    unwanted test schools.
+                    View general school information, subscription and
+                    SMS usage without accessing private records.
                 </p>
             </div>
 
             <span class="panel-badge">
-                {{ recent_schools|length }} Recent
+                {{ recent_schools|length }} Schools
             </span>
+        </div>
+
+        <div class="privacy-note">
+            <span>🔒</span>
+
+            <div>
+                The View button opens only a protected platform overview.
+                It does not expose pupil names, marks, attendance,
+                payments, payroll or other private school records.
+            </div>
         </div>
 
         {% if recent_schools %}
 
         <div class="table-wrap">
+
             <table class="school-table">
 
                 <thead>
@@ -747,6 +860,7 @@
                     {% for school in recent_schools %}
 
                     <tr>
+
                         <td>
                             <div class="school-name">
                                 {{ school.school_name }}
@@ -809,22 +923,16 @@
                         <td>
                             <div class="school-actions">
 
-                                <a href="{{ url_for(
-                                    'switch_school',
-                                    school_id=school.id
-                                ) }}"
-                                   class="open-btn">
-                                    Open
+                                <a href="/school_overview/{{ school.id }}"
+                                   class="view-btn">
+                                    View
                                 </a>
 
                                 <form
                                     method="post"
-                                    action="{{ url_for(
-                                        'delete_school',
-                                        school_id=school.id
-                                    ) }}"
+                                    action="/delete_school/{{ school.id }}"
                                     onsubmit="return confirm(
-                                        'Permanently delete this school and all its linked records? This action cannot be undone.'
+                                        'Permanently delete this school and all its linked records? This cannot be undone.'
                                     );">
 
                                     <button type="submit"
@@ -835,12 +943,15 @@
 
                             </div>
                         </td>
+
                     </tr>
 
                     {% endfor %}
 
                 </tbody>
+
             </table>
+
         </div>
 
         {% else %}
