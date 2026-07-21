@@ -2334,158 +2334,279 @@ def dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
+    # ----------------------------------------------------
+    # SUPER ADMIN
+    # ----------------------------------------------------
+    if session.get("role") == "super admin":
+        return redirect(url_for("super_admin_dashboard"))
+
     school_id = current_school_id()
-    today = date.today()
-    year = today.year
-    month_number = today.month
-    current_month_name = today.strftime("%B")
 
-    if month_number in [1, 2, 3]:
-        current_term = "Term 1"
-    elif month_number in [5, 6, 7]:
-        current_term = "Term 2"
-    elif month_number in [9, 10, 11]:
-        current_term = "Term 3"
-    else:
-        current_term = "Term 2"
+    settings = get_settings()
 
-    term_all_months = term_months(current_term)
+    year = current_year()
+    term = current_term()
+    month = current_month()
 
-    if current_month_name in term_all_months:
-        current_term_months = term_all_months[:term_all_months.index(current_month_name) + 1]
-    else:
-        current_term_months = term_all_months
-
-    total_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").count()
-    active_pupils = Pupil.query.filter_by(school_id=school_id, status="Active").all()
-    inactive_pupils = Pupil.query.filter_by(school_id=school_id, status="Inactive").count()
-    bus_pupils = Pupil.query.filter_by(school_id=school_id, status="Active", uses_bus="Yes").count()
-
-    new_admissions_month = Pupil.query.filter(
-        Pupil.school_id == school_id,
-        Pupil.status == "Active",
-        Pupil.new_admission == "Yes"
+    # ----------------------------------------------------
+    # SCHOOL COUNTS
+    # ----------------------------------------------------
+    active_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Active"
     ).count()
 
-    total_paid_expr = (
-        db.func.coalesce(Payment.tuition_paid, 0) +
-        db.func.coalesce(Payment.bus_paid, 0) +
-        db.func.coalesce(Payment.exam_paid, 0) +
-        db.func.coalesce(Payment.admission_paid, 0)
-    )
+    inactive_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        status="Inactive"
+    ).count()
+
+    bus_pupils = Pupil.query.filter_by(
+        school_id=school_id,
+        uses_bus="Yes",
+        status="Active"
+    ).count()
+
+    new_admissions = Pupil.query.filter_by(
+        school_id=school_id,
+        new_admission="Yes"
+    ).count()
+
+    # ----------------------------------------------------
+    # FINANCE
+    # ----------------------------------------------------
+    today = date.today()
 
     today_collection = db.session.query(
-        db.func.coalesce(db.func.sum(total_paid_expr), 0)
+        db.func.coalesce(
+            db.func.sum(
+                Payment.tuition_paid +
+                Payment.bus_paid +
+                Payment.exam_paid +
+                Payment.admission_paid
+            ),
+            0
+        )
     ).filter(
         Payment.school_id == school_id,
         Payment.payment_date == today
-    ).scalar()
+    ).scalar() or 0
 
     month_collection = db.session.query(
-        db.func.coalesce(db.func.sum(total_paid_expr), 0)
+        db.func.coalesce(
+            db.func.sum(
+                Payment.tuition_paid +
+                Payment.bus_paid +
+                Payment.exam_paid +
+                Payment.admission_paid
+            ),
+            0
+        )
     ).filter(
         Payment.school_id == school_id,
-        Payment.academic_year == year,
-        Payment.term == current_term,
-        Payment.month == current_month_name
-    ).scalar()
+        db.extract("year", Payment.payment_date) == year,
+        db.extract("month", Payment.payment_date) == today.month
+    ).scalar() or 0
 
-    term_collection = db.session.query(
-        db.func.coalesce(db.func.sum(total_paid_expr), 0)
-    ).filter(
-        Payment.school_id == school_id,
-        Payment.academic_year == year,
-        Payment.term == current_term,
-        Payment.month.in_(current_term_months)
-    ).scalar()
+    term_collection = month_collection
 
-    total_expected = 0
+    outstanding = calculate_current_term_outstanding(
+        school_id,
+        year,
+        term,
+        month
+    )
 
-    for pupil in active_pupils:
-        for month_name in current_term_months:
-            fee = FeeStructure.query.filter_by(
-                school_id=school_id,
-                academic_year=year,
-                grade=pupil.grade,
-                term=current_term,
-                month=month_name
-            ).first()
-
-            if not fee:
-                fee = FeeStructure.query.filter_by(
-                    school_id=school_id,
-                    academic_year=year,
-                    grade=pupil.grade,
-                    term=current_term,
-                    month=None
-                ).first()
-
-            if fee:
-                total_expected += fee.tuition_fee or 0
-
-                if pupil.uses_bus == "Yes":
-                    total_expected += fee.bus_fee or 0
-
-                if month_name == current_term_months[0]:
-                    total_expected += fee.exam_fee or 0
-
-                    if pupil.new_admission == "Yes":
-                        total_expected += fee.admission_fee or 0
-
-    outstanding_fees = total_expected - term_collection
-    if outstanding_fees < 0:
-        outstanding_fees = 0
-
-    month_start = today.replace(day=1)
-
-    month_expenses = db.session.query(
-        db.func.coalesce(db.func.sum(Expense.amount), 0)
+    # ----------------------------------------------------
+    # EXPENSES
+    # ----------------------------------------------------
+    expenses_month = db.session.query(
+        db.func.coalesce(
+            db.func.sum(Expense.amount),
+            0
+        )
     ).filter(
         Expense.school_id == school_id,
-        Expense.expense_date >= month_start,
-        Expense.expense_date <= today
-    ).scalar()
+        db.extract("year", Expense.expense_date) == year,
+        db.extract("month", Expense.expense_date) == today.month
+    ).scalar() or 0
 
-    net_income = month_collection - month_expenses
-
+    # ----------------------------------------------------
+    # ATTENDANCE TODAY
+    # ----------------------------------------------------
     attendance_today = Attendance.query.filter_by(
+        school_id=school_id,
+        attendance_date=today
+    ).count()
+
+    present_today = Attendance.query.filter_by(
         school_id=school_id,
         attendance_date=today,
         status="Present"
     ).count()
 
-    latest_payments = Payment.query.filter_by(
-        school_id=school_id
-    ).order_by(Payment.id.desc()).limit(5).all()
+    # ----------------------------------------------------
+    # ANNOUNCEMENTS
+    # ----------------------------------------------------
+    announcements = Announcement.query.filter(
+        (Announcement.school_id == school_id) |
+        (Announcement.school_id == None)
+    ).order_by(
+        Announcement.created_at.desc()
+    ).limit(5).all()
 
-    announcements = Announcement.query.filter_by(
+    # ----------------------------------------------------
+    # RECENT PAYMENTS
+    # ----------------------------------------------------
+    recent_payments = Payment.query.filter_by(
         school_id=school_id
-    ).order_by(Announcement.id.desc()).limit(5).all()
+    ).order_by(
+        Payment.id.desc()
+    ).limit(10).all()
 
     return render_template(
         "dashboard.html",
-        settings=get_settings(),
-        total_pupils=total_pupils,
-        active_pupils=total_pupils,
+
+        settings=settings,
+
+        year=year,
+        term=term,
+        month=month,
+
+        active_pupils=active_pupils,
         inactive_pupils=inactive_pupils,
         bus_pupils=bus_pupils,
-        new_admissions_month=new_admissions_month,
+        new_admissions=new_admissions,
+
         today_collection=today_collection,
         month_collection=month_collection,
         term_collection=term_collection,
-        outstanding_fees=outstanding_fees,
-        outstanding=outstanding_fees,
-        month_expenses=month_expenses,
-        net_income=net_income,
+        outstanding=outstanding,
+        expenses_month=expenses_month,
+
         attendance_today=attendance_today,
-        present_today=attendance_today,
-        latest_payments=latest_payments,
+        present_today=present_today,
+
         announcements=announcements,
-        recent_announcements=announcements,
-        current_term=current_term,
-        current_term_months=current_term_months,
-        current_month_name=current_month_name,
-        year=year,
+        recent_payments=recent_payments,
+
+        money=money
+    )
+
+@app.route("/super_admin_dashboard")
+def super_admin_dashboard():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed("super admin"):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    total_schools = School.query.count()
+
+    active_schools = School.query.filter_by(
+        is_active=True
+    ).count()
+
+    suspended_schools = School.query.filter_by(
+        is_active=False
+    ).count()
+
+    total_users = User.query.count()
+
+    total_pupils = Pupil.query.count()
+
+    pool = PlatformSMSPool.query.first()
+
+    platform_sms_balance = (
+        pool.sms_balance if pool else 0
+    )
+
+    platform_sms_loaded = (
+        pool.sms_loaded if pool else 0
+    )
+
+    platform_sms_sold = (
+        pool.sms_sold if pool else 0
+    )
+
+    pending_sms_purchases = SMSPurchase.query.filter_by(
+        status="Pending"
+    ).count()
+
+    total_sms_revenue = db.session.query(
+        db.func.coalesce(
+            db.func.sum(SMSPurchase.amount),
+            0
+        )
+    ).filter(
+        SMSPurchase.status == "Completed"
+    ).scalar() or 0
+
+    sms_sent = SMSMessage.query.filter_by(
+        status="Sent"
+    ).count()
+
+    sms_pending = SMSMessage.query.filter_by(
+        status="Pending"
+    ).count()
+
+    sms_failed = SMSMessage.query.filter_by(
+        status="Failed"
+    ).count()
+
+    whatsapp_sent = WhatsAppMessage.query.filter_by(
+        status="Sent"
+    ).count()
+
+    whatsapp_pending = WhatsAppMessage.query.filter_by(
+        status="Pending"
+    ).count()
+
+    recent_schools = School.query.order_by(
+        School.created_at.desc()
+    ).limit(8).all()
+
+    recent_sms_purchases = SMSPurchase.query.order_by(
+        SMSPurchase.request_date.desc()
+    ).limit(8).all()
+
+    schools = School.query.order_by(
+        School.school_name.asc()
+    ).all()
+
+    schools_dict = {
+        school.id: school.school_name
+        for school in schools
+    }
+
+    return render_template(
+        "super_admin_dashboard.html",
+        settings=get_settings(),
+
+        total_schools=total_schools,
+        active_schools=active_schools,
+        suspended_schools=suspended_schools,
+        total_users=total_users,
+        total_pupils=total_pupils,
+
+        platform_sms_balance=platform_sms_balance,
+        platform_sms_loaded=platform_sms_loaded,
+        platform_sms_sold=platform_sms_sold,
+        pending_sms_purchases=pending_sms_purchases,
+        total_sms_revenue=total_sms_revenue,
+
+        sms_sent=sms_sent,
+        sms_pending=sms_pending,
+        sms_failed=sms_failed,
+
+        whatsapp_sent=whatsapp_sent,
+        whatsapp_pending=whatsapp_pending,
+
+        recent_schools=recent_schools,
+        recent_sms_purchases=recent_sms_purchases,
+        schools_dict=schools_dict,
+
         money=money
     )
     
