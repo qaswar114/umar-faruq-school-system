@@ -1,211 +1,1795 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>SMS Platform</h2>
-    <p>Super Admin SMS procurement, stock monitoring, and school SMS purchase approvals.</p>
+<style>
+.platform-sms-page {
+    max-width: 1550px;
+    margin: 0 auto;
+    color: #0f172a;
+}
 
+/* =========================================================
+   HERO
+========================================================= */
+.sms-hero {
+    background:
+        linear-gradient(
+            135deg,
+            #071a3d 0%,
+            #075ac8 48%,
+            #0f9f6e 100%
+        );
+    color: white;
+    border-radius: 24px;
+    padding: 25px 28px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, .14);
+}
+
+.sms-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+}
+
+.sms-hero-icon {
+    width: 66px;
+    height: 66px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.17);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    flex-shrink: 0;
+}
+
+.sms-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 31px;
+    line-height: 1.1;
+}
+
+.sms-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    font-size: 15px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.hero-btn {
+    border: 1px solid rgba(255,255,255,.30);
+    background: rgba(255,255,255,.16);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.hero-btn:hover {
+    background: rgba(255,255,255,.24);
+    color: white;
+}
+
+/* =========================================================
+   ALERTS
+========================================================= */
+.alert-box {
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-weight: 800;
+}
+
+.alert-box.warning {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+}
+
+.alert-box.danger {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.alert-box.success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.alert-icon {
+    font-size: 21px;
+    line-height: 1;
+}
+
+/* =========================================================
+   KPI CARDS
+========================================================= */
+.sms-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+    margin-bottom: 18px;
+}
+
+.kpi-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 19px;
+    padding: 17px;
+    box-shadow: 0 8px 20px rgba(15,23,42,.06);
+    position: relative;
+    overflow: hidden;
+    min-height: 140px;
+}
+
+.kpi-card::after {
+    content: "";
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    right: -32px;
+    top: -32px;
+    background: #eff6ff;
+}
+
+.kpi-card.green::after {
+    background: #ecfdf5;
+}
+
+.kpi-card.orange::after {
+    background: #fff7ed;
+}
+
+.kpi-card.red::after {
+    background: #fef2f2;
+}
+
+.kpi-card.purple::after {
+    background: #faf5ff;
+}
+
+.kpi-card.cyan::after {
+    background: #ecfeff;
+}
+
+.kpi-card.yellow::after {
+    background: #fffbeb;
+}
+
+.kpi-icon {
+    width: 43px;
+    height: 43px;
+    border-radius: 13px;
+    background: #dbeafe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    position: relative;
+    z-index: 2;
+}
+
+.green .kpi-icon {
+    background: #dcfce7;
+}
+
+.orange .kpi-icon {
+    background: #ffedd5;
+}
+
+.red .kpi-icon {
+    background: #fee2e2;
+}
+
+.purple .kpi-icon {
+    background: #f3e8ff;
+}
+
+.cyan .kpi-icon {
+    background: #cffafe;
+}
+
+.yellow .kpi-icon {
+    background: #fef3c7;
+}
+
+.kpi-label {
+    margin-top: 13px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
+    position: relative;
+    z-index: 2;
+}
+
+.kpi-value {
+    margin-top: 5px;
+    color: #0f172a;
+    font-size: 27px;
+    line-height: 1.1;
+    font-weight: 950;
+    position: relative;
+    z-index: 2;
+}
+
+.kpi-note {
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 12px;
+    position: relative;
+    z-index: 2;
+}
+
+/* =========================================================
+   GENERAL PANELS
+========================================================= */
+.sms-panel {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 21px;
+    padding: 19px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+    margin-bottom: 18px;
+}
+
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.panel-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.heading-badge {
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.heading-badge.orange {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.heading-badge.green {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.heading-badge.red {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+/* =========================================================
+   MAIN GRID
+========================================================= */
+.sms-main-grid {
+    display: grid;
+    grid-template-columns: 410px 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.sms-two-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.sms-wide-grid {
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap: 18px;
+}
+
+/* =========================================================
+   FORMS
+========================================================= */
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 11px 12px;
+    background: white;
+    color: #0f172a;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #0b5ed7;
+    box-shadow: 0 0 0 3px rgba(11,94,215,.11);
+}
+
+.form-help {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 6px;
+}
+
+.btn {
+    border: none;
+    border-radius: 12px;
+    padding: 11px 15px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.btn.green {
+    background: #16a34a;
+    color: white;
+}
+
+.btn.green:hover {
+    background: #15803d;
+    color: white;
+}
+
+.btn.blue {
+    background: #0b5ed7;
+    color: white;
+}
+
+.btn.blue:hover {
+    background: #084db4;
+    color: white;
+}
+
+.btn.red {
+    background: #dc2626;
+    color: white;
+}
+
+.btn.gray {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.btn.full {
+    width: 100%;
+}
+
+/* =========================================================
+   SUMMARY BLOCKS
+========================================================= */
+.summary-list {
+    display: grid;
+    gap: 9px;
+}
+
+.summary-row {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.summary-row span {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.summary-row strong {
+    color: #0f172a;
+    font-size: 14px;
+    text-align: right;
+}
+
+.profit-positive {
+    color: #15803d !important;
+}
+
+.profit-negative {
+    color: #dc2626 !important;
+}
+
+/* =========================================================
+   TABLES
+========================================================= */
+.table-tools {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.table-search {
+    max-width: 320px;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sms-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 9px;
+    min-width: 760px;
+}
+
+.sms-table th {
+    text-align: left;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 0 10px 6px;
+    white-space: nowrap;
+}
+
+.sms-table td {
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 12px 10px;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.sms-table tr td:first-child {
+    border-left: 1px solid #e5e7eb;
+    border-radius: 13px 0 0 13px;
+}
+
+.sms-table tr td:last-child {
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 13px 13px 0;
+}
+
+.cell-title {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.cell-muted {
+    color: #64748b;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.money-value {
+    color: #166534;
+    font-weight: 900;
+}
+
+/* =========================================================
+   BADGES
+========================================================= */
+.badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.badge.pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.badge.sent,
+.badge.completed,
+.badge.enabled,
+.badge.good {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge.failed,
+.badge.disabled,
+.badge.low {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge.neutral {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.badge.blue {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* =========================================================
+   PROGRESS BARS
+========================================================= */
+.progress-track {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 7px;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg,#0b5ed7,#16a34a);
+}
+
+.progress-bar.low {
+    background: linear-gradient(90deg,#f97316,#dc2626);
+}
+
+/* =========================================================
+   SCHOOL WALLETS
+========================================================= */
+.wallet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 12px;
+}
+
+.wallet-card {
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.wallet-card.low-wallet {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.wallet-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.wallet-school {
+    color: #0f172a;
+    font-weight: 950;
+    font-size: 14px;
+}
+
+.wallet-balance {
+    margin-top: 13px;
+    font-size: 24px;
+    font-weight: 950;
+    color: #0b5ed7;
+}
+
+.wallet-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 11px;
+}
+
+.wallet-meta-box {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+    padding: 8px;
+}
+
+.wallet-meta-box small {
+    display: block;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.wallet-meta-box strong {
+    display: block;
+    color: #0f172a;
+    margin-top: 3px;
+    font-size: 13px;
+}
+
+/* =========================================================
+   RECENT SMS
+========================================================= */
+.message-list {
+    display: grid;
+    gap: 9px;
+}
+
+.message-card {
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 12px 13px;
+}
+
+.message-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.message-recipient {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.message-phone {
+    color: #64748b;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.message-text {
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 9px;
+}
+
+.message-footer {
+    color: #94a3b8;
+    font-size: 10px;
+    margin-top: 8px;
+}
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+.empty-state {
+    padding: 27px;
+    text-align: center;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    border-radius: 15px;
+    color: #64748b;
+    font-weight: 800;
+}
+
+/* =========================================================
+   PRINT
+========================================================= */
+@media print {
+    .no-print,
+    .sidebar,
+    nav,
+    header,
+    .hero-actions,
+    form,
+    button {
+        display: none !important;
+    }
+
+    .platform-sms-page {
+        max-width: 100% !important;
+    }
+
+    .sms-panel,
+    .kpi-card {
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 1250px) {
+    .sms-kpis {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .wallet-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+}
+
+@media (max-width: 1050px) {
+    .sms-main-grid,
+    .sms-wide-grid,
+    .sms-two-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .sms-hero {
+        display: block;
+    }
+
+    .sms-hero-left {
+        align-items: flex-start;
+    }
+
+    .hero-actions {
+        justify-content: flex-start;
+        margin-top: 16px;
+    }
+
+    .sms-kpis,
+    .wallet-grid,
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .sms-hero h2 {
+        font-size: 25px;
+    }
+}
+</style>
+
+<div class="platform-sms-page">
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
+    <div class="sms-hero">
+        <div class="sms-hero-left">
+            <div class="sms-hero-icon">📲</div>
+
+            <div>
+                <h2>Platform SMS Command Center</h2>
+                <p>
+                    Procure SMS stock, approve school purchases,
+                    monitor wallets and review platform messaging activity.
+                </p>
+            </div>
+        </div>
+
+        <div class="hero-actions no-print">
+            <button type="button"
+                    class="hero-btn"
+                    onclick="window.print()">
+                🖨 Print
+            </button>
+
+            <button type="button"
+                    class="hero-btn"
+                    onclick="exportProcurementsToCSV()">
+                📥 Export Procurement
+            </button>
+
+            <button type="button"
+                    class="hero-btn"
+                    onclick="exportWalletsToCSV()">
+                📊 Export Wallets
+            </button>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         WARNINGS
+    ====================================================== -->
     {% if low_balance %}
-    <div class="notice">
-        ⚠ Platform SMS balance is below {{ pool.low_alert_level }} SMS.
-        Please procure more SMS from Africa's Talking.
+    <div class="alert-box warning">
+        <div class="alert-icon">⚠️</div>
+        <div>
+            Platform SMS balance is {{ pool.sms_balance or 0 }},
+            which is at or below the low-alert level of
+            {{ pool.low_alert_level or 0 }} SMS.
+            Procure additional provider credit before approving
+            large school requests.
+        </div>
     </div>
     {% endif %}
 
-    <div class="dashboard-grid">
-        <div class="card">
-            <h3>Total Schools</h3>
-            <div class="number">{{ total_schools }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Schools Using SMS</h3>
-            <div class="number">{{ schools_using_sms }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Platform SMS Balance</h3>
-            <div class="number">{{ pool.sms_balance }}</div>
-        </div>
-
-        <div class="card">
-            <h3>Total SMS Procured</h3>
-            <div class="number">{{ total_procured_sms }}</div>
+    {% if low_wallet_schools %}
+    <div class="alert-box danger">
+        <div class="alert-icon">🚨</div>
+        <div>
+            {{ low_wallet_schools|length }} enabled school wallet(s)
+            are currently at or below their configured low-balance level.
         </div>
     </div>
-</div>
+    {% endif %}
 
-<div class="panel">
-    <h3>Procure SMS Stock from Africa's Talking</h3>
+    {% if not low_balance and not low_wallet_schools %}
+    <div class="alert-box success">
+        <div class="alert-icon">✅</div>
+        <div>
+            Platform and active school SMS balances are currently
+            above their configured warning levels.
+        </div>
+    </div>
+    {% endif %}
 
-    <form method="post">
-        <label>Supplier</label>
-        <input name="supplier" value="Africastalking" required>
+    <!-- =====================================================
+         KPI CARDS
+    ====================================================== -->
+    <div class="sms-kpis">
 
-        <label>SMS Quantity Purchased</label>
-        <input type="number" name="sms_count" min="1" required>
+        <div class="kpi-card">
+            <div class="kpi-icon">📦</div>
+            <div class="kpi-label">Platform Balance</div>
+            <div class="kpi-value">
+                {{ "{:,}".format(pool.sms_balance or 0) }}
+            </div>
+            <div class="kpi-note">
+                Available for sale to schools
+            </div>
+        </div>
 
-        <label>Amount Paid</label>
-        <input type="number" step="0.01" name="amount_paid" min="0" required>
+        <div class="kpi-card green">
+            <div class="kpi-icon">⬆️</div>
+            <div class="kpi-label">Total SMS Loaded</div>
+            <div class="kpi-value">
+                {{ "{:,}".format(pool.sms_loaded or 0) }}
+            </div>
+            <div class="kpi-note">
+                Lifetime platform procurement
+            </div>
+        </div>
 
-        <label>Reference / Receipt No.</label>
-        <input name="reference_no" placeholder="e.g. AT receipt / M-Pesa code">
+        <div class="kpi-card purple">
+            <div class="kpi-icon">🏫</div>
+            <div class="kpi-label">Total SMS Sold</div>
+            <div class="kpi-value">
+                {{ "{:,}".format(pool.sms_sold or 0) }}
+            </div>
+            <div class="kpi-note">
+                Credited to school wallets
+            </div>
+        </div>
 
-        <br><br>
-        <button class="btn green">Record Procurement & Add to Pool</button>
-    </form>
-</div>
+        <div class="kpi-card orange">
+            <div class="kpi-icon">⏳</div>
+            <div class="kpi-label">Pending Requests</div>
+            <div class="kpi-value">
+                {{ pending_purchase_count or 0 }}
+            </div>
+            <div class="kpi-note">
+                {{ "{:,}".format(pending_sms_requested or 0) }}
+                SMS requested
+            </div>
+        </div>
 
-<div class="panel">
-    <h3>SMS Procurement Summary</h3>
+        <div class="kpi-card cyan">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-label">Sales Revenue</div>
+            <div class="kpi-value">
+                {{ money(total_sales_revenue or 0) }}
+            </div>
+            <div class="kpi-note">
+                Completed school purchases
+            </div>
+        </div>
 
-    <table>
-        <tr>
-            <th>Total SMS Procured</th>
-            <td>{{ total_procured_sms }}</td>
-        </tr>
-        <tr>
-            <th>Total Procurement Cost</th>
-            <td>{{ money(total_procurement_cost) }}</td>
-        </tr>
-        <tr>
-            <th>Total SMS Sold to Schools</th>
-            <td>{{ pool.sms_sold }}</td>
-        </tr>
-        <tr>
-            <th>Current Platform Balance</th>
-            <td>{{ pool.sms_balance }}</td>
-        </tr>
-    </table>
-</div>
+        <div class="kpi-card yellow">
+            <div class="kpi-icon">📈</div>
+            <div class="kpi-label">Gross SMS Profit</div>
+            <div class="kpi-value">
+                {{ money(gross_sms_profit or 0) }}
+            </div>
+            <div class="kpi-note">
+                Sales less procurement cost
+            </div>
+        </div>
 
-<div class="panel">
-    <h3>Procurement History</h3>
+        <div class="kpi-card green">
+            <div class="kpi-icon">✅</div>
+            <div class="kpi-label">SMS Sent</div>
+            <div class="kpi-value">
+                {{ "{:,}".format(sent_sms_count or 0) }}
+            </div>
+            <div class="kpi-note">
+                {{ today_sent_count or 0 }} sent today
+            </div>
+        </div>
 
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Supplier</th>
-            <th>SMS</th>
-            <th>Amount Paid</th>
-            <th>Reference</th>
-            <th>Purchased By</th>
-            <th>Status</th>
-        </tr>
+        <div class="kpi-card red">
+            <div class="kpi-icon">❌</div>
+            <div class="kpi-label">Failed / Pending</div>
+            <div class="kpi-value">
+                {{ (failed_sms_count or 0) + (pending_sms_count or 0) }}
+            </div>
+            <div class="kpi-note">
+                {{ failed_sms_count or 0 }} failed,
+                {{ pending_sms_count or 0 }} pending
+            </div>
+        </div>
 
-        {% for p in procurements %}
-        <tr>
-            <td>
-                {% if p.purchase_date %}
-                    {{ p.purchase_date.strftime("%d-%m-%Y %H:%M") }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-            <td>{{ p.supplier }}</td>
-            <td>{{ p.sms_count }}</td>
-            <td>{{ money(p.amount_paid) }}</td>
-            <td>{{ p.reference_no or "-" }}</td>
-            <td>{{ p.purchased_by or "-" }}</td>
-            <td>{{ p.status }}</td>
-        </tr>
+    </div>
+
+    <!-- =====================================================
+         PROCUREMENT + FINANCIAL SUMMARY
+    ====================================================== -->
+    <div class="sms-main-grid">
+
+        <div class="sms-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>🛒 Record Provider Procurement</h3>
+                    <p>
+                        Use this only after purchasing real SMS credit
+                        from Africa’s Talking or another provider.
+                    </p>
+                </div>
+            </div>
+
+            <form method="post" class="no-print">
+
+                <div class="form-group">
+                    <label>Supplier</label>
+                    <input
+                        type="text"
+                        name="supplier"
+                        value="Africa's Talking"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>SMS Quantity Purchased</label>
+                    <input
+                        type="number"
+                        name="sms_count"
+                        min="1"
+                        step="1"
+                        placeholder="Example: 5000"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount Paid (KES)</label>
+                    <input
+                        type="number"
+                        name="amount_paid"
+                        min="0"
+                        step="0.01"
+                        placeholder="Example: 4000"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Receipt / Payment Reference</label>
+                    <input
+                        type="text"
+                        name="reference_no"
+                        placeholder="Example: MPESA123ABC or AT receipt number"
+                        required>
+
+                    <div class="form-help">
+                        Each reference can only be recorded once.
+                        Confirm the provider account balance before saving.
+                    </div>
+                </div>
+
+                <button class="btn green full">
+                    ➕ Add SMS to Platform Pool
+                </button>
+            </form>
+        </div>
+
+        <div class="sms-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>📊 Platform Financial Summary</h3>
+                    <p>
+                        Procurement cost, sales performance and
+                        platform usage indicators.
+                    </p>
+                </div>
+
+                <span class="heading-badge green">
+                    {{ total_schools }} Schools
+                </span>
+            </div>
+
+            <div class="summary-list">
+
+                <div class="summary-row">
+                    <span>Total SMS procured</span>
+                    <strong>
+                        {{ "{:,}".format(total_procured_sms or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Total procurement cost</span>
+                    <strong>
+                        {{ money(total_procurement_cost or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Total SMS sold</span>
+                    <strong>
+                        {{ "{:,}".format(total_sms_sold or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Total sales revenue</span>
+                    <strong>
+                        {{ money(total_sales_revenue or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Gross profit</span>
+
+                    <strong class="{% if (gross_sms_profit or 0) >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                        {{ money(gross_sms_profit or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Average procurement cost per SMS</span>
+                    <strong>
+                        KES {{ "%.4f"|format(average_procurement_cost or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Average selling price per SMS</span>
+                    <strong>
+                        KES {{ "%.4f"|format(average_selling_price or 0) }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Schools using SMS</span>
+                    <strong>
+                        {{ schools_using_sms }} /
+                        {{ total_schools }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Schools not using SMS</span>
+                    <strong>
+                        {{ schools_not_using_sms }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>SMS created today</span>
+                    <strong>
+                        {{ today_sms_count or 0 }}
+                    </strong>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =====================================================
+         PENDING PURCHASES
+    ====================================================== -->
+    <div class="sms-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>⏳ Pending School SMS Purchases</h3>
+                <p>
+                    Review payment information before crediting
+                    the school wallet.
+                </p>
+            </div>
+
+            <span class="heading-badge orange">
+                {{ pending_purchase_count or 0 }} Pending
+            </span>
+        </div>
+
+        {% if pending_purchases %}
+        <div class="table-wrap">
+            <table class="sms-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>School</th>
+                        <th>SMS</th>
+                        <th>Amount</th>
+                        <th>Requested By</th>
+                        <th>Status</th>
+                        <th class="no-print">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for purchase in pending_purchases %}
+                    <tr>
+                        <td>
+                            <div class="cell-title">
+                                {{ purchase.request_date.strftime("%d-%m-%Y")
+                                   if purchase.request_date else "-" }}
+                            </div>
+
+                            <div class="cell-muted">
+                                {{ purchase.request_date.strftime("%H:%M")
+                                   if purchase.request_date else "" }}
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="cell-title">
+                                {{ schools_dict.get(
+                                    purchase.school_id,
+                                    "School #" ~ purchase.school_id
+                                ) }}
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="badge blue">
+                                {{ "{:,}".format(purchase.package_sms or 0) }}
+                                SMS
+                            </span>
+                        </td>
+
+                        <td class="money-value">
+                            {{ money(purchase.amount or 0) }}
+                        </td>
+
+                        <td>
+                            {{ purchase.requested_by or "-" }}
+                        </td>
+
+                        <td>
+                            <span class="badge pending">
+                                {{ purchase.status }}
+                            </span>
+                        </td>
+
+                        <td class="no-print">
+                            <form
+                                method="post"
+                                action="{{ url_for(
+                                    'approve_sms_purchase',
+                                    purchase_id=purchase.id
+                                ) }}"
+                                onsubmit="return confirmSmsApproval(
+                                    '{{ schools_dict.get(
+                                        purchase.school_id,
+                                        'this school'
+                                    )|e }}',
+                                    '{{ purchase.package_sms or 0 }}'
+                                );">
+
+                                <button class="btn green">
+                                    ✅ Approve
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
         {% else %}
-        <tr>
-            <td colspan="7">No SMS procurement records yet.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
+        <div class="empty-state">
+            There are no pending SMS purchase requests.
+        </div>
+        {% endif %}
 
-<div class="panel">
-    <h3>Pending School SMS Purchases</h3>
+    </div>
 
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>School</th>
-            <th>SMS</th>
-            <th>Amount</th>
-            <th>M-Pesa Phone</th>
-            <th>Requested By</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
+    <!-- =====================================================
+         SCHOOL WALLETS
+    ====================================================== -->
+    <div class="sms-panel">
 
-        {% for p in pending_purchases %}
-        <tr>
-            <td>
-                {% if p.request_date %}
-                    {{ p.request_date.strftime("%d-%m-%Y %H:%M") }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
+        <div class="panel-heading">
+            <div>
+                <h3>🏫 School SMS Wallets</h3>
+                <p>
+                    Monitor balances, lifetime loaded SMS and usage
+                    for every school.
+                </p>
+            </div>
 
-            <td>{{ schools_dict.get(p.school_id, "Unknown School") }}</td>
-            <td>{{ p.package_sms }}</td>
-            <td>{{ money(p.amount) }}</td>
-            <td>{{ p.mpesa_phone or "-" }}</td>
-            <td>{{ p.requested_by }}</td>
-            <td>{{ p.status }}</td>
+            <span class="heading-badge">
+                {{ school_wallet_rows|length }} Wallets
+            </span>
+        </div>
 
-            <td>
-                <form method="post"
-                      action="{{ url_for('approve_sms_purchase', purchase_id=p.id) }}"
-                      onsubmit="return confirm('Approve this SMS purchase and credit the school?');"
-                      style="display:inline;">
-                    <button class="btn green">Approve</button>
-                </form>
-            </td>
-        </tr>
+        <div class="table-tools no-print">
+            <input
+                type="text"
+                id="walletSearch"
+                class="table-search"
+                placeholder="Search school..."
+                onkeyup="filterWallets()">
+
+            <select id="walletStatusFilter"
+                    onchange="filterWallets()">
+                <option value="">All Wallets</option>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+                <option value="low">Low Balance</option>
+            </select>
+        </div>
+
+        {% if school_wallet_rows %}
+        <div class="wallet-grid" id="walletGrid">
+
+            {% for row in school_wallet_rows %}
+            {% set is_low =
+                row.enabled and
+                (row.balance or 0) <= (row.low_alert or 0)
+            %}
+
+            <div class="wallet-card
+                        {% if is_low %}low-wallet{% endif %}"
+                 data-school="{{ row.school_name|lower }}"
+                 data-status="{% if is_low %}low{% elif row.enabled %}enabled{% else %}disabled{% endif %}">
+
+                <div class="wallet-card-top">
+                    <div>
+                        <div class="wallet-school">
+                            {{ row.school_name }}
+                        </div>
+
+                        <div class="cell-muted">
+                            School ID: {{ row.school_id }}
+                        </div>
+                    </div>
+
+                    {% if is_low %}
+                    <span class="badge low">Low Balance</span>
+
+                    {% elif row.enabled %}
+                    <span class="badge enabled">Enabled</span>
+
+                    {% else %}
+                    <span class="badge disabled">Disabled</span>
+                    {% endif %}
+                </div>
+
+                <div class="wallet-balance">
+                    {{ "{:,}".format(row.balance or 0) }}
+                    <span style="font-size:12px;color:#64748b;">
+                        SMS
+                    </span>
+                </div>
+
+                {% set used_percent =
+                    ((row.used or 0) / (row.loaded or 1) * 100)
+                    if (row.loaded or 0) > 0
+                    else 0
+                %}
+
+                <div class="progress-track">
+                    <div class="progress-bar
+                                {% if is_low %}low{% endif %}"
+                         style="width:
+                         {{ [used_percent, 100]|min }}%;">
+                    </div>
+                </div>
+
+                <div class="wallet-meta">
+                    <div class="wallet-meta-box">
+                        <small>Loaded</small>
+                        <strong>
+                            {{ "{:,}".format(row.loaded or 0) }}
+                        </strong>
+                    </div>
+
+                    <div class="wallet-meta-box">
+                        <small>Used</small>
+                        <strong>
+                            {{ "{:,}".format(row.used or 0) }}
+                        </strong>
+                    </div>
+
+                    <div class="wallet-meta-box">
+                        <small>Low Alert</small>
+                        <strong>
+                            {{ "{:,}".format(row.low_alert or 0) }}
+                        </strong>
+                    </div>
+
+                    <div class="wallet-meta-box">
+                        <small>Usage Rate</small>
+                        <strong>
+                            {{ "%.1f"|format(used_percent) }}%
+                        </strong>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
         {% else %}
-        <tr>
-            <td colspan="8">No pending SMS purchases.</td>
-        </tr>
+        <div class="empty-state">
+            No school SMS wallet records were found.
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- =====================================================
+         PROCUREMENT + COMPLETED SALES
+    ====================================================== -->
+    <div class="sms-two-grid">
+
+        <div class="sms-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>📥 Procurement History</h3>
+                    <p>Latest provider SMS stock purchases.</p>
+                </div>
+
+                <span class="heading-badge green">
+                    {{ procurements|length }} Records
+                </span>
+            </div>
+
+            {% if procurements %}
+            <div class="table-wrap">
+                <table class="sms-table"
+                       id="procurementTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Supplier</th>
+                            <th>SMS</th>
+                            <th>Cost</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for procurement in procurements %}
+                        <tr>
+                            <td>
+                                {{ procurement.purchase_date.strftime(
+                                    "%d-%m-%Y"
+                                ) if procurement.purchase_date else "-" }}
+                            </td>
+
+                            <td>
+                                <div class="cell-title">
+                                    {{ procurement.supplier or "-" }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="badge blue">
+                                    {{ "{:,}".format(
+                                        procurement.sms_count or 0
+                                    ) }}
+                                </span>
+                            </td>
+
+                            <td class="money-value">
+                                {{ money(procurement.amount_paid or 0) }}
+                            </td>
+
+                            <td>
+                                {{ procurement.reference_no or "-" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+                No platform SMS procurement has been recorded.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="sms-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>✅ Recent Approved Purchases</h3>
+                    <p>Latest school wallets credited by Super Admin.</p>
+                </div>
+
+                <span class="heading-badge green">
+                    {{ completed_purchases|length }} Records
+                </span>
+            </div>
+
+            {% if completed_purchases %}
+            <div class="table-wrap">
+                <table class="sms-table">
+                    <thead>
+                        <tr>
+                            <th>School</th>
+                            <th>SMS</th>
+                            <th>Amount</th>
+                            <th>Paid At</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for purchase in completed_purchases %}
+                        <tr>
+                            <td>
+                                <div class="cell-title">
+                                    {{ schools_dict.get(
+                                        purchase.school_id,
+                                        "School #" ~ purchase.school_id
+                                    ) }}
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="badge completed">
+                                    {{ "{:,}".format(
+                                        purchase.package_sms or 0
+                                    ) }}
+                                </span>
+                            </td>
+
+                            <td class="money-value">
+                                {{ money(purchase.amount or 0) }}
+                            </td>
+
+                            <td>
+                                {{ purchase.paid_at.strftime(
+                                    "%d-%m-%Y %H:%M"
+                                ) if purchase.paid_at else "-" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+                No school SMS purchase has been approved yet.
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- =====================================================
+         SMS ACTIVITY
+    ====================================================== -->
+    <div class="sms-wide-grid">
+
+        <div class="sms-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>📩 Recent Platform SMS Activity</h3>
+                    <p>
+                        Latest messages across all schools.
+                    </p>
+                </div>
+
+                <span class="heading-badge">
+                    {{ recent_sms_messages|length }} Recent
+                </span>
+            </div>
+
+            {% if recent_sms_messages %}
+            <div class="message-list">
+
+                {% for message in recent_sms_messages %}
+                <div class="message-card">
+
+                    <div class="message-top">
+                        <div>
+                            <div class="message-recipient">
+                                {{ message.recipient_name or "Recipient" }}
+                            </div>
+
+                            <div class="message-phone">
+                                {{ message.phone or "-" }}
+                                {% if message.category %}
+                                · {{ message.category }}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div>
+                            {% if message.status == "Sent" %}
+                            <span class="badge sent">Sent</span>
+
+                            {% elif message.status == "Failed" %}
+                            <span class="badge failed">Failed</span>
+
+                            {% else %}
+                            <span class="badge pending">
+                                {{ message.status or "Pending" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="message-text">
+                        {{ message.message[:180] }}
+                        {% if message.message and
+                              message.message|length > 180 %}
+                            ...
+                        {% endif %}
+                    </div>
+
+                    <div class="message-footer">
+                        School ID: {{ message.school_id or "-" }}
+                        ·
+                        {{ message.created_at.strftime(
+                            "%d-%m-%Y %H:%M"
+                        ) if message.created_at else "-" }}
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+                No SMS message activity is available.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="sms-panel">
+            <div class="panel-heading">
+                <div>
+                    <h3>📌 Operational Status</h3>
+                    <p>
+                        Platform readiness and messaging health.
+                    </p>
+                </div>
+            </div>
+
+            <div class="summary-list">
+
+                <div class="summary-row">
+                    <span>Platform low alert</span>
+                    <strong>
+                        {{ "{:,}".format(pool.low_alert_level or 0) }}
+                        SMS
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Last platform load</span>
+                    <strong>
+                        {{ pool.last_loaded.strftime(
+                            "%d-%m-%Y %H:%M"
+                        ) if pool.last_loaded else "Never" }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Last loaded by</span>
+                    <strong>
+                        {{ pool.last_loaded_by or "-" }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Pending outbox</span>
+                    <strong>
+                        {{ pending_sms_count or 0 }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Failed SMS</span>
+                    <strong class="{% if failed_sms_count %}profit-negative{% endif %}">
+                        {{ failed_sms_count or 0 }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Successful SMS</span>
+                    <strong class="profit-positive">
+                        {{ sent_sms_count or 0 }}
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Enabled low wallets</span>
+                    <strong>
+                        {{ low_wallet_schools|length }}
+                    </strong>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function confirmSmsApproval(schoolName, smsCount) {
+    return confirm(
+        "Approve " + smsCount + " SMS for " + schoolName + "?\n\n" +
+        "This will deduct SMS from the platform pool and credit " +
+        "the school's wallet."
+    );
+}
+
+function filterWallets() {
+    const search =
+        document.getElementById("walletSearch").value.toLowerCase();
+
+    const status =
+        document.getElementById("walletStatusFilter").value.toLowerCase();
+
+    const cards =
+        document.querySelectorAll("#walletGrid .wallet-card");
+
+    cards.forEach(function(card) {
+        const school = card.dataset.school || "";
+        const cardStatus = card.dataset.status || "";
+
+        const matchesSearch =
+            school.includes(search);
+
+        const matchesStatus =
+            !status || cardStatus === status;
+
+        card.style.display =
+            matchesSearch && matchesStatus ? "" : "none";
+    });
+}
+
+function downloadCSV(filename, rows) {
+    const csvContent = rows.map(function(row) {
+        return row.map(function(value) {
+            const safeValue =
+                String(value == null ? "" : value)
+                .replace(/"/g, '""');
+
+            return '"' + safeValue + '"';
+        }).join(",");
+    }).join("\n");
+
+    const blob = new Blob(
+        [csvContent],
+        {type: "text/csv;charset=utf-8;"}
+    );
+
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+}
+
+function exportProcurementsToCSV() {
+    const rows = [
+        [
+            "Date",
+            "Supplier",
+            "SMS Count",
+            "Amount Paid",
+            "Reference",
+            "Purchased By",
+            "Status"
+        ]
+
+        {% for procurement in procurements %}
+        ,[
+            "{{ procurement.purchase_date.strftime('%d-%m-%Y %H:%M') if procurement.purchase_date else '' }}",
+            "{{ (procurement.supplier or '')|replace('\"', '\"\"') }}",
+            "{{ procurement.sms_count or 0 }}",
+            "{{ procurement.amount_paid or 0 }}",
+            "{{ (procurement.reference_no or '')|replace('\"', '\"\"') }}",
+            "{{ (procurement.purchased_by or '')|replace('\"', '\"\"') }}",
+            "{{ procurement.status or '' }}"
+        ]
         {% endfor %}
-    </table>
-</div>
+    ];
 
-<div class="panel">
-    <h3>Platform SMS Information</h3>
+    downloadCSV(
+        "platform_sms_procurement.csv",
+        rows
+    );
+}
 
-    <table>
-        <tr>
-            <th>Total SMS Loaded</th>
-            <td>{{ pool.sms_loaded }}</td>
-        </tr>
+function exportWalletsToCSV() {
+    const rows = [
+        [
+            "School",
+            "SMS Balance",
+            "SMS Loaded",
+            "SMS Used",
+            "Low Alert",
+            "Enabled"
+        ]
 
-        <tr>
-            <th>Total SMS Sold</th>
-            <td>{{ pool.sms_sold }}</td>
-        </tr>
+        {% for row in school_wallet_rows %}
+        ,[
+            "{{ row.school_name|replace('\"', '\"\"') }}",
+            "{{ row.balance or 0 }}",
+            "{{ row.loaded or 0 }}",
+            "{{ row.used or 0 }}",
+            "{{ row.low_alert or 0 }}",
+            "{{ 'Yes' if row.enabled else 'No' }}"
+        ]
+        {% endfor %}
+    ];
 
-        <tr>
-            <th>Platform SMS Balance</th>
-            <td>{{ pool.sms_balance }}</td>
-        </tr>
-
-        <tr>
-            <th>Low Alert Level</th>
-            <td>{{ pool.low_alert_level }}</td>
-        </tr>
-
-        <tr>
-            <th>Last Loaded By</th>
-            <td>{{ pool.last_loaded_by or "-" }}</td>
-        </tr>
-
-        <tr>
-            <th>Last Loaded Date</th>
-            <td>
-                {% if pool.last_loaded %}
-                    {{ pool.last_loaded.strftime("%d-%m-%Y %H:%M") }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-    </table>
-</div>
+    downloadCSV(
+        "school_sms_wallets.csv",
+        rows
+    );
+}
+</script>
 
 {% endblock %}
