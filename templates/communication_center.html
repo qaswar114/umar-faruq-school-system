@@ -2,257 +2,1167 @@
 {% block content %}
 
 <style>
-.comm-page{max-width:1500px;margin:0 auto}
-.comm-top{
-    background:linear-gradient(135deg,#0f172a,#0b5ed7,#16a34a);
-    color:white;border-radius:20px;padding:20px 24px;
-    margin-bottom:16px;display:flex;justify-content:space-between;align-items:center
+.comm-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
 }
-.comm-top h2{margin:0;font-size:28px}
-.comm-top p{margin:6px 0 0;color:#dbeafe}
-.badge{background:rgba(255,255,255,.18);padding:9px 14px;border-radius:999px;font-weight:900}
 
-.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
-.card{
-    background:white;border:1px solid #e5e7eb;border-radius:18px;
-    padding:15px;box-shadow:0 8px 20px rgba(15,23,42,.07)
+.comm-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 26px 30px;
+    margin-bottom: 18px;
+    border-radius: 23px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 55%,
+        #16a34a 100%
+    );
+    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
 }
-.card small{font-weight:900;color:#64748b}
-.card h2{margin:10px 0 0;font-size:24px;color:#0b5ed7}
-.green h2{color:#16a34a}.red h2{color:#dc2626}.orange h2{color:#d97706}
 
-.panel{
-    background:white;border:1px solid #e5e7eb;border-radius:20px;
-    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07);
-    margin-bottom:16px
+.comm-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 30px;
 }
-.panel h3{margin:0 0 14px;color:#0b5ed7;font-size:22px}
 
-.wizard-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr;
-    gap:14px
+.comm-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    font-size: 15px;
+    line-height: 1.5;
 }
-.queue-grid,.actions{
-    display:grid;grid-template-columns:repeat(4,1fr);
-    gap:12px;margin-bottom:16px
-}
-.action,.queue-btn{
-    display:block;text-decoration:none;color:#0f172a;
-    background:#f8fafc;border:1px solid #e5e7eb;
-    border-radius:16px;padding:14px;font-weight:900
-}
-.action span,.queue-btn span{font-size:25px;display:block;margin-bottom:6px}
-.action small,.queue-btn small{display:block;color:#64748b;margin-top:4px}
-.queue-btn.green{background:#ecfdf5;border-color:#bbf7d0}
-.queue-btn.orange{background:#fff7ed;border-color:#fed7aa}
-.queue-btn.red{background:#fef2f2;border-color:#fecaca}
 
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.row{
-    display:flex;justify-content:space-between;
-    background:#f8fafc;border:1px solid #e5e7eb;
-    padding:12px 14px;border-radius:14px;margin-bottom:9px;font-weight:900
+.wallet-badge {
+    flex-shrink: 0;
+    padding: 12px 18px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    color: white;
+    font-weight: 900;
+    white-space: nowrap;
 }
-.msg{
-    background:#f8fafc;border:1px solid #e5e7eb;
-    padding:12px;border-radius:14px;margin-bottom:9px
-}
-.msg b{color:#0f172a}
-.msg small{color:#64748b;font-weight:800}
-.status{
-    float:right;padding:4px 8px;border-radius:999px;
-    background:#e5e7eb;font-size:12px;font-weight:900
-}
-.status.Sent{background:#dcfce7;color:#166534}
-.status.Pending{background:#fef3c7;color:#92400e}
-.status.Failed{background:#fee2e2;color:#991b1b}
-textarea{min-height:110px}
 
-@media(max-width:1200px){
-    .cards{grid-template-columns:repeat(3,1fr)}
-    .actions,.queue-grid,.wizard-grid{grid-template-columns:repeat(2,1fr)}
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 13px;
+    margin-bottom: 18px;
 }
-@media(max-width:900px){
-    .cards,.grid,.actions,.queue-grid,.wizard-grid{grid-template-columns:1fr}
-    .comm-top{display:block}
+
+.metric-card {
+    min-height: 135px;
+    padding: 17px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.metric-label {
+    min-height: 40px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 900;
+}
+
+.metric-value {
+    margin-top: 8px;
+    color: #0f172a;
+    font-size: 28px;
+    font-weight: 950;
+}
+
+.metric-value.green {
+    color: #16a34a;
+}
+
+.metric-value.orange {
+    color: #d97706;
+}
+
+.metric-value.red {
+    color: #dc2626;
+}
+
+.comm-panel {
+    padding: 21px;
+    margin-bottom: 18px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 21px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 17px;
+}
+
+.panel-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 22px;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.panel-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: white;
+    color: #0f172a;
+}
+
+.form-group textarea {
+    min-height: 125px;
+    resize: vertical;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.broadcast-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.primary-btn,
+.secondary-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: #16a34a;
+}
+
+.primary-btn:hover {
+    background: #15803d;
+}
+
+.secondary-btn {
+    background: #0b5ed7;
+}
+
+.secondary-btn:hover {
+    background: #084db4;
+}
+
+.queue-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+}
+
+.queue-grid form {
+    margin: 0;
+}
+
+.queue-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 150px;
+    padding: 17px;
+    border: 1px solid #e5e7eb;
+    border-radius: 17px;
+    background: #f8fafc;
+    color: #0f172a;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.queue-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 20px rgba(15,23,42,.08);
+}
+
+.queue-card.send-card {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.queue-card.retry-card {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.queue-card.delete-card {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.queue-icon {
+    font-size: 27px;
+}
+
+.queue-title {
+    margin-top: 12px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 950;
+}
+
+.queue-note {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.link-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+}
+
+.link-card {
+    display: block;
+    min-height: 128px;
+    padding: 17px;
+    border: 1px solid #e5e7eb;
+    border-radius: 17px;
+    background: #f8fafc;
+    color: #0f172a;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 20px rgba(15,23,42,.08);
+}
+
+.link-icon {
+    font-size: 27px;
+}
+
+.link-title {
+    margin-top: 11px;
+    font-size: 16px;
+    font-weight: 950;
+}
+
+.link-note {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.summary-list {
+    display: grid;
+    gap: 10px;
+}
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 13px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.summary-row span {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.summary-row strong {
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.message-list {
+    display: grid;
+    gap: 10px;
+}
+
+.message-card {
+    padding: 13px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.message-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.message-name {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.message-status {
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.status-sent {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.message-meta {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.empty-state {
+    padding: 27px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    font-weight: 800;
+}
+
+.warning-note {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid #fde68a;
+    border-radius: 13px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+@media (max-width: 1250px) {
+    .metric-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .queue-grid,
+    .link-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 650px) {
+    .comm-hero {
+        display: block;
+    }
+
+    .wallet-badge {
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+    .metric-grid,
+    .queue-grid,
+    .link-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 
+{% set wallet_balance =
+    wallet.sms_balance
+    if wallet is defined and wallet
+    else 0
+%}
+
+{% set categories_list = [
+    "General",
+    "Announcement",
+    "Payment Confirmation",
+    "Fees",
+    "Attendance Alert",
+    "Exam Results",
+    "Homework",
+    "Transport",
+    "Staff Notice",
+    "Emergency"
+] %}
+
 <div class="comm-page">
 
-<div class="comm-top">
-    <div>
-        <h2>📡 Communication Center</h2>
-        <p>Broadcast, monitor, retry and manage all school communications.</p>
+    <div class="comm-hero">
+        <div>
+            <h2>📡 Communication Center</h2>
+
+            <p>
+                Create school broadcasts, monitor SMS and WhatsApp queues,
+                and manage communication services from one page.
+            </p>
+        </div>
+
+        <div class="wallet-badge">
+            SMS Balance: {{ "{:,}".format(wallet_balance or 0) }}
+        </div>
     </div>
-    <div class="badge">SMS Balance: {{ wallet.sms_balance }}</div>
-</div>
 
-<div class="cards">
-    <div class="card orange"><small>SMS Pending</small><h2>{{ sms_pending }}</h2></div>
-    <div class="card green"><small>SMS Sent</small><h2>{{ sms_sent }}</h2></div>
-    <div class="card red"><small>SMS Failed</small><h2>{{ sms_failed }}</h2></div>
-    <div class="card orange"><small>WhatsApp Pending</small><h2>{{ whatsapp_pending }}</h2></div>
-    <div class="card green"><small>WhatsApp Sent</small><h2>{{ whatsapp_sent }}</h2></div>
-    <div class="card red"><small>WhatsApp Failed</small><h2>{{ whatsapp_failed }}</h2></div>
-</div>
+    {% if not wallet is defined or not wallet %}
+        <div class="warning-note">
+            This school does not have an SMS wallet. Open SMS Wallet and
+            submit an SMS purchase request before sending SMS.
+        </div>
+    {% elif not wallet.sms_enabled %}
+        <div class="warning-note">
+            SMS service is currently disabled for this school.
+        </div>
+    {% elif (wallet.sms_balance or 0) <= (wallet.sms_low_alert or 0) %}
+        <div class="warning-note">
+            SMS balance is low. Current balance:
+            {{ wallet.sms_balance or 0 }} SMS.
+        </div>
+    {% endif %}
 
-<div class="panel">
-    <h3>📢 Broadcast Wizard</h3>
+    <!-- =====================================================
+         COMMUNICATION METRICS
+    ====================================================== -->
 
-    <form method="post" onsubmit="return confirm('Queue this broadcast message?');">
-        <div class="wizard-grid">
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <div class="metric-label">SMS Pending</div>
+            <div class="metric-value orange">
+                {{ sms_pending if sms_pending is defined else 0 }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">SMS Sent</div>
+            <div class="metric-value green">
+                {{ sms_sent if sms_sent is defined else 0 }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">SMS Failed</div>
+            <div class="metric-value red">
+                {{ sms_failed if sms_failed is defined else 0 }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">WhatsApp Pending</div>
+            <div class="metric-value orange">
+                {{ whatsapp_pending if whatsapp_pending is defined else 0 }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">WhatsApp Sent</div>
+            <div class="metric-value green">
+                {{ whatsapp_sent if whatsapp_sent is defined else 0 }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-label">WhatsApp Failed</div>
+            <div class="metric-value red">
+                {{ whatsapp_failed if whatsapp_failed is defined else 0 }}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =====================================================
+         BROADCAST WIZARD
+    ====================================================== -->
+
+    <div class="comm-panel">
+
+        <div class="panel-heading">
             <div>
-                <label>Channel</label>
-                <select name="channel">
-                    <option value="both">SMS + WhatsApp</option>
-                    <option value="sms">SMS Only</option>
-                    <option value="whatsapp">WhatsApp Only</option>
-                </select>
+                <h3>📣 Broadcast Wizard</h3>
+
+                <p>
+                    Queue SMS, WhatsApp or both for a single parent,
+                    selected grade or all active pupils.
+                </p>
             </div>
 
-            <div>
-                <label>Recipients</label>
-                <select name="recipient_type">
-                    <option value="all">All Active Pupils</option>
-                    <option value="grade">One Grade</option>
-                    <option value="bus">Bus Pupils</option>
-                    <option value="single">Single Parent</option>
-                </select>
+            <span class="panel-badge">
+                School Communication
+            </span>
+        </div>
+
+        <form method="post"
+              action="/communication_center"
+              onsubmit="return confirm(
+                  'Queue this broadcast for the selected recipients?'
+              );">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Channel</label>
+
+                    <select name="channel" required>
+                        <option value="SMS">SMS Only</option>
+                        <option value="WhatsApp">WhatsApp Only</option>
+                        <option value="Both">SMS + WhatsApp</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Recipients</label>
+
+                    <select name="send_to" required>
+                        <option value="all">All Active Pupils</option>
+                        <option value="grade">Selected Grade</option>
+                        <option value="single">Single Parent</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Category</label>
+
+                    <select name="category" required>
+                        {% for category in categories_list %}
+                            <option value="{{ category }}">
+                                {{ category }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Grade</label>
+
+                    <select name="grade">
+                        <option value="">Select grade if needed</option>
+
+                        {% if grades is defined %}
+                            {% for grade in grades %}
+                                <option value="{{ grade }}">
+                                    {{ grade }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Single Parent Name</label>
+
+                    <input type="text"
+                           name="recipient_name"
+                           placeholder="Optional">
+                </div>
+
+                <div class="form-group">
+                    <label>Single Parent Phone</label>
+
+                    <input type="text"
+                           name="phone"
+                           placeholder="07xxxxxxxx">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Message</label>
+
+                    <textarea name="message"
+                              maxlength="1000"
+                              required
+                              placeholder="Type the message here..."></textarea>
+                </div>
+
             </div>
 
+            <div class="broadcast-actions">
+                <button type="submit" class="primary-btn">
+                    Queue Broadcast
+                </button>
+
+                <a href="/sms_wallet" class="secondary-btn">
+                    Open SMS Wallet
+                </a>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- =====================================================
+         QUEUE MANAGER
+    ====================================================== -->
+
+    <div class="comm-panel">
+
+        <div class="panel-heading">
             <div>
-                <label>Category</label>
-                <select name="category">
-                    {% for c in categories %}
-                    <option value="{{ c }}">{{ c }}</option>
+                <h3>⚙️ Queue Manager</h3>
+
+                <p>
+                    Process, retry or clean the current school’s message
+                    queues. These actions do not affect other schools.
+                </p>
+            </div>
+        </div>
+
+        <div class="queue-grid">
+
+            <form method="post"
+                  action="/send_pending_sms"
+                  onsubmit="return confirm(
+                      'Send all pending SMS messages now?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card send-card">
+
+                    <span class="queue-icon">✅</span>
+
+                    <span class="queue-title">
+                        Send Pending SMS
+                    </span>
+
+                    <span class="queue-note">
+                        Process the pending SMS queue and deduct only
+                        successfully sent messages.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/retry_failed_sms"
+                  onsubmit="return confirm(
+                      'Retry all failed SMS messages now?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card retry-card">
+
+                    <span class="queue-icon">🔄</span>
+
+                    <span class="queue-title">
+                        Retry Failed SMS
+                    </span>
+
+                    <span class="queue-note">
+                        Retry failed SMS while checking the wallet balance.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/delete_pending_sms"
+                  onsubmit="return confirm(
+                      'Delete every pending SMS for this school?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card delete-card">
+
+                    <span class="queue-icon">🗑️</span>
+
+                    <span class="queue-title">
+                        Delete Pending SMS
+                    </span>
+
+                    <span class="queue-note">
+                        Permanently clear unsent SMS from the queue.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/delete_failed_sms"
+                  onsubmit="return confirm(
+                      'Delete every failed SMS for this school?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card delete-card">
+
+                    <span class="queue-icon">🧹</span>
+
+                    <span class="queue-title">
+                        Delete Failed SMS
+                    </span>
+
+                    <span class="queue-note">
+                        Permanently remove failed SMS records.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/send_pending_whatsapp"
+                  onsubmit="return confirm(
+                      'Send all pending WhatsApp messages now?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card send-card">
+
+                    <span class="queue-icon">✅</span>
+
+                    <span class="queue-title">
+                        Send Pending WhatsApp
+                    </span>
+
+                    <span class="queue-note">
+                        Process the current school’s WhatsApp queue.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/retry_failed_whatsapp"
+                  onsubmit="return confirm(
+                      'Retry all failed WhatsApp messages now?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card retry-card">
+
+                    <span class="queue-icon">🔄</span>
+
+                    <span class="queue-title">
+                        Retry Failed WhatsApp
+                    </span>
+
+                    <span class="queue-note">
+                        Retry messages that previously failed.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/delete_pending_whatsapp"
+                  onsubmit="return confirm(
+                      'Delete every pending WhatsApp message?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card delete-card">
+
+                    <span class="queue-icon">🗑️</span>
+
+                    <span class="queue-title">
+                        Delete Pending WhatsApp
+                    </span>
+
+                    <span class="queue-note">
+                        Clear unsent WhatsApp messages for this school.
+                    </span>
+                </button>
+            </form>
+
+            <form method="post"
+                  action="/delete_failed_whatsapp"
+                  onsubmit="return confirm(
+                      'Delete every failed WhatsApp message?'
+                  );">
+
+                <button type="submit"
+                        class="queue-card delete-card">
+
+                    <span class="queue-icon">🧹</span>
+
+                    <span class="queue-title">
+                        Delete Failed WhatsApp
+                    </span>
+
+                    <span class="queue-note">
+                        Remove failed WhatsApp records permanently.
+                    </span>
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- =====================================================
+         COMMUNICATION PAGES
+    ====================================================== -->
+
+    <div class="comm-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h3>🚀 Communication Services</h3>
+
+                <p>
+                    Open the detailed school communication pages.
+                </p>
+            </div>
+        </div>
+
+        <div class="link-grid">
+
+            <a href="/sms_messages" class="link-card">
+                <div class="link-icon">💬</div>
+
+                <div class="link-title">
+                    SMS Outbox
+                </div>
+
+                <div class="link-note">
+                    Create, search and review school SMS records.
+                </div>
+            </a>
+
+            <a href="/whatsapp_outbox" class="link-card">
+                <div class="link-icon">📱</div>
+
+                <div class="link-title">
+                    WhatsApp Outbox
+                </div>
+
+                <div class="link-note">
+                    Review queued and processed WhatsApp messages.
+                </div>
+            </a>
+
+            <a href="/fee_reminders" class="link-card">
+                <div class="link-icon">💰</div>
+
+                <div class="link-title">
+                    Fee Reminders
+                </div>
+
+                <div class="link-note">
+                    Prepare balance reminders for parents.
+                </div>
+            </a>
+
+            <a href="/announcements" class="link-card">
+                <div class="link-icon">📣</div>
+
+                <div class="link-title">
+                    Announcements
+                </div>
+
+                <div class="link-note">
+                    Create and manage school notices.
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- =====================================================
+         CATEGORIES AND RECENT ACTIVITY
+    ====================================================== -->
+
+    <div class="content-grid">
+
+        <div class="comm-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h3>📊 Message Categories</h3>
+
+                    <p>
+                        SMS and WhatsApp totals grouped by category.
+                    </p>
+                </div>
+            </div>
+
+            <div class="summary-list">
+
+                {% if category_stats is defined and category_stats %}
+
+                    {% for row in category_stats %}
+
+                        <div class="summary-row">
+                            <span>
+                                {{ row.category }}
+                            </span>
+
+                            <strong>
+                                SMS: {{ row.sms_count or 0 }}
+                                |
+                                WhatsApp:
+                                {{ row.whatsapp_count or 0 }}
+                            </strong>
+                        </div>
+
                     {% endfor %}
-                </select>
-            </div>
 
-            <div>
-                <label>Grade</label>
-                <select name="grade">
-                    <option value="">Select Grade if needed</option>
-                    {% for g in grades %}
-                    <option value="{{ g }}">{{ g }}</option>
+                {% else %}
+
+                    {% for category in categories_list %}
+
+                        <div class="summary-row">
+                            <span>{{ category }}</span>
+
+                            <strong>
+                                SMS: 0 | WhatsApp: 0
+                            </strong>
+                        </div>
+
                     {% endfor %}
-                </select>
+
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div>
+
+            <div class="comm-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>💬 Recent SMS</h3>
+
+                        <p>Latest SMS records for this school.</p>
+                    </div>
+                </div>
+
+                {% if recent_sms is defined and recent_sms %}
+
+                    <div class="message-list">
+
+                        {% for message in recent_sms %}
+
+                            <div class="message-card">
+
+                                <div class="message-head">
+
+                                    <div class="message-name">
+                                        {{ message.recipient_name or "Recipient" }}
+                                    </div>
+
+                                    <span class="message-status
+                                        {% if message.status == 'Sent' %}
+                                            status-sent
+                                        {% elif message.status == 'Failed' %}
+                                            status-failed
+                                        {% else %}
+                                            status-pending
+                                        {% endif %}">
+
+                                        {{ message.status or "Pending" }}
+                                    </span>
+                                </div>
+
+                                <div class="message-meta">
+                                    {{ message.category or "General" }}
+
+                                    {% if message.created_at %}
+                                        ·
+                                        {{ message.created_at.strftime(
+                                            "%d-%m-%Y %H:%M"
+                                        ) }}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty-state">
+                        No SMS messages found.
+                    </div>
+
+                {% endif %}
             </div>
 
+            <div class="comm-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>📱 Recent WhatsApp</h3>
+
+                        <p>Latest WhatsApp records for this school.</p>
+                    </div>
+                </div>
+
+                {% if recent_whatsapp is defined and recent_whatsapp %}
+
+                    <div class="message-list">
+
+                        {% for message in recent_whatsapp %}
+
+                            <div class="message-card">
+
+                                <div class="message-head">
+
+                                    <div class="message-name">
+                                        {{ message.recipient_name or "Recipient" }}
+                                    </div>
+
+                                    <span class="message-status
+                                        {% if message.status == 'Sent' %}
+                                            status-sent
+                                        {% elif message.status == 'Failed' %}
+                                            status-failed
+                                        {% else %}
+                                            status-pending
+                                        {% endif %}">
+
+                                        {{ message.status or "Pending" }}
+                                    </span>
+                                </div>
+
+                                <div class="message-meta">
+                                    {{ message.category or "General" }}
+
+                                    {% if message.created_at %}
+                                        ·
+                                        {{ message.created_at.strftime(
+                                            "%d-%m-%Y %H:%M"
+                                        ) }}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty-state">
+                        No WhatsApp messages found.
+                    </div>
+
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- =====================================================
+         TODAY
+    ====================================================== -->
+
+    <div class="comm-panel">
+
+        <div class="panel-heading">
             <div>
-                <label>Single Parent Name</label>
-                <input name="recipient_name" placeholder="Optional">
-            </div>
+                <h3>📅 Today</h3>
 
-            <div>
-                <label>Single Parent Phone</label>
-                <input name="phone" placeholder="07xxxxxxxx">
+                <p>Messages created today for the current school.</p>
             </div>
         </div>
 
-        <label>Message</label>
-        <textarea name="message" required placeholder="Type message here..."></textarea>
+        <div class="summary-list">
 
-        <button class="btn green">Queue Broadcast</button>
-    </form>
-</div>
+            <div class="summary-row">
+                <span>SMS Created Today</span>
 
-<div class="panel">
-    <h3>⚙️ Queue Manager</h3>
-
-    <div class="queue-grid">
-        <a class="queue-btn green" href="{{ url_for('send_pending_sms') }}" onclick="return confirm('Send all pending SMS now?');">
-            <span>✅</span>Send Pending SMS<small>Process SMS queue</small>
-        </a>
-
-        <a class="queue-btn orange" href="{{ url_for('retry_failed_sms') }}" onclick="return confirm('Retry all failed SMS?');">
-            <span>🔄</span>Retry Failed SMS<small>Resend failed messages</small>
-        </a>
-
-        <a class="queue-btn red" href="{{ url_for('delete_pending_sms') }}" onclick="return confirm('Delete all pending SMS? This cannot be undone.');">
-            <span>🗑</span>Delete Pending SMS<small>Clear SMS queue</small>
-        </a>
-
-        <a class="queue-btn red" href="{{ url_for('delete_failed_sms') }}" onclick="return confirm('Delete all failed SMS? This cannot be undone.');">
-            <span>🧹</span>Delete Failed SMS<small>Clean failed SMS</small>
-        </a>
-
-        <a class="queue-btn green" href="{{ url_for('send_pending_whatsapp') }}" onclick="return confirm('Send all pending WhatsApp messages now?');">
-            <span>✅</span>Send Pending WhatsApp<small>Process WhatsApp queue</small>
-        </a>
-
-        <a class="queue-btn orange" href="{{ url_for('retry_failed_whatsapp') }}" onclick="return confirm('Retry all failed WhatsApp messages?');">
-            <span>🔄</span>Retry Failed WhatsApp<small>Resend failed WhatsApp</small>
-        </a>
-
-        <a class="queue-btn red" href="{{ url_for('delete_pending_whatsapp') }}" onclick="return confirm('Delete all pending WhatsApp messages? This cannot be undone.');">
-            <span>🗑</span>Delete Pending WhatsApp<small>Clear WhatsApp queue</small>
-        </a>
-
-        <a class="queue-btn red" href="{{ url_for('delete_failed_whatsapp') }}" onclick="return confirm('Delete all failed WhatsApp messages? This cannot be undone.');">
-            <span>🧹</span>Delete Failed WhatsApp<small>Clean failed WhatsApp</small>
-        </a>
-    </div>
-</div>
-
-<div class="actions">
-    <a class="action" href="{{ url_for('sms_messages') }}"><span>💬</span>SMS Outbox<small>Create, filter and send SMS</small></a>
-    <a class="action" href="{{ url_for('whatsapp_outbox') }}"><span>📱</span>WhatsApp Outbox<small>View queued WhatsApp messages</small></a>
-    <a class="action" href="{{ url_for('fee_reminders') }}"><span>💰</span>Fee Reminders<small>Queue balance reminders</small></a>
-    <a class="action" href="{{ url_for('announcements') }}"><span>📢</span>Announcements<small>Send school notices</small></a>
-</div>
-
-<div class="grid">
-    <div>
-        <div class="panel">
-            <h3>📊 Message Categories</h3>
-            {% for c in categories %}
-            <div class="row">
-                <span>{{ c }}</span>
-                <span>SMS: {{ sms_category_counts[c] }} | WhatsApp: {{ whatsapp_category_counts[c] }}</span>
+                <strong>
+                    {{ sms_today if sms_today is defined else 0 }}
+                </strong>
             </div>
-            {% endfor %}
-        </div>
 
-        <div class="panel">
-            <h3>📅 Today</h3>
-            <div class="row"><span>SMS Created Today</span><span>{{ sms_today }}</span></div>
-            <div class="row"><span>WhatsApp Created Today</span><span>{{ whatsapp_today }}</span></div>
+            <div class="summary-row">
+                <span>WhatsApp Created Today</span>
+
+                <strong>
+                    {{ whatsapp_today
+                       if whatsapp_today is defined
+                       else 0 }}
+                </strong>
+            </div>
+
         </div>
     </div>
-
-    <div>
-        <div class="panel">
-            <h3>💬 Recent SMS</h3>
-            {% for m in recent_sms %}
-            <div class="msg">
-                <span class="status {{ m.status }}">{{ m.status }}</span>
-                <b>{{ m.recipient_name }}</b><br>
-                <small>{{ m.category }} | {{ m.phone }}</small><br>
-                {{ m.message[:120] }}...
-            </div>
-            {% else %}
-            <div class="msg">No SMS messages found.</div>
-            {% endfor %}
-        </div>
-
-        <div class="panel">
-            <h3>📱 Recent WhatsApp</h3>
-            {% for m in recent_whatsapp %}
-            <div class="msg">
-                <span class="status {{ m.status }}">{{ m.status }}</span>
-                <b>{{ m.recipient_name }}</b><br>
-                <small>{{ m.category }} | {{ m.phone }}</small><br>
-                {{ m.message[:120] }}...
-            </div>
-            {% else %}
-            <div class="msg">No WhatsApp messages found.</div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
 
 </div>
 
