@@ -10778,45 +10778,142 @@ def delete_failed_whatsapp():
     return redirect(url_for("communication_center"))
 
 
-@app.route("/retry_failed_sms")
+@app.route("/retry_failed_sms", methods=["POST"])
 def retry_failed_sms():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar", "super admin"):
+    if not role_allowed(
+        "admin",
+        "principal",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
-    messages = SMSMessage.query.filter_by(
+    wallet = SMSWallet.query.filter_by(
+        school_id=school_id
+    ).first()
+
+    if not wallet:
+        flash(
+            "This school does not have an SMS wallet. "
+            "Please purchase SMS first."
+        )
+        return redirect(url_for("communication_center"))
+
+    if not wallet.sms_enabled:
+        flash("SMS service is disabled for this school.")
+        return redirect(url_for("communication_center"))
+
+    failed_messages = SMSMessage.query.filter_by(
         school_id=school_id,
         status="Failed"
-    ).order_by(SMSMessage.created_at.asc()).all()
+    ).order_by(
+        SMSMessage.created_at.asc()
+    ).all()
 
+    if not failed_messages:
+        flash("There are no failed SMS messages to retry.")
+        return redirect(url_for("communication_center"))
+
+    if int(wallet.sms_balance or 0) <= 0:
+        flash(
+            "Your SMS wallet is empty. "
+            "Please purchase more SMS before retrying."
+        )
+        return redirect(url_for("sms_wallet"))
+
+    retried = 0
     sent = 0
     failed = 0
+    skipped = 0
+    last_error = ""
 
-    for m in messages:
-        ok, response = send_sms_gateway(m.phone, m.message)
+    try:
+        for message_record in failed_messages:
 
-        if ok:
-            m.status = "Sent"
-            sent += 1
-        else:
-            m.status = "Failed"
-            failed += 1
+            if int(wallet.sms_balance or 0) <= 0:
+                skipped += 1
+                continue
 
-    db.session.commit()
+            retried += 1
 
-    save_audit(
-        f"Retried failed SMS messages. Sent: {sent}, Still failed: {failed}",
-        "Communication"
-    )
+            ok, gateway_response = send_sms_gateway(
+                message_record.phone,
+                message_record.message
+            )
 
-    flash(f"SMS retry complete. Sent: {sent}, Still failed: {failed}.")
+            if ok:
+                message_record.status = "Sent"
+
+                wallet.sms_balance = (
+                    int(wallet.sms_balance or 0) - 1
+                )
+
+                wallet.sms_used = (
+                    int(wallet.sms_used or 0) + 1
+                )
+
+                sent += 1
+
+            else:
+                message_record.status = "Failed"
+                failed += 1
+                last_error = str(gateway_response)
+
+            db.session.commit()
+
+        try:
+            save_audit(
+                f"Retried failed SMS for school ID {school_id}. "
+                f"Retried: {retried}, Sent: {sent}, "
+                f"Still failed: {failed}, Skipped: {skipped}, "
+                f"Wallet balance: {wallet.sms_balance}.",
+                "Communication"
+            )
+        except Exception as audit_error:
+            print(
+                "SMS RETRY AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        result_message = (
+            f"SMS retry completed. "
+            f"Retried: {retried}, "
+            f"Sent: {sent}, "
+            f"Still failed: {failed}, "
+            f"Not retried because of insufficient balance: {skipped}. "
+            f"Remaining balance: {wallet.sms_balance or 0}."
+        )
+
+        if last_error:
+            result_message += (
+                f" Last provider response: {last_error}"
+            )
+
+        flash(result_message)
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "RETRY FAILED SMS ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "SMS retry stopped because of an unexpected error."
+        )
+
     return redirect(url_for("communication_center"))
-
 
 @app.route("/delete_pending_sms")
 def delete_pending_sms():
