@@ -1412,15 +1412,28 @@ def clean_phone_number(phone):
         return "+254" + phone[1:]
 
     return None
+    
 def send_sms_gateway(phone, message):
     try:
         phone = clean_phone_number(phone)
 
         if not phone:
-            return False, "Invalid phone number"
+            return {
+                "success": False,
+                "status": "InvalidPhone",
+                "message_id": "",
+                "cost": "",
+                "response": "Invalid phone number"
+            }
 
         if not message or not message.strip():
-            return False, "Message cannot be empty"
+            return {
+                "success": False,
+                "status": "EmptyMessage",
+                "message_id": "",
+                "cost": "",
+                "response": "Message cannot be empty"
+            }
 
         username = os.environ.get(
             "AT_USERNAME",
@@ -1438,9 +1451,13 @@ def send_sms_gateway(phone, message):
         ).strip()
 
         if not api_key:
-            return False, (
-                "Africa's Talking API key is missing."
-            )
+            return {
+                "success": False,
+                "status": "MissingCredentials",
+                "message_id": "",
+                "cost": "",
+                "response": "Africa's Talking API key is missing"
+            }
 
         africastalking.initialize(
             username,
@@ -1474,13 +1491,30 @@ def send_sms_gateway(phone, message):
         )
 
         if not recipients:
-            return False, str(response)
+            return {
+                "success": False,
+                "status": "NoRecipientResponse",
+                "message_id": "",
+                "cost": "",
+                "response": str(response)
+            }
 
         recipient = recipients[0]
 
-        status = str(
+        provider_status = str(
             recipient.get("status", "")
-        ).strip().lower()
+        ).strip()
+
+        normalized_status = provider_status.lower()
+
+        message_id = str(
+            recipient.get("messageId", "")
+            or recipient.get("message_id", "")
+        ).strip()
+
+        cost = str(
+            recipient.get("cost", "")
+        ).strip()
 
         accepted_statuses = {
             "success",
@@ -1488,10 +1522,15 @@ def send_sms_gateway(phone, message):
             "queued"
         }
 
-        if status in accepted_statuses:
-            return True, str(response)
+        success = normalized_status in accepted_statuses
 
-        return False, str(response)
+        return {
+            "success": success,
+            "status": provider_status or "Unknown",
+            "message_id": message_id,
+            "cost": cost,
+            "response": str(response)
+        }
 
     except Exception as error:
         print(
@@ -1500,7 +1539,13 @@ def send_sms_gateway(phone, message):
             flush=True
         )
 
-        return False, str(error)
+        return {
+            "success": False,
+            "status": "Exception",
+            "message_id": "",
+            "cost": "",
+            "response": str(error)
+        }
 
 def send_whatsapp_message(phone, message):
     try:
@@ -10836,13 +10881,38 @@ def send_pending_sms():
 
             attempted += 1
 
-            ok, gateway_response = send_sms_gateway(
+            result = send_sms_gateway(
                 message_record.phone,
                 message_record.message
             )
 
-            if ok:
+            message_record.provider = "AfricasTalking"
+
+            message_record.provider_status = result.get(
+                "status",
+                ""
+            )
+
+            message_record.provider_message_id = result.get(
+                "message_id",
+                ""
+            )
+
+            message_record.cost = result.get(
+                "cost",
+                ""
+            )
+
+            message_record.provider_response = result.get(
+                "response",
+                ""
+            )
+
+            if result.get("success"):
+
                 message_record.status = "Sent"
+                message_record.sent_at = datetime.now()
+                message_record.failed_at = None
 
                 wallet.sms_balance = (
                     int(wallet.sms_balance or 0) - 1
@@ -10856,9 +10926,13 @@ def send_pending_sms():
 
             else:
                 message_record.status = "Failed"
+                message_record.failed_at = datetime.now()
+
                 failed += 1
-                last_provider_response = str(
-                    gateway_response
+
+                last_provider_response = result.get(
+                    "response",
+                    ""
                 )
 
             db.session.commit()
@@ -11058,11 +11132,11 @@ def retry_failed_sms():
         )
         return redirect(url_for("sms_wallet"))
 
-    retried = 0
+    attempted = 0
     sent = 0
     failed = 0
     skipped = 0
-    last_error = ""
+    last_provider_response = ""
 
     try:
         for message_record in failed_messages:
@@ -11071,15 +11145,44 @@ def retry_failed_sms():
                 skipped += 1
                 continue
 
-            retried += 1
+            attempted += 1
 
-            ok, gateway_response = send_sms_gateway(
+            message_record.retry_count = (
+                int(message_record.retry_count or 0) + 1
+            )
+
+            result = send_sms_gateway(
                 message_record.phone,
                 message_record.message
             )
 
-            if ok:
+            message_record.provider = "AfricasTalking"
+
+            message_record.provider_status = result.get(
+                "status",
+                ""
+            )
+
+            message_record.provider_message_id = result.get(
+                "message_id",
+                ""
+            )
+
+            message_record.cost = result.get(
+                "cost",
+                ""
+            )
+
+            message_record.provider_response = result.get(
+                "response",
+                ""
+            )
+
+            if result.get("success"):
+
                 message_record.status = "Sent"
+                message_record.sent_at = datetime.now()
+                message_record.failed_at = None
 
                 wallet.sms_balance = (
                     int(wallet.sms_balance or 0) - 1
@@ -11093,15 +11196,21 @@ def retry_failed_sms():
 
             else:
                 message_record.status = "Failed"
+                message_record.failed_at = datetime.now()
+
                 failed += 1
-                last_error = str(gateway_response)
+
+                last_provider_response = result.get(
+                    "response",
+                    ""
+                )
 
             db.session.commit()
 
         try:
             save_audit(
                 f"Retried failed SMS for school ID {school_id}. "
-                f"Retried: {retried}, Sent: {sent}, "
+                f"Attempted: {attempted}, Sent: {sent}, "
                 f"Still failed: {failed}, Skipped: {skipped}, "
                 f"Wallet balance: {wallet.sms_balance}.",
                 "Communication"
@@ -11115,16 +11224,17 @@ def retry_failed_sms():
 
         result_message = (
             f"SMS retry completed. "
-            f"Retried: {retried}, "
+            f"Attempted: {attempted}, "
             f"Sent: {sent}, "
             f"Still failed: {failed}, "
             f"Not retried because of insufficient balance: {skipped}. "
             f"Remaining balance: {wallet.sms_balance or 0}."
         )
 
-        if last_error:
+        if last_provider_response:
             result_message += (
-                f" Last provider response: {last_error}"
+                f" Last provider response: "
+                f"{last_provider_response}"
             )
 
         flash(result_message)
