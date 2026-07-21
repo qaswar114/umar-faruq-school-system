@@ -7336,89 +7336,353 @@ def platform_sms():
 
     pool = get_platform_sms_pool()
 
+    # =========================================================
+    # RECORD SMS PROCURED FROM AFRICA'S TALKING
+    # =========================================================
     if request.method == "POST":
-        sms_count = int(request.form.get("sms_count") or 0)
-        amount_paid = float(request.form.get("amount_paid") or 0)
-        supplier = request.form.get("supplier", "Africastalking").strip()
-        reference_no = request.form.get("reference_no", "").strip()
+        try:
+            sms_count = int(
+                request.form.get("sms_count") or 0
+            )
 
-        if sms_count <= 0:
-            flash("Enter a valid SMS quantity.")
-            return redirect(url_for("platform_sms"))
+            amount_paid = float(
+                request.form.get("amount_paid") or 0
+            )
 
-        procurement = SMSProcurement(
-            sms_count=sms_count,
-            amount_paid=amount_paid,
-            supplier=supplier or "Africastalking",
-            reference_no=reference_no,
-            purchased_by=session.get("username", ""),
-            status="Completed"
-        )
+            supplier = request.form.get(
+                "supplier",
+                "Africa's Talking"
+            ).strip()
 
-        db.session.add(procurement)
+            reference_no = request.form.get(
+                "reference_no",
+                ""
+            ).strip()
 
-        pool.sms_balance += sms_count
-        pool.sms_loaded += sms_count
-        pool.last_loaded = datetime.now()
-        pool.last_loaded_by = session.get("username", "")
+            if sms_count <= 0:
+                flash("Enter a valid SMS quantity.")
+                return redirect(url_for("platform_sms"))
 
-        db.session.commit()
+            if amount_paid < 0:
+                flash("Amount paid cannot be negative.")
+                return redirect(url_for("platform_sms"))
 
-        save_audit(
-            f"Procured {sms_count} SMS from {supplier}. "
-            f"Amount paid: KES {amount_paid:,.2f}. "
-            f"Platform balance: {pool.sms_balance}",
-            "Communication"
-        )
+            # Prevent accidentally recording the same receipt twice.
+            if reference_no:
+                existing_procurement = (
+                    SMSProcurement.query.filter_by(
+                        reference_no=reference_no
+                    ).first()
+                )
 
-        flash(f"{sms_count} SMS procured from {supplier} and added to platform pool.")
+                if existing_procurement:
+                    flash(
+                        "This procurement reference has already "
+                        "been recorded."
+                    )
+                    return redirect(url_for("platform_sms"))
+
+            procurement = SMSProcurement(
+                sms_count=sms_count,
+                amount_paid=amount_paid,
+                supplier=supplier or "Africa's Talking",
+                reference_no=reference_no,
+                purchased_by=session.get("username", ""),
+                purchase_date=datetime.now(),
+                status="Completed"
+            )
+
+            db.session.add(procurement)
+
+            pool.sms_balance = (
+                pool.sms_balance or 0
+            ) + sms_count
+
+            pool.sms_loaded = (
+                pool.sms_loaded or 0
+            ) + sms_count
+
+            pool.last_loaded = datetime.now()
+            pool.last_loaded_by = session.get(
+                "username",
+                ""
+            )
+
+            db.session.commit()
+
+            try:
+                save_audit(
+                    f"Procured {sms_count} SMS from "
+                    f"{supplier or 'Africa’s Talking'}. "
+                    f"Amount paid: KES {amount_paid:,.2f}. "
+                    f"Platform balance: {pool.sms_balance}.",
+                    "Communication"
+                )
+            except Exception as audit_error:
+                print(
+                    "SMS PROCUREMENT AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
+                )
+
+            flash(
+                f"{sms_count:,} SMS were added to the "
+                f"platform pool successfully."
+            )
+
+        except (TypeError, ValueError):
+            db.session.rollback()
+            flash("Enter valid SMS quantity and amount values.")
+
+        except Exception as e:
+            db.session.rollback()
+
+            print(
+                "PLATFORM SMS PROCUREMENT ERROR:",
+                str(e),
+                flush=True
+            )
+
+            flash(
+                "SMS procurement could not be recorded. "
+                "No platform balance was changed."
+            )
+
         return redirect(url_for("platform_sms"))
 
-    total_schools = School.query.count()
-
-    schools_using_sms = SMSWallet.query.filter(
-        SMSWallet.sms_loaded > 0
-    ).count()
-
-    schools_not_using_sms = max(0, total_schools - schools_using_sms)
-
-    pending_purchases = SMSPurchase.query.filter(
-        SMSPurchase.status != "Completed"
-    ).order_by(
-        SMSPurchase.request_date.desc()
-    ).all()
-
-    procurements = SMSProcurement.query.order_by(
-        SMSProcurement.purchase_date.desc()
-    ).limit(20).all()
-
-    total_procured_sms = sum(p.sms_count for p in SMSProcurement.query.all())
-    total_procurement_cost = sum(p.amount_paid for p in SMSProcurement.query.all())
-
+    # =========================================================
+    # PLATFORM AND SCHOOL INFORMATION
+    # =========================================================
     schools = School.query.order_by(
         School.school_name.asc()
     ).all()
 
+    total_schools = len(schools)
+
     schools_dict = {
-        s.id: s.school_name
-        for s in schools
+        school.id: school.school_name
+        for school in schools
     }
 
-    low_balance = pool.sms_balance <= pool.low_alert_level
+    wallets = SMSWallet.query.order_by(
+        SMSWallet.school_id.asc()
+    ).all()
 
+    wallet_by_school = {
+        wallet.school_id: wallet
+        for wallet in wallets
+    }
+
+    schools_using_sms = sum(
+        1
+        for wallet in wallets
+        if (
+            (wallet.sms_loaded or 0) > 0
+            or (wallet.sms_balance or 0) > 0
+            or (wallet.sms_used or 0) > 0
+        )
+    )
+
+    schools_not_using_sms = max(
+        0,
+        total_schools - schools_using_sms
+    )
+
+    school_wallet_rows = []
+
+    for school in schools:
+        wallet = wallet_by_school.get(school.id)
+
+        school_wallet_rows.append({
+            "school_id": school.id,
+            "school_name": school.school_name,
+            "balance": (
+                wallet.sms_balance
+                if wallet else 0
+            ),
+            "loaded": (
+                wallet.sms_loaded
+                if wallet else 0
+            ),
+            "used": (
+                wallet.sms_used
+                if wallet else 0
+            ),
+            "low_alert": (
+                wallet.sms_low_alert
+                if wallet else 100
+            ),
+            "enabled": (
+                wallet.sms_enabled
+                if wallet else False
+            )
+        })
+
+    # =========================================================
+    # SCHOOL PURCHASE REQUESTS
+    # =========================================================
+    pending_purchases = SMSPurchase.query.filter_by(
+        status="Pending"
+    ).order_by(
+        SMSPurchase.request_date.desc()
+    ).all()
+
+    completed_purchases = SMSPurchase.query.filter_by(
+        status="Completed"
+    ).order_by(
+        SMSPurchase.paid_at.desc()
+    ).limit(20).all()
+
+    pending_purchase_count = len(pending_purchases)
+
+    pending_sms_requested = sum(
+        purchase.package_sms or 0
+        for purchase in pending_purchases
+    )
+
+    total_sms_sold = sum(
+        purchase.package_sms or 0
+        for purchase in SMSPurchase.query.filter_by(
+            status="Completed"
+        ).all()
+    )
+
+    total_sales_revenue = sum(
+        purchase.amount or 0
+        for purchase in SMSPurchase.query.filter_by(
+            status="Completed"
+        ).all()
+    )
+
+    # =========================================================
+    # PROCUREMENT INFORMATION
+    # =========================================================
+    all_procurements = SMSProcurement.query.order_by(
+        SMSProcurement.purchase_date.desc()
+    ).all()
+
+    procurements = all_procurements[:20]
+
+    total_procured_sms = sum(
+        procurement.sms_count or 0
+        for procurement in all_procurements
+        if procurement.status == "Completed"
+    )
+
+    total_procurement_cost = sum(
+        procurement.amount_paid or 0
+        for procurement in all_procurements
+        if procurement.status == "Completed"
+    )
+
+    gross_sms_profit = (
+        total_sales_revenue
+        - total_procurement_cost
+    )
+
+    average_procurement_cost = (
+        total_procurement_cost / total_procured_sms
+        if total_procured_sms > 0
+        else 0
+    )
+
+    average_selling_price = (
+        total_sales_revenue / total_sms_sold
+        if total_sms_sold > 0
+        else 0
+    )
+
+    # =========================================================
+    # SMS OUTBOX STATISTICS
+    # =========================================================
+    sent_sms_count = SMSMessage.query.filter_by(
+        status="Sent"
+    ).count()
+
+    pending_sms_count = SMSMessage.query.filter_by(
+        status="Pending"
+    ).count()
+
+    failed_sms_count = SMSMessage.query.filter_by(
+        status="Failed"
+    ).count()
+
+    today_start = datetime.combine(
+        date.today(),
+        datetime.min.time()
+    )
+
+    today_sms_count = SMSMessage.query.filter(
+        SMSMessage.created_at >= today_start
+    ).count()
+
+    today_sent_count = SMSMessage.query.filter(
+        SMSMessage.created_at >= today_start,
+        SMSMessage.status == "Sent"
+    ).count()
+
+    recent_sms_messages = SMSMessage.query.order_by(
+        SMSMessage.created_at.desc()
+    ).limit(15).all()
+
+    # =========================================================
+    # LOW BALANCE INFORMATION
+    # =========================================================
+    low_balance = (
+        (pool.sms_balance or 0)
+        <= (pool.low_alert_level or 0)
+    )
+
+    low_wallet_schools = [
+        row
+        for row in school_wallet_rows
+        if (
+            row["enabled"]
+            and row["balance"] <= row["low_alert"]
+        )
+    ]
+
+    # =========================================================
+    # PAGE
+    # =========================================================
     return render_template(
         "platform_sms.html",
         settings=get_settings(),
+
         pool=pool,
+        low_balance=low_balance,
+
         total_schools=total_schools,
         schools_using_sms=schools_using_sms,
         schools_not_using_sms=schools_not_using_sms,
-        low_balance=low_balance,
-        pending_purchases=pending_purchases,
+
+        schools=schools,
         schools_dict=schools_dict,
+        school_wallet_rows=school_wallet_rows,
+        low_wallet_schools=low_wallet_schools,
+
+        pending_purchases=pending_purchases,
+        completed_purchases=completed_purchases,
+        pending_purchase_count=pending_purchase_count,
+        pending_sms_requested=pending_sms_requested,
+
         procurements=procurements,
         total_procured_sms=total_procured_sms,
         total_procurement_cost=total_procurement_cost,
+
+        total_sms_sold=total_sms_sold,
+        total_sales_revenue=total_sales_revenue,
+        gross_sms_profit=gross_sms_profit,
+        average_procurement_cost=average_procurement_cost,
+        average_selling_price=average_selling_price,
+
+        sent_sms_count=sent_sms_count,
+        pending_sms_count=pending_sms_count,
+        failed_sms_count=failed_sms_count,
+        today_sms_count=today_sms_count,
+        today_sent_count=today_sent_count,
+        recent_sms_messages=recent_sms_messages,
+
         money=money
     )
 
