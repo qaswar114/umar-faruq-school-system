@@ -2706,6 +2706,179 @@ def super_admin_dashboard():
         recent_schools=recent_schools
     )
 
+@app.route("/school_overview/<int:school_id>")
+def school_overview(school_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    role = (session.get("role") or "").strip().lower()
+
+    if role != "super admin":
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school = School.query.get_or_404(school_id)
+
+    # ---------------------------------------------------------
+    # GENERAL NON-PRIVATE COUNTS
+    # ---------------------------------------------------------
+
+    total_pupils = Pupil.query.filter_by(
+        school_id=school.id
+    ).count()
+
+    active_pupils = Pupil.query.filter_by(
+        school_id=school.id,
+        status="Active"
+    ).count()
+
+    total_staff = Staff.query.filter_by(
+        school_id=school.id
+    ).count()
+
+    total_users = User.query.filter_by(
+        school_id=school.id
+    ).count()
+
+    # ---------------------------------------------------------
+    # SMS WALLET
+    # ---------------------------------------------------------
+
+    wallet = SMSWallet.query.filter_by(
+        school_id=school.id
+    ).first()
+
+    sms_balance = wallet.sms_balance if wallet else 0
+    sms_loaded = wallet.sms_loaded if wallet else 0
+    sms_used = wallet.sms_used if wallet else 0
+    sms_enabled = wallet.sms_enabled if wallet else False
+    sms_low_alert = wallet.sms_low_alert if wallet else 0
+    sms_last_loaded = wallet.last_loaded if wallet else None
+    sms_last_loaded_by = wallet.last_loaded_by if wallet else ""
+
+    # ---------------------------------------------------------
+    # SMS PURCHASE HISTORY
+    # ---------------------------------------------------------
+
+    recent_sms_purchases = SMSPurchase.query.filter_by(
+        school_id=school.id
+    ).order_by(
+        SMSPurchase.id.desc()
+    ).limit(15).all()
+
+    total_sms_requested = db.session.query(
+        db.func.coalesce(
+            db.func.sum(SMSPurchase.package_sms),
+            0
+        )
+    ).filter(
+        SMSPurchase.school_id == school.id
+    ).scalar() or 0
+
+    total_sms_purchase_amount = db.session.query(
+        db.func.coalesce(
+            db.func.sum(SMSPurchase.amount),
+            0
+        )
+    ).filter(
+        SMSPurchase.school_id == school.id
+    ).scalar() or 0
+
+    completed_sms_purchases = SMSPurchase.query.filter_by(
+        school_id=school.id,
+        status="Completed"
+    ).count()
+
+    pending_sms_purchases = SMSPurchase.query.filter(
+        SMSPurchase.school_id == school.id,
+        SMSPurchase.status != "Completed"
+    ).count()
+
+    # ---------------------------------------------------------
+    # COMMUNICATION COUNTS ONLY
+    # No message content is exposed.
+    # ---------------------------------------------------------
+
+    sms_message_count = SMSMessage.query.filter_by(
+        school_id=school.id
+    ).count()
+
+    whatsapp_message_count = WhatsAppMessage.query.filter_by(
+        school_id=school.id
+    ).count()
+
+    # ---------------------------------------------------------
+    # WHATSAPP STATUS
+    # ---------------------------------------------------------
+
+    whatsapp_enabled = getattr(
+        school,
+        "whatsapp_enabled",
+        False
+    )
+
+    whatsapp_business_number = getattr(
+        school,
+        "whatsapp_business_number",
+        ""
+    )
+
+    whatsapp_phone_number_id = getattr(
+        school,
+        "whatsapp_phone_number_id",
+        ""
+    )
+
+    # ---------------------------------------------------------
+    # SUBSCRIPTION INFORMATION
+    # ---------------------------------------------------------
+
+    subscription_status = (
+        school.subscription_status
+        if school.subscription_status
+        else "Not Set"
+    )
+
+    # ---------------------------------------------------------
+    # RENDER SAFE PLATFORM OVERVIEW
+    # ---------------------------------------------------------
+
+    return render_template(
+        "school_overview.html",
+
+        settings=get_settings(),
+        school=school,
+
+        total_pupils=total_pupils,
+        active_pupils=active_pupils,
+        total_staff=total_staff,
+        total_users=total_users,
+
+        sms_balance=sms_balance,
+        sms_loaded=sms_loaded,
+        sms_used=sms_used,
+        sms_enabled=sms_enabled,
+        sms_low_alert=sms_low_alert,
+        sms_last_loaded=sms_last_loaded,
+        sms_last_loaded_by=sms_last_loaded_by,
+
+        recent_sms_purchases=recent_sms_purchases,
+        total_sms_requested=total_sms_requested,
+        total_sms_purchase_amount=total_sms_purchase_amount,
+        completed_sms_purchases=completed_sms_purchases,
+        pending_sms_purchases=pending_sms_purchases,
+
+        sms_message_count=sms_message_count,
+        whatsapp_message_count=whatsapp_message_count,
+
+        whatsapp_enabled=whatsapp_enabled,
+        whatsapp_business_number=whatsapp_business_number,
+        whatsapp_phone_number_id=whatsapp_phone_number_id,
+
+        subscription_status=subscription_status,
+        money=money
+    )
+
 @app.route("/delete_school/<int:school_id>", methods=["POST"])
 def delete_school(school_id):
     if not login_required():
