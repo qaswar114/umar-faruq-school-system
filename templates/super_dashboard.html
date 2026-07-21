@@ -8,11 +8,21 @@
     margin: 0 auto;
 }
 
+.managing-notice {
+    background: #fff7d6;
+    border: 1px solid #f5d66d;
+    color: #854d0e;
+    border-radius: 14px;
+    padding: 13px 17px;
+    margin-bottom: 15px;
+    font-weight: 900;
+}
+
 .super-hero {
     background: linear-gradient(
         135deg,
         #071a3d 0%,
-        #0b5ed7 55%,
+        #0b5ed7 54%,
         #16a34a 100%
     );
     color: white;
@@ -42,7 +52,7 @@
     background: rgba(255,255,255,.16);
     border: 1px solid rgba(255,255,255,.25);
     border-radius: 999px;
-    padding: 11px 16px;
+    padding: 11px 17px;
     font-weight: 900;
     white-space: nowrap;
 }
@@ -149,7 +159,7 @@
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.15fr .85fr;
     gap: 18px;
     margin-bottom: 18px;
 }
@@ -265,7 +275,7 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0 9px;
-    min-width: 850px;
+    min-width: 980px;
 }
 
 .school-table th {
@@ -303,10 +313,10 @@
     color: #0f172a;
 }
 
-.school-phone {
+.school-id {
     color: #64748b;
     font-size: 12px;
-    margin-top: 3px;
+    margin-top: 4px;
 }
 
 .status-badge {
@@ -332,16 +342,49 @@
     color: #c2410c;
 }
 
-.open-btn {
+.school-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: nowrap;
+}
+
+.school-actions form {
+    padding: 0;
+    margin: 0;
+}
+
+.open-btn,
+.delete-school-btn {
+    min-width: 67px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 10px;
-    background: #0b5ed7;
     color: white;
-    padding: 8px 12px;
+    padding: 8px 11px;
     text-decoration: none;
     font-weight: 900;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+}
+
+.open-btn {
+    background: #0b5ed7;
+}
+
+.open-btn:hover {
+    background: #084db4;
+    color: white;
+}
+
+.delete-school-btn {
+    background: #dc2626;
+}
+
+.delete-school-btn:hover {
+    background: #b91c1c;
 }
 
 .empty-state {
@@ -389,12 +432,22 @@
 
 <div class="super-page">
 
+    {% if session.get("school_id") %}
+    <div class="managing-notice">
+        Now managing
+        {{ settings.school_name if settings else
+           "the selected school" }}.
+        To delete this school, switch to another school first.
+    </div>
+    {% endif %}
+
     <div class="super-hero">
         <div>
             <h2>EduManage SaaS Control Center</h2>
+
             <p>
-                Monitor schools, users, pupils, staff, communications
-                and platform activity from one dashboard.
+                Monitor schools, pupils, staff, communication activity
+                and platform performance from one dashboard.
             </p>
         </div>
 
@@ -408,29 +461,45 @@
         <div class="metric-card">
             <div class="metric-icon">🏫</div>
             <div class="metric-label">Total Schools</div>
-            <div class="metric-value">{{ total_schools or 0 }}</div>
-            <div class="metric-note">All registered schools</div>
+            <div class="metric-value">
+                {{ total_schools or 0 }}
+            </div>
+            <div class="metric-note">
+                All registered schools
+            </div>
         </div>
 
         <div class="metric-card green">
             <div class="metric-icon">✅</div>
             <div class="metric-label">Active Schools</div>
-            <div class="metric-value">{{ active_schools or 0 }}</div>
-            <div class="metric-note">Currently operating</div>
+            <div class="metric-value">
+                {{ active_schools or 0 }}
+            </div>
+            <div class="metric-note">
+                Currently operating
+            </div>
         </div>
 
         <div class="metric-card orange">
             <div class="metric-icon">🧪</div>
             <div class="metric-label">Trial Schools</div>
-            <div class="metric-value">{{ trial_schools or 0 }}</div>
-            <div class="metric-note">On trial access</div>
+            <div class="metric-value">
+                {{ trial_schools or 0 }}
+            </div>
+            <div class="metric-note">
+                On trial access
+            </div>
         </div>
 
         <div class="metric-card red">
             <div class="metric-icon">⛔</div>
             <div class="metric-label">Expired Schools</div>
-            <div class="metric-value">{{ expired_schools or 0 }}</div>
-            <div class="metric-note">Need subscription action</div>
+            <div class="metric-value">
+                {{ expired_schools or 0 }}
+            </div>
+            <div class="metric-note">
+                Need subscription action
+            </div>
         </div>
 
         <div class="metric-card purple">
@@ -439,7 +508,9 @@
             <div class="metric-value">
                 {{ "{:,}".format(total_pupils or 0) }}
             </div>
-            <div class="metric-note">Across all schools</div>
+            <div class="metric-note">
+                Across all schools
+            </div>
         </div>
 
         <div class="metric-card green">
@@ -448,7 +519,9 @@
             <div class="metric-value">
                 {{ "{:,}".format(total_staff or 0) }}
             </div>
-            <div class="metric-note">Registered staff members</div>
+            <div class="metric-note">
+                Registered staff members
+            </div>
         </div>
 
         <div class="metric-card">
@@ -457,16 +530,24 @@
             <div class="metric-value">
                 {{ "{:,}".format(total_sms or 0) }}
             </div>
-            <div class="metric-note">Lifetime platform activity</div>
+            <div class="metric-note">
+                Lifetime SMS activity
+            </div>
         </div>
 
         <div class="metric-card orange">
             <div class="metric-icon">💰</div>
             <div class="metric-label">School Collections</div>
             <div class="metric-value">
-                {{ money(total_collected or 0) if money is defined else total_collected }}
+                {% if money is defined %}
+                    {{ money(total_collected or 0) }}
+                {% else %}
+                    KES {{ "{:,.2f}".format(total_collected or 0) }}
+                {% endif %}
             </div>
-            <div class="metric-note">Across all schools</div>
+            <div class="metric-note">
+                Across all schools
+            </div>
         </div>
 
     </div>
@@ -477,7 +558,9 @@
             <div class="panel-heading">
                 <div>
                     <h3>⚡ Quick Actions</h3>
-                    <p>Open the most important platform controls.</p>
+                    <p>
+                        Open the most important platform controls.
+                    </p>
                 </div>
             </div>
 
@@ -485,6 +568,7 @@
 
                 <a href="{{ url_for('create_school') }}"
                    class="quick-card">
+
                     <div class="quick-icon">➕</div>
                     <div class="quick-title">Create School</div>
                     <div class="quick-note">
@@ -494,15 +578,17 @@
 
                 <a href="{{ url_for('schools') }}"
                    class="quick-card">
+
                     <div class="quick-icon">🏫</div>
                     <div class="quick-title">Manage Schools</div>
                     <div class="quick-note">
-                        View, edit, switch or suspend schools.
+                        View, edit, open, suspend or delete schools.
                     </div>
                 </a>
 
                 <a href="{{ url_for('platform_sms') }}"
                    class="quick-card">
+
                     <div class="quick-icon">📱</div>
                     <div class="quick-title">Platform SMS</div>
                     <div class="quick-note">
@@ -512,6 +598,7 @@
 
                 <a href="/communication_center"
                    class="quick-card">
+
                     <div class="quick-icon">📡</div>
                     <div class="quick-title">Communication</div>
                     <div class="quick-note">
@@ -521,6 +608,7 @@
 
                 <a href="{{ url_for('audit_logs') }}"
                    class="quick-card">
+
                     <div class="quick-icon">🧾</div>
                     <div class="quick-title">Audit Logs</div>
                     <div class="quick-note">
@@ -530,6 +618,7 @@
 
                 <a href="/settings"
                    class="quick-card">
+
                     <div class="quick-icon">⚙️</div>
                     <div class="quick-title">Platform Settings</div>
                     <div class="quick-note">
@@ -544,7 +633,9 @@
             <div class="panel-heading">
                 <div>
                     <h3>📊 Platform Summary</h3>
-                    <p>Current SaaS platform overview.</p>
+                    <p>
+                        Current EduManage platform overview.
+                    </p>
                 </div>
 
                 <span class="panel-badge">
@@ -556,6 +647,7 @@
 
                 <div class="summary-row">
                     <span>Active school rate</span>
+
                     <strong>
                         {% if total_schools %}
                             {{ "%.1f"|format(
@@ -569,6 +661,7 @@
 
                 <div class="summary-row">
                     <span>Average pupils per school</span>
+
                     <strong>
                         {% if total_schools %}
                             {{ "%.1f"|format(
@@ -582,6 +675,7 @@
 
                 <div class="summary-row">
                     <span>Average staff per school</span>
+
                     <strong>
                         {% if total_schools %}
                             {{ "%.1f"|format(
@@ -620,8 +714,10 @@
         <div class="panel-heading">
             <div>
                 <h3>🏫 Recent Schools</h3>
+
                 <p>
-                    Latest schools registered on the EduManage platform.
+                    Open schools for management or permanently remove
+                    unwanted test schools.
                 </p>
             </div>
 
@@ -634,6 +730,7 @@
 
         <div class="table-wrap">
             <table class="school-table">
+
                 <thead>
                     <tr>
                         <th>School</th>
@@ -641,19 +738,21 @@
                         <th>Subscription</th>
                         <th>Status</th>
                         <th>Created</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
+
                     {% for school in recent_schools %}
+
                     <tr>
                         <td>
                             <div class="school-name">
                                 {{ school.school_name }}
                             </div>
 
-                            <div class="school-phone">
+                            <div class="school-id">
                                 School ID: {{ school.id }}
                             </div>
                         </td>
@@ -664,6 +763,7 @@
 
                         <td>
                             {% if school.subscription_status %}
+
                                 <span class="status-badge
                                     {% if school.subscription_status|lower == 'trial' %}
                                         status-trial
@@ -672,24 +772,32 @@
                                     {% else %}
                                         status-inactive
                                     {% endif %}">
+
                                     {{ school.subscription_status|title }}
                                 </span>
+
                             {% else %}
+
                                 <span class="status-badge status-inactive">
                                     Not Set
                                 </span>
+
                             {% endif %}
                         </td>
 
                         <td>
                             {% if school.is_active %}
+
                                 <span class="status-badge status-active">
                                     Active
                                 </span>
+
                             {% else %}
+
                                 <span class="status-badge status-inactive">
                                     Inactive
                                 </span>
+
                             {% endif %}
                         </td>
 
@@ -699,16 +807,38 @@
                         </td>
 
                         <td>
-                            <a href="{{ url_for(
-                                'switch_school',
-                                school_id=school.id
-                            ) }}"
-                               class="open-btn">
-                                Open
-                            </a>
+                            <div class="school-actions">
+
+                                <a href="{{ url_for(
+                                    'switch_school',
+                                    school_id=school.id
+                                ) }}"
+                                   class="open-btn">
+                                    Open
+                                </a>
+
+                                <form
+                                    method="post"
+                                    action="{{ url_for(
+                                        'delete_school',
+                                        school_id=school.id
+                                    ) }}"
+                                    onsubmit="return confirm(
+                                        'Permanently delete this school and all its linked records? This action cannot be undone.'
+                                    );">
+
+                                    <button type="submit"
+                                            class="delete-school-btn">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
                         </td>
                     </tr>
+
                     {% endfor %}
+
                 </tbody>
             </table>
         </div>
