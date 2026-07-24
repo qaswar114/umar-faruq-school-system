@@ -1,0 +1,931 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.advance-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+.advance-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 25px 28px;
+    margin-bottom: 18px;
+    border-radius: 23px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 55%,
+        #16a34a 100%
+    );
+    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
+}
+
+.advance-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 30px;
+}
+
+.advance-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.hero-badge {
+    flex-shrink: 0;
+    padding: 11px 17px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 13px;
+    margin-bottom: 18px;
+}
+
+.metric-card {
+    min-height: 135px;
+    padding: 17px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.metric-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 43px;
+    height: 43px;
+    border-radius: 12px;
+    background: #dbeafe;
+    font-size: 21px;
+}
+
+.metric-label {
+    margin-top: 12px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.metric-value {
+    margin-top: 5px;
+    color: #0f172a;
+    font-size: 25px;
+    font-weight: 950;
+}
+
+.metric-note {
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.advance-grid {
+    display: grid;
+    grid-template-columns: 430px 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.advance-panel {
+    padding: 20px;
+    margin-bottom: 18px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 21px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.panel-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.panel-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: white;
+    color: #0f172a;
+}
+
+.form-group textarea {
+    min-height: 105px;
+    resize: vertical;
+}
+
+.salary-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 3px 0 15px;
+}
+
+.salary-box {
+    padding: 12px;
+    border-radius: 13px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+}
+
+.salary-box small {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.salary-box strong {
+    display: block;
+    margin-top: 4px;
+    color: #0f172a;
+    font-size: 16px;
+}
+
+.rule-note {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 13px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 11px 15px;
+    border: none;
+    border-radius: 11px;
+    background: #16a34a;
+    color: white;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background: #15803d;
+}
+
+.table-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.table-tools input,
+.table-tools select {
+    width: auto;
+    min-width: 220px;
+    margin: 0;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.advance-table {
+    width: 100%;
+    min-width: 1050px;
+    border-collapse: separate;
+    border-spacing: 0 9px;
+}
+
+.advance-table th {
+    padding: 0 10px 7px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: left;
+}
+
+.advance-table td {
+    padding: 12px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.advance-table tr td:first-child {
+    border-left: 1px solid #e5e7eb;
+    border-radius: 13px 0 0 13px;
+}
+
+.advance-table tr td:last-child {
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 13px 13px 0;
+}
+
+.staff-name {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.staff-role {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.money-value {
+    color: #166534;
+    font-weight: 900;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.status-approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.status-paid {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.empty-state {
+    padding: 28px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    font-weight: 800;
+}
+
+@media (max-width: 1250px) {
+    .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1000px) {
+    .advance-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .metric-grid,
+    .form-row,
+    .salary-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .advance-hero {
+        display: block;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+    .table-tools input,
+    .table-tools select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+</style>
+
+<div class="advance-page">
+
+    <div class="advance-hero">
+        <div>
+            <h2>Staff Salary Advances</h2>
+
+            <p>
+                Record staff salary advances, enforce the 50% salary limit
+                and automatically post approved advances to school expenses.
+            </p>
+        </div>
+
+        <div class="hero-badge">
+            HR & Payroll
+        </div>
+    </div>
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <div class="metric-icon">📅</div>
+
+            <div class="metric-label">
+                Advances This Month
+            </div>
+
+            <div class="metric-value">
+                {{ money(month_total or 0) }}
+            </div>
+
+            <div class="metric-note">
+                {{ current_month }} {{ current_year }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">✅</div>
+
+            <div class="metric-label">
+                Approved Advances
+            </div>
+
+            <div class="metric-value">
+                {{ money(approved_total or 0) }}
+            </div>
+
+            <div class="metric-note">
+                Awaiting payroll deduction
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">⏳</div>
+
+            <div class="metric-label">
+                Pending Advances
+            </div>
+
+            <div class="metric-value">
+                {{ money(pending_total or 0) }}
+            </div>
+
+            <div class="metric-note">
+                Not yet approved
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">💳</div>
+
+            <div class="metric-label">
+                Paid Advances
+            </div>
+
+            <div class="metric-value">
+                {{ money(paid_total or 0) }}
+            </div>
+
+            <div class="metric-note">
+                Already deducted through payroll
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">👥</div>
+
+            <div class="metric-label">
+                Staff With Advances
+            </div>
+
+            <div class="metric-value">
+                {{ staff_with_advances or 0 }}
+            </div>
+
+            <div class="metric-note">
+                Pending or approved
+            </div>
+        </div>
+
+    </div>
+
+    <div class="advance-grid">
+
+        <div class="advance-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h3>➕ New Salary Advance</h3>
+
+                    <p>
+                        A staff member cannot receive more than half of
+                        their monthly salary for the selected payroll month.
+                    </p>
+                </div>
+            </div>
+
+            <div class="rule-note">
+                Approved advances are automatically recorded under the
+                Expense category <strong>Salary Advance</strong>.
+            </div>
+
+            <form method="post"
+                  action="{{ url_for('salary_advances') }}"
+                  onsubmit="return validateAdvanceForm();">
+
+                <div class="form-group">
+                    <label>Staff Member</label>
+
+                    <select name="staff_id"
+                            id="staffSelect"
+                            onchange="updateSalaryDetails()"
+                            required>
+
+                        <option value="">
+                            Select staff member
+                        </option>
+
+                        {% for staff in staff_members %}
+
+                            <option
+                                value="{{ staff.id }}"
+                                data-salary="{{ staff.monthly_salary or 0 }}"
+                                data-name="{{ staff.full_name|e }}">
+
+                                {{ staff.full_name }}
+                                — {{ staff.role }}
+                            </option>
+
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="salary-summary">
+
+                    <div class="salary-box">
+                        <small>Monthly Salary</small>
+
+                        <strong id="monthlySalary">
+                            KES 0.00
+                        </strong>
+                    </div>
+
+                    <div class="salary-box">
+                        <small>Maximum Advance — 50%</small>
+
+                        <strong id="maximumAdvance">
+                            KES 0.00
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+                        <label>Advance Date</label>
+
+                        <input
+                            type="date"
+                            name="advance_date"
+                            value="{{ current_year }}-{{ '%02d'|format(
+                                months.index(current_month) + 1
+                            ) }}-01"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+
+                        <select name="status" required>
+                            <option value="Approved">
+                                Approved
+                            </option>
+
+                            <option value="Pending">
+                                Pending
+                            </option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+                        <label>Payroll Month</label>
+
+                        <select name="payroll_month" required>
+
+                            {% for month in months %}
+
+                                <option
+                                    value="{{ month }}"
+                                    {% if month == current_month %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ month }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Payroll Year</label>
+
+                        <input
+                            type="number"
+                            name="payroll_year"
+                            value="{{ current_year }}"
+                            min="2020"
+                            max="2100"
+                            required>
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <label>Advance Amount — KES</label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        id="advanceAmount"
+                        min="1"
+                        step="0.01"
+                        placeholder="Enter advance amount"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason</label>
+
+                    <textarea
+                        name="reason"
+                        placeholder="Reason for the salary advance"></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Save Salary Advance
+                </button>
+
+            </form>
+        </div>
+
+        <div class="advance-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h3>📋 Salary Advance History</h3>
+
+                    <p>
+                        Approved advances appear automatically in the
+                        school Expense module.
+                    </p>
+                </div>
+
+                <span class="panel-badge">
+                    {{ advances|length }} Records
+                </span>
+            </div>
+
+            <div class="table-tools">
+
+                <input
+                    type="text"
+                    id="advanceSearch"
+                    placeholder="Search staff or reason..."
+                    onkeyup="filterAdvances()">
+
+                <select
+                    id="statusFilter"
+                    onchange="filterAdvances()">
+
+                    <option value="">
+                        All Statuses
+                    </option>
+
+                    <option value="pending">
+                        Pending
+                    </option>
+
+                    <option value="approved">
+                        Approved
+                    </option>
+
+                    <option value="paid">
+                        Paid
+                    </option>
+                </select>
+
+            </div>
+
+            {% if advances %}
+
+                <div class="table-wrap">
+
+                    <table class="advance-table"
+                           id="advanceTable">
+
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Staff</th>
+                                <th>Monthly Salary</th>
+                                <th>Maximum</th>
+                                <th>Advance</th>
+                                <th>Payroll Period</th>
+                                <th>Status</th>
+                                <th>Approved By</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for advance in advances %}
+
+                                {% set staff =
+                                    staff_dict.get(advance.staff_id)
+                                %}
+
+                                {% set salary =
+                                    staff.monthly_salary
+                                    if staff
+                                    else 0
+                                %}
+
+                                <tr
+                                    data-search="
+                                        {{ (
+                                            (staff.full_name if staff else '')
+                                            ~ ' '
+                                            ~ (advance.reason or '')
+                                        )|lower
+                                        }}"
+                                    data-status="{{ advance.status|lower }}">
+
+                                    <td>
+                                        {{ advance.advance_date.strftime(
+                                            "%d-%m-%Y"
+                                        ) if advance.advance_date else "-" }}
+                                    </td>
+
+                                    <td>
+                                        <div class="staff-name">
+                                            {{ staff.full_name
+                                               if staff
+                                               else "Unknown Staff" }}
+                                        </div>
+
+                                        <div class="staff-role">
+                                            {{ staff.role
+                                               if staff
+                                               else "" }}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {{ money(salary or 0) }}
+                                    </td>
+
+                                    <td>
+                                        {{ money(
+                                            (salary or 0) * 0.50
+                                        ) }}
+                                    </td>
+
+                                    <td class="money-value">
+                                        {{ money(advance.amount or 0) }}
+                                    </td>
+
+                                    <td>
+                                        {{ advance.payroll_month }}
+                                        {{ advance.payroll_year }}
+                                    </td>
+
+                                    <td>
+                                        <span class="status-badge
+                                            {% if advance.status == 'Approved' %}
+                                                status-approved
+                                            {% elif advance.status == 'Paid' %}
+                                                status-paid
+                                            {% else %}
+                                                status-pending
+                                            {% endif %}">
+
+                                            {{ advance.status }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {{ advance.approved_by or "-" }}
+                                    </td>
+
+                                    <td>
+                                        {{ advance.reason or "-" }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+            {% else %}
+
+                <div class="empty-state">
+                    No salary advance records have been created.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function formatMoney(value) {
+    const amount = Number(value || 0);
+
+    return "KES " + amount.toLocaleString(
+        "en-US",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    );
+}
+
+function updateSalaryDetails() {
+    const select = document.getElementById("staffSelect");
+    const option = select.options[select.selectedIndex];
+
+    const salary = Number(
+        option ? option.dataset.salary || 0 : 0
+    );
+
+    document.getElementById("monthlySalary").textContent =
+        formatMoney(salary);
+
+    document.getElementById("maximumAdvance").textContent =
+        formatMoney(salary * 0.50);
+
+    const amountInput =
+        document.getElementById("advanceAmount");
+
+    amountInput.max = salary * 0.50;
+}
+
+function validateAdvanceForm() {
+    const select = document.getElementById("staffSelect");
+    const option = select.options[select.selectedIndex];
+
+    const salary = Number(
+        option ? option.dataset.salary || 0 : 0
+    );
+
+    const amount = Number(
+        document.getElementById("advanceAmount").value || 0
+    );
+
+    if (salary <= 0) {
+        alert(
+            "The selected staff member does not have a monthly salary configured."
+        );
+
+        return false;
+    }
+
+    if (amount <= 0) {
+        alert("Enter a valid advance amount.");
+        return false;
+    }
+
+    if (amount > salary * 0.50) {
+        alert(
+            "The advance cannot exceed 50% of the monthly salary. " +
+            "Maximum allowed: " +
+            formatMoney(salary * 0.50)
+        );
+
+        return false;
+    }
+
+    return confirm(
+        "Save this salary advance? " +
+        "Approved advances will also be recorded as an expense."
+    );
+}
+
+function filterAdvances() {
+    const search = (
+        document.getElementById("advanceSearch").value || ""
+    ).toLowerCase();
+
+    const status = (
+        document.getElementById("statusFilter").value || ""
+    ).toLowerCase();
+
+    const rows = document.querySelectorAll(
+        "#advanceTable tbody tr"
+    );
+
+    rows.forEach(function(row) {
+        const rowSearch = row.dataset.search || "";
+        const rowStatus = row.dataset.status || "";
+
+        const matchesSearch =
+            rowSearch.includes(search);
+
+        const matchesStatus =
+            !status || rowStatus === status;
+
+        row.style.display =
+            matchesSearch && matchesStatus
+            ? ""
+            : "none";
+    });
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    updateSalaryDetails
+);
+</script>
+
+{% endblock %}
