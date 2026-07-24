@@ -454,6 +454,43 @@ class Payroll(db.Model):
         default=datetime.utcnow
     )
 
+class SalaryAdvance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False
+    )
+
+    staff_id = db.Column(
+        db.Integer,
+        db.ForeignKey("staff.id"),
+        nullable=False
+    )
+
+    advance_date = db.Column(db.Date, default=date.today)
+
+    payroll_month = db.Column(db.String(20))
+    payroll_year = db.Column(db.Integer)
+
+    amount = db.Column(db.Float, default=0)
+
+    reason = db.Column(db.String(300))
+
+    status = db.Column(
+        db.String(30),
+        default="Pending"
+    )
+
+    approved_by = db.Column(db.String(100))
+    created_by = db.Column(db.String(100))
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+
 class StaffAttendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
