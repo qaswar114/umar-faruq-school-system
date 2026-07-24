@@ -692,23 +692,58 @@
 
             {% if role in ["admin", "bursar"] %}
 
-                <div class="nav-label">FINANCE</div>
+<div class="nav-label">FINANCE</div>
 
-                <details open>
-                    <summary>💰 Finance</summary>
+<details open>
+    <summary>💰 Finance</summary>
 
-                    <div class="subnav">
-                        <a href="/payments">Payments</a>
-                        <a href="/fees">Fee Structure</a>
-                        <a href="/discounts">Discounts / Waivers</a>
-                        <a href="/balances">Balances</a>
-                        <a href="/defaulters_report">Defaulters</a>
-                        <a href="/expenses">Expenses</a>
-                        <a href="/expense_report">Expense Report</a>
-                    </div>
-                </details>
+    <div class="subnav">
 
-            {% endif %}
+        <a href="/payments"
+           class="{% if endpoint == 'payments' %}active{% endif %}">
+            Payments
+        </a>
+
+        <a href="/fees"
+           class="{% if endpoint == 'fees' %}active{% endif %}">
+            Fee Structure
+        </a>
+
+        <a href="/discounts"
+           class="{% if endpoint == 'discounts' %}active{% endif %}">
+            Discounts / Waivers
+        </a>
+
+        <a href="/balances"
+           class="{% if endpoint == 'balances' %}active{% endif %}">
+            Balances
+        </a>
+
+        <a href="/defaulters_report"
+           class="{% if endpoint == 'defaulters_report' %}active{% endif %}">
+            Defaulters
+        </a>
+
+        <a href="/expenses"
+           class="{% if endpoint == 'expenses' %}active{% endif %}">
+            Expenses
+        </a>
+
+        <a href="/salary_advances"
+           class="{% if endpoint == 'salary_advances' %}active{% endif %}">
+            Staff Salary Advances
+        </a>
+
+        <a href="/expense_report"
+           class="{% if endpoint == 'expense_report' %}active{% endif %}">
+            Expense Report
+        </a>
+
+    </div>
+
+</details>
+
+{% endif %}
 
             <!-- HUMAN RESOURCE -->
 
