@@ -833,6 +833,7 @@ class Payment(db.Model):
     payment_date = db.Column(db.Date, default=date.today)
     collected_by = db.Column(db.String(80), nullable=False)
     pupil = db.relationship("Pupil")
+    
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -9897,6 +9898,338 @@ def payroll():
         total_net_salary=total_net_salary,
         active_staff_count=len(staff_options),
         payroll_count=len(payroll_rows),
+        money=money
+    )
+
+@app.route("/salary_advances", methods=["GET", "POST"])
+def salary_advances():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "admin",
+        "bursar",
+        "principal"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ]
+
+    if request.method == "POST":
+        try:
+            staff_id = int(
+                request.form.get("staff_id") or 0
+            )
+
+            advance_date_text = request.form.get(
+                "advance_date",
+                date.today().isoformat()
+            ).strip()
+
+            payroll_month = request.form.get(
+                "payroll_month",
+                ""
+            ).strip()
+
+            payroll_year = int(
+                request.form.get("payroll_year")
+                or date.today().year
+            )
+
+            amount = float(
+                request.form.get("amount")
+                or 0
+            )
+
+            reason = request.form.get(
+                "reason",
+                ""
+            ).strip()
+
+            status = request.form.get(
+                "status",
+                "Approved"
+            ).strip()
+
+            if status not in [
+                "Pending",
+                "Approved"
+            ]:
+                status = "Approved"
+
+            if payroll_month not in months:
+                flash("Select a valid payroll month.")
+                return redirect(url_for("salary_advances"))
+
+            try:
+                advance_date = datetime.strptime(
+                    advance_date_text,
+                    "%Y-%m-%d"
+                ).date()
+
+            except ValueError:
+                flash("Enter a valid advance date.")
+                return redirect(url_for("salary_advances"))
+
+            staff = Staff.query.filter_by(
+                id=staff_id,
+                school_id=school_id,
+                status="Active"
+            ).first()
+
+            if not staff:
+                flash("Selected staff member was not found.")
+                return redirect(url_for("salary_advances"))
+
+            monthly_salary = float(
+                staff.monthly_salary or 0
+            )
+
+            if monthly_salary <= 0:
+                flash(
+                    f"{staff.full_name} does not have a monthly "
+                    f"salary configured. Update the staff profile first."
+                )
+                return redirect(url_for("salary_advances"))
+
+            if amount <= 0:
+                flash("Enter a valid salary advance amount.")
+                return redirect(url_for("salary_advances"))
+
+            maximum_advance = monthly_salary * 0.50
+
+            existing_advance_total = db.session.query(
+                db.func.coalesce(
+                    db.func.sum(SalaryAdvance.amount),
+                    0
+                )
+            ).filter(
+                SalaryAdvance.school_id == school_id,
+                SalaryAdvance.staff_id == staff.id,
+                SalaryAdvance.payroll_month == payroll_month,
+                SalaryAdvance.payroll_year == payroll_year,
+                SalaryAdvance.status.in_([
+                    "Pending",
+                    "Approved"
+                ])
+            ).scalar() or 0
+
+            existing_advance_total = float(
+                existing_advance_total or 0
+            )
+
+            remaining_limit = (
+                maximum_advance
+                - existing_advance_total
+            )
+
+            if remaining_limit <= 0:
+                flash(
+                    f"{staff.full_name} has already reached the "
+                    f"maximum advance limit of "
+                    f"KES {maximum_advance:,.2f} for "
+                    f"{payroll_month} {payroll_year}."
+                )
+                return redirect(url_for("salary_advances"))
+
+            if amount > remaining_limit:
+                flash(
+                    f"Maximum additional advance available for "
+                    f"{staff.full_name} is KES "
+                    f"{remaining_limit:,.2f}. "
+                    f"Salary advances cannot exceed 50% of the "
+                    f"monthly salary."
+                )
+                return redirect(url_for("salary_advances"))
+
+            advance = SalaryAdvance(
+                school_id=school_id,
+                staff_id=staff.id,
+                advance_date=advance_date,
+                payroll_month=payroll_month,
+                payroll_year=payroll_year,
+                amount=amount,
+                reason=reason,
+                status=status,
+                approved_by=(
+                    session.get("username", "")
+                    if status == "Approved"
+                    else ""
+                ),
+                created_by=session.get(
+                    "username",
+                    ""
+                )
+            )
+
+            db.session.add(advance)
+            db.session.flush()
+
+            # Automatically record an approved salary advance
+            # as a school expense.
+            if status == "Approved":
+                expense = Expense(
+                    school_id=school_id,
+                    expense_date=advance_date,
+                    category="Salary Advance",
+                    description=(
+                        f"Salary advance paid to "
+                        f"{staff.full_name} for "
+                        f"{payroll_month} {payroll_year}"
+                    ),
+                    amount=amount,
+                    recorded_by=session.get(
+                        "username",
+                        ""
+                    )
+                )
+
+                db.session.add(expense)
+
+            db.session.commit()
+
+            try:
+                save_audit(
+                    f"Created salary advance for "
+                    f"{staff.full_name}: "
+                    f"KES {amount:,.2f}, "
+                    f"{payroll_month} {payroll_year}, "
+                    f"status {status}.",
+                    "Payroll"
+                )
+
+            except Exception as audit_error:
+                print(
+                    "SALARY ADVANCE AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
+                )
+
+            flash(
+                f"Salary advance of KES {amount:,.2f} "
+                f"was saved for {staff.full_name}."
+            )
+
+        except (TypeError, ValueError):
+            db.session.rollback()
+
+            flash(
+                "Enter valid staff, year and advance amount values."
+            )
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "SALARY ADVANCE ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                "The salary advance could not be saved. "
+                "No changes were made."
+            )
+
+        return redirect(url_for("salary_advances"))
+
+    # ---------------------------------------------------------
+    # PAGE DATA
+    # ---------------------------------------------------------
+    staff_members = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).order_by(
+        Staff.full_name.asc()
+    ).all()
+
+    advances = SalaryAdvance.query.filter_by(
+        school_id=school_id
+    ).order_by(
+        SalaryAdvance.advance_date.desc(),
+        SalaryAdvance.id.desc()
+    ).all()
+
+    staff_dict = {
+        staff.id: staff
+        for staff in staff_members
+    }
+
+    current_month = date.today().strftime("%B")
+    current_year = date.today().year
+
+    month_total = sum(
+        float(advance.amount or 0)
+        for advance in advances
+        if advance.payroll_month == current_month
+        and advance.payroll_year == current_year
+        and advance.status in [
+            "Pending",
+            "Approved"
+        ]
+    )
+
+    approved_total = sum(
+        float(advance.amount or 0)
+        for advance in advances
+        if advance.status == "Approved"
+    )
+
+    pending_total = sum(
+        float(advance.amount or 0)
+        for advance in advances
+        if advance.status == "Pending"
+    )
+
+    paid_total = sum(
+        float(advance.amount or 0)
+        for advance in advances
+        if advance.status == "Paid"
+    )
+
+    staff_with_advances = len({
+        advance.staff_id
+        for advance in advances
+        if advance.status in [
+            "Pending",
+            "Approved"
+        ]
+    })
+
+    return render_template(
+        "salary_advances.html",
+        settings=get_settings(),
+
+        staff_members=staff_members,
+        staff_dict=staff_dict,
+        advances=advances,
+
+        months=months,
+        current_month=current_month,
+        current_year=current_year,
+
+        month_total=month_total,
+        approved_total=approved_total,
+        pending_total=pending_total,
+        paid_total=paid_total,
+        staff_with_advances=staff_with_advances,
+
         money=money
     )
     
