@@ -2,306 +2,1262 @@
 {% block content %}
 
 <style>
-.payroll-wrap {
-    max-width: 1200px;
+.payroll-page {
+    width: 100%;
+    max-width: 1550px;
     margin: 0 auto;
 }
 
-.payroll-head {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-left: 6px solid #0b5ed7;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 14px;
-}
-
-.payroll-head h2 {
-    margin: 0;
-}
-
-.payroll-head p {
-    margin: 5px 0 0;
-    color: #555;
-}
-
-.quick-actions {
-    margin-top: 12px;
+.payroll-hero {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 25px 28px;
+    margin-bottom: 18px;
+    border-radius: 23px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 55%,
+        #16a34a 100%
+    );
+    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
 }
 
-.compact-stats {
+.payroll-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 30px;
+}
+
+.payroll-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.hero-badge {
+    flex-shrink: 0;
+    padding: 11px 17px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    color: white;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.metric-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 14px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 13px;
+    margin-bottom: 18px;
 }
 
-.stat-box, .payroll-card {
-    background: #fff;
-    border: 1px solid #e1e1e1;
+.metric-card {
+    min-height: 135px;
+    padding: 17px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.metric-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 43px;
+    height: 43px;
     border-radius: 12px;
-    padding: 14px;
+    background: #dbeafe;
+    font-size: 21px;
 }
 
-.stat-box small {
-    color: #666;
-    font-weight: bold;
+.metric-label {
+    margin-top: 12px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
 }
 
-.stat-box h3 {
-    margin: 6px 0 0;
-    font-size: 22px;
+.metric-value {
+    margin-top: 5px;
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 950;
 }
 
-.payroll-card {
+.metric-note {
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.payroll-grid {
+    display: grid;
+    grid-template-columns: 430px 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.payroll-panel {
+    padding: 20px;
+    margin-bottom: 18px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 21px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.panel-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.panel-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.filter-form {
+    display: grid;
+    grid-template-columns: 1fr 150px auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.form-group {
     margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: white;
+    color: #0f172a;
 }
 
 .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 10px;
-    align-items: end;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
 }
 
-.manual-grid {
+.salary-preview {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
+    margin-bottom: 14px;
 }
 
-.badge {
-    padding: 5px 10px;
-    border-radius: 20px;
-    background: #fff3cd;
+.preview-box {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+    background: #f8fafc;
+}
+
+.preview-box.advance {
+    border-color: #fed7aa;
+    background: #fff7ed;
+}
+
+.preview-box small {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.preview-box strong {
+    display: block;
+    margin-top: 4px;
+    color: #0f172a;
+    font-size: 16px;
+}
+
+.advance-note {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 13px;
+    background: #eff6ff;
+    color: #1e3a8a;
     font-size: 12px;
-    font-weight: bold;
+    line-height: 1.5;
 }
 
-.badge.paid {
-    background: #d1e7dd;
+.btn-primary,
+.btn-green,
+.btn-gray {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #0b5ed7;
+}
+
+.btn-primary:hover {
+    background: #084db4;
+}
+
+.btn-green {
+    background: #16a34a;
+}
+
+.btn-green:hover {
+    background: #15803d;
+}
+
+.btn-gray {
+    background: #64748b;
+}
+
+.btn-gray:hover {
+    background: #475569;
+}
+
+.full-btn {
+    width: 100%;
+}
+
+.generate-box {
+    padding: 16px;
+    margin-bottom: 18px;
+    border: 1px solid #bbf7d0;
+    border-radius: 16px;
+    background: #f0fdf4;
+}
+
+.generate-box h4 {
+    margin: 0;
+    color: #166534;
+    font-size: 16px;
+}
+
+.generate-box p {
+    margin: 6px 0 14px;
+    color: #3f6212;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.table-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 13px;
+    flex-wrap: wrap;
+}
+
+.table-tools input,
+.table-tools select {
+    width: auto;
+    min-width: 220px;
+    margin: 0;
 }
 
 .table-wrap {
+    width: 100%;
     overflow-x: auto;
 }
 
-.action-btn {
+.payroll-table {
+    width: 100%;
+    min-width: 1300px;
+    border-collapse: separate;
+    border-spacing: 0 9px;
+}
+
+.payroll-table th {
+    padding: 0 10px 7px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: left;
+}
+
+.payroll-table td {
+    padding: 12px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.payroll-table tr td:first-child {
+    border-left: 1px solid #e5e7eb;
+    border-radius: 13px 0 0 13px;
+}
+
+.payroll-table tr td:last-child {
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 13px 13px 0;
+}
+
+.staff-name {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.staff-period {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.amount-positive {
+    color: #166534;
+    font-weight: 900;
+}
+
+.amount-deduction {
+    color: #b45309;
+    font-weight: 900;
+}
+
+.amount-net {
+    color: #1d4ed8;
+    font-weight: 950;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.status-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.payslip-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 7px 10px;
-    border-radius: 8px;
+    border-radius: 9px;
     background: #0b5ed7;
     color: white;
     text-decoration: none;
-    display: inline-block;
+    font-size: 12px;
+    font-weight: 900;
 }
 
-@media(max-width: 900px) {
-    .compact-stats,
-    .form-row,
-    .manual-grid {
+.payslip-btn:hover {
+    background: #084db4;
+    color: white;
+}
+
+.empty-state {
+    padding: 28px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    font-weight: 800;
+}
+
+@media (max-width: 1250px) {
+    .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1000px) {
+    .payroll-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 750px) {
+    .filter-form,
+    .form-row,
+    .salary-preview {
+        grid-template-columns: 1fr;
+    }
+
+    .metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .payroll-hero {
+        display: block;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+    .table-tools input,
+    .table-tools select {
+        width: 100%;
+        min-width: 0;
     }
 }
 </style>
 
-<div class="payroll-wrap">
+<div class="payroll-page">
 
-    <div class="payroll-head">
-        <h2>Payroll Management</h2>
-        <p>{{ settings.school_name }} — Generate, review, and print staff payslips.</p>
+    <div class="payroll-hero">
 
-        <div class="quick-actions">
-            <a class="btn" href="{{ url_for('staff_dashboard') }}">Back to Staff Dashboard</a>
-            <a class="btn blue" href="{{ url_for('hr_profiles') }}">HR Profiles</a>
+        <div>
+            <h2>Staff Payroll Management</h2>
+
+            <p>
+                Generate monthly payroll, deduct approved salary advances,
+                record manual payroll and issue staff payslips.
+            </p>
         </div>
+
+        <div class="hero-badge">
+            {{ selected_month }} {{ selected_year }}
+        </div>
+
     </div>
 
-    <div class="compact-stats">
-        <div class="stat-box">
-            <small>Active Staff</small>
-            <h3>{{ staff_options|length }}</h3>
+    <!-- =====================================================
+         SUMMARY CARDS
+    ====================================================== -->
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <div class="metric-icon">👥</div>
+
+            <div class="metric-label">
+                Active Staff
+            </div>
+
+            <div class="metric-value">
+                {{ active_staff_count or 0 }}
+            </div>
+
+            <div class="metric-note">
+                Eligible for payroll
+            </div>
         </div>
 
-        <div class="stat-box">
-            <small>Payroll Records</small>
-            <h3>{{ payroll_rows|length }}</h3>
+        <div class="metric-card">
+            <div class="metric-icon">📋</div>
+
+            <div class="metric-label">
+                Payroll Records
+            </div>
+
+            <div class="metric-value">
+                {{ payroll_count or 0 }}
+            </div>
+
+            <div class="metric-note">
+                {{ selected_month }} {{ selected_year }}
+            </div>
         </div>
 
-        <div class="stat-box">
-            <small>Total Net Payroll</small>
-            <h3>{{ money(total_net_salary) }}</h3>
+        <div class="metric-card">
+            <div class="metric-icon">💰</div>
+
+            <div class="metric-label">
+                Basic Salaries
+            </div>
+
+            <div class="metric-value">
+                {{ money(total_basic_salary or 0) }}
+            </div>
+
+            <div class="metric-note">
+                Before allowances
+            </div>
         </div>
 
-        <div class="stat-box">
-            <small>Period</small>
-            <h3>{{ selected_month }} {{ selected_year }}</h3>
+        <div class="metric-card">
+            <div class="metric-icon">📉</div>
+
+            <div class="metric-label">
+                Salary Advances
+            </div>
+
+            <div class="metric-value">
+                {{ money(total_salary_advances or 0) }}
+            </div>
+
+            <div class="metric-note">
+                Deducted from payroll
+            </div>
         </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">💵</div>
+
+            <div class="metric-label">
+                Net Payroll
+            </div>
+
+            <div class="metric-value">
+                {{ money(total_net_salary or 0) }}
+            </div>
+
+            <div class="metric-note">
+                Amount payable to staff
+            </div>
+        </div>
+
     </div>
 
-    <div class="payroll-card">
-        <h3>Payroll Period</h3>
+    <!-- =====================================================
+         PERIOD FILTER
+    ====================================================== -->
 
-        <form method="get" class="form-row">
+    <div class="payroll-panel">
+
+        <div class="panel-heading">
             <div>
-                <label>Month</label>
-                <select name="month">
-                    {% for m in months %}
-                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+                <h3>📅 Payroll Period</h3>
+
+                <p>
+                    Select a month and year to view or generate payroll.
+                </p>
+            </div>
+        </div>
+
+        <form method="get"
+              action="{{ url_for('payroll') }}"
+              class="filter-form">
+
+            <div class="form-group">
+                <label>Payroll Month</label>
+
+                <select name="month" required>
+
+                    {% for month in months %}
+
+                        <option
+                            value="{{ month }}"
+                            {% if month == selected_month %}
+                                selected
+                            {% endif %}>
+
+                            {{ month }}
+                        </option>
+
                     {% endfor %}
+
                 </select>
             </div>
 
-            <div>
-                <label>Year</label>
-                <input type="number" name="year" value="{{ selected_year }}">
+            <div class="form-group">
+                <label>Payroll Year</label>
+
+                <input
+                    type="number"
+                    name="year"
+                    value="{{ selected_year }}"
+                    min="2020"
+                    max="2100"
+                    required>
             </div>
 
-            <button class="btn blue" type="submit">View</button>
+            <button type="submit" class="btn-primary">
+                Load Payroll
+            </button>
+
         </form>
     </div>
 
-    <div class="payroll-card">
-        <h3>Generate Payroll</h3>
+    <div class="payroll-grid">
 
-        <form method="post" class="form-row">
-            <input type="hidden" name="action" value="generate_payroll">
+        <!-- =================================================
+             MANUAL PAYROLL
+        ================================================== -->
 
-            <div>
-                <label>Month</label>
-                <select name="payroll_month">
-                    {% for m in months %}
-                        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
-                    {% endfor %}
-                </select>
+        <div>
+
+            <div class="payroll-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>➕ Manual Payroll</h3>
+
+                        <p>
+                            Create payroll for one staff member.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="advance-note">
+                    Any approved salary advance for the selected payroll
+                    period is added automatically to deductions. Enter only
+                    other deductions in the form.
+                </div>
+
+                <form method="post"
+                      action="{{ url_for(
+                          'payroll',
+                          month=selected_month,
+                          year=selected_year
+                      ) }}"
+                      onsubmit="return confirmManualPayroll();">
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="manual_payroll">
+
+                    <input
+                        type="hidden"
+                        name="payroll_month"
+                        value="{{ selected_month }}">
+
+                    <input
+                        type="hidden"
+                        name="payroll_year"
+                        value="{{ selected_year }}">
+
+                    <div class="form-group">
+                        <label>Staff Member</label>
+
+                        <select
+                            name="staff_id"
+                            id="staffPayrollSelect"
+                            onchange="updatePayrollPreview()"
+                            required>
+
+                            <option value="">
+                                Select staff member
+                            </option>
+
+                            {% for staff in staff_options %}
+
+                                <option
+                                    value="{{ staff.id }}"
+                                    data-salary="{{ staff.basic_salary or 0 }}"
+                                    data-advance="{{ staff.approved_advance or 0 }}"
+                                    data-name="{{ staff.name|e }}">
+
+                                    {{ staff.name }}
+                                    — {{ staff.role }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                    <div class="salary-preview">
+
+                        <div class="preview-box">
+                            <small>Configured Basic Salary</small>
+
+                            <strong id="configuredSalary">
+                                KES 0.00
+                            </strong>
+                        </div>
+
+                        <div class="preview-box advance">
+                            <small>Approved Salary Advance</small>
+
+                            <strong id="approvedAdvance">
+                                KES 0.00
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label>Basic Salary</label>
+
+                        <input
+                            type="number"
+                            name="basic_salary"
+                            id="basicSalaryInput"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Allowances</label>
+
+                        <input
+                            type="number"
+                            name="allowances"
+                            id="allowancesInput"
+                            min="0"
+                            step="0.01"
+                            value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Other Deductions</label>
+
+                        <input
+                            type="number"
+                            name="deductions"
+                            id="deductionsInput"
+                            min="0"
+                            step="0.01"
+                            value="0">
+
+                        <small style="color:#64748b;">
+                            Do not include salary advance here. It is added
+                            automatically.
+                        </small>
+                    </div>
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label>Payment Method</label>
+
+                            <select name="payment_method" required>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank">Bank</option>
+                                <option value="M-Pesa">M-Pesa</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payment Date</label>
+
+                            <input
+                                type="date"
+                                name="payment_date"
+                                value="{{ selected_year }}-01-01"
+                                required>
+                        </div>
+
+                    </div>
+
+                    <div class="salary-preview">
+
+                        <div class="preview-box">
+                            <small>Total Deductions</small>
+
+                            <strong id="previewDeductions">
+                                KES 0.00
+                            </strong>
+                        </div>
+
+                        <div class="preview-box">
+                            <small>Estimated Net Salary</small>
+
+                            <strong id="previewNetSalary">
+                                KES 0.00
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <button type="submit"
+                            class="btn-green full-btn">
+                        Save Manual Payroll
+                    </button>
+
+                </form>
+
             </div>
 
-            <div>
-                <label>Year</label>
-                <input type="number" name="payroll_year" value="{{ selected_year }}">
+            <!-- GENERATE ALL -->
+
+            <div class="generate-box">
+
+                <h4>⚡ Generate Payroll for All Staff</h4>
+
+                <p>
+                    Creates payroll for every active staff member who does
+                    not already have payroll for the selected period.
+                    Approved salary advances will be deducted automatically.
+                </p>
+
+                <form method="post"
+                      action="{{ url_for(
+                          'payroll',
+                          month=selected_month,
+                          year=selected_year
+                      ) }}"
+                      onsubmit="return confirm(
+                          'Generate payroll for all active staff for {{ selected_month }} {{ selected_year }}? Approved salary advances will be deducted.'
+                      );">
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="generate_payroll">
+
+                    <input
+                        type="hidden"
+                        name="payroll_month"
+                        value="{{ selected_month }}">
+
+                    <input
+                        type="hidden"
+                        name="payroll_year"
+                        value="{{ selected_year }}">
+
+                    <button type="submit"
+                            class="btn-green full-btn">
+                        Generate All Payroll
+                    </button>
+
+                </form>
+
             </div>
 
-            <button class="btn green" type="submit">Generate Payroll</button>
-        </form>
-    </div>
+            <a href="/salary_advances"
+               class="btn-primary full-btn">
+                View Staff Salary Advances
+            </a>
 
-    <div class="payroll-card">
-        <h3>Payroll Records</h3>
-
-        <div class="table-wrap">
-            <table>
-                <tr>
-                    <th>#</th>
-                    <th>Staff</th>
-                    <th>Month</th>
-                    <th>Basic</th>
-                    <th>Allowances</th>
-                    <th>Deductions</th>
-                    <th>Net Salary</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-
-                {% for p in payroll_rows %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td><b>{{ p.staff_name }}</b></td>
-                    <td>{{ p.month_year }}</td>
-                    <td>{{ money(p.basic_salary) }}</td>
-                    <td>{{ money(p.allowances) }}</td>
-                    <td>{{ money(p.deductions) }}</td>
-                    <td><b>{{ money(p.net_salary) }}</b></td>
-                    <td>
-                        <span class="badge {% if p.status == 'Paid' %}paid{% endif %}">
-                            {{ p.status }}
-                        </span>
-                    </td>
-                    <td>
-                        <a class="action-btn" href="{{ url_for('payslip', payroll_id=p.id) }}">
-                            Payslip
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="9">No payroll records for this period.</td>
-                </tr>
-                {% endfor %}
-            </table>
         </div>
-    </div>
 
-    <div class="payroll-card">
-        <h3>Manual Payroll Entry</h3>
+        <!-- =================================================
+             PAYROLL HISTORY
+        ================================================== -->
 
-        <form method="post">
-            <input type="hidden" name="action" value="manual_payroll">
+        <div class="payroll-panel">
 
-            <div class="manual-grid">
-                <div>
-                    <label>Staff</label>
-                    <select name="staff_id" required>
-                        <option value="">Select Staff</option>
-                        {% for s in staff_options %}
-                            <option value="{{ s.id }}">{{ s.name }} - {{ s.role }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+            <div class="panel-heading">
 
                 <div>
-                    <label>Month</label>
-                    <select name="payroll_month">
-                        {% for m in months %}
-                            <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
-                        {% endfor %}
-                    </select>
+                    <h3>📋 Payroll Records</h3>
+
+                    <p>
+                        Payroll and salary advance deductions for
+                        {{ selected_month }} {{ selected_year }}.
+                    </p>
                 </div>
 
-                <div>
-                    <label>Year</label>
-                    <input type="number" name="payroll_year" value="{{ selected_year }}">
-                </div>
+                <span class="panel-badge">
+                    {{ payroll_rows|length }} Records
+                </span>
 
-                <div>
-                    <label>Basic Salary</label>
-                    <input type="number" step="0.01" name="basic_salary" value="0">
-                </div>
-
-                <div>
-                    <label>Allowances</label>
-                    <input type="number" step="0.01" name="allowances" value="0">
-                </div>
-
-                <div>
-                    <label>Deductions</label>
-                    <input type="number" step="0.01" name="deductions" value="0">
-                </div>
-
-                <div>
-                    <label>Payment Method</label>
-                    <select name="payment_method">
-                        <option>Cash</option>
-                        <option>Mpesa</option>
-                        <option>Bank</option>
-                        <option>Cheque</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label>Payment Date</label>
-                    <input type="date" name="payment_date">
-                </div>
-
-                <div>
-                    <label>&nbsp;</label>
-                    <button class="btn blue" type="submit">Save Manual Payroll</button>
-                </div>
             </div>
-        </form>
+
+            <div class="table-tools">
+
+                <input
+                    type="text"
+                    id="payrollSearch"
+                    placeholder="Search staff..."
+                    onkeyup="filterPayroll()">
+
+                <select
+                    id="payrollStatusFilter"
+                    onchange="filterPayroll()">
+
+                    <option value="">
+                        All Statuses
+                    </option>
+
+                    <option value="pending">
+                        Pending
+                    </option>
+
+                    <option value="paid">
+                        Paid
+                    </option>
+
+                </select>
+
+            </div>
+
+            {% if payroll_rows %}
+
+                <div class="table-wrap">
+
+                    <table class="payroll-table"
+                           id="payrollTable">
+
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Staff</th>
+                                <th>Basic Salary</th>
+                                <th>Allowances</th>
+                                <th>Salary Advance</th>
+                                <th>Total Deductions</th>
+                                <th>Net Salary</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Created By</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for row in payroll_rows %}
+
+                                <tr
+                                    data-search="{{ row.staff_name|lower }}"
+                                    data-status="{{ row.status|lower }}">
+
+                                    <td>
+                                        {{ row.payment_date.strftime(
+                                            "%d-%m-%Y"
+                                        ) if row.payment_date else "-" }}
+                                    </td>
+
+                                    <td>
+                                        <div class="staff-name">
+                                            {{ row.staff_name }}
+                                        </div>
+
+                                        <div class="staff-period">
+                                            {{ row.month_year }}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {{ money(row.basic_salary or 0) }}
+                                    </td>
+
+                                    <td class="amount-positive">
+                                        {{ money(row.allowances or 0) }}
+                                    </td>
+
+                                    <td class="amount-deduction">
+                                        {{ money(row.salary_advance or 0) }}
+                                    </td>
+
+                                    <td class="amount-deduction">
+                                        {{ money(row.deductions or 0) }}
+                                    </td>
+
+                                    <td class="amount-net">
+                                        {{ money(row.net_salary or 0) }}
+                                    </td>
+
+                                    <td>
+                                        {{ row.payment_method or "-" }}
+                                    </td>
+
+                                    <td>
+                                        <span class="status-badge
+                                            {% if row.status == 'Paid' %}
+                                                status-paid
+                                            {% else %}
+                                                status-pending
+                                            {% endif %}">
+
+                                            {{ row.status }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {{ row.created_by or "-" }}
+                                    </td>
+
+                                    <td>
+                                        <a
+                                            href="/payslip/{{ row.id }}"
+                                            class="payslip-btn">
+
+                                            Payslip
+                                        </a>
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-state">
+                    No payroll records exist for
+                    {{ selected_month }} {{ selected_year }}.
+                </div>
+
+            {% endif %}
+
+        </div>
+
     </div>
 
 </div>
+
+<script>
+function formatPayrollMoney(value) {
+    const amount = Number(value || 0);
+
+    return "KES " + amount.toLocaleString(
+        "en-US",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    );
+}
+
+function updatePayrollPreview() {
+    const staffSelect =
+        document.getElementById("staffPayrollSelect");
+
+    const selectedOption =
+        staffSelect.options[staffSelect.selectedIndex];
+
+    const salary = Number(
+        selectedOption
+        ? selectedOption.dataset.salary || 0
+        : 0
+    );
+
+    const advance = Number(
+        selectedOption
+        ? selectedOption.dataset.advance || 0
+        : 0
+    );
+
+    document.getElementById(
+        "configuredSalary"
+    ).textContent = formatPayrollMoney(salary);
+
+    document.getElementById(
+        "approvedAdvance"
+    ).textContent = formatPayrollMoney(advance);
+
+    document.getElementById(
+        "basicSalaryInput"
+    ).value = salary.toFixed(2);
+
+    calculatePayrollPreview();
+}
+
+function calculatePayrollPreview() {
+    const staffSelect =
+        document.getElementById("staffPayrollSelect");
+
+    const selectedOption =
+        staffSelect.options[staffSelect.selectedIndex];
+
+    const advance = Number(
+        selectedOption
+        ? selectedOption.dataset.advance || 0
+        : 0
+    );
+
+    const basicSalary = Number(
+        document.getElementById(
+            "basicSalaryInput"
+        ).value || 0
+    );
+
+    const allowances = Number(
+        document.getElementById(
+            "allowancesInput"
+        ).value || 0
+    );
+
+    const otherDeductions = Number(
+        document.getElementById(
+            "deductionsInput"
+        ).value || 0
+    );
+
+    const totalDeductions =
+        otherDeductions + advance;
+
+    const netSalary =
+        basicSalary + allowances - totalDeductions;
+
+    document.getElementById(
+        "previewDeductions"
+    ).textContent = formatPayrollMoney(
+        totalDeductions
+    );
+
+    document.getElementById(
+        "previewNetSalary"
+    ).textContent = formatPayrollMoney(
+        netSalary
+    );
+}
+
+function confirmManualPayroll() {
+    const staffSelect =
+        document.getElementById("staffPayrollSelect");
+
+    if (!staffSelect.value) {
+        alert("Select a staff member.");
+        return false;
+    }
+
+    const selectedOption =
+        staffSelect.options[staffSelect.selectedIndex];
+
+    const advance = Number(
+        selectedOption.dataset.advance || 0
+    );
+
+    const basicSalary = Number(
+        document.getElementById(
+            "basicSalaryInput"
+        ).value || 0
+    );
+
+    const allowances = Number(
+        document.getElementById(
+            "allowancesInput"
+        ).value || 0
+    );
+
+    const otherDeductions = Number(
+        document.getElementById(
+            "deductionsInput"
+        ).value || 0
+    );
+
+    const netSalary =
+        basicSalary
+        + allowances
+        - otherDeductions
+        - advance;
+
+    if (netSalary < 0) {
+        alert(
+            "Total deductions exceed the staff member's gross salary."
+        );
+
+        return false;
+    }
+
+    return confirm(
+        "Save this payroll? Approved salary advance of " +
+        formatPayrollMoney(advance) +
+        " will be deducted and marked Paid."
+    );
+}
+
+function filterPayroll() {
+    const search = (
+        document.getElementById(
+            "payrollSearch"
+        ).value || ""
+    ).toLowerCase();
+
+    const status = (
+        document.getElementById(
+            "payrollStatusFilter"
+        ).value || ""
+    ).toLowerCase();
+
+    const rows = document.querySelectorAll(
+        "#payrollTable tbody tr"
+    );
+
+    rows.forEach(function(row) {
+        const rowSearch =
+            row.dataset.search || "";
+
+        const rowStatus =
+            row.dataset.status || "";
+
+        const matchesSearch =
+            rowSearch.includes(search);
+
+        const matchesStatus =
+            !status || rowStatus === status;
+
+        row.style.display =
+            matchesSearch && matchesStatus
+            ? ""
+            : "none";
+    });
+}
+
+[
+    "basicSalaryInput",
+    "allowancesInput",
+    "deductionsInput"
+].forEach(function(id) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.addEventListener(
+            "input",
+            calculatePayrollPreview
+        );
+    }
+});
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+        updatePayrollPreview();
+        calculatePayrollPreview();
+    }
+);
+</script>
 
 {% endblock %}
