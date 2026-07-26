@@ -9708,94 +9708,328 @@ def payroll():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar", "principal", "super admin"):
+    if not role_allowed(
+        "admin",
+        "bursar",
+        "principal"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    db.create_all()
     school_id = current_school_id()
 
     months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
     ]
 
-    selected_month = request.args.get("month", date.today().strftime("%B"))
-    selected_year = int(request.args.get("year") or date.today().year)
+    selected_month = request.args.get(
+        "month",
+        date.today().strftime("%B")
+    )
 
+    try:
+        selected_year = int(
+            request.args.get("year")
+            or date.today().year
+        )
+    except (TypeError, ValueError):
+        selected_year = date.today().year
+
+    if selected_month not in months:
+        selected_month = date.today().strftime("%B")
+
+    # ---------------------------------------------------------
+    # APPROVED SALARY ADVANCE HELPER
+    # ---------------------------------------------------------
+    def get_approved_advances(
+        staff_id,
+        payroll_month,
+        payroll_year
+    ):
+        return SalaryAdvance.query.filter(
+            SalaryAdvance.school_id == school_id,
+            SalaryAdvance.staff_id == staff_id,
+            SalaryAdvance.payroll_month == payroll_month,
+            SalaryAdvance.payroll_year == payroll_year,
+            SalaryAdvance.status == "Approved"
+        ).order_by(
+            SalaryAdvance.advance_date.asc(),
+            SalaryAdvance.id.asc()
+        ).all()
+
+    # ---------------------------------------------------------
+    # POST ACTIONS
+    # ---------------------------------------------------------
     if request.method == "POST":
-        action = request.form.get("action")
 
-        payroll_month = request.form.get("payroll_month") or selected_month
-        payroll_year = int(request.form.get("payroll_year") or selected_year)
+        action = request.form.get(
+            "action",
+            ""
+        ).strip()
 
+        payroll_month = request.form.get(
+            "payroll_month",
+            selected_month
+        ).strip()
+
+        try:
+            payroll_year = int(
+                request.form.get("payroll_year")
+                or selected_year
+            )
+        except (TypeError, ValueError):
+            flash("Enter a valid payroll year.")
+
+            return redirect(
+                url_for(
+                    "payroll",
+                    month=selected_month,
+                    year=selected_year
+                )
+            )
+
+        if payroll_month not in months:
+            flash("Select a valid payroll month.")
+
+            return redirect(
+                url_for(
+                    "payroll",
+                    month=selected_month,
+                    year=selected_year
+                )
+            )
+
+        # =====================================================
+        # GENERATE PAYROLL FOR ALL ACTIVE STAFF
+        # =====================================================
         if action == "generate_payroll":
+
             staff_members = Staff.query.filter_by(
                 school_id=school_id,
                 status="Active"
-            ).order_by(Staff.full_name).all()
+            ).order_by(
+                Staff.full_name.asc()
+            ).all()
 
             created = 0
             skipped = 0
+            advance_records_paid = 0
+            advance_amount_deducted = 0
 
-            for staff in staff_members:
-                existing = StaffPayroll.query.filter_by(
-                    school_id=school_id,
-                    staff_id=staff.id,
-                    payroll_month=payroll_month,
-                    payroll_year=payroll_year
-                ).first()
+            try:
+                for staff in staff_members:
 
-                if existing:
-                    skipped += 1
-                    continue
+                    existing = StaffPayroll.query.filter_by(
+                        school_id=school_id,
+                        staff_id=staff.id,
+                        payroll_month=payroll_month,
+                        payroll_year=payroll_year
+                    ).first()
 
-                hr = StaffHR.query.filter_by(
-                    school_id=school_id,
-                    staff_id=staff.id
-                ).first()
+                    if existing:
+                        skipped += 1
+                        continue
 
-                basic_salary = float(hr.basic_salary or 0) if hr else 0
-                allowances = 0
+                    hr = StaffHR.query.filter_by(
+                        school_id=school_id,
+                        staff_id=staff.id
+                    ).first()
 
-                if hr:
-                    allowances = float(
-                        (hr.house_allowance or 0) +
-                        (hr.transport_allowance or 0) +
-                        (hr.other_allowance or 0)
+                    basic_salary = (
+                        float(hr.basic_salary or 0)
+                        if hr else
+                        float(staff.monthly_salary or 0)
                     )
 
-                deductions = 0
-                net_salary = basic_salary + allowances - deductions
+                    allowances = 0
 
-                payroll_item = StaffPayroll(
-                    school_id=school_id,
-                    staff_id=staff.id,
-                    payroll_month=payroll_month,
-                    payroll_year=payroll_year,
-                    basic_salary=basic_salary,
-                    allowances=allowances,
-                    deductions=deductions,
-                    net_salary=net_salary,
-                    payment_method=hr.payment_mode if hr and hr.payment_mode else "Cash",
-                    payment_date=date.today(),
-                    status="Pending",
-                    created_by=session.get("username")
+                    if hr:
+                        allowances = (
+                            float(hr.house_allowance or 0)
+                            + float(hr.transport_allowance or 0)
+                            + float(hr.other_allowance or 0)
+                        )
+
+                    approved_advances = get_approved_advances(
+                        staff.id,
+                        payroll_month,
+                        payroll_year
+                    )
+
+                    salary_advance_deduction = sum(
+                        float(advance.amount or 0)
+                        for advance in approved_advances
+                    )
+
+                    other_deductions = 0
+
+                    total_deductions = (
+                        other_deductions
+                        + salary_advance_deduction
+                    )
+
+                    gross_salary = (
+                        basic_salary
+                        + allowances
+                    )
+
+                    net_salary = (
+                        gross_salary
+                        - total_deductions
+                    )
+
+                    if net_salary < 0:
+                        print(
+                            "PAYROLL SKIPPED - NEGATIVE NET SALARY:",
+                            staff.full_name,
+                            gross_salary,
+                            total_deductions,
+                            flush=True
+                        )
+
+                        skipped += 1
+                        continue
+
+                    payroll_item = StaffPayroll(
+                        school_id=school_id,
+                        staff_id=staff.id,
+                        payroll_month=payroll_month,
+                        payroll_year=payroll_year,
+                        basic_salary=basic_salary,
+                        allowances=allowances,
+                        deductions=total_deductions,
+                        net_salary=net_salary,
+                        payment_method=(
+                            hr.payment_mode
+                            if hr and hr.payment_mode
+                            else "Cash"
+                        ),
+                        payment_date=date.today(),
+                        status="Pending",
+                        created_by=session.get(
+                            "username",
+                            ""
+                        )
+                    )
+
+                    db.session.add(payroll_item)
+
+                    # The advance was already posted as an expense
+                    # when approved. Do not create another expense.
+                    for advance in approved_advances:
+                        advance.status = "Paid"
+                        advance_records_paid += 1
+
+                    advance_amount_deducted += (
+                        salary_advance_deduction
+                    )
+
+                    created += 1
+
+                db.session.commit()
+
+                try:
+                    save_audit(
+                        f"Generated payroll for "
+                        f"{payroll_month} {payroll_year}. "
+                        f"Created: {created}, "
+                        f"Skipped: {skipped}, "
+                        f"Salary advances deducted: "
+                        f"KES {advance_amount_deducted:,.2f}, "
+                        f"Advance records marked Paid: "
+                        f"{advance_records_paid}.",
+                        "Payroll"
+                    )
+
+                except Exception as audit_error:
+                    print(
+                        "PAYROLL AUDIT ERROR:",
+                        str(audit_error),
+                        flush=True
+                    )
+
+                flash(
+                    f"Payroll generated successfully. "
+                    f"Created: {created}, "
+                    f"Skipped: {skipped}. "
+                    f"Salary advances deducted: "
+                    f"KES {advance_amount_deducted:,.2f}."
                 )
 
-                db.session.add(payroll_item)
-                created += 1
+            except Exception as error:
+                db.session.rollback()
 
-            db.session.commit()
-            flash(f"Payroll generated successfully. Created: {created}, Skipped existing: {skipped}.")
-            return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
+                print(
+                    "GENERATE PAYROLL ERROR:",
+                    str(error),
+                    flush=True
+                )
 
+                flash(
+                    "Payroll generation failed. "
+                    "No payroll or salary advance changes were saved."
+                )
+
+            return redirect(
+                url_for(
+                    "payroll",
+                    month=payroll_month,
+                    year=payroll_year
+                )
+            )
+
+        # =====================================================
+        # MANUAL PAYROLL
+        # =====================================================
         if action == "manual_payroll":
-            staff_id = int(request.form.get("staff_id") or 0)
+
+            try:
+                staff_id = int(
+                    request.form.get("staff_id")
+                    or 0
+                )
+
+            except (TypeError, ValueError):
+                staff_id = 0
 
             if staff_id <= 0:
-                flash("Please select staff.")
-                return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
+                flash("Please select a staff member.")
+
+                return redirect(
+                    url_for(
+                        "payroll",
+                        month=payroll_month,
+                        year=payroll_year
+                    )
+                )
+
+            staff = Staff.query.filter_by(
+                id=staff_id,
+                school_id=school_id,
+                status="Active"
+            ).first()
+
+            if not staff:
+                flash("Selected staff member was not found.")
+
+                return redirect(
+                    url_for(
+                        "payroll",
+                        month=payroll_month,
+                        year=payroll_year
+                    )
+                )
 
             existing = StaffPayroll.query.filter_by(
                 school_id=school_id,
@@ -9805,102 +10039,370 @@ def payroll():
             ).first()
 
             if existing:
-                flash("Payroll for this staff already exists for this period.")
-                return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
+                flash(
+                    "Payroll for this staff member already "
+                    "exists for the selected period."
+                )
 
-            basic_salary = float(request.form.get("basic_salary") or 0)
-            allowances = float(request.form.get("allowances") or 0)
-            deductions = float(request.form.get("deductions") or 0)
-            net_salary = basic_salary + allowances - deductions
+                return redirect(
+                    url_for(
+                        "payroll",
+                        month=payroll_month,
+                        year=payroll_year
+                    )
+                )
 
-            payment_method = request.form.get("payment_method") or "Cash"
-            payment_date_raw = request.form.get("payment_date")
+            try:
+                basic_salary = float(
+                    request.form.get("basic_salary")
+                    or 0
+                )
+
+                allowances = float(
+                    request.form.get("allowances")
+                    or 0
+                )
+
+                manual_deductions = float(
+                    request.form.get("deductions")
+                    or 0
+                )
+
+            except (TypeError, ValueError):
+                flash(
+                    "Enter valid salary, allowance "
+                    "and deduction amounts."
+                )
+
+                return redirect(
+                    url_for(
+                        "payroll",
+                        month=payroll_month,
+                        year=payroll_year
+                    )
+                )
+
+            if (
+                basic_salary < 0
+                or allowances < 0
+                or manual_deductions < 0
+            ):
+                flash(
+                    "Salary, allowances and deductions "
+                    "cannot be negative."
+                )
+
+                return redirect(
+                    url_for(
+                        "payroll",
+                        month=payroll_month,
+                        year=payroll_year
+                    )
+                )
+
+            approved_advances = get_approved_advances(
+                staff_id,
+                payroll_month,
+                payroll_year
+            )
+
+            salary_advance_deduction = sum(
+                float(advance.amount or 0)
+                for advance in approved_advances
+            )
+
+            total_deductions = (
+                manual_deductions
+                + salary_advance_deduction
+            )
+
+            gross_salary = (
+                basic_salary
+                + allowances
+            )
+
+            net_salary = (
+                gross_salary
+                - total_deductions
+            )
+
+            if net_salary < 0:
+                flash(
+                    f"Total deductions exceed gross salary. "
+                    f"Salary advance deduction is "
+                    f"KES {salary_advance_deduction:,.2f}."
+                )
+
+                return redirect(
+                    url_for(
+                        "payroll",
+                        month=payroll_month,
+                        year=payroll_year
+                    )
+                )
+
+            payment_method = request.form.get(
+                "payment_method",
+                "Cash"
+            ).strip() or "Cash"
+
+            payment_date_raw = request.form.get(
+                "payment_date",
+                ""
+            ).strip()
 
             if payment_date_raw:
-                payment_date = datetime.strptime(payment_date_raw, "%Y-%m-%d").date()
+                try:
+                    payment_date = datetime.strptime(
+                        payment_date_raw,
+                        "%Y-%m-%d"
+                    ).date()
+
+                except ValueError:
+                    flash("Enter a valid payment date.")
+
+                    return redirect(
+                        url_for(
+                            "payroll",
+                            month=payroll_month,
+                            year=payroll_year
+                        )
+                    )
             else:
                 payment_date = date.today()
 
-            payroll_item = StaffPayroll(
-                school_id=school_id,
-                staff_id=staff_id,
-                payroll_month=payroll_month,
-                payroll_year=payroll_year,
-                basic_salary=basic_salary,
-                allowances=allowances,
-                deductions=deductions,
-                net_salary=net_salary,
-                payment_method=payment_method,
-                payment_date=payment_date,
-                status="Paid",
-                created_by=session.get("username")
+            try:
+                payroll_item = StaffPayroll(
+                    school_id=school_id,
+                    staff_id=staff_id,
+                    payroll_month=payroll_month,
+                    payroll_year=payroll_year,
+                    basic_salary=basic_salary,
+                    allowances=allowances,
+                    deductions=total_deductions,
+                    net_salary=net_salary,
+                    payment_method=payment_method,
+                    payment_date=payment_date,
+                    status="Paid",
+                    created_by=session.get(
+                        "username",
+                        ""
+                    )
+                )
+
+                db.session.add(payroll_item)
+
+                # Mark only this staff member's approved advances
+                # for the selected payroll period as Paid.
+                for advance in approved_advances:
+                    advance.status = "Paid"
+
+                db.session.commit()
+
+                try:
+                    save_audit(
+                        f"Recorded manual payroll for "
+                        f"{staff.full_name}, "
+                        f"{payroll_month} {payroll_year}. "
+                        f"Salary advance deducted: "
+                        f"KES {salary_advance_deduction:,.2f}.",
+                        "Payroll"
+                    )
+
+                except Exception as audit_error:
+                    print(
+                        "MANUAL PAYROLL AUDIT ERROR:",
+                        str(audit_error),
+                        flush=True
+                    )
+
+                flash(
+                    f"Manual payroll recorded successfully. "
+                    f"Salary advance deducted: "
+                    f"KES {salary_advance_deduction:,.2f}."
+                )
+
+            except Exception as error:
+                db.session.rollback()
+
+                print(
+                    "MANUAL PAYROLL ERROR:",
+                    str(error),
+                    flush=True
+                )
+
+                flash(
+                    "Manual payroll could not be saved. "
+                    "No salary advance changes were made."
+                )
+
+            return redirect(
+                url_for(
+                    "payroll",
+                    month=payroll_month,
+                    year=payroll_year
+                )
             )
 
-            db.session.add(payroll_item)
-            db.session.commit()
+        flash("Unknown payroll action.")
 
-            flash("Manual payroll recorded successfully.")
-            return redirect(url_for("payroll", month=payroll_month, year=payroll_year))
+        return redirect(
+            url_for(
+                "payroll",
+                month=payroll_month,
+                year=payroll_year
+            )
+        )
 
+    # ---------------------------------------------------------
+    # PAGE DATA
+    # ---------------------------------------------------------
     staff_members = Staff.query.filter_by(
         school_id=school_id,
         status="Active"
-    ).order_by(Staff.full_name).all()
+    ).order_by(
+        Staff.full_name.asc()
+    ).all()
 
     staff_options = []
     staff_name_map = {}
 
-    for s in staff_members:
+    for staff in staff_members:
+
+        hr = StaffHR.query.filter_by(
+            school_id=school_id,
+            staff_id=staff.id
+        ).first()
+
+        configured_salary = (
+            float(hr.basic_salary or 0)
+            if hr else
+            float(staff.monthly_salary or 0)
+        )
+
+        approved_advance_total = db.session.query(
+            db.func.coalesce(
+                db.func.sum(SalaryAdvance.amount),
+                0
+            )
+        ).filter(
+            SalaryAdvance.school_id == school_id,
+            SalaryAdvance.staff_id == staff.id,
+            SalaryAdvance.payroll_month == selected_month,
+            SalaryAdvance.payroll_year == selected_year,
+            SalaryAdvance.status == "Approved"
+        ).scalar() or 0
+
         staff_options.append({
-            "id": s.id,
-            "name": s.full_name,
-            "role": s.role
+            "id": staff.id,
+            "name": staff.full_name,
+            "role": staff.role,
+            "basic_salary": configured_salary,
+            "approved_advance": float(
+                approved_advance_total or 0
+            )
         })
-        staff_name_map[s.id] = s.full_name
+
+        staff_name_map[staff.id] = staff.full_name
 
     payrolls = StaffPayroll.query.filter_by(
         school_id=school_id,
         payroll_month=selected_month,
         payroll_year=selected_year
-    ).order_by(StaffPayroll.id.desc()).all()
+    ).order_by(
+        StaffPayroll.id.desc()
+    ).all()
 
     payroll_rows = []
+    total_basic_salary = 0
+    total_allowances = 0
+    total_deductions = 0
+    total_salary_advances = 0
     total_net_salary = 0
 
-    for x in payrolls:
-        total_net_salary += x.net_salary or 0
+    for payroll_item in payrolls:
+
+        paid_advance_total = db.session.query(
+            db.func.coalesce(
+                db.func.sum(SalaryAdvance.amount),
+                0
+            )
+        ).filter(
+            SalaryAdvance.school_id == school_id,
+            SalaryAdvance.staff_id == payroll_item.staff_id,
+            SalaryAdvance.payroll_month == payroll_item.payroll_month,
+            SalaryAdvance.payroll_year == payroll_item.payroll_year,
+            SalaryAdvance.status == "Paid"
+        ).scalar() or 0
+
+        paid_advance_total = float(
+            paid_advance_total or 0
+        )
+
+        total_basic_salary += float(
+            payroll_item.basic_salary or 0
+        )
+
+        total_allowances += float(
+            payroll_item.allowances or 0
+        )
+
+        total_deductions += float(
+            payroll_item.deductions or 0
+        )
+
+        total_salary_advances += paid_advance_total
+
+        total_net_salary += float(
+            payroll_item.net_salary or 0
+        )
 
         payroll_rows.append({
-            "id": x.id,
-            "payment_date": x.payment_date,
-            "staff_id": x.staff_id,
-            "staff_name": staff_name_map.get(x.staff_id, f"Staff {x.staff_id}"),
-            "month_year": f"{x.payroll_month} {x.payroll_year}",
-            "payroll_month": x.payroll_month,
-            "payroll_year": x.payroll_year,
-            "basic_salary": x.basic_salary or 0,
-            "allowances": x.allowances or 0,
-            "deductions": x.deductions or 0,
-            "net_salary": x.net_salary or 0,
-            "payment_method": x.payment_method,
-            "status": x.status,
-            "created_by": x.created_by
+            "id": payroll_item.id,
+            "payment_date": payroll_item.payment_date,
+            "staff_id": payroll_item.staff_id,
+            "staff_name": staff_name_map.get(
+                payroll_item.staff_id,
+                f"Staff {payroll_item.staff_id}"
+            ),
+            "month_year": (
+                f"{payroll_item.payroll_month} "
+                f"{payroll_item.payroll_year}"
+            ),
+            "payroll_month": payroll_item.payroll_month,
+            "payroll_year": payroll_item.payroll_year,
+            "basic_salary": payroll_item.basic_salary or 0,
+            "allowances": payroll_item.allowances or 0,
+            "salary_advance": paid_advance_total,
+            "deductions": payroll_item.deductions or 0,
+            "net_salary": payroll_item.net_salary or 0,
+            "payment_method": payroll_item.payment_method,
+            "status": payroll_item.status,
+            "created_by": payroll_item.created_by
         })
 
     return render_template(
         "payroll.html",
         settings=get_settings(),
+
         staff_options=staff_options,
         payroll_rows=payroll_rows,
+
         months=months,
         selected_month=selected_month,
         selected_year=selected_year,
+
+        total_basic_salary=total_basic_salary,
+        total_allowances=total_allowances,
+        total_deductions=total_deductions,
+        total_salary_advances=total_salary_advances,
         total_net_salary=total_net_salary,
+
         active_staff_count=len(staff_options),
         payroll_count=len(payroll_rows),
+
         money=money
     )
-
 @app.route("/salary_advances", methods=["GET", "POST"])
 def salary_advances():
     if not login_required():
