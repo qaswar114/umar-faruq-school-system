@@ -10408,11 +10408,7 @@ def salary_advances():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed(
-        "admin",
-        "bursar",
-        "principal"
-    ):
+    if not role_allowed("admin", "bursar", "principal"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
@@ -10432,6 +10428,21 @@ def salary_advances():
         "November",
         "December"
     ]
+
+    def get_staff_monthly_salary(staff):
+        """
+        Use StaffHR.basic_salary first.
+        Fall back to Staff.monthly_salary when no HR salary exists.
+        """
+        hr = StaffHR.query.filter_by(
+            school_id=school_id,
+            staff_id=staff.id
+        ).first()
+
+        if hr and float(hr.basic_salary or 0) > 0:
+            return float(hr.basic_salary or 0)
+
+        return float(staff.monthly_salary or 0)
 
     if request.method == "POST":
         try:
@@ -10469,10 +10480,7 @@ def salary_advances():
                 "Approved"
             ).strip()
 
-            if status not in [
-                "Pending",
-                "Approved"
-            ]:
+            if status not in ["Pending", "Approved"]:
                 status = "Approved"
 
             if payroll_month not in months:
@@ -10484,7 +10492,6 @@ def salary_advances():
                     advance_date_text,
                     "%Y-%m-%d"
                 ).date()
-
             except ValueError:
                 flash("Enter a valid advance date.")
                 return redirect(url_for("salary_advances"))
@@ -10499,14 +10506,12 @@ def salary_advances():
                 flash("Selected staff member was not found.")
                 return redirect(url_for("salary_advances"))
 
-            monthly_salary = float(
-                staff.monthly_salary or 0
-            )
+            monthly_salary = get_staff_monthly_salary(staff)
 
             if monthly_salary <= 0:
                 flash(
-                    f"{staff.full_name} does not have a monthly "
-                    f"salary configured. Update the staff profile first."
+                    f"{staff.full_name} does not have a salary configured. "
+                    f"Update the staff HR profile first."
                 )
                 return redirect(url_for("salary_advances"))
 
@@ -10583,8 +10588,7 @@ def salary_advances():
             db.session.add(advance)
             db.session.flush()
 
-            # Automatically record an approved salary advance
-            # as a school expense.
+            # Record approved advance once as an expense.
             if status == "Approved":
                 expense = Expense(
                     school_id=school_id,
@@ -10615,7 +10619,6 @@ def salary_advances():
                     f"status {status}.",
                     "Payroll"
                 )
-
             except Exception as audit_error:
                 print(
                     "SALARY ADVANCE AUDIT ERROR:",
@@ -10654,12 +10657,28 @@ def salary_advances():
     # ---------------------------------------------------------
     # PAGE DATA
     # ---------------------------------------------------------
-    staff_members = Staff.query.filter_by(
+    staff_records = Staff.query.filter_by(
         school_id=school_id,
         status="Active"
     ).order_by(
         Staff.full_name.asc()
     ).all()
+
+    staff_members = []
+    staff_dict = {}
+
+    for staff in staff_records:
+        monthly_salary = get_staff_monthly_salary(staff)
+
+        staff_data = {
+            "id": staff.id,
+            "full_name": staff.full_name,
+            "role": staff.role,
+            "monthly_salary": monthly_salary
+        }
+
+        staff_members.append(staff_data)
+        staff_dict[staff.id] = staff_data
 
     advances = SalaryAdvance.query.filter_by(
         school_id=school_id
@@ -10667,11 +10686,6 @@ def salary_advances():
         SalaryAdvance.advance_date.desc(),
         SalaryAdvance.id.desc()
     ).all()
-
-    staff_dict = {
-        staff.id: staff
-        for staff in staff_members
-    }
 
     current_month = date.today().strftime("%B")
     current_year = date.today().year
@@ -10681,10 +10695,7 @@ def salary_advances():
         for advance in advances
         if advance.payroll_month == current_month
         and advance.payroll_year == current_year
-        and advance.status in [
-            "Pending",
-            "Approved"
-        ]
+        and advance.status in ["Pending", "Approved"]
     )
 
     approved_total = sum(
@@ -10708,10 +10719,7 @@ def salary_advances():
     staff_with_advances = len({
         advance.staff_id
         for advance in advances
-        if advance.status in [
-            "Pending",
-            "Approved"
-        ]
+        if advance.status in ["Pending", "Approved"]
     })
 
     return render_template(
