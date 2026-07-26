@@ -2638,9 +2638,6 @@ def dashboard():
     # ---------------------------------------------------------
     # SUPER ADMIN ROUTING
     # ---------------------------------------------------------
-    # Super Admin without a selected school sees the SaaS
-    # dashboard. After clicking Open, school_id will exist and
-    # the selected school's dashboard will be displayed.
     if role == "super admin" and not session.get("school_id"):
         return redirect(url_for("super_admin_dashboard"))
 
@@ -2721,9 +2718,26 @@ def dashboard():
         Payment.payment_date == today
     ).scalar() or 0
 
+    today_collection = float(today_collection or 0)
+
     # ---------------------------------------------------------
     # CURRENT CALENDAR-MONTH COLLECTION
     # ---------------------------------------------------------
+    first_day_this_month = today.replace(day=1)
+
+    if today.month == 12:
+        first_day_next_month = date(
+            today.year + 1,
+            1,
+            1
+        )
+    else:
+        first_day_next_month = date(
+            today.year,
+            today.month + 1,
+            1
+        )
+
     month_collection = db.session.query(
         db.func.coalesce(
             db.func.sum(payment_total),
@@ -2731,9 +2745,11 @@ def dashboard():
         )
     ).filter(
         Payment.school_id == school_id,
-        db.extract("year", Payment.payment_date) == year,
-        db.extract("month", Payment.payment_date) == today.month
+        Payment.payment_date >= first_day_this_month,
+        Payment.payment_date < first_day_next_month
     ).scalar() or 0
+
+    month_collection = float(month_collection or 0)
 
     # ---------------------------------------------------------
     # CURRENT TERM COLLECTION
@@ -2749,18 +2765,31 @@ def dashboard():
         Payment.term == term
     ).scalar() or 0
 
+    term_collection = float(term_collection or 0)
+
     # ---------------------------------------------------------
     # CURRENT TERM OUTSTANDING
     # ---------------------------------------------------------
     term_months = {
-        "Term 1": ["January", "February", "March"],
-        "Term 2": ["May", "June", "July"],
-        "Term 3": ["September", "October", "November"]
+        "Term 1": [
+            "January",
+            "February",
+            "March"
+        ],
+        "Term 2": [
+            "May",
+            "June",
+            "July"
+        ],
+        "Term 3": [
+            "September",
+            "October",
+            "November"
+        ]
     }
 
     months_for_term = term_months.get(term, [])
 
-    # Charge only months already reached in the active term.
     if month in months_for_term:
         month_position = months_for_term.index(month)
         chargeable_months = months_for_term[:month_position + 1]
@@ -2786,15 +2815,15 @@ def dashboard():
         ).all()
 
         for fee in fee_rows:
-            pupil_due += fee.tuition_fee or 0
+            pupil_due += float(fee.tuition_fee or 0)
 
             if pupil.uses_bus == "Yes":
-                pupil_due += fee.bus_fee or 0
+                pupil_due += float(fee.bus_fee or 0)
 
-            pupil_due += fee.exam_fee or 0
+            pupil_due += float(fee.exam_fee or 0)
 
             if pupil.new_admission == "Yes":
-                pupil_due += fee.admission_fee or 0
+                pupil_due += float(fee.admission_fee or 0)
 
         pupil_paid = db.session.query(
             db.func.coalesce(
@@ -2833,6 +2862,8 @@ def dashboard():
         if pupil_balance > 0:
             outstanding += pupil_balance
 
+    outstanding = float(outstanding or 0)
+
     # ---------------------------------------------------------
     # EXPENSES THIS MONTH
     # ---------------------------------------------------------
@@ -2843,9 +2874,11 @@ def dashboard():
         )
     ).filter(
         Expense.school_id == school_id,
-        db.extract("year", Expense.expense_date) == year,
-        db.extract("month", Expense.expense_date) == today.month
+        Expense.expense_date >= first_day_this_month,
+        Expense.expense_date < first_day_next_month
     ).scalar() or 0
+
+    expenses_month = float(expenses_month or 0)
 
     # ---------------------------------------------------------
     # ATTENDANCE TODAY
@@ -2918,9 +2951,15 @@ def dashboard():
         today_collection=today_collection,
         month_collection=month_collection,
         term_collection=term_collection,
+
         outstanding=outstanding,
         term_outstanding=outstanding,
+
+        # Pass all common expense variable names so the
+        # dashboard template displays the same correct value.
         expenses_month=expenses_month,
+        expenses_this_month=expenses_month,
+        month_expenses=expenses_month,
 
         attendance_today=attendance_today,
         present_today=present_today,
