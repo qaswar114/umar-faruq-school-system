@@ -11239,35 +11239,269 @@ def edit_user(user_id):
     if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role", "").lower() != "admin":
-        flash("Only Admin can edit users.")
+    current_role = (
+        session.get("role")
+        or ""
+    ).strip().lower()
+
+    if current_role == "super admin":
+        flash(
+            "School user accounts must be managed inside the school."
+        )
+        return redirect(url_for("super_admin_dashboard"))
+
+    if current_role not in [
+        "director",
+        "manager",
+        "admin"
+    ]:
+        flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    user = User.query.filter_by(
+    school_id = current_school_id()
+
+    user_account = User.query.filter_by(
         id=user_id,
-        school_id=current_school_id()
+        school_id=school_id
     ).first_or_404()
 
+    target_role = (
+        user_account.role
+        or ""
+    ).strip().lower()
+
+    # ---------------------------------------------------------
+    # WHO MAY MANAGE THIS ACCOUNT?
+    # ---------------------------------------------------------
+    if current_role == "manager" and target_role in [
+        "director",
+        "manager"
+    ]:
+        flash(
+            "A Manager cannot edit Director or Manager accounts."
+        )
+        return redirect(url_for("users"))
+
+    if current_role == "admin" and target_role in [
+        "director",
+        "manager",
+        "admin"
+    ]:
+        flash(
+            "An Admin cannot edit Director, Manager or Admin accounts."
+        )
+        return redirect(url_for("users"))
+
+    all_school_roles = [
+        "Director",
+        "Manager",
+        "Admin",
+        "Principal",
+        "Headteacher",
+        "Deputy Headteacher",
+        "Accountant",
+        "Bursar",
+        "Registrar",
+        "Receptionist",
+        "Teacher",
+        "ICT Officer",
+        "Librarian",
+        "Storekeeper",
+        "Nurse",
+        "Driver",
+        "Security Officer",
+        "Cook",
+        "Cleaner"
+    ]
+
+    if current_role == "director":
+        available_roles = all_school_roles
+
+    elif current_role == "manager":
+        available_roles = [
+            "Admin",
+            "Principal",
+            "Headteacher",
+            "Deputy Headteacher",
+            "Accountant",
+            "Bursar",
+            "Registrar",
+            "Receptionist",
+            "Teacher",
+            "ICT Officer",
+            "Librarian",
+            "Storekeeper",
+            "Nurse",
+            "Driver",
+            "Security Officer",
+            "Cook",
+            "Cleaner"
+        ]
+
+    else:
+        available_roles = [
+            "Principal",
+            "Headteacher",
+            "Deputy Headteacher",
+            "Accountant",
+            "Bursar",
+            "Registrar",
+            "Receptionist",
+            "Teacher",
+            "ICT Officer",
+            "Librarian",
+            "Storekeeper",
+            "Nurse",
+            "Driver",
+            "Security Officer",
+            "Cook",
+            "Cleaner"
+        ]
+
     if request.method == "POST":
-        user.role = request.form["role"]
-        user.assigned_grade = request.form.get("assigned_grade", "")
-        user.is_active = bool(int(request.form["is_active"]))
+        username = request.form.get(
+            "username",
+            ""
+        ).strip()
 
-        db.session.commit()
+        role = request.form.get(
+            "role",
+            ""
+        ).strip()
 
-        save_audit(
-            f"Updated user account: {user.username}",
-            "Security"
+        assigned_grade = request.form.get(
+            "assigned_grade",
+            ""
+        ).strip()
+
+        assigned_subjects = request.form.get(
+            "assigned_subjects",
+            ""
+        ).strip()
+
+        is_active = (
+            request.form.get("is_active") == "yes"
         )
 
-        flash("User updated successfully.")
+        if not username:
+            flash("Enter a username.")
+            return redirect(
+                url_for(
+                    "edit_user",
+                    user_id=user_account.id
+                )
+            )
+
+        if len(username) < 3:
+            flash(
+                "Username must contain at least three characters."
+            )
+            return redirect(
+                url_for(
+                    "edit_user",
+                    user_id=user_account.id
+                )
+            )
+
+        if role not in available_roles:
+            flash(
+                "You are not permitted to assign that role."
+            )
+            return redirect(
+                url_for(
+                    "edit_user",
+                    user_id=user_account.id
+                )
+            )
+
+        existing_username = User.query.filter(
+            db.func.lower(User.username)
+            == username.lower(),
+            User.id != user_account.id
+        ).first()
+
+        if existing_username:
+            flash(
+                "Username already exists. Choose another username."
+            )
+            return redirect(
+                url_for(
+                    "edit_user",
+                    user_id=user_account.id
+                )
+            )
+
+        # Protect the last active Director.
+        if target_role == "director":
+            active_directors = User.query.filter(
+                User.school_id == school_id,
+                db.func.lower(User.role) == "director",
+                User.is_active.is_(True)
+            ).count()
+
+            removing_director_authority = (
+                role.lower() != "director"
+                or not is_active
+            )
+
+            if (
+                active_directors <= 1
+                and removing_director_authority
+            ):
+                flash(
+                    "The last active Director cannot be removed, "
+                    "demoted or deactivated."
+                )
+                return redirect(
+                    url_for(
+                        "edit_user",
+                        user_id=user_account.id
+                    )
+                )
+
+        if role != "Teacher":
+            assigned_grade = ""
+            assigned_subjects = ""
+
+        user_account.username = username
+        user_account.role = role
+        user_account.assigned_grade = assigned_grade
+        user_account.assigned_subjects = assigned_subjects
+        user_account.is_active = is_active
+
+        try:
+            db.session.commit()
+
+            save_audit(
+                f"Updated user account: "
+                f"{user_account.username} ({user_account.role})",
+                "Security"
+            )
+
+            flash("User account updated successfully.")
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "EDIT USER ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                "The user account could not be updated."
+            )
+
         return redirect(url_for("users"))
 
     return render_template(
         "edit_user.html",
         settings=get_settings(),
-        user=user,
-        grades=GRADES
+        user=user_account,
+        grades=GRADES,
+        available_roles=available_roles,
+        current_role=current_role
     )
 
 @app.route("/reports_dashboard")
@@ -11285,31 +11519,109 @@ def reports_dashboard():
     )
 
 
-@app.route("/reset_user_password/<int:user_id>", methods=["POST"])
+@app.route(
+    "/reset_user_password/<int:user_id>",
+    methods=["POST"]
+)
 def reset_user_password(user_id):
     if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role", "").lower() not in ["admin", "super admin"]:
-        flash("Only Admin can reset passwords.")
-        return redirect(url_for("users"))
+    current_role = (
+        session.get("role")
+        or ""
+    ).strip().lower()
 
-    user = User.query.filter_by(
+    if current_role == "super admin":
+        flash(
+            "School user passwords must be managed inside the school."
+        )
+        return redirect(url_for("super_admin_dashboard"))
+
+    if current_role not in [
+        "director",
+        "manager",
+        "admin"
+    ]:
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    user_account = User.query.filter_by(
         id=user_id,
-        school_id=current_school_id()
+        school_id=school_id
     ).first_or_404()
 
-    new_password = request.form["new_password"]
-    user.password_hash = generate_password_hash(new_password)
+    target_role = (
+        user_account.role
+        or ""
+    ).strip().lower()
 
-    db.session.commit()
+    if current_role == "manager" and target_role in [
+        "director",
+        "manager"
+    ]:
+        flash(
+            "A Manager cannot reset Director or Manager passwords."
+        )
+        return redirect(url_for("users"))
 
-    save_audit(
-        f"Reset password for user: {user.username}",
-        "Security"
-    )
+    if current_role == "admin" and target_role in [
+        "director",
+        "manager",
+        "admin"
+    ]:
+        flash(
+            "An Admin cannot reset Director, Manager or Admin passwords."
+        )
+        return redirect(url_for("users"))
 
-    flash("Password reset successfully.")
+    new_password = request.form.get(
+        "new_password",
+        ""
+    ).strip()
+
+    if len(new_password) < 6:
+        flash(
+            "The new password must contain at least six characters."
+        )
+        return redirect(url_for("users"))
+
+    try:
+        user_account.password_hash = generate_password_hash(
+            new_password
+        )
+
+        if hasattr(user_account, "force_password_change"):
+            user_account.force_password_change = True
+
+        db.session.commit()
+
+        save_audit(
+            f"Reset password for user: "
+            f"{user_account.username} ({user_account.role})",
+            "Security"
+        )
+
+        flash(
+            f"Password reset successfully for "
+            f"{user_account.username}."
+        )
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "RESET USER PASSWORD ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "The password could not be reset."
+        )
+
     return redirect(url_for("users"))
 
 
@@ -11318,32 +11630,104 @@ def delete_user(user_id):
     if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role", "").lower() != "admin":
-        flash("Only Admin can delete users.")
+    current_role = (
+        session.get("role")
+        or ""
+    ).strip().lower()
+
+    if current_role == "super admin":
+        flash(
+            "School user accounts must be managed inside the school."
+        )
+        return redirect(url_for("super_admin_dashboard"))
+
+    if current_role not in [
+        "director",
+        "manager",
+        "admin"
+    ]:
+        flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    user = User.query.filter_by(
+    school_id = current_school_id()
+
+    user_account = User.query.filter_by(
         id=user_id,
-        school_id=current_school_id()
+        school_id=school_id
     ).first_or_404()
 
-    if user.username == "admin":
-        flash("Main admin cannot be deleted.")
+    target_role = (
+        user_account.role
+        or ""
+    ).strip().lower()
+
+    # No one deletes their own active session account.
+    if user_account.id == session.get("user_id"):
+        flash(
+            "You cannot delete the account you are currently using."
+        )
         return redirect(url_for("users"))
 
-    if user.username == session.get("username"):
-        flash("You cannot delete your own account while logged in.")
+    if current_role == "manager" and target_role in [
+        "director",
+        "manager"
+    ]:
+        flash(
+            "A Manager cannot delete Director or Manager accounts."
+        )
         return redirect(url_for("users"))
 
-    db.session.delete(user)
-    db.session.commit()
+    if current_role == "admin" and target_role in [
+        "director",
+        "manager",
+        "admin"
+    ]:
+        flash(
+            "An Admin cannot delete Director, Manager or Admin accounts."
+        )
+        return redirect(url_for("users"))
 
-    save_audit(
-        f"Deleted user account: {user.username}",
-        "Security"
-    )
+    if target_role == "director":
+        active_directors = User.query.filter(
+            User.school_id == school_id,
+            db.func.lower(User.role) == "director",
+            User.is_active.is_(True)
+        ).count()
 
-    flash("User deleted successfully.")
+        if active_directors <= 1:
+            flash(
+                "The last active Director cannot be deleted."
+            )
+            return redirect(url_for("users"))
+
+    username = user_account.username
+    role_name = user_account.role
+
+    try:
+        db.session.delete(user_account)
+        db.session.commit()
+
+        save_audit(
+            f"Deleted user account: "
+            f"{username} ({role_name})",
+            "Security"
+        )
+
+        flash("User account deleted successfully.")
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "DELETE USER ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "The user account could not be deleted."
+        )
+
     return redirect(url_for("users"))
 
 
