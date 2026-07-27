@@ -4,149 +4,1425 @@
 {% set today_amt = today_collection|default(0, true)|float %}
 {% set month_amt = month_collection|default(0, true)|float %}
 {% set term_amt = term_collection|default(0, true)|float %}
+{% set year_amt = year_collection|default(0, true)|float %}
 {% set outstanding_amt = outstanding|default(0, true)|float %}
 {% set expense_amt = month_expenses|default(0, true)|float %}
-{% set total_cash = term_amt + outstanding_amt %}
-{% if total_cash <= 0 %}
-    {% set total_cash = 1 %}
+{% set expense_year_amt = expenses_year|default(0, true)|float %}
+{% set net_cash_amt = month_net_cash|default(0, true)|float %}
+{% set payroll_amt = payroll_month_total|default(0, true)|float %}
+{% set approved_advance_amt = approved_salary_advances|default(0, true)|float %}
+{% set pending_advance_amt = pending_salary_advances|default(0, true)|float %}
+
+{% set finance_graph_total = term_amt + outstanding_amt + expense_amt %}
+
+{% if finance_graph_total <= 0 %}
+    {% set finance_graph_total = 1 %}
 {% endif %}
 
 <style>
-.dash{max-width:1500px;margin:0 auto;padding-bottom:30px}
-.top{
-    background:linear-gradient(135deg,#071f49,#0b5ed7,#16a34a);
-    color:white;border-radius:20px;padding:18px 22px;
-    display:flex;justify-content:space-between;align-items:center;
-    margin-bottom:16px;box-shadow:0 14px 35px rgba(15,23,42,.16)
+.dashboard-page {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding-bottom: 35px;
 }
-.top h2{margin:0;font-size:26px;font-weight:900}
-.top p{margin:5px 0 0;color:#dbeafe;font-weight:700}
-.badge{background:rgba(255,255,255,.18);padding:8px 13px;border-radius:999px;font-weight:900}
 
-.cards{
-    display:grid;grid-template-columns:repeat(6,1fr);
-    gap:12px;margin-bottom:16px
+.dashboard-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 22px;
+    padding: 25px 28px;
+    margin-bottom: 18px;
+    border-radius: 23px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 55%,
+        #16a34a 100%
+    );
+    box-shadow: 0 16px 35px rgba(15, 23, 42, .14);
 }
-.card{
-    background:white;border:1px solid #e5e7eb;border-radius:18px;
-    padding:15px;box-shadow:0 8px 20px rgba(15,23,42,.07);
-    min-height:105px
+
+.dashboard-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 30px;
 }
-.card small{font-weight:900;color:#64748b}
-.card h2{margin:10px 0 0;font-size:23px;color:#0b5ed7}
-.green h2{color:#159947}.red h2{color:#dc2626}.dark h2{color:#0f172a}.orange h2{color:#d97706}
 
-.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
-.panel{
-    background:white;border:1px solid #e5e7eb;border-radius:20px;
-    padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.07);
-    margin-bottom:16px
+.dashboard-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    font-size: 14px;
+    line-height: 1.5;
 }
-.panel h3{margin:0 0 14px;color:#0b5ed7;font-size:22px}
 
-.row{
-    display:flex;justify-content:space-between;align-items:center;
-    background:#f8fafc;border:1px solid #e5e7eb;
-    padding:12px 14px;border-radius:14px;margin-bottom:9px;
-    font-weight:900
+.hero-badges {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
-.bar-wrap{margin-bottom:14px}
-.bar-title{display:flex;justify-content:space-between;font-weight:900;margin-bottom:7px}
-.bar{height:15px;background:#e5e7eb;border-radius:999px;overflow:hidden}
-.fill{height:100%;background:linear-gradient(90deg,#0b5ed7,#16a34a);border-radius:999px}
-.fill.red{background:linear-gradient(90deg,#dc2626,#f97316)}
-.fill.orange{background:linear-gradient(90deg,#f59e0b,#d97706)}
 
-.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.action{
-    text-decoration:none;color:#0f172a;background:#f8fafc;
-    border:1px solid #e5e7eb;border-radius:16px;
-    padding:14px;font-weight:900
+.hero-badge {
+    padding: 10px 15px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    color: white;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
 }
-.action span{font-size:26px;display:block;margin-bottom:7px}
-.action small{display:block;color:#64748b;margin-top:4px}
 
-.notice{background:#fff7d6;border-radius:14px;padding:13px;font-weight:800}
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 13px;
+    margin-bottom: 18px;
+}
 
-@media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:900px){.cards,.grid,.actions{grid-template-columns:1fr}.top{display:block}}
+.metric-card {
+    min-height: 132px;
+    padding: 16px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.metric-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #dbeafe;
+    font-size: 21px;
+}
+
+.metric-label {
+    margin-top: 11px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.metric-value {
+    margin-top: 5px;
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 950;
+}
+
+.metric-note {
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.value-green {
+    color: #15803d;
+}
+
+.value-red {
+    color: #dc2626;
+}
+
+.value-orange {
+    color: #d97706;
+}
+
+.value-blue {
+    color: #1d4ed8;
+}
+
+.value-purple {
+    color: #7c3aed;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.dashboard-panel {
+    padding: 20px;
+    margin-bottom: 18px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 21px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 17px;
+}
+
+.panel-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.panel-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.panel-badge {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.finance-row {
+    margin-bottom: 15px;
+}
+
+.finance-row:last-child {
+    margin-bottom: 0;
+}
+
+.finance-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 7px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.finance-bar {
+    width: 100%;
+    height: 15px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.finance-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0b5ed7, #16a34a);
+}
+
+.finance-fill.red {
+    background: linear-gradient(90deg, #dc2626, #f97316);
+}
+
+.finance-fill.orange {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.finance-fill.purple {
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+}
+
+.quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.quick-card {
+    display: block;
+    min-height: 130px;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 17px;
+    background: #f8fafc;
+    color: #0f172a;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.quick-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 20px rgba(15,23,42,.08);
+}
+
+.quick-icon {
+    font-size: 27px;
+}
+
+.quick-title {
+    margin-top: 11px;
+    font-size: 15px;
+    font-weight: 950;
+}
+
+.quick-note {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.summary-list {
+    display: grid;
+    gap: 10px;
+}
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 13px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.summary-row span {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.summary-row strong {
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.status-card {
+    padding: 13px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.status-card small {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.status-card strong {
+    display: block;
+    margin-top: 5px;
+    color: #0f172a;
+    font-size: 20px;
+}
+
+.status-card.sent {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.status-card.pending {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.status-card.failed {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.notice-list {
+    display: grid;
+    gap: 10px;
+}
+
+.notice-card {
+    padding: 13px 14px;
+    border: 1px solid #fde68a;
+    border-radius: 14px;
+    background: #fffbeb;
+}
+
+.notice-title {
+    color: #92400e;
+    font-weight: 900;
+}
+
+.notice-message {
+    margin-top: 5px;
+    color: #78350f;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.payment-list {
+    display: grid;
+    gap: 10px;
+}
+
+.payment-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 13px;
+    padding: 13px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.payment-main {
+    min-width: 0;
+}
+
+.payment-name {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.payment-meta {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.payment-amount {
+    flex-shrink: 0;
+    color: #15803d;
+    font-weight: 950;
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.control-card {
+    display: block;
+    min-height: 105px;
+    padding: 14px;
+    border: 1px solid #ddd6fe;
+    border-radius: 16px;
+    background: #f5f3ff;
+    color: #4c1d95;
+    text-decoration: none;
+}
+
+.control-card:hover {
+    background: #ede9fe;
+}
+
+.control-icon {
+    font-size: 24px;
+}
+
+.control-title {
+    margin-top: 8px;
+    font-weight: 950;
+}
+
+.control-note {
+    margin-top: 4px;
+    color: #6d28d9;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.warning-box {
+    padding: 13px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 14px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 800;
+}
+
+.empty-state {
+    padding: 26px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    font-weight: 800;
+}
+
+@media (max-width: 1300px) {
+    .metric-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1050px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .metric-grid,
+    .quick-grid,
+    .status-grid,
+    .control-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-hero {
+        display: block;
+    }
+
+    .hero-badges {
+        justify-content: flex-start;
+        margin-top: 15px;
+    }
+}
 </style>
 
-<div class="dash">
+<div class="dashboard-page">
 
-<div class="top">
-    <div>
-        <h2>🏫 Executive Dashboard</h2>
-        <p>{{ current_term|default("Current Term") }} {{ year }} | {{ current_month_name|default("") }}</p>
-    </div>
-    <div class="badge">EduManage SaaS</div>
-</div>
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
 
-<div class="cards">
-    <div class="card green"><small>Today</small><h2>{{ money(today_amt) }}</h2></div>
-    <div class="card green"><small>This Month</small><h2>{{ money(month_amt) }}</h2></div>
-    <div class="card green"><small>Term Collection</small><h2>{{ money(term_amt) }}</h2></div>
-    <div class="card red"><small>Term Outstanding</small><h2>{{ money(outstanding_amt) }}</h2></div>
-    <div class="card orange"><small>Expenses This Month</small><h2>{{ money(expense_amt) }}</h2></div>
-    <div class="card dark"><small>Pupils</small><h2>{{ total_pupils|default(0,true) }}</h2></div>
-</div>
+    <div class="dashboard-hero">
 
-<div class="grid">
+        <div>
+            <h2>
+                {% if dashboard_mode == "director" %}
+                    👑 Director Executive Dashboard
+                {% elif dashboard_mode == "manager" %}
+                    🏢 School Manager Dashboard
+                {% else %}
+                    🏫 School Dashboard
+                {% endif %}
+            </h2>
 
-    <div>
-        <div class="panel">
-            <h3>📊 Finance Graph</h3>
-
-            <div class="bar-wrap">
-                <div class="bar-title"><span>Current Term Collection</span><span>{{ money(term_amt) }}</span></div>
-                <div class="bar"><div class="fill" style="width:{{ (term_amt / total_cash * 100)|round(0) }}%"></div></div>
-            </div>
-
-            <div class="bar-wrap">
-                <div class="bar-title"><span>Current Term Outstanding</span><span>{{ money(outstanding_amt) }}</span></div>
-                <div class="bar"><div class="fill red" style="width:{{ (outstanding_amt / total_cash * 100)|round(0) }}%"></div></div>
-            </div>
-
-            <div class="bar-wrap">
-                <div class="bar-title"><span>Expenses This Month</span><span>{{ money(expense_amt) }}</span></div>
-                <div class="bar"><div class="fill orange" style="width:{{ (expense_amt / total_cash * 100)|round(0) }}%"></div></div>
-            </div>
+            <p>
+                {{ current_term }} {{ current_year }}
+                · {{ current_month_name }}
+                · {{ settings.school_name if settings else "EduManage School" }}
+            </p>
         </div>
 
-        <div class="panel">
-            <h3>⚡ Quick Actions</h3>
-            <div class="actions">
-                <a class="action" href="/pupils"><span>🎓</span>Register Pupil<small>Admissions</small></a>
-                <a class="action" href="/payments"><span>💳</span>Collect Fees<small>Payments</small></a>
-                <a class="action" href="/balances"><span>📄</span>Balances<small>Statements</small></a>
-                <a class="action" href="/defaulters_report"><span>💸</span>Defaulters<small>Arrears</small></a>
-                <a class="action" href="/expenses"><span>🧾</span>Expenses<small>Record costs</small></a>
-                <a class="action" href="/expense_report"><span>📈</span>Expense Report<small>Analyze spending</small></a>
+        <div class="hero-badges">
+
+            <div class="hero-badge">
+                {{ role|title }}
             </div>
+
+            <div class="hero-badge">
+                Attendance {{ attendance_rate|default(0, true) }}%
+            </div>
+
+            {% if dashboard_mode == "director" %}
+                <div class="hero-badge">
+                    Ownership Control
+                </div>
+            {% endif %}
+
         </div>
+
     </div>
 
-    <div>
-        <div class="panel">
-            <h3>👥 School Summary</h3>
-            <div class="row"><span>Active Pupils</span><span>{{ active_pupils|default(total_pupils,true)|default(0,true) }}</span></div>
-            <div class="row"><span>Inactive Pupils</span><span>{{ inactive_pupils|default(0,true) }}</span></div>
-            <div class="row"><span>Bus Pupils</span><span>{{ bus_pupils|default(0,true) }}</span></div>
-            <div class="row"><span>New Admissions</span><span>{{ new_admissions_month|default(0,true) }}</span></div>
-            <div class="row"><span>Attendance Today</span><span>{{ present_today|default(attendance_today,true)|default(0,true) }} / {{ total_pupils|default(0,true) }}</span></div>
+    <!-- =====================================================
+         MAIN METRICS
+    ====================================================== -->
+
+    <div class="metric-grid">
+
+        <div class="metric-card">
+            <div class="metric-icon">💳</div>
+
+            <div class="metric-label">
+                Collection Today
+            </div>
+
+            <div class="metric-value value-green">
+                {{ money(today_amt) }}
+            </div>
+
+            <div class="metric-note">
+                Payments received today
+            </div>
         </div>
 
-        <div class="panel">
-            <h3>📢 Announcements</h3>
-            {% for a in recent_announcements %}
-                <div class="notice"><b>{{ a.title }}</b><br>{{ a.message }}</div>
-            {% else %}
-                <div class="notice">No recent announcements.</div>
-            {% endfor %}
+        <div class="metric-card">
+            <div class="metric-icon">📅</div>
+
+            <div class="metric-label">
+                Collection This Month
+            </div>
+
+            <div class="metric-value value-green">
+                {{ money(month_amt) }}
+            </div>
+
+            <div class="metric-note">
+                {{ current_month_name }} {{ current_year }}
+            </div>
         </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">📈</div>
+
+            <div class="metric-label">
+                Current Term Collection
+            </div>
+
+            <div class="metric-value value-blue">
+                {{ money(term_amt) }}
+            </div>
+
+            <div class="metric-note">
+                {{ current_term }}
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">💸</div>
+
+            <div class="metric-label">
+                Current Term Outstanding
+            </div>
+
+            <div class="metric-value value-red">
+                {{ money(outstanding_amt) }}
+            </div>
+
+            <div class="metric-note">
+                Active pupil balances
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">🧾</div>
+
+            <div class="metric-label">
+                Expenses This Month
+            </div>
+
+            <div class="metric-value value-orange">
+                {{ money(expense_amt) }}
+            </div>
+
+            <div class="metric-note">
+                Includes salary advances
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">🏦</div>
+
+            <div class="metric-label">
+                Monthly Net Cash
+            </div>
+
+            <div class="metric-value
+                {% if net_cash_amt >= 0 %}
+                    value-green
+                {% else %}
+                    value-red
+                {% endif %}">
+
+                {{ money(net_cash_amt) }}
+            </div>
+
+            <div class="metric-note">
+                Collection less expenses
+            </div>
+        </div>
+
     </div>
 
-</div>
+    <!-- DIRECTOR EXTRA METRICS -->
+
+    {% if dashboard_mode == "director" %}
+
+        <div class="metric-grid">
+
+            <div class="metric-card">
+                <div class="metric-icon">📆</div>
+
+                <div class="metric-label">
+                    Year Collection
+                </div>
+
+                <div class="metric-value value-blue">
+                    {{ money(year_amt) }}
+                </div>
+
+                <div class="metric-note">
+                    Calendar year {{ current_year }}
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">📉</div>
+
+                <div class="metric-label">
+                    Year Expenses
+                </div>
+
+                <div class="metric-value value-orange">
+                    {{ money(expense_year_amt) }}
+                </div>
+
+                <div class="metric-note">
+                    Total school expenditure
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">💵</div>
+
+                <div class="metric-label">
+                    Monthly Payroll
+                </div>
+
+                <div class="metric-value value-purple">
+                    {{ money(payroll_amt) }}
+                </div>
+
+                <div class="metric-note">
+                    Net staff salaries
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🪙</div>
+
+                <div class="metric-label">
+                    Approved Advances
+                </div>
+
+                <div class="metric-value value-orange">
+                    {{ money(approved_advance_amt) }}
+                </div>
+
+                <div class="metric-note">
+                    Awaiting payroll deduction
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">👥</div>
+
+                <div class="metric-label">
+                    Active Staff
+                </div>
+
+                <div class="metric-value">
+                    {{ active_staff|default(0, true) }}
+                </div>
+
+                <div class="metric-note">
+                    {{ total_staff|default(0, true) }} total staff
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🎓</div>
+
+                <div class="metric-label">
+                    Active Pupils
+                </div>
+
+                <div class="metric-value">
+                    {{ active_pupils|default(0, true) }}
+                </div>
+
+                <div class="metric-note">
+                    {{ total_pupils|default(0, true) }} total records
+                </div>
+            </div>
+
+        </div>
+
+    {% endif %}
+
+    <div class="main-grid">
+
+        <!-- =================================================
+             LEFT COLUMN
+        ================================================== -->
+
+        <div>
+
+            <!-- FINANCE PERFORMANCE -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>📊 Financial Performance</h3>
+
+                        <p>
+                            Comparison of collections, outstanding balances
+                            and current monthly expenses.
+                        </p>
+                    </div>
+
+                    <span class="panel-badge">
+                        {{ current_term }}
+                    </span>
+                </div>
+
+                <div class="finance-row">
+
+                    <div class="finance-title">
+                        <span>Current Term Collection</span>
+                        <span>{{ money(term_amt) }}</span>
+                    </div>
+
+                    <div class="finance-bar">
+                        <div
+                            class="finance-fill"
+                            style="width: {{
+                                ((term_amt / finance_graph_total) * 100)
+                                |round(0)
+                            }}%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="finance-row">
+
+                    <div class="finance-title">
+                        <span>Current Term Outstanding</span>
+                        <span>{{ money(outstanding_amt) }}</span>
+                    </div>
+
+                    <div class="finance-bar">
+                        <div
+                            class="finance-fill red"
+                            style="width: {{
+                                ((outstanding_amt / finance_graph_total) * 100)
+                                |round(0)
+                            }}%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="finance-row">
+
+                    <div class="finance-title">
+                        <span>Expenses This Month</span>
+                        <span>{{ money(expense_amt) }}</span>
+                    </div>
+
+                    <div class="finance-bar">
+                        <div
+                            class="finance-fill orange"
+                            style="width: {{
+                                ((expense_amt / finance_graph_total) * 100)
+                                |round(0)
+                            }}%;">
+                        </div>
+                    </div>
+                </div>
+
+                {% if dashboard_mode == "director" %}
+
+                    <div class="finance-row">
+
+                        <div class="finance-title">
+                            <span>Monthly Payroll</span>
+                            <span>{{ money(payroll_amt) }}</span>
+                        </div>
+
+                        <div class="finance-bar">
+                            <div
+                                class="finance-fill purple"
+                                style="width: {{
+                                    (
+                                        (
+                                            payroll_amt
+                                            / (
+                                                finance_graph_total
+                                                + payroll_amt
+                                                if (
+                                                    finance_graph_total
+                                                    + payroll_amt
+                                                ) > 0
+                                                else 1
+                                            )
+                                        ) * 100
+                                    )|round(0)
+                                }}%;">
+                            </div>
+                        </div>
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            <!-- QUICK ACTIONS -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>⚡ Quick Actions</h3>
+
+                        <p>
+                            Frequently used school management functions.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="quick-grid">
+
+                    <a href="/pupils" class="quick-card">
+                        <div class="quick-icon">🎓</div>
+                        <div class="quick-title">Admissions</div>
+                        <div class="quick-note">
+                            Register and manage pupils.
+                        </div>
+                    </a>
+
+                    <a href="/payments" class="quick-card">
+                        <div class="quick-icon">💳</div>
+                        <div class="quick-title">Collect Fees</div>
+                        <div class="quick-note">
+                            Record school fee payments.
+                        </div>
+                    </a>
+
+                    <a href="/balances" class="quick-card">
+                        <div class="quick-icon">📄</div>
+                        <div class="quick-title">Balances</div>
+                        <div class="quick-note">
+                            Review pupil balances and statements.
+                        </div>
+                    </a>
+
+                    <a href="/defaulters_report" class="quick-card">
+                        <div class="quick-icon">💸</div>
+                        <div class="quick-title">Defaulters</div>
+                        <div class="quick-note">
+                            Review outstanding school fees.
+                        </div>
+                    </a>
+
+                    <a href="/expenses" class="quick-card">
+                        <div class="quick-icon">🧾</div>
+                        <div class="quick-title">Expenses</div>
+                        <div class="quick-note">
+                            Record daily school expenses.
+                        </div>
+                    </a>
+
+                    <a href="/expense_report" class="quick-card">
+                        <div class="quick-icon">📈</div>
+                        <div class="quick-title">Expense Report</div>
+                        <div class="quick-note">
+                            Analyze school expenditure.
+                        </div>
+                    </a>
+
+                    {% if dashboard_mode in ["director", "manager"] %}
+
+                        <a href="/payroll" class="quick-card">
+                            <div class="quick-icon">💵</div>
+                            <div class="quick-title">Payroll</div>
+                            <div class="quick-note">
+                                Review and generate staff payroll.
+                            </div>
+                        </a>
+
+                        <a href="/salary_advances" class="quick-card">
+                            <div class="quick-icon">🪙</div>
+                            <div class="quick-title">Salary Advances</div>
+                            <div class="quick-note">
+                                Manage staff salary advances.
+                            </div>
+                        </a>
+
+                        <a href="/staff" class="quick-card">
+                            <div class="quick-icon">👥</div>
+                            <div class="quick-title">Staff Directory</div>
+                            <div class="quick-note">
+                                Manage school employees.
+                            </div>
+                        </a>
+
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- DIRECTOR CONTROL PANEL -->
+
+            {% if dashboard_mode == "director" %}
+
+                <div class="dashboard-panel">
+
+                    <div class="panel-heading">
+                        <div>
+                            <h3>👑 Director Control Panel</h3>
+
+                            <p>
+                                Ownership-level controls for this school.
+                            </p>
+                        </div>
+
+                        <span class="panel-badge">
+                            Director Only
+                        </span>
+                    </div>
+
+                    <div class="control-grid">
+
+                        <a href="/users" class="control-card">
+                            <div class="control-icon">👤</div>
+                            <div class="control-title">
+                                User Authority
+                            </div>
+                            <div class="control-note">
+                                Create Managers, Admins and school users.
+                            </div>
+                        </a>
+
+                        <a href="/settings" class="control-card">
+                            <div class="control-icon">🎨</div>
+                            <div class="control-title">
+                                School Settings
+                            </div>
+                            <div class="control-note">
+                                Branding, logo, stamp and school details.
+                            </div>
+                        </a>
+
+                        <a href="/audit_logs" class="control-card">
+                            <div class="control-icon">🧾</div>
+                            <div class="control-title">
+                                Audit Logs
+                            </div>
+                            <div class="control-note">
+                                Review sensitive activity and changes.
+                            </div>
+                        </a>
+
+                        <a href="/business_dashboard" class="control-card">
+                            <div class="control-icon">📊</div>
+                            <div class="control-title">
+                                Business Intelligence
+                            </div>
+                            <div class="control-note">
+                                Cash flow, performance and financial health.
+                            </div>
+                        </a>
+
+                        <a href="/communication_center" class="control-card">
+                            <div class="control-icon">📡</div>
+                            <div class="control-title">
+                                Communications
+                            </div>
+                            <div class="control-note">
+                                SMS, WhatsApp and parent communication.
+                            </div>
+                        </a>
+
+                        <a href="/reports_dashboard" class="control-card">
+                            <div class="control-icon">📑</div>
+                            <div class="control-title">
+                                Reports Centre
+                            </div>
+                            <div class="control-note">
+                                Open all school operational reports.
+                            </div>
+                        </a>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+            <!-- RECENT PAYMENTS -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>💳 Recent Payments</h3>
+
+                        <p>
+                            Latest school fee collection records.
+                        </p>
+                    </div>
+
+                    <a href="/daily_collections" class="panel-badge">
+                        Daily Report
+                    </a>
+                </div>
+
+                {% if recent_payments %}
+
+                    <div class="payment-list">
+
+                        {% for payment in recent_payments %}
+
+                            {% set payment_amount =
+                                (payment.tuition_paid or 0)
+                                + (payment.bus_paid or 0)
+                                + (payment.exam_paid or 0)
+                                + (payment.admission_paid or 0)
+                            %}
+
+                            <div class="payment-card">
+
+                                <div class="payment-main">
+
+                                    <div class="payment-name">
+                                        Receipt {{ payment.receipt_no or "-" }}
+                                    </div>
+
+                                    <div class="payment-meta">
+                                        {{ payment.payment_date.strftime(
+                                            "%d-%m-%Y"
+                                        ) if payment.payment_date else "-" }}
+
+                                        · {{ payment.payment_method or "Payment" }}
+
+                                        · {{ payment.month or "-" }}
+                                    </div>
+
+                                </div>
+
+                                <div class="payment-amount">
+                                    {{ money(payment_amount) }}
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty-state">
+                        No payment records are available.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <!-- =================================================
+             RIGHT COLUMN
+        ================================================== -->
+
+        <div>
+
+            <!-- SCHOOL SUMMARY -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>👥 School Summary</h3>
+
+                        <p>
+                            Current school operational statistics.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="summary-list">
+
+                    <div class="summary-row">
+                        <span>Active Pupils</span>
+                        <strong>{{ active_pupils|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Inactive Pupils</span>
+                        <strong>{{ inactive_pupils|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Bus Pupils</span>
+                        <strong>{{ bus_pupils|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>New Admissions</span>
+                        <strong>{{ new_admissions_month|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Active Staff</span>
+                        <strong>{{ active_staff|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Active System Users</span>
+                        <strong>{{ active_users|default(0, true) }}</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ATTENDANCE -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>🕒 Attendance Today</h3>
+
+                        <p>
+                            Daily pupil attendance performance.
+                        </p>
+                    </div>
+
+                    <span class="panel-badge">
+                        {{ attendance_rate|default(0, true) }}%
+                    </span>
+                </div>
+
+                <div class="summary-list">
+
+                    <div class="summary-row">
+                        <span>Present</span>
+                        <strong>{{ present_today|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Absent</span>
+                        <strong>{{ absent_today|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Late</span>
+                        <strong>{{ late_today|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Attendance Recorded</span>
+                        <strong>{{ attendance_today|default(0, true) }}</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- PAYROLL AND ADVANCES -->
+
+            {% if dashboard_mode in ["director", "manager"] %}
+
+                <div class="dashboard-panel">
+
+                    <div class="panel-heading">
+                        <div>
+                            <h3>💵 Payroll & Advances</h3>
+
+                            <p>
+                                Current salary and staff advance position.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="summary-list">
+
+                        <div class="summary-row">
+                            <span>Monthly Payroll</span>
+                            <strong>{{ money(payroll_amt) }}</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Payroll Pending</span>
+                            <strong>{{ payroll_pending|default(0, true) }}</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Payroll Paid</span>
+                            <strong>{{ payroll_paid|default(0, true) }}</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Approved Advances</span>
+                            <strong>{{ money(approved_advance_amt) }}</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Pending Advances</span>
+                            <strong>{{ money(pending_advance_amt) }}</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+            <!-- COMMUNICATION HEALTH -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>📡 Communication Health</h3>
+
+                        <p>
+                            SMS and WhatsApp queue performance.
+                        </p>
+                    </div>
+
+                    <span class="panel-badge">
+                        SMS Balance {{ sms_balance|default(0, true) }}
+                    </span>
+                </div>
+
+                <h4 style="margin:0 0 9px;color:#334155;">
+                    SMS
+                </h4>
+
+                <div class="status-grid">
+
+                    <div class="status-card sent">
+                        <small>Sent</small>
+                        <strong>{{ sms_sent|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="status-card pending">
+                        <small>Pending</small>
+                        <strong>{{ sms_pending|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="status-card failed">
+                        <small>Failed</small>
+                        <strong>{{ sms_failed|default(0, true) }}</strong>
+                    </div>
+
+                </div>
+
+                <h4 style="margin:16px 0 9px;color:#334155;">
+                    WhatsApp
+                </h4>
+
+                <div class="status-grid">
+
+                    <div class="status-card sent">
+                        <small>Sent</small>
+                        <strong>{{ whatsapp_sent|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="status-card pending">
+                        <small>Pending</small>
+                        <strong>{{ whatsapp_pending|default(0, true) }}</strong>
+                    </div>
+
+                    <div class="status-card failed">
+                        <small>Failed</small>
+                        <strong>{{ whatsapp_failed|default(0, true) }}</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ANNOUNCEMENTS -->
+
+            <div class="dashboard-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <h3>📢 Announcements</h3>
+
+                        <p>
+                            Latest school and platform notices.
+                        </p>
+                    </div>
+                </div>
+
+                {% if recent_announcements %}
+
+                    <div class="notice-list">
+
+                        {% for announcement in recent_announcements %}
+
+                            <div class="notice-card">
+
+                                <div class="notice-title">
+                                    {{ announcement.title or "Announcement" }}
+                                </div>
+
+                                <div class="notice-message">
+                                    {{ announcement.message or "" }}
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty-state">
+                        No recent announcements.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+            <!-- DIRECTOR WARNINGS -->
+
+            {% if dashboard_mode == "director" %}
+
+                {% if outstanding_amt > term_amt %}
+
+                    <div class="warning-box">
+                        Outstanding fees are currently higher than the
+                        amount collected for the term. Review the defaulters
+                        report and parent communication plan.
+                    </div>
+
+                {% elif sms_failed > 0 or whatsapp_failed > 0 %}
+
+                    <div class="warning-box">
+                        Some parent communications have failed. Review the
+                        Communication Center and retry failed messages.
+                    </div>
+
+                {% elif payroll_pending > 0 %}
+
+                    <div class="warning-box">
+                        There are pending payroll records for
+                        {{ current_month_name }} {{ current_year }}.
+                    </div>
+
+                {% endif %}
+
+            {% endif %}
+
+        </div>
+
+    </div>
 
 </div>
 
