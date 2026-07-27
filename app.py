@@ -2633,40 +2633,73 @@ def dashboard():
     if not login_required():
         return redirect(url_for("login"))
 
-    role = (session.get("role") or "").strip().lower()
+    role = (
+        session.get("role")
+        or ""
+    ).strip().lower()
 
     # ---------------------------------------------------------
     # SUPER ADMIN ROUTING
     # ---------------------------------------------------------
-    if role == "super admin" and not session.get("school_id"):
+    if role == "super admin":
         return redirect(url_for("super_admin_dashboard"))
 
     school_id = current_school_id()
 
     if not school_id:
-        if role == "super admin":
-            return redirect(url_for("super_admin_dashboard"))
-
         flash("No school has been selected.")
         return redirect(url_for("login"))
 
     settings = get_settings()
 
     today = datetime.now().date()
-    year = today.year
-    month = today.strftime("%B")
+    current_year = today.year
+    current_month_name = today.strftime("%B")
 
     # ---------------------------------------------------------
-    # DETERMINE CURRENT TERM
+    # CURRENT TERM
     # ---------------------------------------------------------
     if today.month in [1, 2, 3, 4]:
-        term = "Term 1"
+        current_term = "Term 1"
 
     elif today.month in [5, 6, 7, 8]:
-        term = "Term 2"
+        current_term = "Term 2"
 
     else:
-        term = "Term 3"
+        current_term = "Term 3"
+
+    # ---------------------------------------------------------
+    # CURRENT MONTH DATE RANGE
+    # ---------------------------------------------------------
+    first_day_this_month = today.replace(day=1)
+
+    if today.month == 12:
+        first_day_next_month = date(
+            today.year + 1,
+            1,
+            1
+        )
+    else:
+        first_day_next_month = date(
+            today.year,
+            today.month + 1,
+            1
+        )
+
+    # ---------------------------------------------------------
+    # CURRENT YEAR DATE RANGE
+    # ---------------------------------------------------------
+    first_day_this_year = date(
+        current_year,
+        1,
+        1
+    )
+
+    first_day_next_year = date(
+        current_year + 1,
+        1,
+        1
+    )
 
     # ---------------------------------------------------------
     # PUPIL STATISTICS
@@ -2687,26 +2720,81 @@ def dashboard():
         uses_bus="Yes"
     ).count()
 
+    total_pupils = (
+        active_pupils
+        + inactive_pupils
+    )
+
     new_admissions = Pupil.query.filter_by(
         school_id=school_id,
         status="Active",
         new_admission="Yes"
     ).count()
 
-    total_pupils = active_pupils + inactive_pupils
+    # Keep both variable names for template compatibility.
+    new_admissions_month = new_admissions
+
+    # ---------------------------------------------------------
+    # STAFF AND USER STATISTICS
+    # ---------------------------------------------------------
+    active_staff = Staff.query.filter_by(
+        school_id=school_id,
+        status="Active"
+    ).count()
+
+    inactive_staff = Staff.query.filter_by(
+        school_id=school_id,
+        status="Inactive"
+    ).count()
+
+    total_staff = (
+        active_staff
+        + inactive_staff
+    )
+
+    total_users = User.query.filter_by(
+        school_id=school_id
+    ).count()
+
+    active_users = User.query.filter_by(
+        school_id=school_id,
+        is_active=True
+    ).count()
+
+    directors_count = User.query.filter(
+        User.school_id == school_id,
+        db.func.lower(User.role) == "director"
+    ).count()
+
+    managers_count = User.query.filter(
+        User.school_id == school_id,
+        db.func.lower(User.role) == "manager"
+    ).count()
 
     # ---------------------------------------------------------
     # PAYMENT TOTAL EXPRESSION
     # ---------------------------------------------------------
     payment_total = (
-        db.func.coalesce(Payment.tuition_paid, 0)
-        + db.func.coalesce(Payment.bus_paid, 0)
-        + db.func.coalesce(Payment.exam_paid, 0)
-        + db.func.coalesce(Payment.admission_paid, 0)
+        db.func.coalesce(
+            Payment.tuition_paid,
+            0
+        )
+        + db.func.coalesce(
+            Payment.bus_paid,
+            0
+        )
+        + db.func.coalesce(
+            Payment.exam_paid,
+            0
+        )
+        + db.func.coalesce(
+            Payment.admission_paid,
+            0
+        )
     )
 
     # ---------------------------------------------------------
-    # TODAY'S COLLECTION
+    # TODAY COLLECTION
     # ---------------------------------------------------------
     today_collection = db.session.query(
         db.func.coalesce(
@@ -2718,26 +2806,13 @@ def dashboard():
         Payment.payment_date == today
     ).scalar() or 0
 
-    today_collection = float(today_collection or 0)
+    today_collection = float(
+        today_collection or 0
+    )
 
     # ---------------------------------------------------------
-    # CURRENT CALENDAR-MONTH COLLECTION
+    # MONTH COLLECTION
     # ---------------------------------------------------------
-    first_day_this_month = today.replace(day=1)
-
-    if today.month == 12:
-        first_day_next_month = date(
-            today.year + 1,
-            1,
-            1
-        )
-    else:
-        first_day_next_month = date(
-            today.year,
-            today.month + 1,
-            1
-        )
-
     month_collection = db.session.query(
         db.func.coalesce(
             db.func.sum(payment_total),
@@ -2749,10 +2824,30 @@ def dashboard():
         Payment.payment_date < first_day_next_month
     ).scalar() or 0
 
-    month_collection = float(month_collection or 0)
+    month_collection = float(
+        month_collection or 0
+    )
 
     # ---------------------------------------------------------
-    # CURRENT TERM COLLECTION
+    # YEAR COLLECTION
+    # ---------------------------------------------------------
+    year_collection = db.session.query(
+        db.func.coalesce(
+            db.func.sum(payment_total),
+            0
+        )
+    ).filter(
+        Payment.school_id == school_id,
+        Payment.payment_date >= first_day_this_year,
+        Payment.payment_date < first_day_next_year
+    ).scalar() or 0
+
+    year_collection = float(
+        year_collection or 0
+    )
+
+    # ---------------------------------------------------------
+    # TERM COLLECTION
     # ---------------------------------------------------------
     term_collection = db.session.query(
         db.func.coalesce(
@@ -2761,14 +2856,16 @@ def dashboard():
         )
     ).filter(
         Payment.school_id == school_id,
-        Payment.academic_year == year,
-        Payment.term == term
+        Payment.academic_year == current_year,
+        Payment.term == current_term
     ).scalar() or 0
 
-    term_collection = float(term_collection or 0)
+    term_collection = float(
+        term_collection or 0
+    )
 
     # ---------------------------------------------------------
-    # CURRENT TERM OUTSTANDING
+    # TERM OUTSTANDING
     # ---------------------------------------------------------
     term_months = {
         "Term 1": [
@@ -2788,11 +2885,19 @@ def dashboard():
         ]
     }
 
-    months_for_term = term_months.get(term, [])
+    months_for_term = term_months.get(
+        current_term,
+        []
+    )
 
-    if month in months_for_term:
-        month_position = months_for_term.index(month)
-        chargeable_months = months_for_term[:month_position + 1]
+    if current_month_name in months_for_term:
+        month_position = months_for_term.index(
+            current_month_name
+        )
+
+        chargeable_months = months_for_term[
+            :month_position + 1
+        ]
     else:
         chargeable_months = months_for_term
 
@@ -2808,22 +2913,32 @@ def dashboard():
 
         fee_rows = FeeStructure.query.filter(
             FeeStructure.school_id == school_id,
-            FeeStructure.academic_year == year,
+            FeeStructure.academic_year == current_year,
             FeeStructure.grade == pupil.grade,
-            FeeStructure.term == term,
-            FeeStructure.month.in_(chargeable_months)
+            FeeStructure.term == current_term,
+            FeeStructure.month.in_(
+                chargeable_months
+            )
         ).all()
 
         for fee in fee_rows:
-            pupil_due += float(fee.tuition_fee or 0)
+            pupil_due += float(
+                fee.tuition_fee or 0
+            )
 
             if pupil.uses_bus == "Yes":
-                pupil_due += float(fee.bus_fee or 0)
+                pupil_due += float(
+                    fee.bus_fee or 0
+                )
 
-            pupil_due += float(fee.exam_fee or 0)
+            pupil_due += float(
+                fee.exam_fee or 0
+            )
 
             if pupil.new_admission == "Yes":
-                pupil_due += float(fee.admission_fee or 0)
+                pupil_due += float(
+                    fee.admission_fee or 0
+                )
 
         pupil_paid = db.session.query(
             db.func.coalesce(
@@ -2833,9 +2948,11 @@ def dashboard():
         ).filter(
             Payment.school_id == school_id,
             Payment.pupil_id == pupil.id,
-            Payment.academic_year == year,
-            Payment.term == term,
-            Payment.month.in_(chargeable_months)
+            Payment.academic_year == current_year,
+            Payment.term == current_term,
+            Payment.month.in_(
+                chargeable_months
+            )
         ).scalar() or 0
 
         pupil_discount = db.session.query(
@@ -2846,9 +2963,9 @@ def dashboard():
         ).filter(
             Discount.school_id == school_id,
             Discount.pupil_id == pupil.id,
-            Discount.academic_year == year,
+            Discount.academic_year == current_year,
             (
-                (Discount.term == term)
+                (Discount.term == current_term)
                 | (Discount.term == "All Year")
             )
         ).scalar() or 0
@@ -2862,10 +2979,12 @@ def dashboard():
         if pupil_balance > 0:
             outstanding += pupil_balance
 
-    outstanding = float(outstanding or 0)
+    outstanding = float(
+        outstanding or 0
+    )
 
     # ---------------------------------------------------------
-    # EXPENSES THIS MONTH
+    # MONTH EXPENSES
     # ---------------------------------------------------------
     expenses_month = db.session.query(
         db.func.coalesce(
@@ -2878,7 +2997,147 @@ def dashboard():
         Expense.expense_date < first_day_next_month
     ).scalar() or 0
 
-    expenses_month = float(expenses_month or 0)
+    expenses_month = float(
+        expenses_month or 0
+    )
+
+    # ---------------------------------------------------------
+    # YEAR EXPENSES
+    # ---------------------------------------------------------
+    expenses_year = db.session.query(
+        db.func.coalesce(
+            db.func.sum(Expense.amount),
+            0
+        )
+    ).filter(
+        Expense.school_id == school_id,
+        Expense.expense_date >= first_day_this_year,
+        Expense.expense_date < first_day_next_year
+    ).scalar() or 0
+
+    expenses_year = float(
+        expenses_year or 0
+    )
+
+    # ---------------------------------------------------------
+    # MONTH NET CASH POSITION
+    # ---------------------------------------------------------
+    month_net_cash = (
+        month_collection
+        - expenses_month
+    )
+
+    # ---------------------------------------------------------
+    # PAYROLL STATISTICS
+    # ---------------------------------------------------------
+    payroll_month_total = db.session.query(
+        db.func.coalesce(
+            db.func.sum(
+                StaffPayroll.net_salary
+            ),
+            0
+        )
+    ).filter(
+        StaffPayroll.school_id == school_id,
+        StaffPayroll.payroll_month == current_month_name,
+        StaffPayroll.payroll_year == current_year
+    ).scalar() or 0
+
+    payroll_month_total = float(
+        payroll_month_total or 0
+    )
+
+    payroll_pending = StaffPayroll.query.filter_by(
+        school_id=school_id,
+        payroll_month=current_month_name,
+        payroll_year=current_year,
+        status="Pending"
+    ).count()
+
+    payroll_paid = StaffPayroll.query.filter_by(
+        school_id=school_id,
+        payroll_month=current_month_name,
+        payroll_year=current_year,
+        status="Paid"
+    ).count()
+
+    # ---------------------------------------------------------
+    # SALARY ADVANCES
+    # ---------------------------------------------------------
+    approved_salary_advances = db.session.query(
+        db.func.coalesce(
+            db.func.sum(
+                SalaryAdvance.amount
+            ),
+            0
+        )
+    ).filter(
+        SalaryAdvance.school_id == school_id,
+        SalaryAdvance.status == "Approved"
+    ).scalar() or 0
+
+    approved_salary_advances = float(
+        approved_salary_advances or 0
+    )
+
+    pending_salary_advances = db.session.query(
+        db.func.coalesce(
+            db.func.sum(
+                SalaryAdvance.amount
+            ),
+            0
+        )
+    ).filter(
+        SalaryAdvance.school_id == school_id,
+        SalaryAdvance.status == "Pending"
+    ).scalar() or 0
+
+    pending_salary_advances = float(
+        pending_salary_advances or 0
+    )
+
+    # ---------------------------------------------------------
+    # COMMUNICATION STATISTICS
+    # ---------------------------------------------------------
+    sms_pending = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    sms_failed = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
+
+    sms_sent = SMSMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    whatsapp_pending = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Pending"
+    ).count()
+
+    whatsapp_failed = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Failed"
+    ).count()
+
+    whatsapp_sent = WhatsAppMessage.query.filter_by(
+        school_id=school_id,
+        status="Sent"
+    ).count()
+
+    wallet = SMSWallet.query.filter_by(
+        school_id=school_id
+    ).first()
+
+    sms_balance = (
+        int(wallet.sms_balance or 0)
+        if wallet
+        else 0
+    )
 
     # ---------------------------------------------------------
     # ATTENDANCE TODAY
@@ -2906,12 +3165,28 @@ def dashboard():
         status="Late"
     ).count()
 
+    attendance_rate = 0
+
+    if active_pupils > 0:
+        attendance_rate = round(
+            (
+                present_today
+                / active_pupils
+            ) * 100,
+            1
+        )
+
     # ---------------------------------------------------------
     # ANNOUNCEMENTS
     # ---------------------------------------------------------
-    announcements = Announcement.query.filter(
-        (Announcement.school_id == school_id)
-        | (Announcement.school_id.is_(None))
+    recent_announcements = Announcement.query.filter(
+        (
+            Announcement.school_id
+            == school_id
+        )
+        | (
+            Announcement.school_id.is_(None)
+        )
     ).order_by(
         Announcement.created_at.desc()
     ).limit(5).all()
@@ -2926,52 +3201,101 @@ def dashboard():
     ).limit(10).all()
 
     # ---------------------------------------------------------
-    # RENDER SCHOOL DASHBOARD
+    # DASHBOARD MODE
+    # ---------------------------------------------------------
+    if role == "director":
+        dashboard_mode = "director"
+        dashboard_title = "Director Executive Dashboard"
+
+    elif role == "manager":
+        dashboard_mode = "manager"
+        dashboard_title = "School Manager Dashboard"
+
+    else:
+        dashboard_mode = "standard"
+        dashboard_title = "School Dashboard"
+
+    # ---------------------------------------------------------
+    # RENDER
     # ---------------------------------------------------------
     return render_template(
         "dashboard.html",
 
         settings=settings,
 
-        year=year,
-        current_year=year,
+        role=role,
+        dashboard_mode=dashboard_mode,
+        dashboard_title=dashboard_title,
 
-        term=term,
-        current_term=term,
+        year=current_year,
+        current_year=current_year,
 
-        month=month,
-        current_month=month,
+        term=current_term,
+        current_term=current_term,
+
+        month=current_month_name,
+        current_month=current_month_name,
+        current_month_name=current_month_name,
 
         total_pupils=total_pupils,
         active_pupils=active_pupils,
         inactive_pupils=inactive_pupils,
         bus_pupils=bus_pupils,
         new_admissions=new_admissions,
+        new_admissions_month=new_admissions_month,
+
+        total_staff=total_staff,
+        active_staff=active_staff,
+        inactive_staff=inactive_staff,
+
+        total_users=total_users,
+        active_users=active_users,
+        directors_count=directors_count,
+        managers_count=managers_count,
 
         today_collection=today_collection,
         month_collection=month_collection,
         term_collection=term_collection,
+        year_collection=year_collection,
 
         outstanding=outstanding,
         term_outstanding=outstanding,
 
-        # Pass all common expense variable names so the
-        # dashboard template displays the same correct value.
         expenses_month=expenses_month,
         expenses_this_month=expenses_month,
         month_expenses=expenses_month,
+        expenses_year=expenses_year,
+
+        month_net_cash=month_net_cash,
+
+        payroll_month_total=payroll_month_total,
+        payroll_pending=payroll_pending,
+        payroll_paid=payroll_paid,
+
+        approved_salary_advances=approved_salary_advances,
+        pending_salary_advances=pending_salary_advances,
+
+        sms_pending=sms_pending,
+        sms_failed=sms_failed,
+        sms_sent=sms_sent,
+        sms_balance=sms_balance,
+
+        whatsapp_pending=whatsapp_pending,
+        whatsapp_failed=whatsapp_failed,
+        whatsapp_sent=whatsapp_sent,
 
         attendance_today=attendance_today,
         present_today=present_today,
         absent_today=absent_today,
         late_today=late_today,
+        attendance_rate=attendance_rate,
 
-        announcements=announcements,
+        announcements=recent_announcements,
+        recent_announcements=recent_announcements,
         recent_payments=recent_payments,
 
         money=money
     )
-
 @app.route("/super_admin_dashboard")
 def super_admin_dashboard():
     if not login_required():
