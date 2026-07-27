@@ -452,7 +452,9 @@
                     <select name="role" required>
                         <option value="">Select Role</option>
 
-                        <optgroup label="School Leadership">
+                        <optgroup label="School Ownership and Leadership">
+                            <option value="Director">Director / Proprietor</option>
+                            <option value="Manager">School Manager</option>
                             <option value="Admin">Admin</option>
                             <option value="Principal">Principal</option>
                             <option value="Headteacher">Headteacher</option>
@@ -604,9 +606,9 @@
                 </label>
 
                 <small class="field-note">
-                    A staff designation does not automatically determine
-                    system access. Login permissions must also be supported
-                    by the Users module and role restrictions.
+                    Director and Manager can be created as staff designations here.
+                    Their login access must also be supported by the Users module,
+                    role permissions and the sidebar menu.
                 </small>
 
             </div>
@@ -650,6 +652,8 @@
                 onchange="filterStaffTable()">
 
                 <option value="">All Roles</option>
+                <option value="director">Director / Proprietor</option>
+                <option value="manager">School Manager</option>
                 <option value="admin">Admin</option>
                 <option value="principal">Principal</option>
                 <option value="headteacher">Headteacher</option>
