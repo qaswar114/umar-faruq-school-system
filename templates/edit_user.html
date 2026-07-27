@@ -1,39 +1,443 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="panel">
-    <h1>Edit User</h1>
 
-    <form method="POST">
-        <label>Username</label>
-        <input type="text" value="{{ user.username }}" disabled>
+<style>
+.edit-user-page {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
 
-        <label>Role</label>
-        <select name="role">
-            <option value="Admin" {% if user.role=="Admin" %}selected{% endif %}>Admin</option>
-            <option value="Principal" {% if user.role=="Principal" %}selected{% endif %}>Principaln</option>
-            <option value="Bursar" {% if user.role=="Bursar" %}selected{% endif %}>Bursar</option>
-            <option value="Registrar" {% if user.role=="Registrar" %}selected{% endif %}>Registrar</option>
-            <option value="Teacher" {% if user.role=="Teacher" %}selected{% endif %}>Teacher</option>
-            <option value="Receptionist" {% if user.role=="Receptionist" %}selected{% endif %}>Receptionist</option>
-        </select>
+.edit-user-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 24px 28px;
+    margin-bottom: 18px;
+    border-radius: 22px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 55%,
+        #16a34a 100%
+    );
+    box-shadow: 0 15px 34px rgba(15, 23, 42, .14);
+}
 
-        <label>Assigned Grade</label>
-        <select name="assigned_grade">
-            <option value="">None</option>
-            {% for g in grades %}
-            <option value="{{ g }}" {% if user.assigned_grade==g %}selected{% endif %}>{{ g }}</option>
-            {% endfor %}
-        </select>
+.edit-user-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 28px;
+}
 
-        <label>Active Status</label>
-        <select name="is_active">
-            <option value="1" {% if user.is_active %}selected{% endif %}>Active</option>
-            <option value="0" {% if not user.is_active %}selected{% endif %}>Inactive</option>
-        </select>
+.edit-user-hero p {
+    margin: 7px 0 0;
+    color: #dbeafe;
+    line-height: 1.5;
+}
 
-        <br><br>
-        <button type="submit">Save Changes</button>
-    </form>
+.role-badge {
+    flex-shrink: 0;
+    padding: 10px 15px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    color: white;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.edit-user-card {
+    padding: 22px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.section-heading {
+    margin-bottom: 18px;
+}
+
+.section-heading h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.section-heading p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: white;
+    color: #0f172a;
+}
+
+.form-group input[readonly] {
+    background: #f8fafc;
+    color: #475569;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+}
+
+.authority-note {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid #bfdbfe;
+    border-radius: 13px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.academic-box {
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+    background: #f8fafc;
+}
+
+.status-box {
+    padding: 15px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+    background: #f8fafc;
+}
+
+.status-check {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.status-check input {
+    width: auto;
+    margin: 0;
+}
+
+.action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.save-btn,
+.cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.save-btn {
+    background: #16a34a;
+}
+
+.save-btn:hover {
+    background: #15803d;
+}
+
+.cancel-btn {
+    background: #64748b;
+}
+
+.cancel-btn:hover {
+    background: #475569;
+    color: white;
+}
+
+@media (max-width: 700px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-user-hero {
+        display: block;
+    }
+
+    .role-badge {
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+    .action-row {
+        justify-content: stretch;
+    }
+
+    .save-btn,
+    .cancel-btn {
+        width: 100%;
+    }
+}
+</style>
+
+<div class="edit-user-page">
+
+    <div class="edit-user-hero">
+
+        <div>
+            <h2>Edit User Account</h2>
+
+            <p>
+                Update the user’s role, academic assignment and
+                active status according to your authority level.
+            </p>
+        </div>
+
+        <div class="role-badge">
+            {{ current_role|title }} Access
+        </div>
+
+    </div>
+
+    <div class="edit-user-card">
+
+        <div class="section-heading">
+            <h3>{{ user.username }}</h3>
+
+            <p>
+                Current role: {{ user.role }}
+            </p>
+        </div>
+
+        <div class="authority-note">
+
+            {% if current_role == "director" %}
+
+                As Director, you may assign any school role,
+                including Director and Manager.
+
+            {% elif current_role == "manager" %}
+
+                As Manager, you may assign Admin and lower roles.
+                Director and Manager roles are protected.
+
+            {% else %}
+
+                As Admin, you may assign operational roles only.
+                Director, Manager and Admin roles are protected.
+
+            {% endif %}
+
+        </div>
+
+        <form method="post"
+              action="{{ url_for(
+                  'edit_user',
+                  user_id=user.id
+              ) }}"
+              onsubmit="return confirm(
+                  'Save changes to this user account?'
+              );">
+
+            <div class="form-group">
+                <label>Username</label>
+
+                <input
+                    type="text"
+                    name="username"
+                    value="{{ user.username }}"
+                    minlength="3"
+                    required>
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label>Role</label>
+
+                    <select
+                        name="role"
+                        id="editUserRole"
+                        onchange="toggleEditAcademicFields()"
+                        required>
+
+                        {% for role_name in available_roles %}
+
+                            <option
+                                value="{{ role_name }}"
+                                {% if user.role == role_name %}
+                                    selected
+                                {% endif %}>
+
+                                {{ role_name }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Current Account</label>
+
+                    <input
+                        type="text"
+                        value="{{ user.role }}"
+                        readonly>
+                </div>
+
+            </div>
+
+            <div id="editAcademicFields"
+                 class="academic-box">
+
+                <div class="form-row">
+
+                    <div class="form-group">
+                        <label>Assigned Grade</label>
+
+                        <select name="assigned_grade">
+
+                            <option value="">
+                                None
+                            </option>
+
+                            {% for grade in grades %}
+
+                                <option
+                                    value="{{ grade }}"
+                                    {% if user.assigned_grade == grade %}
+                                        selected
+                                    {% endif %}>
+
+                                    {{ grade }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Assigned Subjects</label>
+
+                        <input
+                            type="text"
+                            name="assigned_subjects"
+                            value="{{ user.assigned_subjects or '' }}"
+                            placeholder="Example: Maths, English">
+                    </div>
+
+                </div>
+
+                <small style="color:#64748b;">
+                    Grade and subject assignments apply only to teachers.
+                    They are automatically cleared for other roles.
+                </small>
+
+            </div>
+
+            <div class="status-box">
+
+                <label class="status-check">
+
+                    <input
+                        type="checkbox"
+                        name="is_active"
+                        value="yes"
+                        {% if user.is_active %}
+                            checked
+                        {% endif %}>
+
+                    Account is active
+                </label>
+
+                <small style="display:block;margin-top:7px;color:#64748b;">
+                    Inactive users cannot log in to EduManage.
+                </small>
+
+            </div>
+
+            <div class="action-row">
+
+                <a
+                    href="{{ url_for('users') }}"
+                    class="cancel-btn">
+
+                    Cancel
+                </a>
+
+                <button
+                    type="submit"
+                    class="save-btn">
+
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
 </div>
+
+<script>
+function toggleEditAcademicFields() {
+    const roleField =
+        document.getElementById("editUserRole");
+
+    const academicFields =
+        document.getElementById("editAcademicFields");
+
+    const selectedRole =
+        (roleField.value || "").toLowerCase();
+
+    academicFields.style.display =
+        selectedRole === "teacher"
+        ? "block"
+        : "none";
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+        toggleEditAcademicFields();
+    }
+);
+</script>
+
 {% endblock %}
