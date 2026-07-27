@@ -2,210 +2,901 @@
 {% block content %}
 
 <style>
-.users-page{max-width:1600px;margin:0 auto}
-.users-hero{background:linear-gradient(135deg,#0b5ed7,#16a34a);color:white;border-radius:18px;padding:22px;margin-bottom:16px}
-.users-hero h2{margin:0;font-size:30px}
-.users-hero p{margin:8px 0 0;color:#dbeafe}
-.users-card{background:white;border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(15,23,42,.07);border:1px solid #e5e7eb;margin-bottom:16px}
-.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
-.section-title h3{margin:0;color:#0b5ed7}
-.muted{color:#64748b;font-size:13px}
-.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
-.summary-card{background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:14px}
-.summary-card small{color:#64748b;font-weight:bold}
-.summary-card h3{margin:6px 0 0;font-size:22px}
-.filter-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px}
-.table-wrap{overflow-x:auto}
-.users-table{width:100%;border-collapse:separate;border-spacing:0 8px}
-.users-table th{background:#f8fafc;padding:11px;color:#475569;font-size:13px}
-.users-table td{background:white;padding:11px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;vertical-align:top}
-.users-table td:first-child{border-left:1px solid #e5e7eb;border-radius:12px 0 0 12px}
-.users-table td:last-child{border-right:1px solid #e5e7eb;border-radius:0 12px 12px 0}
-.role-pill,.grade-pill,.status-pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900}
-.role-pill{background:#eff6ff;color:#0b5ed7}
-.grade-pill{background:#f0fdf4;color:#15803d}
-.status-pill{background:#dcfce7;color:#166534}
-.action-row,.reset-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.reset-form{margin-top:8px}
-.reset-form input{max-width:220px;margin-bottom:0}
-.small-btn{padding:8px 11px;font-size:13px}
-.delete-btn{background:#dc2626!important}
-.empty-row{text-align:center;padding:20px!important;color:#64748b}
-@media(max-width:900px){
-    .form-grid-2,.form-grid-3,.summary-grid,.filter-row{grid-template-columns:1fr}
-    .section-title{flex-direction:column;align-items:flex-start}
-    .reset-form input{max-width:100%}
+.users-page {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.users-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 24px 28px;
+    margin-bottom: 18px;
+    border-radius: 22px;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #0b5ed7 55%,
+        #16a34a 100%
+    );
+    box-shadow: 0 15px 34px rgba(15, 23, 42, .14);
+}
+
+.users-hero h2 {
+    margin: 0;
+    color: white;
+    font-size: 30px;
+}
+
+.users-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+    line-height: 1.5;
+}
+
+.hierarchy-badge {
+    flex-shrink: 0;
+    padding: 11px 16px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    color: white;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 13px;
+    margin-bottom: 18px;
+}
+
+.summary-card {
+    min-height: 126px;
+    padding: 16px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 17px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.summary-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: #dbeafe;
+    font-size: 20px;
+}
+
+.summary-label {
+    margin-top: 11px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.summary-value {
+    margin-top: 4px;
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 950;
+}
+
+.users-grid {
+    display: grid;
+    grid-template-columns: 430px 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.users-card {
+    padding: 20px;
+    margin-bottom: 18px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+}
+
+.section-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.section-title h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.section-title p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.role-note {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 13px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: white;
+    color: #0f172a;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+}
+
+.create-btn {
+    width: 100%;
+    padding: 11px 15px;
+    border: none;
+    border-radius: 10px;
+    background: #16a34a;
+    color: white;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.create-btn:hover {
+    background: #15803d;
+}
+
+.table-tools {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 11px;
+    margin-bottom: 13px;
+}
+
+.table-tools input,
+.table-tools select {
+    width: 100%;
+    margin: 0;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    min-width: 1150px;
+    border-collapse: separate;
+    border-spacing: 0 9px;
+}
+
+.users-table th {
+    padding: 0 10px 7px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: left;
+}
+
+.users-table td {
+    padding: 12px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    color: #334155;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.users-table tr td:first-child {
+    border-left: 1px solid #e5e7eb;
+    border-radius: 13px 0 0 13px;
+}
+
+.users-table tr td:last-child {
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 13px 13px 0;
+}
+
+.username {
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.role-pill,
+.grade-pill,
+.status-pill,
+.permission-pill {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.role-pill {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.role-director {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.role-manager {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.grade-pill {
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.permission-pill {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.action-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 9px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.edit-btn {
+    background: #0b5ed7;
+}
+
+.delete-btn {
+    background: #dc2626;
+}
+
+.reset-btn {
+    background: #64748b;
+}
+
+.reset-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 7px;
+}
+
+.reset-form input {
+    min-width: 150px;
+    margin: 0;
+    padding: 7px 8px;
+    font-size: 12px;
+}
+
+.no-access {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.empty-state {
+    padding: 28px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    font-weight: 800;
+}
+
+@media (max-width: 1250px) {
+    .summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1000px) {
+    .users-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 750px) {
+    .summary-grid,
+    .form-row,
+    .table-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .users-hero {
+        display: block;
+    }
+
+    .hierarchy-badge {
+        display: inline-block;
+        margin-top: 15px;
+    }
+
+    .reset-form {
+        display: block;
+    }
+
+    .reset-form input {
+        width: 100%;
+        margin-bottom: 6px;
+    }
 }
 </style>
 
 <div class="users-page">
 
     <div class="users-hero">
-        <h2>👤 User & Role Management</h2>
-        <p>Create school users, assign roles, control teacher access and manage passwords.</p>
-    </div>
+        <div>
+            <h2>User & Role Management</h2>
 
-    <div class="users-card">
-        <div class="section-title">
-            <h3>Create New User</h3>
-            <span class="muted">Professional EduManage role structure</span>
+            <p>
+                Create school users and enforce the authority hierarchy
+                between Directors, Managers, Admins and operational staff.
+            </p>
         </div>
 
-        <form method="POST">
-            <div class="form-grid-2">
-                <div>
-                    <label>Username</label>
-                    <input name="username" required placeholder="Example: headteacher">
-                </div>
+        <div class="hierarchy-badge">
+            {{ current_role|title }} Access
+        </div>
+    </div>
 
+    <div class="summary-grid">
+
+        <div class="summary-card">
+            <div class="summary-icon">👥</div>
+            <div class="summary-label">Total Users</div>
+            <div class="summary-value">{{ total_users or 0 }}</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon">👑</div>
+            <div class="summary-label">Directors</div>
+            <div class="summary-value">{{ directors_count or 0 }}</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon">🏢</div>
+            <div class="summary-label">Managers</div>
+            <div class="summary-value">{{ managers_count or 0 }}</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon">⚙️</div>
+            <div class="summary-label">Admins</div>
+            <div class="summary-value">{{ admins_count or 0 }}</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon">👨‍🏫</div>
+            <div class="summary-label">Teachers</div>
+            <div class="summary-value">{{ teachers_count or 0 }}</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-icon">✅</div>
+            <div class="summary-label">Active Users</div>
+            <div class="summary-value">{{ active_users or 0 }}</div>
+        </div>
+
+    </div>
+
+    <div class="users-grid">
+
+        <div class="users-card">
+
+            <div class="section-title">
                 <div>
-                    <label>Password</label>
-                    <input type="password" name="password" required placeholder="Enter password">
+                    <h3>Create New User</h3>
+
+                    <p>
+                        Only roles below your current authority level
+                        are available for selection.
+                    </p>
                 </div>
             </div>
 
-            <div class="form-grid-3">
-                <div>
-                    <label>Role</label>
-                    <select name="role" required>
-                        {% for r in available_roles %}
-                        <option value="{{ r }}">{{ r }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+            <div class="role-note">
 
-                <div>
-                    <label>Assigned Grade</label>
-                    <select name="assigned_grade">
-                        <option value="">None</option>
-                        {% for g in grades %}
-                        <option value="{{ g }}">{{ g }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                {% if current_role == "director" %}
 
-                <div>
-                    <label>Assigned Subjects</label>
-                    <input name="assigned_subjects" placeholder="Example: Maths, English or All Subjects">
-                </div>
-            </div>
+                    As Director, you may create Directors, Managers,
+                    Admins and all operational users.
 
-            <button class="btn green" type="submit">Create User</button>
-        </form>
-    </div>
+                {% elif current_role == "manager" %}
 
-    <div class="users-card">
-        <div class="section-title">
-            <h3>Existing Users</h3>
-            <span class="muted">{{ users|length }} accounts</span>
-        </div>
+                    As Manager, you may create Admins and operational users,
+                    but you cannot create Directors or Managers.
 
-        <div class="summary-grid">
-            <div class="summary-card"><small>Total Users</small><h3>{{ users|length }}</h3></div>
-            <div class="summary-card"><small>Admins</small><h3>{{ users|selectattr("role","equalto","Admin")|list|length }}</h3></div>
-            <div class="summary-card"><small>Headteachers</small><h3>{{ users|selectattr("role","equalto","Headteacher")|list|length }}</h3></div>
-            <div class="summary-card"><small>Deputies</small><h3>{{ users|selectattr("role","equalto","Deputy Headteacher")|list|length }}</h3></div>
-            <div class="summary-card"><small>Teachers</small><h3>{{ users|selectattr("role","equalto","Teacher")|list|length }}</h3></div>
-        </div>
-
-        <div class="filter-row">
-            <input type="text" id="userSearch" placeholder="Search username, role, grade or subject...">
-
-            <select id="roleFilter">
-                <option value="">All Roles</option>
-                {% for r in available_roles %}
-                <option value="{{ r }}">{{ r }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="table-wrap">
-            <table class="users-table" id="usersTable">
-                <tr>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Grade</th>
-                    <th>Subjects</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-
-                {% for u in users %}
-                <tr data-role="{{ u.role }}">
-                    <td><b>{{ u.username }}</b></td>
-
-                    <td><span class="role-pill">{{ u.role }}</span></td>
-
-                    <td>
-                        {% if u.assigned_grade %}
-                            <span class="grade-pill">{{ u.assigned_grade }}</span>
-                        {% else %}
-                            <span class="muted">Not assigned</span>
-                        {% endif %}
-                    </td>
-
-                    <td>{{ u.assigned_subjects or "-" }}</td>
-
-                    <td>
-                        {% if u.is_active %}
-                            <span class="status-pill">Active</span>
-                        {% else %}
-                            <span class="muted">Inactive</span>
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        <div class="action-row">
-                            <a class="btn small-btn" href="{{ url_for('edit_user', user_id=u.id) }}">Edit</a>
-
-                            {% if u.username != 'admin' %}
-                            <form method="post" action="{{ url_for('delete_user', user_id=u.id) }}" style="display:inline;">
-                                <button type="submit" class="btn small-btn delete-btn" onclick="return confirm('Delete this user?')">
-                                    Delete
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
-
-                        <form method="post" action="/reset_user_password/{{ u.id }}" class="reset-form">
-                            <input type="text" name="new_password" placeholder="New password" required>
-                            <button type="submit" class="btn small-btn">Reset Password</button>
-                        </form>
-                    </td>
-                </tr>
                 {% else %}
-                <tr>
-                    <td colspan="6" class="empty-row">No users created yet.</td>
-                </tr>
-                {% endfor %}
-            </table>
+
+                    As Admin, you may create operational users only.
+                    You cannot create Directors, Managers or other Admins.
+
+                {% endif %}
+
+            </div>
+
+            <form method="post"
+                  action="{{ url_for('users') }}">
+
+                <div class="form-group">
+                    <label>Username</label>
+
+                    <input
+                        name="username"
+                        minlength="3"
+                        required
+                        placeholder="Example: schoolmanager">
+                </div>
+
+                <div class="form-group">
+                    <label>Temporary Password</label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        minlength="6"
+                        required
+                        placeholder="At least 6 characters">
+                </div>
+
+                <div class="form-group">
+                    <label>Role</label>
+
+                    <select
+                        name="role"
+                        id="newUserRole"
+                        onchange="toggleAcademicFields()"
+                        required>
+
+                        <option value="">
+                            Select Role
+                        </option>
+
+                        {% for role_name in available_roles %}
+
+                            <option value="{{ role_name }}">
+                                {{ role_name }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div id="academicFields">
+
+                    <div class="form-group">
+                        <label>Assigned Grade</label>
+
+                        <select name="assigned_grade">
+                            <option value="">None</option>
+
+                            {% for grade in grades %}
+
+                                <option value="{{ grade }}">
+                                    {{ grade }}
+                                </option>
+
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Assigned Subjects</label>
+
+                        <input
+                            name="assigned_subjects"
+                            placeholder="Example: Maths, English">
+                    </div>
+
+                </div>
+
+                <button type="submit" class="create-btn">
+                    Create User Account
+                </button>
+
+            </form>
+
         </div>
+
+        <div class="users-card">
+
+            <div class="section-title">
+                <div>
+                    <h3>Existing Users</h3>
+
+                    <p>
+                        Accounts you cannot control are displayed without
+                        edit, delete or password-reset buttons.
+                    </p>
+                </div>
+
+                <span class="permission-pill">
+                    {{ total_users or 0 }} Accounts
+                </span>
+            </div>
+
+            <div class="table-tools">
+
+                <input
+                    type="text"
+                    id="userSearch"
+                    placeholder="Search username, role, grade or subject..."
+                    onkeyup="filterUsers()">
+
+                <select
+                    id="roleFilter"
+                    onchange="filterUsers()">
+
+                    <option value="">All Roles</option>
+
+                    {% for role_name in all_school_roles %}
+
+                        <option value="{{ role_name|lower }}">
+                            {{ role_name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <select
+                    id="statusFilter"
+                    onchange="filterUsers()">
+
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+
+                </select>
+
+            </div>
+
+            {% if user_rows %}
+
+                <div class="table-wrap">
+
+                    <table class="users-table"
+                           id="usersTable">
+
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Grade</th>
+                                <th>Subjects</th>
+                                <th>Status</th>
+                                <th>Permissions</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for row in user_rows %}
+
+                                {% set user = row.user %}
+                                {% set normalized_role =
+                                    (user.role or '')|lower
+                                %}
+
+                                <tr
+                                    data-search="{{ (
+                                        (user.username or '')
+                                        ~ ' '
+                                        ~ (user.role or '')
+                                        ~ ' '
+                                        ~ (user.assigned_grade or '')
+                                        ~ ' '
+                                        ~ (user.assigned_subjects or '')
+                                    )|lower }}"
+                                    data-role="{{ normalized_role }}"
+                                    data-status="{% if user.is_active %}active{% else %}inactive{% endif %}">
+
+                                    <td>
+                                        <div class="username">
+                                            {{ user.username }}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="role-pill
+                                            {% if normalized_role == 'director' %}
+                                                role-director
+                                            {% elif normalized_role == 'manager' %}
+                                                role-manager
+                                            {% endif %}">
+
+                                            {{ user.role }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        {% if user.assigned_grade %}
+
+                                            <span class="grade-pill">
+                                                {{ user.assigned_grade }}
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="no-access">
+                                                Not assigned
+                                            </span>
+
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {{ user.assigned_subjects or "-" }}
+                                    </td>
+
+                                    <td>
+                                        {% if user.is_active %}
+
+                                            <span class="status-pill status-active">
+                                                Active
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="status-pill status-inactive">
+                                                Inactive
+                                            </span>
+
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if row.can_manage %}
+
+                                            <span class="permission-pill">
+                                                Manageable
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="no-access">
+                                                Higher authority
+                                            </span>
+
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if row.can_manage %}
+
+                                            <div class="action-group">
+
+                                                <a
+                                                    class="action-btn edit-btn"
+                                                    href="{{ url_for(
+                                                        'edit_user',
+                                                        user_id=user.id
+                                                    ) }}">
+
+                                                    Edit
+                                                </a>
+
+                                                {% if row.can_delete %}
+
+                                                    <form
+                                                        method="post"
+                                                        action="{{ url_for(
+                                                            'delete_user',
+                                                            user_id=user.id
+                                                        ) }}"
+                                                        onsubmit="return confirm(
+                                                            'Delete this user account?'
+                                                        );">
+
+                                                        <button
+                                                            type="submit"
+                                                            class="action-btn delete-btn">
+
+                                                            Delete
+                                                        </button>
+                                                    </form>
+
+                                                {% endif %}
+
+                                            </div>
+
+                                            {% if row.can_reset_password %}
+
+                                                <form
+                                                    method="post"
+                                                    action="/reset_user_password/{{ user.id }}"
+                                                    class="reset-form"
+                                                    onsubmit="return confirm(
+                                                        'Reset this user password?'
+                                                    );">
+
+                                                    <input
+                                                        type="password"
+                                                        name="new_password"
+                                                        minlength="6"
+                                                        placeholder="New password"
+                                                        required>
+
+                                                    <button
+                                                        type="submit"
+                                                        class="action-btn reset-btn">
+
+                                                        Reset
+                                                    </button>
+
+                                                </form>
+
+                                            {% endif %}
+
+                                        {% else %}
+
+                                            <span class="no-access">
+                                                No permission
+                                            </span>
+
+                                        {% endif %}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-state">
+                    No user accounts have been created for this school.
+                </div>
+
+            {% endif %}
+
+        </div>
+
     </div>
 
 </div>
 
 <script>
-const userSearch = document.getElementById("userSearch");
-const roleFilter = document.getElementById("roleFilter");
-const userRows = document.querySelectorAll("#usersTable tr[data-role]");
+function toggleAcademicFields() {
+    const roleField =
+        document.getElementById("newUserRole");
 
-function filterUsers(){
-    let search = userSearch.value.toLowerCase();
-    let role = roleFilter.value;
+    const academicFields =
+        document.getElementById("academicFields");
 
-    userRows.forEach(function(row){
-        let text = row.textContent.toLowerCase();
-        let rowRole = row.getAttribute("data-role");
-        row.style.display = (text.includes(search) && (!role || rowRole === role)) ? "" : "none";
+    const selectedRole =
+        (roleField.value || "").toLowerCase();
+
+    academicFields.style.display =
+        selectedRole === "teacher"
+        ? "block"
+        : "none";
+}
+
+function filterUsers() {
+    const search = (
+        document.getElementById("userSearch").value || ""
+    ).toLowerCase();
+
+    const role = (
+        document.getElementById("roleFilter").value || ""
+    ).toLowerCase();
+
+    const status = (
+        document.getElementById("statusFilter").value || ""
+    ).toLowerCase();
+
+    const rows = document.querySelectorAll(
+        "#usersTable tbody tr"
+    );
+
+    rows.forEach(function(row) {
+        const rowSearch =
+            row.dataset.search || "";
+
+        const rowRole =
+            row.dataset.role || "";
+
+        const rowStatus =
+            row.dataset.status || "";
+
+        const matchesSearch =
+            rowSearch.includes(search);
+
+        const matchesRole =
+            !role || rowRole === role;
+
+        const matchesStatus =
+            !status || rowStatus === status;
+
+        row.style.display =
+            matchesSearch &&
+            matchesRole &&
+            matchesStatus
+            ? ""
+            : "none";
     });
 }
 
-if(userSearch && roleFilter){
-    userSearch.addEventListener("keyup", filterUsers);
-    roleFilter.addEventListener("change", filterUsers);
-}
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+        toggleAcademicFields();
+    }
+);
 </script>
 
 {% endblock %}
