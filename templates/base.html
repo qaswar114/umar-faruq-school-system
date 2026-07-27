@@ -370,6 +370,9 @@
         .platform-sms-page,
         .platform-page,
         .school-overview-page,
+        .salary-advance-page,
+        .advance-page,
+        .edit-user-page,
         .kitchen-dashboard {
             width: 100% !important;
             max-width: 100% !important;
@@ -581,12 +584,37 @@
                 <summary>📚 Academics</summary>
 
                 <div class="subnav">
-                    <a href="/subjects">Subjects</a>
-                    <a href="/homework">Homework</a>
-                    <a href="/timetable_dashboard">Timetable</a>
-                    <a href="/attendance">Mark Attendance</a>
-                    <a href="/exams">Exams</a>
-                    <a href="/report_cards">Report Cards</a>
+
+                    <a href="/subjects"
+                       class="{% if endpoint == 'subjects' %}active{% endif %}">
+                        Subjects
+                    </a>
+
+                    <a href="/homework"
+                       class="{% if endpoint == 'homework' %}active{% endif %}">
+                        Homework
+                    </a>
+
+                    <a href="/timetable_dashboard"
+                       class="{% if endpoint == 'timetable_dashboard' %}active{% endif %}">
+                        Timetable
+                    </a>
+
+                    <a href="/attendance"
+                       class="{% if endpoint == 'attendance' %}active{% endif %}">
+                        Mark Attendance
+                    </a>
+
+                    <a href="/exams"
+                       class="{% if endpoint == 'exams' %}active{% endif %}">
+                        Exams
+                    </a>
+
+                    <a href="/report_cards"
+                       class="{% if endpoint == 'report_cards' %}active{% endif %}">
+                        Report Cards
+                    </a>
+
                 </div>
             </details>
 
@@ -596,10 +624,27 @@
                 <summary>📡 Communication Center</summary>
 
                 <div class="subnav">
-                    <a href="/communication_center">Overview</a>
-                    <a href="/sms_messages">SMS Center</a>
-                    <a href="/whatsapp_messages">WhatsApp Center</a>
-                    <a href="/announcements">Announcements</a>
+
+                    <a href="/communication_center"
+                       class="{% if endpoint == 'communication_center' %}active{% endif %}">
+                        Overview
+                    </a>
+
+                    <a href="/sms_messages"
+                       class="{% if endpoint == 'sms_messages' %}active{% endif %}">
+                        SMS Center
+                    </a>
+
+                    <a href="/whatsapp_messages"
+                       class="{% if endpoint == 'whatsapp_messages' %}active{% endif %}">
+                        WhatsApp Center
+                    </a>
+
+                    <a href="/announcements"
+                       class="{% if endpoint == 'announcements' %}active{% endif %}">
+                        Announcements
+                    </a>
+
                 </div>
             </details>
 
@@ -617,9 +662,12 @@
             </a>
 
             {% if role in [
+                "director",
+                "manager",
                 "admin",
                 "principal",
                 "headteacher",
+                "accountant",
                 "bursar"
             ] %}
 
@@ -633,6 +681,8 @@
             <!-- STUDENTS -->
 
             {% if role in [
+                "director",
+                "manager",
                 "admin",
                 "principal",
                 "headteacher",
@@ -647,29 +697,62 @@
                     <summary>🎓 Students</summary>
 
                     <div class="subnav">
-                        <a href="/pupils">Admissions</a>
-                        <a href="/attendance">Mark Attendance</a>
-                        <a href="/attendance_report">Attendance Report</a>
+
+                        <a href="/pupils"
+                           class="{% if endpoint == 'pupils' %}active{% endif %}">
+                            Admissions
+                        </a>
+
+                        <a href="/attendance"
+                           class="{% if endpoint == 'attendance' %}active{% endif %}">
+                            Mark Attendance
+                        </a>
+
+                        <a href="/attendance_report"
+                           class="{% if endpoint == 'attendance_report' %}active{% endif %}">
+                            Attendance Report
+                        </a>
 
                         {% if role in [
+                            "director",
+                            "manager",
                             "admin",
                             "registrar",
-                            "receptionist"
+                            "receptionist",
+                            "driver"
                         ] %}
-                            <a href="/transport">Transport</a>
+
+                            <a href="/transport"
+                               class="{% if endpoint == 'transport' %}active{% endif %}">
+                                Transport
+                            </a>
+
                         {% endif %}
+
                     </div>
                 </details>
+
+            {% elif role == "driver" %}
+
+                <div class="nav-label">TRANSPORT</div>
+
+                <a href="/transport"
+                   class="{% if endpoint == 'transport' %}active{% endif %}">
+                    🚌 Transport
+                </a>
 
             {% endif %}
 
             <!-- ACADEMICS -->
 
             {% if role in [
+                "director",
+                "manager",
                 "admin",
                 "principal",
                 "headteacher",
-                "deputy headteacher"
+                "deputy headteacher",
+                "librarian"
             ] %}
 
                 <div class="nav-label">ACADEMICS</div>
@@ -678,11 +761,36 @@
                     <summary>📚 Academics</summary>
 
                     <div class="subnav">
-                        <a href="/subjects">Subjects</a>
-                        <a href="/homework">Homework</a>
-                        <a href="/timetable_dashboard">Timetable</a>
-                        <a href="/exams">Exams</a>
-                        <a href="/report_cards">Report Cards</a>
+
+                        <a href="/subjects"
+                           class="{% if endpoint == 'subjects' %}active{% endif %}">
+                            Subjects
+                        </a>
+
+                        <a href="/homework"
+                           class="{% if endpoint == 'homework' %}active{% endif %}">
+                            Homework
+                        </a>
+
+                        <a href="/timetable_dashboard"
+                           class="{% if endpoint == 'timetable_dashboard' %}active{% endif %}">
+                            Timetable
+                        </a>
+
+                        {% if role != "librarian" %}
+
+                            <a href="/exams"
+                               class="{% if endpoint == 'exams' %}active{% endif %}">
+                                Exams
+                            </a>
+
+                            <a href="/report_cards"
+                               class="{% if endpoint == 'report_cards' %}active{% endif %}">
+                                Report Cards
+                            </a>
+
+                        {% endif %}
+
                     </div>
                 </details>
 
@@ -690,64 +798,81 @@
 
             <!-- FINANCE -->
 
-            {% if role in ["admin", "bursar"] %}
+            {% if role in [
+                "director",
+                "manager",
+                "admin",
+                "accountant",
+                "bursar"
+            ] %}
 
-<div class="nav-label">FINANCE</div>
+                <div class="nav-label">FINANCE</div>
 
-<details open>
-    <summary>💰 Finance</summary>
+                <details open>
+                    <summary>💰 Finance</summary>
 
-    <div class="subnav">
+                    <div class="subnav">
 
-        <a href="/payments"
-           class="{% if endpoint == 'payments' %}active{% endif %}">
-            Payments
-        </a>
+                        <a href="/payments"
+                           class="{% if endpoint == 'payments' %}active{% endif %}">
+                            Payments
+                        </a>
 
-        <a href="/fees"
-           class="{% if endpoint == 'fees' %}active{% endif %}">
-            Fee Structure
-        </a>
+                        {% if role in [
+                            "director",
+                            "manager",
+                            "admin"
+                        ] %}
 
-        <a href="/discounts"
-           class="{% if endpoint == 'discounts' %}active{% endif %}">
-            Discounts / Waivers
-        </a>
+                            <a href="/fees"
+                               class="{% if endpoint == 'fees' %}active{% endif %}">
+                                Fee Structure
+                            </a>
 
-        <a href="/balances"
-           class="{% if endpoint == 'balances' %}active{% endif %}">
-            Balances
-        </a>
+                            <a href="/discounts"
+                               class="{% if endpoint == 'discounts' %}active{% endif %}">
+                                Discounts / Waivers
+                            </a>
 
-        <a href="/defaulters_report"
-           class="{% if endpoint == 'defaulters_report' %}active{% endif %}">
-            Defaulters
-        </a>
+                        {% endif %}
 
-        <a href="/expenses"
-           class="{% if endpoint == 'expenses' %}active{% endif %}">
-            Expenses
-        </a>
+                        <a href="/balances"
+                           class="{% if endpoint == 'balances' %}active{% endif %}">
+                            Balances
+                        </a>
 
-        <a href="/salary_advances"
-           class="{% if endpoint == 'salary_advances' %}active{% endif %}">
-            Staff Salary Advances
-        </a>
+                        <a href="/defaulters_report"
+                           class="{% if endpoint == 'defaulters_report' %}active{% endif %}">
+                            Defaulters
+                        </a>
 
-        <a href="/expense_report"
-           class="{% if endpoint == 'expense_report' %}active{% endif %}">
-            Expense Report
-        </a>
+                        <a href="/expenses"
+                           class="{% if endpoint == 'expenses' %}active{% endif %}">
+                            Expenses
+                        </a>
 
-    </div>
+                        <a href="/salary_advances"
+                           class="{% if endpoint == 'salary_advances' %}active{% endif %}">
+                            Staff Salary Advances
+                        </a>
 
-</details>
+                        <a href="/expense_report"
+                           class="{% if endpoint == 'expense_report' %}active{% endif %}">
+                            Expense Report
+                        </a>
 
-{% endif %}
+                    </div>
+                </details>
 
-            <!-- HUMAN RESOURCE -->
+            {% endif %}
 
-            {% if role == "admin" %}
+                <!-- HUMAN RESOURCE -->
+
+            {% if role in [
+                "director",
+                "manager",
+                "admin"
+            ] %}
 
                 <div class="nav-label">HUMAN RESOURCE</div>
 
@@ -755,13 +880,32 @@
                     <summary>👥 Human Resource</summary>
 
                     <div class="subnav">
-                        <a href="/staff_dashboard">Staff Dashboard</a>
-                        <a href="/staff">Staff Directory</a>
-                        <a href="/staff_attendance">Staff Attendance</a>
-                        <a href="/staff_attendance_report">
+
+                        <a href="/staff_dashboard"
+                           class="{% if endpoint == 'staff_dashboard' %}active{% endif %}">
+                            Staff Dashboard
+                        </a>
+
+                        <a href="/staff"
+                           class="{% if endpoint == 'staff' %}active{% endif %}">
+                            Staff Directory
+                        </a>
+
+                        <a href="/staff_attendance"
+                           class="{% if endpoint == 'staff_attendance' %}active{% endif %}">
+                            Staff Attendance
+                        </a>
+
+                        <a href="/staff_attendance_report"
+                           class="{% if endpoint == 'staff_attendance_report' %}active{% endif %}">
                             Staff Attendance Report
                         </a>
-                        <a href="/payroll">Payroll</a>
+
+                        <a href="/payroll"
+                           class="{% if endpoint == 'payroll' %}active{% endif %}">
+                            Payroll
+                        </a>
+
                     </div>
                 </details>
 
@@ -770,13 +914,17 @@
             <!-- SCHOOL COMMUNICATION -->
 
             {% if role in [
+                "director",
+                "manager",
                 "admin",
                 "principal",
                 "headteacher",
                 "deputy headteacher",
+                "accountant",
                 "bursar",
                 "registrar",
-                "receptionist"
+                "receptionist",
+                "ict officer"
             ] %}
 
                 <div class="nav-label">COMMUNICATION CENTER</div>
@@ -786,31 +934,48 @@
 
                     <div class="subnav">
 
-                        <a href="/communication_center">
+                        <a href="/communication_center"
+                           class="{% if endpoint == 'communication_center' %}active{% endif %}">
                             Communication Overview
                         </a>
 
-                        <a href="/sms_messages">
+                        <a href="/sms_messages"
+                           class="{% if endpoint == 'sms_messages' %}active{% endif %}">
                             SMS Center
                         </a>
 
-                        <a href="/whatsapp_messages">
+                        <a href="/whatsapp_messages"
+                           class="{% if endpoint == 'whatsapp_messages' %}active{% endif %}">
                             WhatsApp Center
                         </a>
 
-                        <a href="/whatsapp_outbox">
+                        <a href="/whatsapp_outbox"
+                           class="{% if endpoint == 'whatsapp_outbox' %}active{% endif %}">
                             WhatsApp Outbox
                         </a>
 
-                        <a href="/sms_wallet">
-                            SMS Wallet
-                        </a>
+                        {% if role in [
+                            "director",
+                            "manager",
+                            "admin",
+                            "accountant",
+                            "bursar"
+                        ] %}
 
-                        <a href="/fee_reminders">
-                            Fee Reminders
-                        </a>
+                            <a href="/sms_wallet"
+                               class="{% if endpoint == 'sms_wallet' %}active{% endif %}">
+                                SMS Wallet
+                            </a>
 
-                        <a href="/announcements">
+                            <a href="/fee_reminders"
+                               class="{% if endpoint == 'fee_reminders' %}active{% endif %}">
+                                Fee Reminders
+                            </a>
+
+                        {% endif %}
+
+                        <a href="/announcements"
+                           class="{% if endpoint == 'announcements' %}active{% endif %}">
                             Announcements
                         </a>
 
@@ -821,59 +986,176 @@
 
             <!-- OPERATIONS -->
 
-            {% if role == "admin" %}
+            {% if role in [
+                "director",
+                "manager",
+                "admin",
+                "storekeeper",
+                "cook"
+            ] %}
 
                 <div class="nav-label">OPERATIONS</div>
 
-                <details>
-                    <summary>📦 Inventory / Store</summary>
+                {% if role in [
+                    "director",
+                    "manager",
+                    "admin",
+                    "storekeeper"
+                ] %}
 
-                    <div class="subnav">
-                        <a href="/inventory">Inventory Dashboard</a>
-                        <a href="/stock_in">Stock In</a>
-                        <a href="/stock_out">Stock Out</a>
-                        <a href="/inventory_transactions">Stock History</a>
-                        <a href="/inventory_reports">Inventory Reports</a>
-                    </div>
-                </details>
+                    <details>
+                        <summary>📦 Inventory / Store</summary>
 
-                <details>
-                    <summary>🍽️ Kitchen</summary>
+                        <div class="subnav">
 
-                    <div class="subnav">
-                        <a href="/kitchen">Kitchen Dashboard</a>
-                        <a href="/kitchen/categories">Food Categories</a>
-                        <a href="/kitchen/items">Food Items</a>
-                        <a href="/kitchen/issues">Kitchen Issues</a>
-                        <a href="/kitchen/menu">Meal Menu</a>
-                        <a href="/kitchen/consumption">Consumption</a>
-                        <a href="/kitchen/serving">Meal Serving</a>
-                        <a href="/kitchen/waste">Kitchen Waste</a>
-                        <a href="/kitchen/reports">Kitchen Reports</a>
-                    </div>
-                </details>
+                            <a href="/inventory"
+                               class="{% if endpoint == 'inventory' %}active{% endif %}">
+                                Inventory Dashboard
+                            </a>
+
+                            <a href="/stock_in"
+                               class="{% if endpoint == 'stock_in' %}active{% endif %}">
+                                Stock In
+                            </a>
+
+                            <a href="/stock_out"
+                               class="{% if endpoint == 'stock_out' %}active{% endif %}">
+                                Stock Out
+                            </a>
+
+                            <a href="/inventory_transactions"
+                               class="{% if endpoint == 'inventory_transactions' %}active{% endif %}">
+                                Stock History
+                            </a>
+
+                            <a href="/inventory_reports"
+                               class="{% if endpoint == 'inventory_reports' %}active{% endif %}">
+                                Inventory Reports
+                            </a>
+
+                        </div>
+                    </details>
+
+                {% endif %}
+
+                {% if role in [
+                    "director",
+                    "manager",
+                    "admin",
+                    "cook"
+                ] %}
+
+                    <details>
+                        <summary>🍽️ Kitchen</summary>
+
+                        <div class="subnav">
+
+                            <a href="/kitchen"
+                               class="{% if endpoint == 'kitchen_dashboard' %}active{% endif %}">
+                                Kitchen Dashboard
+                            </a>
+
+                            <a href="/kitchen/categories"
+                               class="{% if endpoint == 'kitchen_categories' %}active{% endif %}">
+                                Food Categories
+                            </a>
+
+                            <a href="/kitchen/items"
+                               class="{% if endpoint == 'kitchen_items' %}active{% endif %}">
+                                Food Items
+                            </a>
+
+                            <a href="/kitchen/issues"
+                               class="{% if endpoint == 'kitchen_issues' %}active{% endif %}">
+                                Kitchen Issues
+                            </a>
+
+                            <a href="/kitchen/menu"
+                               class="{% if endpoint == 'meal_menu' %}active{% endif %}">
+                                Meal Menu
+                            </a>
+
+                            <a href="/kitchen/consumption"
+                               class="{% if endpoint == 'kitchen_consumption' %}active{% endif %}">
+                                Consumption
+                            </a>
+
+                            <a href="/kitchen/serving"
+                               class="{% if endpoint == 'meal_serving' %}active{% endif %}">
+                                Meal Serving
+                            </a>
+
+                            <a href="/kitchen/waste"
+                               class="{% if endpoint == 'kitchen_waste' %}active{% endif %}">
+                                Kitchen Waste
+                            </a>
+
+                            <a href="/kitchen/reports"
+                               class="{% if endpoint == 'kitchen_reports' %}active{% endif %}">
+                                Kitchen Reports
+                            </a>
+
+                        </div>
+                    </details>
+
+                {% endif %}
+
+            {% endif %}
+
+            <!-- REPORTS -->
+
+            {% if role in [
+                "director",
+                "manager",
+                "admin",
+                "principal",
+                "headteacher",
+                "accountant",
+                "bursar"
+            ] %}
 
                 <a href="/reports_dashboard"
                    class="{% if endpoint == 'reports_dashboard' %}active{% endif %}">
                     📊 Reports Centre
                 </a>
 
+            {% endif %}
+
+            <!-- ADMINISTRATION -->
+
+            {% if role in [
+                "director",
+                "manager",
+                "admin"
+            ] %}
+
                 <div class="nav-label">ADMINISTRATION</div>
 
                 <a href="/users"
-                   class="{% if endpoint == 'users' %}active{% endif %}">
+                   class="{% if endpoint in ['users', 'edit_user'] %}active{% endif %}">
                     👤 Users
                 </a>
 
-                <a href="/audit_logs"
-                   class="{% if endpoint == 'audit_logs' %}active{% endif %}">
-                    🧾 Audit Logs
-                </a>
+                {% if role == "director" %}
 
-                <a href="/settings"
-                   class="{% if endpoint == 'settings' %}active{% endif %}">
-                    🎨 Branding
-                </a>
+                    <a href="/audit_logs"
+                       class="{% if endpoint == 'audit_logs' %}active{% endif %}">
+                        🧾 Audit Logs
+                    </a>
+
+                    <a href="/settings"
+                       class="{% if endpoint == 'settings' %}active{% endif %}">
+                        🎨 School Settings
+                    </a>
+
+                {% elif role == "admin" %}
+
+                    <a href="/audit_logs"
+                       class="{% if endpoint == 'audit_logs' %}active{% endif %}">
+                        🧾 Audit Logs
+                    </a>
+
+                {% endif %}
 
             {% endif %}
 
@@ -906,7 +1188,16 @@
                 <h1>Platform Communication</h1>
 
             {% elif endpoint == "dashboard" %}
-                <h1>Dashboard</h1>
+
+                {% if role == "director" %}
+                    <h1>Director Executive Dashboard</h1>
+
+                {% elif role == "manager" %}
+                    <h1>School Manager Dashboard</h1>
+
+                {% else %}
+                    <h1>Dashboard</h1>
+                {% endif %}
 
             {% elif endpoint == "business_dashboard" %}
                 <h1>Business Dashboard</h1>
@@ -962,6 +1253,15 @@
             {% elif endpoint == "staff_dashboard" %}
                 <h1>Human Resource</h1>
 
+            {% elif endpoint == "staff" %}
+                <h1>Staff Directory</h1>
+
+            {% elif endpoint == "salary_advances" %}
+                <h1>Staff Salary Advances</h1>
+
+            {% elif endpoint == "edit_user" %}
+                <h1>Edit User Account</h1>
+
             {% elif endpoint == "payroll" %}
                 <h1>Payroll</h1>
 
@@ -1015,7 +1315,7 @@
                 {% if role == "super admin" %}
                     <h1>Platform Settings</h1>
                 {% else %}
-                    <h1>School Branding</h1>
+                    <h1>School Settings</h1>
                 {% endif %}
 
             {% else %}
@@ -1031,7 +1331,69 @@
         <div class="top-user">
 
             <div class="pill">
-                📅 2026
+                📅 {{ current_year|default(2026, true) }}
+            </div>
+
+            <div class="avatar">
+                👤
+            </div>
+
+            <div>
+                <b>{{ session.get("username") }}</b><br>
+
+                <small>
+                    {{ session.get("role") }}
+                </small>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="content">
+
+        {% with messages = get_flashed_messages() %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="flash">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+    </div>
+</div>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+        navigator.serviceWorker.register(
+            "/static/service-worker.js"
+        ).catch(function (error) {
+            console.log(
+                "Service worker registration failed:",
+                error
+            );
+        });
+    });
+}
+</script>
+
+</body>
+</html>
+        <div class="top-user">
+
+            <div class="pill">
+                📅 {{ current_year|default(2026, true) }}
             </div>
 
             <div class="avatar">
