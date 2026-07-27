@@ -10862,71 +10862,378 @@ def users():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "super admin"):
+    current_role = (
+        session.get("role")
+        or ""
+    ).strip().lower()
+
+    # Super Admin remains at platform level and should not
+    # manage a school's private staff login accounts.
+    if current_role == "super admin":
+        flash(
+            "School user accounts must be managed by the "
+            "school Director, Manager or Admin."
+        )
+        return redirect(url_for("super_admin_dashboard"))
+
+    if current_role not in [
+        "director",
+        "manager",
+        "admin"
+    ]:
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
-    available_roles = [
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
+    # ---------------------------------------------------------
+    # COMPLETE SCHOOL ROLE STRUCTURE
+    # ---------------------------------------------------------
+    all_school_roles = [
+        "Director",
+        "Manager",
         "Admin",
+        "Principal",
         "Headteacher",
         "Deputy Headteacher",
+        "Accountant",
         "Bursar",
         "Registrar",
         "Receptionist",
-        "Teacher"
+        "Teacher",
+        "ICT Officer",
+        "Librarian",
+        "Storekeeper",
+        "Nurse",
+        "Driver",
+        "Security Officer",
+        "Cook",
+        "Cleaner"
     ]
 
+    # ---------------------------------------------------------
+    # ROLES EACH CURRENT USER MAY CREATE
+    # ---------------------------------------------------------
+    if current_role == "director":
+        available_roles = all_school_roles
+
+    elif current_role == "manager":
+        available_roles = [
+            "Admin",
+            "Principal",
+            "Headteacher",
+            "Deputy Headteacher",
+            "Accountant",
+            "Bursar",
+            "Registrar",
+            "Receptionist",
+            "Teacher",
+            "ICT Officer",
+            "Librarian",
+            "Storekeeper",
+            "Nurse",
+            "Driver",
+            "Security Officer",
+            "Cook",
+            "Cleaner"
+        ]
+
+    else:
+        # Admin cannot create or control Director,
+        # Manager or another Admin.
+        available_roles = [
+            "Principal",
+            "Headteacher",
+            "Deputy Headteacher",
+            "Accountant",
+            "Bursar",
+            "Registrar",
+            "Receptionist",
+            "Teacher",
+            "ICT Officer",
+            "Librarian",
+            "Storekeeper",
+            "Nurse",
+            "Driver",
+            "Security Officer",
+            "Cook",
+            "Cleaner"
+        ]
+
+    # ---------------------------------------------------------
+    # CREATE USER
+    # ---------------------------------------------------------
     if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"].strip()
-        role = request.form["role"].strip()
-        assigned_grade = request.form.get("assigned_grade", "").strip()
-        assigned_subjects = request.form.get("assigned_subjects", "").strip()
+        try:
+            username = request.form.get(
+                "username",
+                ""
+            ).strip()
 
-        if role not in available_roles:
-            flash("Invalid role selected.")
-            return redirect(url_for("users"))
+            password = request.form.get(
+                "password",
+                ""
+            ).strip()
 
-        existing = User.query.filter_by(username=username).first()
-        if existing:
-            flash("Username already exists. Choose another username.")
-            return redirect(url_for("users"))
+            role = request.form.get(
+                "role",
+                ""
+            ).strip()
 
-        new_user = User(
-            school_id=school_id,
-            username=username,
-            password_hash=generate_password_hash(password),
-            role=role,
-            assigned_grade=assigned_grade if role == "Teacher" else "",
-            assigned_subjects=assigned_subjects if role == "Teacher" else "",
-            is_active=True
-        )
+            assigned_grade = request.form.get(
+                "assigned_grade",
+                ""
+            ).strip()
 
-        db.session.add(new_user)
-        db.session.commit()
+            assigned_subjects = request.form.get(
+                "assigned_subjects",
+                ""
+            ).strip()
 
-        save_audit(
-            f"Created user account: {username} ({role})",
-            "Security"
-        )
+            if not username:
+                flash("Enter a username.")
+                return redirect(url_for("users"))
 
-        flash("User created successfully.")
+            if len(username) < 3:
+                flash(
+                    "Username must contain at least "
+                    "three characters."
+                )
+                return redirect(url_for("users"))
+
+            if not password:
+                flash("Enter a password.")
+                return redirect(url_for("users"))
+
+            if len(password) < 6:
+                flash(
+                    "Password must contain at least "
+                    "six characters."
+                )
+                return redirect(url_for("users"))
+
+            if role not in available_roles:
+                flash(
+                    "You are not permitted to create "
+                    f"a {role or 'selected'} account."
+                )
+                return redirect(url_for("users"))
+
+            # Only a Director may create another Director
+            # or promote someone to Manager.
+            if role in ["Director", "Manager"] and (
+                current_role != "director"
+            ):
+                flash(
+                    "Only the School Director may create "
+                    "Director or Manager accounts."
+                )
+                return redirect(url_for("users"))
+
+            existing = User.query.filter(
+                db.func.lower(User.username)
+                == username.lower()
+            ).first()
+
+            if existing:
+                flash(
+                    "Username already exists. "
+                    "Choose another username."
+                )
+                return redirect(url_for("users"))
+
+            # Academic assignments apply only to teachers.
+            if role != "Teacher":
+                assigned_grade = ""
+                assigned_subjects = ""
+
+            new_user = User(
+                school_id=school_id,
+                username=username,
+                password_hash=generate_password_hash(
+                    password
+                ),
+                role=role,
+                assigned_grade=assigned_grade,
+                assigned_subjects=assigned_subjects,
+                is_active=True
+            )
+
+            db.session.add(new_user)
+            db.session.commit()
+
+            try:
+                save_audit(
+                    f"Created user account: "
+                    f"{username} ({role}) "
+                    f"for school ID {school_id}.",
+                    "Security"
+                )
+
+            except Exception as audit_error:
+                print(
+                    "CREATE USER AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
+                )
+
+            flash(
+                f"User account {username} was created "
+                f"successfully as {role}."
+            )
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "CREATE USER ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                "The user account could not be created. "
+                "No changes were saved."
+            )
+
         return redirect(url_for("users"))
 
+    # ---------------------------------------------------------
+    # EXISTING SCHOOL USERS
+    # ---------------------------------------------------------
     all_users = User.query.filter_by(
         school_id=school_id
-    ).order_by(User.username.asc()).all()
+    ).order_by(
+        User.username.asc()
+    ).all()
+
+    # ---------------------------------------------------------
+    # PER-ACCOUNT MANAGEMENT PERMISSIONS
+    # ---------------------------------------------------------
+    user_rows = []
+
+    for user_account in all_users:
+        account_role = (
+            user_account.role
+            or ""
+        ).strip().lower()
+
+        can_manage = False
+        can_delete = False
+        can_reset_password = False
+
+        if current_role == "director":
+            can_manage = True
+            can_reset_password = True
+
+            # Prevent a Director from deleting their own
+            # account from this page.
+            can_delete = (
+                user_account.id
+                != session.get("user_id")
+            )
+
+        elif current_role == "manager":
+            # Manager cannot control Directors or Managers.
+            if account_role not in [
+                "director",
+                "manager"
+            ]:
+                can_manage = True
+                can_delete = True
+                can_reset_password = True
+
+        elif current_role == "admin":
+            # Admin cannot control Director, Manager or Admin.
+            if account_role not in [
+                "director",
+                "manager",
+                "admin"
+            ]:
+                can_manage = True
+                can_delete = True
+                can_reset_password = True
+
+        user_rows.append({
+            "user": user_account,
+            "can_manage": can_manage,
+            "can_delete": can_delete,
+            "can_reset_password": can_reset_password
+        })
+
+    # ---------------------------------------------------------
+    # SUMMARY COUNTS
+    # ---------------------------------------------------------
+    role_counts = {
+        role_name: sum(
+            1
+            for user_account in all_users
+            if (
+                user_account.role
+                or ""
+            ).strip().lower() == role_name.lower()
+        )
+        for role_name in all_school_roles
+    }
+
+    active_users = sum(
+        1
+        for user_account in all_users
+        if bool(user_account.is_active)
+    )
+
+    inactive_users = max(
+        0,
+        len(all_users) - active_users
+    )
+
+    directors_count = role_counts.get(
+        "Director",
+        0
+    )
+
+    managers_count = role_counts.get(
+        "Manager",
+        0
+    )
+
+    admins_count = role_counts.get(
+        "Admin",
+        0
+    )
+
+    teachers_count = role_counts.get(
+        "Teacher",
+        0
+    )
 
     return render_template(
         "users.html",
         settings=get_settings(),
-        users=all_users,
-        grades=GRADES,
-        available_roles=available_roles
-    )
 
+        users=all_users,
+        user_rows=user_rows,
+
+        grades=GRADES,
+        available_roles=available_roles,
+        all_school_roles=all_school_roles,
+        role_counts=role_counts,
+
+        current_role=current_role,
+
+        total_users=len(all_users),
+        active_users=active_users,
+        inactive_users=inactive_users,
+
+        directors_count=directors_count,
+        managers_count=managers_count,
+        admins_count=admins_count,
+        teachers_count=teachers_count
+    )
 @app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
     if not login_required():
