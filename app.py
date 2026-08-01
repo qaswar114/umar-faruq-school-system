@@ -11846,6 +11846,7 @@ def users():
         admins_count=admins_count,
         teachers_count=teachers_count
     )
+
 @app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
     if not login_required():
@@ -11856,9 +11857,12 @@ def edit_user(user_id):
         or ""
     ).strip().lower()
 
+    # Super Admin creates Directors only through the dedicated
+    # school Director page, not through normal school user editing.
     if current_role == "super admin":
         flash(
-            "School user accounts must be managed inside the school."
+            "School user accounts must be managed inside the school. "
+            "Use Schools Management for Director accounts."
         )
         return redirect(url_for("super_admin_dashboard"))
 
@@ -11871,6 +11875,10 @@ def edit_user(user_id):
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
 
     user_account = User.query.filter_by(
         id=user_id,
@@ -11885,6 +11893,15 @@ def edit_user(user_id):
     # ---------------------------------------------------------
     # WHO MAY MANAGE THIS ACCOUNT?
     # ---------------------------------------------------------
+
+    # Director accounts cannot be edited through the normal
+    # school user-management page.
+    if target_role == "director":
+        flash(
+            "Director accounts can only be managed by Super Admin."
+        )
+        return redirect(url_for("users"))
+
     if current_role == "manager" and target_role in [
         "director",
         "manager"
@@ -11904,30 +11921,30 @@ def edit_user(user_id):
         )
         return redirect(url_for("users"))
 
-    all_school_roles = [
-        "Director",
-        "Manager",
-        "Admin",
-        "Principal",
-        "Headteacher",
-        "Deputy Headteacher",
-        "Accountant",
-        "Bursar",
-        "Registrar",
-        "Receptionist",
-        "Teacher",
-        "ICT Officer",
-        "Librarian",
-        "Storekeeper",
-        "Nurse",
-        "Driver",
-        "Security Officer",
-        "Cook",
-        "Cleaner"
-    ]
-
+    # ---------------------------------------------------------
+    # ROLES EACH USER MAY ASSIGN
+    # ---------------------------------------------------------
     if current_role == "director":
-        available_roles = all_school_roles
+        available_roles = [
+            "Manager",
+            "Admin",
+            "Principal",
+            "Headteacher",
+            "Deputy Headteacher",
+            "Accountant",
+            "Bursar",
+            "Registrar",
+            "Receptionist",
+            "Teacher",
+            "ICT Officer",
+            "Librarian",
+            "Storekeeper",
+            "Nurse",
+            "Driver",
+            "Security Officer",
+            "Cook",
+            "Cleaner"
+        ]
 
     elif current_role == "manager":
         available_roles = [
@@ -11971,98 +11988,44 @@ def edit_user(user_id):
         ]
 
     if request.method == "POST":
-        username = request.form.get(
-            "username",
-            ""
-        ).strip()
+        try:
+            username = request.form.get(
+                "username",
+                ""
+            ).strip()
 
-        role = request.form.get(
-            "role",
-            ""
-        ).strip()
+            role = request.form.get(
+                "role",
+                ""
+            ).strip()
 
-        assigned_grade = request.form.get(
-            "assigned_grade",
-            ""
-        ).strip()
+            assigned_grade = request.form.get(
+                "assigned_grade",
+                ""
+            ).strip()
 
-        assigned_subjects = request.form.get(
-            "assigned_subjects",
-            ""
-        ).strip()
+            assigned_subjects = request.form.get(
+                "assigned_subjects",
+                ""
+            ).strip()
 
-        is_active = (
-            request.form.get("is_active") == "yes"
-        )
+            is_active = (
+                request.form.get("is_active") == "yes"
+            )
 
-        if not username:
-            flash("Enter a username.")
-            return redirect(
-                url_for(
-                    "edit_user",
-                    user_id=user_account.id
+            if not username:
+                flash("Enter a username.")
+                return redirect(
+                    url_for(
+                        "edit_user",
+                        user_id=user_account.id
+                    )
                 )
-            )
 
-        if len(username) < 3:
-            flash(
-                "Username must contain at least three characters."
-            )
-            return redirect(
-                url_for(
-                    "edit_user",
-                    user_id=user_account.id
-                )
-            )
-
-        if role not in available_roles:
-            flash(
-                "You are not permitted to assign that role."
-            )
-            return redirect(
-                url_for(
-                    "edit_user",
-                    user_id=user_account.id
-                )
-            )
-
-        existing_username = User.query.filter(
-            db.func.lower(User.username)
-            == username.lower(),
-            User.id != user_account.id
-        ).first()
-
-        if existing_username:
-            flash(
-                "Username already exists. Choose another username."
-            )
-            return redirect(
-                url_for(
-                    "edit_user",
-                    user_id=user_account.id
-                )
-            )
-
-        # Protect the last active Director.
-        if target_role == "director":
-            active_directors = User.query.filter(
-                User.school_id == school_id,
-                db.func.lower(User.role) == "director",
-                User.is_active.is_(True)
-            ).count()
-
-            removing_director_authority = (
-                role.lower() != "director"
-                or not is_active
-            )
-
-            if (
-                active_directors <= 1
-                and removing_director_authority
-            ):
+            if len(username) < 3:
                 flash(
-                    "The last active Director cannot be removed, "
-                    "demoted or deactivated."
+                    "Username must contain at least "
+                    "three characters."
                 )
                 return redirect(
                     url_for(
@@ -12071,24 +12034,94 @@ def edit_user(user_id):
                     )
                 )
 
-        if role != "Teacher":
-            assigned_grade = ""
-            assigned_subjects = ""
+            # Director can never be assigned through this route,
+            # even if someone manually changes the HTML form.
+            if role.lower() == "director":
+                flash(
+                    "Only Super Admin can assign "
+                    "the Director role."
+                )
+                return redirect(
+                    url_for(
+                        "edit_user",
+                        user_id=user_account.id
+                    )
+                )
 
-        user_account.username = username
-        user_account.role = role
-        user_account.assigned_grade = assigned_grade
-        user_account.assigned_subjects = assigned_subjects
-        user_account.is_active = is_active
+            if role not in available_roles:
+                flash(
+                    "You are not permitted to assign that role."
+                )
+                return redirect(
+                    url_for(
+                        "edit_user",
+                        user_id=user_account.id
+                    )
+                )
 
-        try:
+            # Only Director may assign Manager.
+            if (
+                role == "Manager"
+                and current_role != "director"
+            ):
+                flash(
+                    "Only the School Director may assign "
+                    "the Manager role."
+                )
+                return redirect(
+                    url_for(
+                        "edit_user",
+                        user_id=user_account.id
+                    )
+                )
+
+            existing_username = User.query.filter(
+                db.func.lower(User.username)
+                == username.lower(),
+                User.id != user_account.id
+            ).first()
+
+            if existing_username:
+                flash(
+                    "Username already exists. "
+                    "Choose another username."
+                )
+                return redirect(
+                    url_for(
+                        "edit_user",
+                        user_id=user_account.id
+                    )
+                )
+
+            if role != "Teacher":
+                assigned_grade = ""
+                assigned_subjects = ""
+
+            old_username = user_account.username
+            old_role = user_account.role
+
+            user_account.username = username
+            user_account.role = role
+            user_account.assigned_grade = assigned_grade
+            user_account.assigned_subjects = assigned_subjects
+            user_account.is_active = is_active
+
             db.session.commit()
 
-            save_audit(
-                f"Updated user account: "
-                f"{user_account.username} ({user_account.role})",
-                "Security"
-            )
+            try:
+                save_audit(
+                    f"Updated user account: "
+                    f"{old_username} ({old_role}) to "
+                    f"{username} ({role}).",
+                    "Security"
+                )
+
+            except Exception as audit_error:
+                print(
+                    "EDIT USER AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
+                )
 
             flash("User account updated successfully.")
 
@@ -12102,7 +12135,8 @@ def edit_user(user_id):
             )
 
             flash(
-                "The user account could not be updated."
+                "The user account could not be updated. "
+                "No changes were saved."
             )
 
         return redirect(url_for("users"))
@@ -12115,6 +12149,7 @@ def edit_user(user_id):
         available_roles=available_roles,
         current_role=current_role
     )
+
 
 @app.route("/reports_dashboard")
 def reports_dashboard():
