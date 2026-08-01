@@ -12179,6 +12179,8 @@ def reset_user_password(user_id):
         or ""
     ).strip().lower()
 
+    # Super Admin does not reset normal school-user passwords
+    # through the school Users page.
     if current_role == "super admin":
         flash(
             "School user passwords must be managed inside the school."
@@ -12195,6 +12197,10 @@ def reset_user_password(user_id):
 
     school_id = current_school_id()
 
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
     user_account = User.query.filter_by(
         id=user_id,
         school_id=school_id
@@ -12205,6 +12211,14 @@ def reset_user_password(user_id):
         or ""
     ).strip().lower()
 
+    # Director passwords can only be handled by Super Admin.
+    if target_role == "director":
+        flash(
+            "Director passwords can only be reset by Super Admin."
+        )
+        return redirect(url_for("users"))
+
+    # Manager cannot reset Director or Manager passwords.
     if current_role == "manager" and target_role in [
         "director",
         "manager"
@@ -12214,13 +12228,15 @@ def reset_user_password(user_id):
         )
         return redirect(url_for("users"))
 
+    # Admin cannot reset Director, Manager or Admin passwords.
     if current_role == "admin" and target_role in [
         "director",
         "manager",
         "admin"
     ]:
         flash(
-            "An Admin cannot reset Director, Manager or Admin passwords."
+            "An Admin cannot reset Director, Manager "
+            "or Admin passwords."
         )
         return redirect(url_for("users"))
 
@@ -12229,9 +12245,14 @@ def reset_user_password(user_id):
         ""
     ).strip()
 
+    if not new_password:
+        flash("Enter a new password.")
+        return redirect(url_for("users"))
+
     if len(new_password) < 6:
         flash(
-            "The new password must contain at least six characters."
+            "The new password must contain at least "
+            "six characters."
         )
         return redirect(url_for("users"))
 
@@ -12240,16 +12261,28 @@ def reset_user_password(user_id):
             new_password
         )
 
-        if hasattr(user_account, "force_password_change"):
+        if hasattr(
+            user_account,
+            "force_password_change"
+        ):
             user_account.force_password_change = True
 
         db.session.commit()
 
-        save_audit(
-            f"Reset password for user: "
-            f"{user_account.username} ({user_account.role})",
-            "Security"
-        )
+        try:
+            save_audit(
+                f"Reset password for user: "
+                f"{user_account.username} "
+                f"({user_account.role})",
+                "Security"
+            )
+
+        except Exception as audit_error:
+            print(
+                "RESET PASSWORD AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
 
         flash(
             f"Password reset successfully for "
@@ -12266,11 +12299,11 @@ def reset_user_password(user_id):
         )
 
         flash(
-            "The password could not be reset."
+            "The password could not be reset. "
+            "No changes were saved."
         )
 
     return redirect(url_for("users"))
-
 
 @app.route("/delete_user/<int:user_id>", methods=["POST"])
 def delete_user(user_id):
@@ -12282,6 +12315,8 @@ def delete_user(user_id):
         or ""
     ).strip().lower()
 
+    # Super Admin should not delete ordinary school accounts
+    # through the school Users page.
     if current_role == "super admin":
         flash(
             "School user accounts must be managed inside the school."
@@ -12298,6 +12333,10 @@ def delete_user(user_id):
 
     school_id = current_school_id()
 
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
     user_account = User.query.filter_by(
         id=user_id,
         school_id=school_id
@@ -12308,13 +12347,21 @@ def delete_user(user_id):
         or ""
     ).strip().lower()
 
-    # No one deletes their own active session account.
+    # No one may delete the account currently being used.
     if user_account.id == session.get("user_id"):
         flash(
             "You cannot delete the account you are currently using."
         )
         return redirect(url_for("users"))
 
+    # Director accounts are controlled only by Super Admin.
+    if target_role == "director":
+        flash(
+            "Director accounts can only be deleted by Super Admin."
+        )
+        return redirect(url_for("users"))
+
+    # Manager cannot delete Director or Manager accounts.
     if current_role == "manager" and target_role in [
         "director",
         "manager"
@@ -12324,28 +12371,17 @@ def delete_user(user_id):
         )
         return redirect(url_for("users"))
 
+    # Admin cannot delete Director, Manager or Admin accounts.
     if current_role == "admin" and target_role in [
         "director",
         "manager",
         "admin"
     ]:
         flash(
-            "An Admin cannot delete Director, Manager or Admin accounts."
+            "An Admin cannot delete Director, Manager "
+            "or Admin accounts."
         )
         return redirect(url_for("users"))
-
-    if target_role == "director":
-        active_directors = User.query.filter(
-            User.school_id == school_id,
-            db.func.lower(User.role) == "director",
-            User.is_active.is_(True)
-        ).count()
-
-        if active_directors <= 1:
-            flash(
-                "The last active Director cannot be deleted."
-            )
-            return redirect(url_for("users"))
 
     username = user_account.username
     role_name = user_account.role
@@ -12354,11 +12390,19 @@ def delete_user(user_id):
         db.session.delete(user_account)
         db.session.commit()
 
-        save_audit(
-            f"Deleted user account: "
-            f"{username} ({role_name})",
-            "Security"
-        )
+        try:
+            save_audit(
+                f"Deleted user account: "
+                f"{username} ({role_name})",
+                "Security"
+            )
+
+        except Exception as audit_error:
+            print(
+                "DELETE USER AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
 
         flash("User account deleted successfully.")
 
@@ -12372,7 +12416,8 @@ def delete_user(user_id):
         )
 
         flash(
-            "The user account could not be deleted."
+            "The user account could not be deleted. "
+            "No changes were saved."
         )
 
     return redirect(url_for("users"))
