@@ -11438,15 +11438,20 @@ def users():
         or ""
     ).strip().lower()
 
-    # Super Admin remains at platform level and should not
-    # manage a school's private staff login accounts.
+    # Super Admin remains at platform level.
+    # Director accounts are created through the dedicated
+    # Super Admin Director-creation page.
     if current_role == "super admin":
         flash(
-            "School user accounts must be managed by the "
-            "school Director, Manager or Admin."
+            "School user accounts must be managed inside the school. "
+            "Use Schools Management to create a Director account."
         )
-        return redirect(url_for("super_admin_dashboard"))
+        return redirect(
+            url_for("super_admin_dashboard")
+        )
 
+    # Only school Director, Manager and Admin may manage
+    # ordinary school login accounts.
     if current_role not in [
         "director",
         "manager",
@@ -11463,6 +11468,9 @@ def users():
 
     # ---------------------------------------------------------
     # COMPLETE SCHOOL ROLE STRUCTURE
+    # Used for summaries and role counts.
+    # Director remains here so existing Director accounts
+    # appear correctly in the user list and statistics.
     # ---------------------------------------------------------
     all_school_roles = [
         "Director",
@@ -11489,10 +11497,33 @@ def users():
     # ---------------------------------------------------------
     # ROLES EACH CURRENT USER MAY CREATE
     # ---------------------------------------------------------
+
     if current_role == "director":
-        available_roles = all_school_roles
+        # Director can create Manager and lower roles,
+        # but cannot create another Director.
+        available_roles = [
+            "Manager",
+            "Admin",
+            "Principal",
+            "Headteacher",
+            "Deputy Headteacher",
+            "Accountant",
+            "Bursar",
+            "Registrar",
+            "Receptionist",
+            "Teacher",
+            "ICT Officer",
+            "Librarian",
+            "Storekeeper",
+            "Nurse",
+            "Driver",
+            "Security Officer",
+            "Cook",
+            "Cleaner"
+        ]
 
     elif current_role == "manager":
+        # Manager cannot create Director or Manager.
         available_roles = [
             "Admin",
             "Principal",
@@ -11514,8 +11545,7 @@ def users():
         ]
 
     else:
-        # Admin cannot create or control Director,
-        # Manager or another Admin.
+        # Admin cannot create Director, Manager or Admin.
         available_roles = [
             "Principal",
             "Headteacher",
@@ -11587,6 +11617,16 @@ def users():
                 )
                 return redirect(url_for("users"))
 
+            # Extra security protection:
+            # Director can never be created from this route,
+            # even if someone manually alters the HTML form.
+            if role.lower() == "director":
+                flash(
+                    "Only Super Admin can create "
+                    "a Director account."
+                )
+                return redirect(url_for("users"))
+
             if role not in available_roles:
                 flash(
                     "You are not permitted to create "
@@ -11594,14 +11634,14 @@ def users():
                 )
                 return redirect(url_for("users"))
 
-            # Only a Director may create another Director
-            # or promote someone to Manager.
-            if role in ["Director", "Manager"] and (
-                current_role != "director"
+            # Only the Director may create a Manager.
+            if (
+                role == "Manager"
+                and current_role != "director"
             ):
                 flash(
                     "Only the School Director may create "
-                    "Director or Manager accounts."
+                    "a Manager account."
                 )
                 return redirect(url_for("users"))
 
@@ -11698,18 +11738,19 @@ def users():
         can_reset_password = False
 
         if current_role == "director":
+            # Director can manage school accounts.
             can_manage = True
             can_reset_password = True
 
-            # Prevent a Director from deleting their own
-            # account from this page.
+            # Director cannot delete the account currently
+            # being used for the session.
             can_delete = (
                 user_account.id
                 != session.get("user_id")
             )
 
         elif current_role == "manager":
-            # Manager cannot control Directors or Managers.
+            # Manager cannot control Director or Manager.
             if account_role not in [
                 "director",
                 "manager"
