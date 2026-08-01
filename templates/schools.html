@@ -1,47 +1,313 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="panel">
-    <h2>Schools Management</h2>
+<style>
+.schools-page {
+    max-width: 1500px;
+    margin: 0 auto;
+}
 
-    <p class="notice">
-        Super Admin area. Manage all schools on the SaaS platform.
-    </p>
+.schools-hero {
+    background: linear-gradient(
+        135deg,
+        #071f49,
+        #0b5ed7,
+        #16a34a
+    );
+    color: white;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .14);
+}
 
-    <a class="btn" href="{{ url_for('create_school') }}">+ Create School</a>
+.schools-hero h2 {
+    margin: 0;
+    font-size: 30px;
+}
 
-    <br><br>
+.schools-hero p {
+    margin: 8px 0 0;
+    color: #dbeafe;
+}
 
-    <table>
-        <tr>
-            <th>School Name</th>
-            <th>Phone</th>
-            <th>Subscription</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Actions</th>
-        </tr>
+.schools-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
+    margin-bottom: 18px;
+}
 
-        {% for school in schools %}
-        <tr>
-            <td>{{ school.school_name }}</td>
-            <td>{{ school.phone }}</td>
-            <td>{{ school.subscription_status }}</td>
-            <td>
-                {% if school.is_active %}
-                    Active
+.schools-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.schools-topbar h3 {
+    margin: 0;
+    color: #0b5ed7;
+}
+
+.notice-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    border-radius: 14px;
+    padding: 13px;
+    margin-bottom: 16px;
+    font-weight: 700;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.schools-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.schools-table th {
+    background: #f8fafc;
+    color: #475569;
+    padding: 12px;
+    font-size: 13px;
+}
+
+.schools-table td {
+    background: white;
+    padding: 12px;
+    vertical-align: top;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.schools-table td:first-child {
+    border-left: 1px solid #e5e7eb;
+    border-radius: 12px 0 0 12px;
+}
+
+.schools-table td:last-child {
+    border-right: 1px solid #e5e7eb;
+    border-radius: 0 12px 12px 0;
+}
+
+.school-name {
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.muted {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-suspended {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.subscription-pill {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #0b5ed7;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: capitalize;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-director {
+    background: #7c3aed !important;
+}
+
+.btn-edit {
+    background: #475569 !important;
+}
+
+.empty-row {
+    text-align: center;
+    color: #64748b;
+    padding: 24px !important;
+}
+
+@media (max-width: 800px) {
+    .schools-topbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+</style>
+
+<div class="schools-page">
+
+    <div class="schools-hero">
+        <h2>🏫 Schools Management</h2>
+        <p>
+            Manage schools, subscriptions and Director accounts
+            across the EduManage SaaS platform.
+        </p>
+    </div>
+
+    <div class="schools-card">
+
+        <div class="schools-topbar">
+            <div>
+                <h3>Registered Schools</h3>
+                <div class="muted">
+                    {{ schools|length }} school(s) on the platform
+                </div>
+            </div>
+
+            <a
+                class="btn green"
+                href="{{ url_for('create_school') }}">
+                + Create School
+            </a>
+        </div>
+
+        <div class="notice-box">
+            Only the Super Admin can create a school Director account.
+        </div>
+
+        <div class="table-wrap">
+            <table class="schools-table">
+
+                <tr>
+                    <th>School</th>
+                    <th>Contact</th>
+                    <th>Subscription</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+
+                {% for school in schools %}
+
+                <tr>
+                    <td>
+                        <div class="school-name">
+                            {{ school.school_name }}
+                        </div>
+
+                        <div class="muted">
+                            School ID: {{ school.id }}
+                        </div>
+                    </td>
+
+                    <td>
+                        {{ school.phone or "-" }}
+
+                        {% if school.email %}
+                            <br>
+                            <span class="muted">
+                                {{ school.email }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <span class="subscription-pill">
+                            {{ school.subscription_status or "Unknown" }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if school.is_active %}
+                            <span class="status-pill status-active">
+                                Active
+                            </span>
+                        {% else %}
+                            <span class="status-pill status-suspended">
+                                Suspended
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if school.created_at %}
+                            {{ school.created_at.strftime("%d %b %Y") }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="actions">
+
+                            <a
+                                href="{{ url_for(
+                                    'switch_school',
+                                    school_id=school.id
+                                ) }}"
+                                class="btn">
+                                Open
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'edit_school',
+                                    school_id=school.id
+                                ) }}"
+                                class="btn btn-edit">
+                                Edit
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'super_admin_create_director',
+                                    school_id=school.id
+                                ) }}"
+                                class="btn btn-director">
+                                Create Director
+                            </a>
+
+                        </div>
+                    </td>
+                </tr>
+
                 {% else %}
-                    Suspended
-                {% endif %}
-            </td>
-            <td>{{ school.created_at }}</td>
-            <td>
-                <a href="{{ url_for('switch_school', school_id=school.id) }}" class="btn">Open</a>
-                <a href="{{ url_for('edit_school', school_id=school.id) }}" class="btn">Edit</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+
+                <tr>
+                    <td colspan="6" class="empty-row">
+                        No schools have been created yet.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </table>
+        </div>
+
+    </div>
+
 </div>
 
 {% endblock %}
