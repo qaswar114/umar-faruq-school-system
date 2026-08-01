@@ -11257,6 +11257,176 @@ def audit_logs():
         settings=get_settings(),
         logs=logs
     )
+
+@app.route(
+    "/super_admin/create_director/<int:school_id>",
+    methods=["GET", "POST"]
+)
+def super_admin_create_director(school_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    current_role = (
+        session.get("role")
+        or ""
+    ).strip().lower()
+
+    if current_role != "super admin":
+        flash(
+            "Only Super Admin can create a Director account."
+        )
+        return redirect(url_for("dashboard"))
+
+    school = School.query.get_or_404(school_id)
+
+    existing_director = User.query.filter(
+        User.school_id == school.id,
+        db.func.lower(User.role) == "director",
+        User.is_active.is_(True)
+    ).first()
+
+    if request.method == "POST":
+        if existing_director:
+            flash(
+                f"{school.school_name} already has an active "
+                f"Director account."
+            )
+            return redirect(
+                url_for(
+                    "super_admin_create_director",
+                    school_id=school.id
+                )
+            )
+
+        username = request.form.get(
+            "username",
+            ""
+        ).strip()
+
+        password = request.form.get(
+            "password",
+            ""
+        ).strip()
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            ""
+        ).strip()
+
+        if not username:
+            flash("Username is required.")
+            return redirect(
+                url_for(
+                    "super_admin_create_director",
+                    school_id=school.id
+                )
+            )
+
+        if len(password) < 6:
+            flash(
+                "Password must contain at least six characters."
+            )
+            return redirect(
+                url_for(
+                    "super_admin_create_director",
+                    school_id=school.id
+                )
+            )
+
+        if password != confirm_password:
+            flash("Passwords do not match.")
+            return redirect(
+                url_for(
+                    "super_admin_create_director",
+                    school_id=school.id
+                )
+            )
+
+        existing_username = User.query.filter(
+            db.func.lower(User.username)
+            == username.lower()
+        ).first()
+
+        if existing_username:
+            flash(
+                "That username already exists. "
+                "Choose another username."
+            )
+            return redirect(
+                url_for(
+                    "super_admin_create_director",
+                    school_id=school.id
+                )
+            )
+
+        director = User(
+            school_id=school.id,
+            username=username,
+            password_hash=generate_password_hash(
+                password
+            ),
+            role="Director",
+            assigned_grade="",
+            assigned_subjects="",
+            is_active=True
+        )
+
+        try:
+            db.session.add(director)
+            db.session.flush()
+
+            audit = AuditLog(
+                school_id=school.id,
+                username=session.get(
+                    "username",
+                    ""
+                ),
+                role="Super Admin",
+                action=(
+                    f"Created Director account: "
+                    f"{username}"
+                ),
+                module="Security"
+            )
+
+            db.session.add(audit)
+            db.session.commit()
+
+            flash(
+                f"Director account created successfully "
+                f"for {school.school_name}."
+            )
+
+            return redirect(
+                url_for("schools")
+            )
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "CREATE DIRECTOR ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                "The Director account could not be created."
+            )
+
+            return redirect(
+                url_for(
+                    "super_admin_create_director",
+                    school_id=school.id
+                )
+            )
+
+    return render_template(
+        "create_school_director.html",
+        settings=get_settings(),
+        school=school,
+        existing_director=existing_director
+    )
     
 @app.route("/users", methods=["GET", "POST"])
 def users():
