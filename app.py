@@ -6787,6 +6787,7 @@ def fix_discount_table():
 
     flash("Discount table fixed successfully.")
     return redirect(url_for("discounts"))
+    
  def allocate_payment_oldest_first(
     pupil,
     academic_year,
