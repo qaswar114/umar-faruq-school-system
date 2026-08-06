@@ -818,22 +818,94 @@ class FeeStructure(db.Model):
     admission_fee = db.Column(db.Float, default=0)
 
 class Payment(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
-    receipt_no = db.Column(db.String(120), unique=True, nullable=False)
-    pupil_id = db.Column(db.Integer, db.ForeignKey("pupil.id"), nullable=False)
-    academic_year = db.Column(db.Integer, nullable=False)
-    term = db.Column(db.String(30), nullable=False)
-    month = db.Column(db.String(30), nullable=False)
-    tuition_paid = db.Column(db.Float, default=0)
-    bus_paid = db.Column(db.Float, default=0)
-    exam_paid = db.Column(db.Float, default=0)
-    admission_paid = db.Column(db.Float, default=0)
-    payment_method = db.Column(db.String(50), nullable=False)
-    payment_date = db.Column(db.Date, default=date.today)
-    collected_by = db.Column(db.String(80), nullable=False)
-    pupil = db.relationship("Pupil")
-    
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        default=1,
+        nullable=False
+    )
+
+    receipt_no = db.Column(
+        db.String(120),
+        unique=True,
+        nullable=False
+    )
+
+    payment_batch_ref = db.Column(
+        db.String(120),
+        default="",
+        index=True
+    )
+
+    pupil_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pupil.id"),
+        nullable=False
+    )
+
+    academic_year = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    term = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    month = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    tuition_paid = db.Column(
+        db.Float,
+        default=0
+    )
+
+    bus_paid = db.Column(
+        db.Float,
+        default=0
+    )
+
+    exam_paid = db.Column(
+        db.Float,
+        default=0
+    )
+
+    admission_paid = db.Column(
+        db.Float,
+        default=0
+    )
+
+    payment_method = db.Column(
+        db.String(50),
+        nullable=False
+    )
+
+    payment_date = db.Column(
+        db.Date,
+        default=date.today
+    )
+
+    collected_by = db.Column(
+        db.String(80),
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    pupil = db.relationship(
+        "Pupil"
+    )
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -1887,6 +1959,51 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 
 def init_database():
     db.create_all()
+
+    # Add automatic payment allocation columns
+try:
+    with db.engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                ALTER TABLE payment
+                ADD COLUMN IF NOT EXISTS payment_batch_ref
+                VARCHAR(120) DEFAULT '';
+                """
+            )
+        )
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE payment
+                ADD COLUMN IF NOT EXISTS created_at
+                TIMESTAMP;
+                """
+            )
+        )
+
+        connection.execute(
+            text(
+                """
+                UPDATE payment
+                SET created_at = CURRENT_TIMESTAMP
+                WHERE created_at IS NULL;
+                """
+            )
+        )
+
+    print(
+        "Payment allocation columns checked successfully.",
+        flush=True
+    )
+
+except Exception as error:
+    print(
+        "PAYMENT COLUMN UPDATE ERROR:",
+        str(error),
+        flush=True
+    )
     
     try:
         SchoolBus.__table__.create(db.engine, checkfirst=True)
@@ -6670,56 +6787,507 @@ def fix_discount_table():
 
     flash("Discount table fixed successfully.")
     return redirect(url_for("discounts"))
+ def allocate_payment_oldest_first(
+    pupil,
+    academic_year,
+    amount_received
+):
+    school_id = current_school_id()
+
+    remaining_money = round(
+        float(amount_received or 0),
+        2
+    )
+
+    allocations = []
+
+    if remaining_money <= 0:
+        return allocations, 0
+
+    # EduManage billing started in May 2026.
+    billing_periods = []
+
+    for term in TERMS:
+        for month in term_months(term):
+            if (
+                academic_year == 2026
+                and term == "Term 1"
+            ):
+                continue
+
+            billing_periods.append(
+                (term, month)
+            )
+
+    for term, month in billing_periods:
+        if remaining_money <= 0:
+            break
+
+        month_due = monthly_due(
+            pupil,
+            academic_year,
+            term,
+            month
+        )
+
+        already_paid = db.session.query(
+            db.func.coalesce(
+                db.func.sum(Payment.tuition_paid),
+                0
+            ),
+            db.func.coalesce(
+                db.func.sum(Payment.bus_paid),
+                0
+            ),
+            db.func.coalesce(
+                db.func.sum(Payment.exam_paid),
+                0
+            ),
+            db.func.coalesce(
+                db.func.sum(Payment.admission_paid),
+                0
+            )
+        ).filter(
+            Payment.school_id == school_id,
+            Payment.pupil_id == pupil.id,
+            Payment.academic_year == academic_year,
+            Payment.term == term,
+            Payment.month == month
+        ).first()
+
+        tuition_remaining = max(
+            0,
+            round(
+                float(month_due.get("tuition") or 0)
+                - float(already_paid[0] or 0),
+                2
+            )
+        )
+
+        bus_remaining = max(
+            0,
+            round(
+                float(month_due.get("bus") or 0)
+                - float(already_paid[1] or 0),
+                2
+            )
+        )
+
+        exam_remaining = max(
+            0,
+            round(
+                float(month_due.get("exam") or 0)
+                - float(already_paid[2] or 0),
+                2
+            )
+        )
+
+        admission_remaining = max(
+            0,
+            round(
+                float(month_due.get("admission") or 0)
+                - float(already_paid[3] or 0),
+                2
+            )
+        )
+
+        allocation = {
+            "term": term,
+            "month": month,
+            "tuition_paid": 0,
+            "bus_paid": 0,
+            "exam_paid": 0,
+            "admission_paid": 0
+        }
+
+        # Allocate oldest charges first within each month.
+        fee_items = [
+            ("tuition_paid", tuition_remaining),
+            ("bus_paid", bus_remaining),
+            ("exam_paid", exam_remaining),
+            ("admission_paid", admission_remaining)
+        ]
+
+        for field_name, outstanding_amount in fee_items:
+            if remaining_money <= 0:
+                break
+
+            allocated_amount = min(
+                remaining_money,
+                outstanding_amount
+            )
+
+            allocated_amount = round(
+                allocated_amount,
+                2
+            )
+
+            allocation[field_name] = allocated_amount
+
+            remaining_money = round(
+                remaining_money
+                - allocated_amount,
+                2
+            )
+
+        allocation_total = round(
+            allocation["tuition_paid"]
+            + allocation["bus_paid"]
+            + allocation["exam_paid"]
+            + allocation["admission_paid"],
+            2
+        )
+
+        if allocation_total > 0:
+            allocations.append(allocation)
+
+    allocated_total = round(
+        float(amount_received or 0)
+        - remaining_money,
+        2
+    )
+
+    return allocations, allocated_total 
     
 @app.route("/payments", methods=["GET", "POST"])
 def payments():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("bursar", "admin", "principal", "super admin"):
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin",
+        "accountant",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         try:
-            year = int(request.form["academic_year"])
-            term = request.form["term"]
-            month = request.form["month"]
-            pupil_id = int(request.form["pupil_id"])
+            # -------------------------------------------------
+            # BASIC PAYMENT DETAILS
+            # -------------------------------------------------
+            year = int(
+                request.form.get("academic_year")
+                or current_year()
+            )
 
+            term = request.form.get(
+                "term",
+                ""
+            ).strip()
+
+            month = request.form.get(
+                "month",
+                ""
+            ).strip()
+
+            pupil_id = int(
+                request.form.get("pupil_id")
+                or 0
+            )
+
+            if term not in TERMS:
+                flash("Select a valid academic term.")
+                return redirect(url_for("payments"))
+
+            if month not in term_months(term):
+                flash(
+                    "Selected month does not belong "
+                    "to the selected term."
+                )
+                return redirect(url_for("payments"))
+
+            # Lock the pupil record while validating and
+            # recording this payment.
             pupil = Pupil.query.filter_by(
                 id=pupil_id,
                 school_id=school_id,
                 status="Active"
-            ).first()
+            ).with_for_update().first()
 
             if not pupil:
                 flash("Invalid pupil selected.")
                 return redirect(url_for("payments"))
 
-            if month not in term_months(term):
-                flash("Selected month does not belong to the selected term.")
+            # -------------------------------------------------
+            # AMOUNTS ENTERED
+            # -------------------------------------------------
+            tuition_paid = round(
+                float(
+                    request.form.get("tuition_paid")
+                    or 0
+                ),
+                2
+            )
+
+            bus_paid = round(
+                float(
+                    request.form.get("bus_paid")
+                    or 0
+                ),
+                2
+            )
+
+            exam_paid = round(
+                float(
+                    request.form.get("exam_paid")
+                    or 0
+                ),
+                2
+            )
+
+            admission_paid = round(
+                float(
+                    request.form.get("admission_paid")
+                    or 0
+                ),
+                2
+            )
+
+            entered_amounts = [
+                tuition_paid,
+                bus_paid,
+                exam_paid,
+                admission_paid
+            ]
+
+            if any(amount < 0 for amount in entered_amounts):
+                flash(
+                    "Payment amounts cannot be negative."
+                )
                 return redirect(url_for("payments"))
 
-            tuition_paid = float(request.form.get("tuition_paid") or 0)
-            bus_paid = float(request.form.get("bus_paid") or 0)
-            exam_paid = float(request.form.get("exam_paid") or 0)
-            admission_paid = float(request.form.get("admission_paid") or 0)
-
-            amount_paid = tuition_paid + bus_paid + exam_paid + admission_paid
+            amount_paid = round(
+                tuition_paid
+                + bus_paid
+                + exam_paid
+                + admission_paid,
+                2
+            )
 
             if amount_paid <= 0:
-                flash("Enter at least one payment amount.")
+                flash(
+                    "Enter at least one payment amount."
+                )
                 return redirect(url_for("payments"))
 
-            payment_date = datetime.strptime(
-                request.form["payment_date"],
-                "%Y-%m-%d"
-            ).date()
+            # -------------------------------------------------
+            # FEES DUE FOR THE SELECTED MONTH
+            # -------------------------------------------------
+            month_due = monthly_due(
+                pupil,
+                year,
+                term,
+                month
+            )
 
-            receipt_number = unique_receipt_no(year, term, school_id)
+            tuition_due = round(
+                float(month_due.get("tuition") or 0),
+                2
+            )
+
+            bus_due = round(
+                float(month_due.get("bus") or 0),
+                2
+            )
+
+            exam_due = round(
+                float(month_due.get("exam") or 0),
+                2
+            )
+
+            admission_due = round(
+                float(month_due.get("admission") or 0),
+                2
+            )
+
+            # -------------------------------------------------
+            # TOTAL ALREADY PAID FOR THIS MONTH
+            # -------------------------------------------------
+            previous_totals = db.session.query(
+                db.func.coalesce(
+                    db.func.sum(Payment.tuition_paid),
+                    0
+                ),
+                db.func.coalesce(
+                    db.func.sum(Payment.bus_paid),
+                    0
+                ),
+                db.func.coalesce(
+                    db.func.sum(Payment.exam_paid),
+                    0
+                ),
+                db.func.coalesce(
+                    db.func.sum(Payment.admission_paid),
+                    0
+                )
+            ).filter(
+                Payment.school_id == school_id,
+                Payment.pupil_id == pupil.id,
+                Payment.academic_year == year,
+                Payment.term == term,
+                Payment.month == month
+            ).first()
+
+            tuition_already_paid = round(
+                float(previous_totals[0] or 0),
+                2
+            )
+
+            bus_already_paid = round(
+                float(previous_totals[1] or 0),
+                2
+            )
+
+            exam_already_paid = round(
+                float(previous_totals[2] or 0),
+                2
+            )
+
+            admission_already_paid = round(
+                float(previous_totals[3] or 0),
+                2
+            )
+
+            # -------------------------------------------------
+            # REMAINING AMOUNTS
+            # -------------------------------------------------
+            tuition_remaining = max(
+                0,
+                round(
+                    tuition_due
+                    - tuition_already_paid,
+                    2
+                )
+            )
+
+            bus_remaining = max(
+                0,
+                round(
+                    bus_due
+                    - bus_already_paid,
+                    2
+                )
+            )
+
+            exam_remaining = max(
+                0,
+                round(
+                    exam_due
+                    - exam_already_paid,
+                    2
+                )
+            )
+
+            admission_remaining = max(
+                0,
+                round(
+                    admission_due
+                    - admission_already_paid,
+                    2
+                )
+            )
+
+            # -------------------------------------------------
+            # PREVENT DUPLICATE OR EXCESS PAYMENTS
+            # -------------------------------------------------
+            errors = []
+
+            if tuition_paid > tuition_remaining:
+                errors.append(
+                    f"Tuition payment exceeds the remaining "
+                    f"amount of {money(tuition_remaining)}."
+                )
+
+            if bus_paid > bus_remaining:
+                errors.append(
+                    f"Bus payment exceeds the remaining "
+                    f"amount of {money(bus_remaining)}."
+                )
+
+            if exam_paid > exam_remaining:
+                errors.append(
+                    f"Exam payment exceeds the remaining "
+                    f"amount of {money(exam_remaining)}."
+                )
+
+            if admission_paid > admission_remaining:
+                errors.append(
+                    f"Admission payment exceeds the remaining "
+                    f"amount of {money(admission_remaining)}."
+                )
+
+            if errors:
+                for error_message in errors:
+                    flash(error_message)
+
+                return redirect(url_for("payments"))
+
+            # A pupil who has completed all selected-month fees
+            # cannot make another payment for that month.
+            total_remaining_before_payment = round(
+                tuition_remaining
+                + bus_remaining
+                + exam_remaining
+                + admission_remaining,
+                2
+            )
+
+            if total_remaining_before_payment <= 0:
+                flash(
+                    f"{pupil.full_name} has already completed "
+                    f"all fees charged for {month} {year}."
+                )
+                return redirect(url_for("payments"))
+
+            # -------------------------------------------------
+            # PAYMENT DATE AND METHOD
+            # -------------------------------------------------
+            payment_date_text = request.form.get(
+                "payment_date",
+                ""
+            ).strip()
+
+            if payment_date_text:
+                try:
+                    payment_date = datetime.strptime(
+                        payment_date_text,
+                        "%Y-%m-%d"
+                    ).date()
+
+                except ValueError:
+                    flash("Enter a valid payment date.")
+                    return redirect(url_for("payments"))
+
+            else:
+                payment_date = date.today()
+
+            payment_method = request.form.get(
+                "payment_method",
+                ""
+            ).strip()
+
+            if not payment_method:
+                flash("Select a payment method.")
+                return redirect(url_for("payments"))
+
+            # -------------------------------------------------
+            # CREATE PAYMENT
+            # -------------------------------------------------
+            receipt_number = unique_receipt_no(
+                year,
+                term,
+                school_id
+            )
 
             pay = Payment(
                 school_id=school_id,
@@ -6732,21 +7300,26 @@ def payments():
                 bus_paid=bus_paid,
                 exam_paid=exam_paid,
                 admission_paid=admission_paid,
-                payment_method=request.form["payment_method"],
+                payment_method=payment_method,
                 payment_date=payment_date,
-                collected_by=session.get("username", "")
+                collected_by=session.get(
+                    "username",
+                    ""
+                )
             )
 
             db.session.add(pay)
             db.session.commit()
 
-            total_due = due_until_month(pupil, year, term, month)
-            total_paid = paid_year(pupil.id, year)
-            discounts = discount_year(pupil.id, year)
-            balance = total_due - total_paid - discounts
-
-            if balance < 0:
-                balance = 0
+            # -------------------------------------------------
+            # UPDATED BALANCE
+            # -------------------------------------------------
+            balance = balance_until_month(
+                pupil,
+                year,
+                term,
+                month
+            )
 
             school = get_settings()
 
@@ -6754,68 +7327,157 @@ def payments():
                 f"{school.school_name}\n\n"
                 f"PAYMENT CONFIRMATION\n\n"
                 f"Dear Parent,\n"
-                f"We have received {money(amount_paid)} for {pupil.full_name}.\n"
+                f"We have received {money(amount_paid)} "
+                f"for {pupil.full_name}.\n"
                 f"Receipt No: {receipt_number}\n"
                 f"Period: {term}, {month} {year}\n"
                 f"Balance: {money(balance)}\n\n"
                 f"Thank you."
             )
 
+            # -------------------------------------------------
+            # PAYMENT CONFIRMATION
+            # Messaging failure must not reverse a valid payment.
+            # -------------------------------------------------
             whatsapp_queued = False
             sms_queued = False
             sms_note = ""
 
             if pupil.guardian_phone:
-                wa = WhatsAppMessage(
-                    school_id=school_id,
-                    recipient_name=pupil.guardian_name or pupil.full_name,
-                    phone=pupil.guardian_phone,
-                    message=confirmation_message,
-                    category="Payment Confirmation",
-                    status="Pending",
-                    created_by=session.get("username", "")
+                try:
+                    wa = WhatsAppMessage(
+                        school_id=school_id,
+                        recipient_name=(
+                            pupil.guardian_name
+                            or pupil.full_name
+                        ),
+                        phone=pupil.guardian_phone,
+                        message=confirmation_message,
+                        category="Payment Confirmation",
+                        status="Pending",
+                        created_by=session.get(
+                            "username",
+                            ""
+                        )
+                    )
+
+                    db.session.add(wa)
+                    db.session.commit()
+
+                    whatsapp_queued = True
+
+                except Exception as whatsapp_error:
+                    db.session.rollback()
+
+                    print(
+                        "PAYMENT WHATSAPP QUEUE ERROR:",
+                        str(whatsapp_error),
+                        flush=True
+                    )
+
+                try:
+                    sms_ok, sms_msg = create_sms(
+                        pupil.guardian_name
+                        or pupil.full_name,
+                        pupil.guardian_phone,
+                        confirmation_message,
+                        "Payment Confirmation"
+                    )
+
+                    if sms_ok:
+                        sms_queued = True
+                    else:
+                        sms_note = sms_msg
+
+                except Exception as sms_error:
+                    sms_note = str(sms_error)
+
+                    print(
+                        "PAYMENT SMS QUEUE ERROR:",
+                        str(sms_error),
+                        flush=True
+                    )
+
+            # -------------------------------------------------
+            # AUDIT
+            # -------------------------------------------------
+            try:
+                save_audit(
+                    f"Payment recorded for "
+                    f"{pupil.full_name}: "
+                    f"{money(amount_paid)}. "
+                    f"Receipt: {receipt_number}. "
+                    f"Period: {month} {year}.",
+                    "Finance"
                 )
 
-                db.session.add(wa)
-                db.session.commit()
-                whatsapp_queued = True
-
-                sms_ok, sms_msg = create_sms(
-                    pupil.guardian_name or pupil.full_name,
-                    pupil.guardian_phone,
-                    confirmation_message,
-                    "Payment Confirmation"
+            except Exception as audit_error:
+                print(
+                    "PAYMENT AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
                 )
 
-                if sms_ok:
-                    sms_queued = True
-                else:
-                    sms_note = sms_msg
-
-            flash_message = "Payment recorded successfully."
-
-            if whatsapp_queued:
-                flash_message += " WhatsApp confirmation queued."
-
-            if sms_queued:
-                flash_message += " SMS confirmation queued."
-            elif sms_note:
-                flash_message += f" SMS not queued: {sms_note}"
-
-            save_audit(
-                f"Payment recorded for {pupil.full_name}: {money(amount_paid)}. Receipt: {receipt_number}",
-                "Finance"
+            flash_message = (
+                f"Payment of {money(amount_paid)} "
+                f"recorded successfully."
             )
 
-            flash(flash_message)
-            return redirect(url_for("receipt", payment_id=pay.id))
+            if whatsapp_queued:
+                flash_message += (
+                    " WhatsApp confirmation queued."
+                )
 
-        except Exception as e:
+            if sms_queued:
+                flash_message += (
+                    " SMS confirmation queued."
+                )
+
+            elif sms_note:
+                flash_message += (
+                    f" SMS not queued: {sms_note}"
+                )
+
+            flash(flash_message)
+
+            return redirect(
+                url_for(
+                    "receipt",
+                    payment_id=pay.id
+                )
+            )
+
+        except (TypeError, ValueError):
             db.session.rollback()
-            flash(f"Payment failed: {str(e)}")
+
+            flash(
+                "Enter valid pupil, year and payment amounts."
+            )
+
             return redirect(url_for("payments"))
 
-    selected_grade = request.args.get("grade", "All")
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "PAYMENT ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                f"Payment failed: {str(error)}"
+            )
+
+            return redirect(url_for("payments"))
+
+    # ---------------------------------------------------------
+    # PAGE DATA
+    # ---------------------------------------------------------
+    selected_grade = request.args.get(
+        "grade",
+        "All"
+    )
 
     pupil_query = Pupil.query.filter_by(
         school_id=school_id,
@@ -6823,14 +7485,23 @@ def payments():
     )
 
     if selected_grade != "All":
-        pupil_query = pupil_query.filter_by(grade=selected_grade)
+        pupil_query = pupil_query.filter_by(
+            grade=selected_grade
+        )
 
-    pupils = pupil_query.order_by(Pupil.full_name.asc()).all()
+    pupils = pupil_query.order_by(
+        Pupil.full_name.asc()
+    ).all()
 
-    payment_query = Payment.query.filter_by(school_id=school_id)
+    payment_query = Payment.query.filter_by(
+        school_id=school_id
+    )
 
     if selected_grade != "All":
-        payment_query = payment_query.join(Pupil, Payment.pupil_id == Pupil.id).filter(
+        payment_query = payment_query.join(
+            Pupil,
+            Payment.pupil_id == Pupil.id
+        ).filter(
             Pupil.grade == selected_grade,
             Pupil.school_id == school_id
         )
