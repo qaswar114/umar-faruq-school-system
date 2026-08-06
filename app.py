@@ -1960,96 +1960,184 @@ def send_sms_stk_push(phone, amount, account_reference, transaction_desc):
 def init_database():
     db.create_all()
 
-    # Add automatic payment allocation columns
-try:
-    with db.engine.begin() as connection:
-        connection.execute(
-            text(
-                """
-                ALTER TABLE payment
-                ADD COLUMN IF NOT EXISTS payment_batch_ref
-                VARCHAR(120) DEFAULT '';
-                """
+    # ---------------------------------------------------------
+    # ADD AUTOMATIC PAYMENT ALLOCATION COLUMNS
+    # ---------------------------------------------------------
+    try:
+        with db.engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE payment
+                    ADD COLUMN IF NOT EXISTS payment_batch_ref
+                    VARCHAR(120) DEFAULT '';
+                    """
+                )
             )
+
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE payment
+                    ADD COLUMN IF NOT EXISTS created_at
+                    TIMESTAMP;
+                    """
+                )
+            )
+
+            connection.execute(
+                text(
+                    """
+                    UPDATE payment
+                    SET created_at = CURRENT_TIMESTAMP
+                    WHERE created_at IS NULL;
+                    """
+                )
+            )
+
+        print(
+            "Payment allocation columns checked successfully.",
+            flush=True
         )
 
-        connection.execute(
-            text(
-                """
-                ALTER TABLE payment
-                ADD COLUMN IF NOT EXISTS created_at
-                TIMESTAMP;
-                """
-            )
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "PAYMENT COLUMN UPDATE ERROR:",
+            str(error),
+            flush=True
         )
 
-        connection.execute(
-            text(
-                """
-                UPDATE payment
-                SET created_at = CURRENT_TIMESTAMP
-                WHERE created_at IS NULL;
-                """
-            )
+    # ---------------------------------------------------------
+    # TRANSPORT TABLES
+    # ---------------------------------------------------------
+    try:
+        SchoolBus.__table__.create(
+            db.engine,
+            checkfirst=True
         )
 
-    print(
-        "Payment allocation columns checked successfully.",
-        flush=True
-    )
+        TransportRoute.__table__.create(
+            db.engine,
+            checkfirst=True
+        )
 
-except Exception as error:
-    print(
-        "PAYMENT COLUMN UPDATE ERROR:",
-        str(error),
-        flush=True
-    )
-    
-    try:
-        SchoolBus.__table__.create(db.engine, checkfirst=True)
-        TransportRoute.__table__.create(db.engine, checkfirst=True)
-        PupilTransport.__table__.create(db.engine, checkfirst=True)
+        PupilTransport.__table__.create(
+            db.engine,
+            checkfirst=True
+        )
+
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
+        print(
+            "TRANSPORT TABLE CREATION ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # TIMETABLE TABLE
+    # ---------------------------------------------------------
     try:
-        Timetable.__table__.create(db.engine, checkfirst=True)
+        Timetable.__table__.create(
+            db.engine,
+            checkfirst=True
+        )
+
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
+        print(
+            "TIMETABLE TABLE CREATION ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # FINANCE PERIOD TABLE
+    # ---------------------------------------------------------
     try:
-        FinancePeriod.__table__.create(db.engine, checkfirst=True)
+        FinancePeriod.__table__.create(
+            db.engine,
+            checkfirst=True
+        )
+
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-        # Create SMS Procurement table
+        print(
+            "FINANCE PERIOD TABLE CREATION ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # SMS PROCUREMENT TABLE
+    # ---------------------------------------------------------
     try:
         SMSProcurement.__table__.create(
             db.engine,
             checkfirst=True
         )
+
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Default SMS packages
+        print(
+            "SMS PROCUREMENT TABLE CREATION ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # DEFAULT SMS PACKAGES
+    # ---------------------------------------------------------
     try:
         if SMSPackage.query.count() == 0:
             packages = [
-                SMSPackage(sms_count=100, price=120),
-                SMSPackage(sms_count=500, price=550),
-                SMSPackage(sms_count=1000, price=1000),
-                SMSPackage(sms_count=5000, price=4500)
+                SMSPackage(
+                    sms_count=100,
+                    price=120
+                ),
+                SMSPackage(
+                    sms_count=500,
+                    price=550
+                ),
+                SMSPackage(
+                    sms_count=1000,
+                    price=1000
+                ),
+                SMSPackage(
+                    sms_count=5000,
+                    price=4500
+                )
             ]
+
             db.session.add_all(packages)
             db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Platform SMS pool
+        print(
+            "DEFAULT SMS PACKAGES ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # PLATFORM SMS POOL
+    # ---------------------------------------------------------
     try:
         if PlatformSMSPool.query.count() == 0:
             pool = PlatformSMSPool(
@@ -2059,15 +2147,25 @@ except Exception as error:
                 low_alert_level=2000,
                 last_loaded_by=""
             )
+
             db.session.add(pool)
             db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Default school
+        print(
+            "PLATFORM SMS POOL ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # DEFAULT SCHOOL
+    # ---------------------------------------------------------
     try:
         if not School.query.first():
-            db.session.add(School(
+            default_school = School(
                 school_name="Umar Faruq Integrated Academy",
                 motto="",
                 phone="",
@@ -2078,45 +2176,111 @@ except Exception as error:
                 secondary_color="#ffffff",
                 subscription_status="active",
                 is_active=True
-            ))
+            )
+
+            db.session.add(default_school)
             db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Add missing SMS purchase columns
+        print(
+            "DEFAULT SCHOOL CREATION ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # ADD MISSING SMS PURCHASE COLUMNS
+    # ---------------------------------------------------------
     sms_purchase_columns = [
-        ("mpesa_phone", "VARCHAR(20) DEFAULT ''"),
-        ("mpesa_checkout_request_id", "VARCHAR(100) DEFAULT ''"),
-        ("mpesa_receipt_no", "VARCHAR(100) DEFAULT ''"),
-        ("paid_at", "TIMESTAMP")
+        (
+            "mpesa_phone",
+            "VARCHAR(20) DEFAULT ''"
+        ),
+        (
+            "mpesa_checkout_request_id",
+            "VARCHAR(100) DEFAULT ''"
+        ),
+        (
+            "mpesa_receipt_no",
+            "VARCHAR(100) DEFAULT ''"
+        ),
+        (
+            "paid_at",
+            "TIMESTAMP"
+        )
     ]
 
     for column_name, column_type in sms_purchase_columns:
         try:
             db.session.execute(
-                db.text(f"ALTER TABLE sms_purchase ADD COLUMN {column_name} {column_type}")
+                db.text(
+                    f"""
+                    ALTER TABLE sms_purchase
+                    ADD COLUMN IF NOT EXISTS
+                    {column_name} {column_type}
+                    """
+                )
             )
+
             db.session.commit()
-        except Exception:
+
+        except Exception as error:
             db.session.rollback()
 
-    # Add missing SMS wallet columns
+            print(
+                f"SMS PURCHASE COLUMN ERROR "
+                f"({column_name}):",
+                str(error),
+                flush=True
+            )
+
+    # ---------------------------------------------------------
+    # ADD MISSING SMS WALLET COLUMNS
+    # ---------------------------------------------------------
     sms_wallet_columns = [
-        ("sms_username", "VARCHAR(100) DEFAULT ''"),
-        ("sms_api_key", "VARCHAR(255) DEFAULT ''"),
-        ("sms_sender_id", "VARCHAR(50) DEFAULT ''")
+        (
+            "sms_username",
+            "VARCHAR(100) DEFAULT ''"
+        ),
+        (
+            "sms_api_key",
+            "VARCHAR(255) DEFAULT ''"
+        ),
+        (
+            "sms_sender_id",
+            "VARCHAR(50) DEFAULT ''"
+        )
     ]
 
     for column_name, column_type in sms_wallet_columns:
         try:
             db.session.execute(
-                db.text(f"ALTER TABLE sms_wallet ADD COLUMN {column_name} {column_type}")
+                db.text(
+                    f"""
+                    ALTER TABLE sms_wallet
+                    ADD COLUMN IF NOT EXISTS
+                    {column_name} {column_type}
+                    """
+                )
             )
+
             db.session.commit()
-        except Exception:
+
+        except Exception as error:
             db.session.rollback()
 
-    # Add school_id columns
+            print(
+                f"SMS WALLET COLUMN ERROR "
+                f"({column_name}):",
+                str(error),
+                flush=True
+            )
+
+    # ---------------------------------------------------------
+    # ADD SCHOOL_ID COLUMNS
+    # ---------------------------------------------------------
     school_id_tables = [
         '"user"',
         "staff",
@@ -2137,33 +2301,87 @@ except Exception as error:
     for table in school_id_tables:
         try:
             db.session.execute(
-                db.text(f"ALTER TABLE {table} ADD COLUMN school_id INTEGER DEFAULT 1")
+                db.text(
+                    f"""
+                    ALTER TABLE {table}
+                    ADD COLUMN IF NOT EXISTS
+                    school_id INTEGER DEFAULT 1
+                    """
+                )
             )
+
             db.session.commit()
-        except Exception:
+
+        except Exception as error:
             db.session.rollback()
 
-    # Other missing columns
+            print(
+                f"SCHOOL_ID COLUMN ERROR ({table}):",
+                str(error),
+                flush=True
+            )
+
+    # ---------------------------------------------------------
+    # ADD OTHER MISSING COLUMNS
+    # ---------------------------------------------------------
     extra_columns = [
-        ('"user"', "assigned_grade", "VARCHAR(50) DEFAULT ''"),
-        ('"user"', "assigned_subjects", "VARCHAR(255) DEFAULT ''"),
-        ('"user"', "is_active", "BOOLEAN DEFAULT TRUE"),
-        ("staff", "assigned_subjects", "VARCHAR(255) DEFAULT ''"),
-        ("pupil", "photo", "VARCHAR(255) DEFAULT ''")
+        (
+            '"user"',
+            "assigned_grade",
+            "VARCHAR(50) DEFAULT ''"
+        ),
+        (
+            '"user"',
+            "assigned_subjects",
+            "VARCHAR(255) DEFAULT ''"
+        ),
+        (
+            '"user"',
+            "is_active",
+            "BOOLEAN DEFAULT TRUE"
+        ),
+        (
+            "staff",
+            "assigned_subjects",
+            "VARCHAR(255) DEFAULT ''"
+        ),
+        (
+            "pupil",
+            "photo",
+            "VARCHAR(255) DEFAULT ''"
+        )
     ]
 
     for table, column_name, column_type in extra_columns:
         try:
             db.session.execute(
-                db.text(f"ALTER TABLE {table} ADD COLUMN {column_name} {column_type}")
+                db.text(
+                    f"""
+                    ALTER TABLE {table}
+                    ADD COLUMN IF NOT EXISTS
+                    {column_name} {column_type}
+                    """
+                )
             )
+
             db.session.commit()
-        except Exception:
+
+        except Exception as error:
             db.session.rollback()
 
-    # Create SMS wallet for every school
+            print(
+                f"EXTRA COLUMN ERROR "
+                f"({table}.{column_name}):",
+                str(error),
+                flush=True
+            )
+
+    # ---------------------------------------------------------
+    # CREATE SMS WALLET FOR EVERY SCHOOL
+    # ---------------------------------------------------------
     try:
         schools = School.query.all()
+
         for school in schools:
             existing_wallet = SMSWallet.query.filter_by(
                 school_id=school.id
@@ -2178,84 +2396,170 @@ except Exception as error:
                     sms_low_alert=100,
                     sms_enabled=True
                 )
+
                 db.session.add(wallet)
 
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Default settings
+        print(
+            "SCHOOL SMS WALLET CREATION ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # DEFAULT SETTINGS
+    # ---------------------------------------------------------
     try:
         if not Setting.query.first():
-            db.session.add(Setting(
+            default_setting = Setting(
                 school_name=SCHOOL_NAME,
                 address="Umar Faruq Integrated Academy"
-            ))
+            )
+
+            db.session.add(default_setting)
             db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Default users
+        print(
+            "DEFAULT SETTINGS ERROR:",
+            str(error),
+            flush=True
+        )
+
+    # ---------------------------------------------------------
+    # DEFAULT USERS
+    # ---------------------------------------------------------
     default_users = [
-        ("superadmin", "super123", "Super Admin"),
-        ("admin", "admin123", "Admin"),
-        ("registrar", "reg123", "Registrar"),
-        ("bursar", "bursar123", "Bursar"),
-        ("reception", "recep123", "Receptionist"),
+        (
+            "superadmin",
+            "super123",
+            "Super Admin"
+        ),
+        (
+            "admin",
+            "admin123",
+            "Admin"
+        ),
+        (
+            "registrar",
+            "reg123",
+            "Registrar"
+        ),
+        (
+            "bursar",
+            "bursar123",
+            "Bursar"
+        ),
+        (
+            "reception",
+            "recep123",
+            "Receptionist"
+        )
     ]
 
     for username, password, role in default_users:
         try:
-            user = User.query.filter_by(username=username).first()
+            user = User.query.filter_by(
+                username=username
+            ).first()
 
             if not user:
-                db.session.add(User(
+                new_user = User(
                     school_id=1,
                     username=username,
-                    password_hash=generate_password_hash(password),
+                    password_hash=generate_password_hash(
+                        password
+                    ),
                     role=role,
                     is_active=True
-                ))
+                )
+
+                db.session.add(new_user)
+
             else:
-                user.school_id = user.school_id or 1
+                user.school_id = (
+                    user.school_id
+                    or 1
+                )
 
             db.session.commit()
-        except Exception:
+
+        except Exception as error:
             db.session.rollback()
 
-    # Fix school logos
+            print(
+                f"DEFAULT USER ERROR ({username}):",
+                str(error),
+                flush=True
+            )
+
+    # ---------------------------------------------------------
+    # FIX SCHOOL LOGOS
+    # ---------------------------------------------------------
     try:
         bustani = School.query.filter(
-            School.school_name.ilike("%Bustani%")
+            School.school_name.ilike(
+                "%Bustani%"
+            )
         ).first()
 
         if bustani:
             bustani.logo = "bustani_logo.png"
 
         umar = School.query.filter(
-            School.school_name.ilike("%Umar%")
+            School.school_name.ilike(
+                "%Umar%"
+            )
         ).first()
 
         if umar:
             umar.logo = "logo.png"
 
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
 
-    # Convert old school leadership roles to new professional role names
-    try:
-        old_principals = User.query.filter_by(role="Principal").all()
-        for u in old_principals:
-            u.role = "Headteacher"
+        print(
+            "SCHOOL LOGO UPDATE ERROR:",
+            str(error),
+            flush=True
+        )
 
-        old_deputies = User.query.filter_by(role="Deputy Principal").all()
-        for u in old_deputies:
-            u.role = "Deputy Headteacher"
+    # ---------------------------------------------------------
+    # CONVERT OLD SCHOOL LEADERSHIP ROLES
+    # ---------------------------------------------------------
+    try:
+        old_principals = User.query.filter_by(
+            role="Principal"
+        ).all()
+
+        for user in old_principals:
+            user.role = "Headteacher"
+
+        old_deputies = User.query.filter_by(
+            role="Deputy Principal"
+        ).all()
+
+        for user in old_deputies:
+            user.role = "Deputy Headteacher"
 
         db.session.commit()
-    except Exception:
+
+    except Exception as error:
         db.session.rollback()
+
+        print(
+            "OLD ROLE CONVERSION ERROR:",
+            str(error),
+            flush=True
+        )
         
 def login_required():
     return "username" in session
