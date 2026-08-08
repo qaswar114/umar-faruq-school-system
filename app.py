@@ -1528,6 +1528,154 @@ def get_settings():
 
     return s
 
+def send_sms_gateway(phone, message):
+    try:
+        cleaned_phone = clean_phone_number(phone)
+
+        if not cleaned_phone:
+            return {
+                "success": False,
+                "status": "InvalidPhone",
+                "message_id": "",
+                "cost": "",
+                "response": "Invalid phone number"
+            }
+
+        message = str(message or "").strip()
+
+        if not message:
+            return {
+                "success": False,
+                "status": "EmptyMessage",
+                "message_id": "",
+                "cost": "",
+                "response": "Message cannot be empty"
+            }
+
+        username = os.environ.get(
+            "AT_USERNAME",
+            ""
+        ).strip()
+
+        api_key = os.environ.get(
+            "AT_API_KEY",
+            ""
+        ).strip()
+
+        sender_id = os.environ.get(
+            "AT_SENDER_ID",
+            ""
+        ).strip()
+
+        if not username:
+            return {
+                "success": False,
+                "status": "MissingUsername",
+                "message_id": "",
+                "cost": "",
+                "response": (
+                    "Africa's Talking username is missing."
+                )
+            }
+
+        if not api_key:
+            return {
+                "success": False,
+                "status": "MissingCredentials",
+                "message_id": "",
+                "cost": "",
+                "response": (
+                    "Africa's Talking API key is missing."
+                )
+            }
+
+        africastalking.initialize(
+            username,
+            api_key
+        )
+
+        sms_service = africastalking.SMS
+
+        if sender_id:
+            response = sms_service.send(
+                message,
+                [cleaned_phone],
+                sender_id=sender_id
+            )
+        else:
+            response = sms_service.send(
+                message,
+                [cleaned_phone]
+            )
+
+        print(
+            "AFRICASTALKING RESPONSE:",
+            response,
+            flush=True
+        )
+
+        recipients = (
+            response
+            .get("SMSMessageData", {})
+            .get("Recipients", [])
+        )
+
+        if not recipients:
+            return {
+                "success": False,
+                "status": "NoRecipientResponse",
+                "message_id": "",
+                "cost": "",
+                "response": str(response)
+            }
+
+        recipient = recipients[0]
+
+        provider_status = str(
+            recipient.get("status", "")
+        ).strip()
+
+        message_id = str(
+            recipient.get("messageId", "")
+            or recipient.get("message_id", "")
+        ).strip()
+
+        cost = str(
+            recipient.get("cost", "")
+        ).strip()
+
+        success = (
+            provider_status.lower()
+            in {
+                "success",
+                "sent",
+                "queued"
+            }
+        )
+
+        return {
+            "success": success,
+            "status": provider_status or "Unknown",
+            "message_id": message_id,
+            "cost": cost,
+            "response": str(response)
+        }
+
+    except Exception as error:
+        print(
+            "AFRICASTALKING ERROR:",
+            str(error),
+            flush=True
+        )
+
+        return {
+            "success": False,
+            "status": "Exception",
+            "message_id": "",
+            "cost": "",
+            "response": str(error)
+        }
+
 def get_sms_wallet():
     school_id = current_school_id()
 
@@ -9184,164 +9332,423 @@ def sms_messages():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "principal", "teacher", "registrar", "receptionist", "bursar"):
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "accountant",
+        "bursar"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
     today = date.today()
+
     wallet = get_sms_wallet()
 
+    if not wallet:
+        flash("SMS wallet could not be loaded.")
+        return redirect(url_for("dashboard"))
+
+    # ---------------------------------------------------------
+    # CREATE / MANAGE SMS
+    # ---------------------------------------------------------
     if request.method == "POST":
-        action = request.form.get("action", "create_sms")
 
-        if action == "send_pending":
-            pending_messages = SMSMessage.query.filter_by(
-                school_id=school_id,
-                status="Pending"
-            ).order_by(SMSMessage.created_at.asc()).all()
+        action = request.form.get(
+            "action",
+            "create_sms"
+        ).strip()
 
-            sent_count = 0
-            failed_count = 0
-            last_error = ""
+        # -----------------------------------------------------
+        # RESET SCHOOL SMS BALANCE
+        # -----------------------------------------------------
+        if action == "reset_balance":
 
-            for sms in pending_messages:
-                ok, response = send_sms_gateway(sms.phone, sms.message)
+            current_role = (
+                session.get("role")
+                or ""
+            ).strip().lower()
 
-                if ok:
-                    sms.status = "Sent"
-                    sent_count += 1
-                else:
-                    sms.status = "Failed"
-                    failed_count += 1
-                    last_error = f"{sms.phone}: {response}"
+            if current_role not in [
+                "director",
+                "manager"
+            ]:
+                flash(
+                    "Only the Director or Manager "
+                    "may reset the school SMS balance."
+                )
+                return redirect(
+                    url_for("sms_messages")
+                )
 
-            db.session.commit()
+            try:
+                old_balance = int(
+                    wallet.sms_balance or 0
+                )
 
-            save_audit(
-                f"Sent pending SMS. Sent: {sent_count}, Failed: {failed_count}",
-                "Communication"
+                wallet.sms_balance = 0
+
+                db.session.commit()
+
+                try:
+                    save_audit(
+                        f"SMS wallet balance reset "
+                        f"from {old_balance} to 0.",
+                        "Communication"
+                    )
+                except Exception as audit_error:
+                    print(
+                        "SMS RESET AUDIT ERROR:",
+                        str(audit_error),
+                        flush=True
+                    )
+
+                flash(
+                    "SMS balance reset to 0 successfully."
+                )
+
+            except Exception as error:
+                db.session.rollback()
+
+                print(
+                    "SMS BALANCE RESET ERROR:",
+                    str(error),
+                    flush=True
+                )
+
+                flash(
+                    "SMS balance could not be reset."
+                )
+
+            return redirect(
+                url_for("sms_messages")
             )
 
-            flash(f"SMS sending complete. Sent: {sent_count}, Failed: {failed_count}. {last_error}")
-            return redirect(url_for("sms_messages"))
+        # -----------------------------------------------------
+        # SEND PENDING
+        # -----------------------------------------------------
+        # We no longer send SMS from inside this route.
+        # /send_pending_sms is the single sending engine.
+        if action == "send_pending":
+            flash(
+                "Use the Send Pending SMS button "
+                "to process queued messages."
+            )
 
-        if action == "reset_balance":
-            wallet.sms_balance = 0
-            db.session.commit()
-            flash("SMS balance reset to 0.")
-            return redirect(url_for("sms_messages"))
+            return redirect(
+                url_for("sms_messages")
+            )
 
-        send_to = request.form.get("send_to", "single")
-        message = request.form.get("message", "").strip()
-        category = request.form.get("category", "General")
+        # -----------------------------------------------------
+        # CREATE NEW SMS
+        # -----------------------------------------------------
+        send_to = request.form.get(
+            "send_to",
+            "single"
+        ).strip().lower()
+
+        message = request.form.get(
+            "message",
+            ""
+        ).strip()
+
+        category = request.form.get(
+            "category",
+            "General"
+        ).strip()
 
         if not message:
             flash("Please type the SMS message.")
-            return redirect(url_for("sms_messages"))
+            return redirect(
+                url_for("sms_messages")
+            )
 
         recipients = []
 
+        # -----------------------------------------------------
+        # SINGLE RECIPIENT
+        # -----------------------------------------------------
         if send_to == "single":
-            phone = request.form.get("phone", "").strip()
-            recipient_name = request.form.get("recipient_name", "").strip()
 
-            cleaned_phone = clean_phone_number(phone)
+            phone = request.form.get(
+                "phone",
+                ""
+            ).strip()
+
+            recipient_name = request.form.get(
+                "recipient_name",
+                ""
+            ).strip()
+
+            cleaned_phone = clean_phone_number(
+                phone
+            )
 
             if not cleaned_phone:
-                flash("Invalid phone number.")
-                return redirect(url_for("sms_messages"))
+                flash(
+                    "Invalid phone number. "
+                    "Use a valid Kenyan mobile number."
+                )
+
+                return redirect(
+                    url_for("sms_messages")
+                )
 
             recipients.append({
-                "name": recipient_name,
+                "name": (
+                    recipient_name
+                    or "Parent"
+                ),
                 "phone": cleaned_phone
             })
 
+        # -----------------------------------------------------
+        # GRADE RECIPIENTS
+        # -----------------------------------------------------
         elif send_to == "grade":
-            grade = request.form.get("grade")
+
+            grade = request.form.get(
+                "grade",
+                ""
+            ).strip()
+
+            if grade not in GRADES:
+                flash("Select a valid grade.")
+                return redirect(
+                    url_for("sms_messages")
+                )
 
             pupils = Pupil.query.filter_by(
                 school_id=school_id,
                 grade=grade,
                 status="Active"
+            ).order_by(
+                Pupil.full_name.asc()
             ).all()
 
-            for p in pupils:
-                cleaned_phone = clean_phone_number(p.guardian_phone)
-                if cleaned_phone:
+            seen_numbers = set()
+
+            for pupil in pupils:
+
+                cleaned_phone = clean_phone_number(
+                    pupil.guardian_phone
+                )
+
+                if (
+                    cleaned_phone
+                    and cleaned_phone not in seen_numbers
+                ):
                     recipients.append({
-                        "name": p.guardian_name,
+                        "name": (
+                            pupil.guardian_name
+                            or pupil.full_name
+                        ),
                         "phone": cleaned_phone
                     })
 
+                    seen_numbers.add(
+                        cleaned_phone
+                    )
+
+        # -----------------------------------------------------
+        # ALL ACTIVE PARENTS
+        # -----------------------------------------------------
         elif send_to == "all":
+
             pupils = Pupil.query.filter_by(
                 school_id=school_id,
                 status="Active"
+            ).order_by(
+                Pupil.full_name.asc()
             ).all()
 
-            for p in pupils:
-                cleaned_phone = clean_phone_number(p.guardian_phone)
-                if cleaned_phone:
+            seen_numbers = set()
+
+            for pupil in pupils:
+
+                cleaned_phone = clean_phone_number(
+                    pupil.guardian_phone
+                )
+
+                if (
+                    cleaned_phone
+                    and cleaned_phone not in seen_numbers
+                ):
                     recipients.append({
-                        "name": p.guardian_name,
+                        "name": (
+                            pupil.guardian_name
+                            or pupil.full_name
+                        ),
                         "phone": cleaned_phone
                     })
 
+                    seen_numbers.add(
+                        cleaned_phone
+                    )
+
+        else:
+            flash(
+                "Invalid SMS recipient selection."
+            )
+            return redirect(
+                url_for("sms_messages")
+            )
+
         required_sms = len(recipients)
 
-        if required_sms == 0:
-            flash("No valid recipient phone numbers found.")
-            return redirect(url_for("sms_messages"))
+        if required_sms <= 0:
+            flash(
+                "No valid recipient phone numbers found."
+            )
+            return redirect(
+                url_for("sms_messages")
+            )
 
         if not wallet.sms_enabled:
-            flash("SMS service is disabled for this school.")
-            return redirect(url_for("sms_messages"))
-
-        if wallet.sms_balance < required_sms:
             flash(
-                f"Insufficient SMS balance. You need {required_sms}, "
-                f"but your balance is {wallet.sms_balance}."
+                "SMS service is disabled for this school."
             )
-            return redirect(url_for("sms_messages"))
+            return redirect(
+                url_for("sms_messages")
+            )
 
-        count = 0
+        # We check available credits before queueing.
+        # No credits are deducted here.
+        if int(wallet.sms_balance or 0) < required_sms:
+            flash(
+                f"Insufficient SMS balance. "
+                f"You need {required_sms} SMS, "
+                f"but your current balance is "
+                f"{wallet.sms_balance or 0}."
+            )
+
+            return redirect(
+                url_for("sms_messages")
+            )
+
+        queued_count = 0
         failed_count = 0
+        failure_messages = []
 
-        for r in recipients:
-            ok, sms_msg = create_sms(
-                r["name"],
-                r["phone"],
-                message,
-                category
-            )
+        for recipient in recipients:
 
-            if ok:
-                count += 1
-            else:
+            try:
+                ok, sms_message = create_sms(
+                    recipient["name"],
+                    recipient["phone"],
+                    message,
+                    category
+                )
+
+                if ok:
+                    queued_count += 1
+
+                else:
+                    failed_count += 1
+
+                    if sms_message:
+                        failure_messages.append(
+                            str(sms_message)
+                        )
+
+            except Exception as error:
                 failed_count += 1
 
-        save_audit(
-            f"Created {count} SMS message(s). Failed: {failed_count}. Category: {category}",
-            "Communication"
+                failure_messages.append(
+                    str(error)
+                )
+
+                print(
+                    "CREATE SMS LOOP ERROR:",
+                    str(error),
+                    flush=True
+                )
+
+        try:
+            save_audit(
+                f"Queued {queued_count} SMS message(s). "
+                f"Failed: {failed_count}. "
+                f"Category: {category}.",
+                "Communication"
+            )
+
+        except Exception as audit_error:
+            print(
+                "SMS CREATE AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        flash_message = (
+            f"{queued_count} SMS message(s) "
+            f"queued successfully."
         )
 
-        flash(f"{count} SMS message(s) saved as pending. {failed_count} failed.")
-        return redirect(url_for("sms_messages"))
+        if failed_count:
+            flash_message += (
+                f" {failed_count} could not be queued."
+            )
 
-    selected_status = request.args.get("status", "")
-    selected_category = request.args.get("category", "")
+        if failure_messages:
+            flash_message += (
+                " Last error: "
+                + failure_messages[-1]
+            )
 
-    query = SMSMessage.query.filter_by(school_id=school_id)
+        flash(flash_message)
+
+        return redirect(
+            url_for("sms_messages")
+        )
+
+    # ---------------------------------------------------------
+    # FILTERS
+    # ---------------------------------------------------------
+    selected_status = request.args.get(
+        "status",
+        ""
+    ).strip()
+
+    selected_category = request.args.get(
+        "category",
+        ""
+    ).strip()
+
+    query = SMSMessage.query.filter_by(
+        school_id=school_id
+    )
 
     if selected_status:
-        query = query.filter(SMSMessage.status == selected_status)
+        query = query.filter(
+            SMSMessage.status
+            == selected_status
+        )
 
     if selected_category:
-        query = query.filter(SMSMessage.category == selected_category)
+        query = query.filter(
+            SMSMessage.category
+            == selected_category
+        )
 
-    rows = query.order_by(SMSMessage.created_at.desc()).limit(100).all()
+    rows = query.order_by(
+        SMSMessage.created_at.desc()
+    ).limit(100).all()
 
+    # ---------------------------------------------------------
+    # DASHBOARD COUNTS
+    # ---------------------------------------------------------
     pending_count = SMSMessage.query.filter_by(
         school_id=school_id,
         status="Pending"
@@ -9357,45 +9764,61 @@ def sms_messages():
         status="Failed"
     ).count()
 
-    attendance_alert_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Attendance Alert"
-    ).count()
+    attendance_alert_count = (
+        SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending",
+            category="Attendance Alert"
+        ).count()
+    )
 
-    payment_alert_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Payment Confirmation"
-    ).count()
+    payment_alert_count = (
+        SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending",
+            category="Payment Confirmation"
+        ).count()
+    )
 
-    fee_alert_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Fees"
-    ).count()
+    fee_alert_count = (
+        SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending",
+            category="Fees"
+        ).count()
+    )
 
-    announcement_alert_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Announcement"
-    ).count()
+    announcement_alert_count = (
+        SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending",
+            category="Announcement"
+        ).count()
+    )
 
-    exam_alert_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending",
-        category="Exam"
-    ).count()
+    exam_alert_count = (
+        SMSMessage.query.filter_by(
+            school_id=school_id,
+            status="Pending",
+            category="Exam"
+        ).count()
+    )
+
+    today_start = datetime.combine(
+        today,
+        datetime.min.time()
+    )
 
     today_created = SMSMessage.query.filter(
         SMSMessage.school_id == school_id,
-        SMSMessage.created_at >= datetime.combine(today, datetime.min.time())
+        SMSMessage.created_at >= today_start
     ).count()
 
     today_sent = SMSMessage.query.filter(
         SMSMessage.school_id == school_id,
         SMSMessage.status == "Sent",
-        SMSMessage.created_at >= datetime.combine(today, datetime.min.time())
+        SMSMessage.sent_at != None,
+        SMSMessage.sent_at >= today_start
     ).count()
 
     return render_template(
@@ -9417,7 +9840,6 @@ def sms_messages():
         selected_status=selected_status,
         selected_category=selected_category
     )
-
 @app.route("/sms_delivery_callback", methods=["POST"])
 def sms_delivery_callback():
     try:
@@ -14244,11 +14666,15 @@ def send_pending_sms():
         return redirect(url_for("login"))
 
     if not role_allowed(
+        "director",
+        "manager",
         "admin",
-        "principal",
+        "headteacher",
+        "deputy headteacher",
         "teacher",
         "registrar",
         "receptionist",
+        "accountant",
         "bursar"
     ):
         flash("Access denied.")
@@ -14256,20 +14682,27 @@ def send_pending_sms():
 
     school_id = current_school_id()
 
-    wallet = SMSWallet.query.filter_by(
-        school_id=school_id
-    ).first()
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
+    wallet = get_sms_wallet()
 
     if not wallet:
         flash(
-            "This school does not have an SMS wallet. "
-            "Please purchase SMS first."
+            "This school does not have an SMS wallet."
         )
-        return redirect(url_for("communication_center"))
+        return redirect(
+            url_for("communication_center")
+        )
 
     if not wallet.sms_enabled:
-        flash("SMS service is disabled for this school.")
-        return redirect(url_for("communication_center"))
+        flash(
+            "SMS service is disabled for this school."
+        )
+        return redirect(
+            url_for("communication_center")
+        )
 
     pending_messages = SMSMessage.query.filter_by(
         school_id=school_id,
@@ -14280,19 +14713,24 @@ def send_pending_sms():
 
     if not pending_messages:
         flash("There are no pending SMS messages.")
-        return redirect(url_for("communication_center"))
+        return redirect(
+            url_for("sms_messages")
+        )
 
     if int(wallet.sms_balance or 0) <= 0:
         flash(
             "Your SMS wallet is empty. "
             "Please purchase more SMS."
         )
-        return redirect(url_for("sms_wallet"))
+        return redirect(
+            url_for("sms_wallet")
+        )
 
     attempted = 0
     sent = 0
     failed = 0
     skipped = 0
+
     last_provider_response = ""
 
     try:
@@ -14309,35 +14747,50 @@ def send_pending_sms():
                 message_record.message
             )
 
-            message_record.provider = "AfricasTalking"
-
-            message_record.provider_status = result.get(
-                "status",
-                ""
+            message_record.provider = (
+                "AfricasTalking"
             )
 
-            message_record.provider_message_id = result.get(
-                "message_id",
-                ""
+            message_record.provider_status = (
+                result.get("status", "")
             )
 
-            message_record.cost = result.get(
-                "cost",
-                ""
+            message_record.provider_message_id = (
+                result.get("message_id", "")
             )
 
-            message_record.provider_response = result.get(
-                "response",
-                ""
+            message_record.cost = (
+                result.get("cost", "")
+            )
+
+            message_record.provider_response = (
+                result.get("response", "")
             )
 
             if result.get("success"):
 
                 message_record.status = "Sent"
-                message_record.sent_at = datetime.now()
+
+                message_record.sent_at = (
+                    datetime.now()
+                )
+
                 message_record.failed_at = None
 
-                wallet.sms_balance = (
+                if hasattr(
+                    message_record,
+                    "delivery_status"
+                ):
+                    message_record.delivery_status = (
+                        result.get(
+                            "status",
+                            "Sent"
+                        )
+                    )
+
+                # Charge only AFTER provider acceptance.
+                wallet.sms_balance = max(
+                    0,
                     int(wallet.sms_balance or 0) - 1
                 )
 
@@ -14349,25 +14802,58 @@ def send_pending_sms():
 
             else:
                 message_record.status = "Failed"
-                message_record.failed_at = datetime.now()
+
+                message_record.failed_at = (
+                    datetime.now()
+                )
+
+                if hasattr(
+                    message_record,
+                    "retry_count"
+                ):
+                    message_record.retry_count = (
+                        int(
+                            message_record.retry_count
+                            or 0
+                        )
+                        + 1
+                    )
+
+                if hasattr(
+                    message_record,
+                    "delivery_status"
+                ):
+                    message_record.delivery_status = (
+                        result.get(
+                            "status",
+                            "Failed"
+                        )
+                    )
 
                 failed += 1
 
-                last_provider_response = result.get(
-                    "response",
-                    ""
+                last_provider_response = (
+                    result.get(
+                        "response",
+                        ""
+                    )
                 )
 
             db.session.commit()
 
         try:
             save_audit(
-                f"Processed pending SMS for school ID {school_id}. "
-                f"Attempted: {attempted}, Sent: {sent}, "
-                f"Failed: {failed}, Skipped: {skipped}, "
-                f"Wallet balance: {wallet.sms_balance}.",
+                f"Processed pending SMS for school "
+                f"ID {school_id}. "
+                f"Attempted: {attempted}, "
+                f"Sent: {sent}, "
+                f"Failed: {failed}, "
+                f"Skipped: {skipped}, "
+                f"Wallet balance: "
+                f"{wallet.sms_balance or 0}.",
                 "Communication"
             )
+
         except Exception as audit_error:
             print(
                 "SEND PENDING SMS AUDIT ERROR:",
@@ -14377,17 +14863,19 @@ def send_pending_sms():
 
         result_message = (
             f"SMS processing completed. "
-            f"Attempted: {attempted}, "
-            f"Sent: {sent}, "
-            f"Failed: {failed}, "
-            f"Not sent because of insufficient balance: {skipped}. "
-            f"Remaining balance: {wallet.sms_balance or 0}."
+            f"Attempted: {attempted}. "
+            f"Sent: {sent}. "
+            f"Failed: {failed}. "
+            f"Skipped because wallet was empty: "
+            f"{skipped}. "
+            f"Remaining SMS balance: "
+            f"{wallet.sms_balance or 0}."
         )
 
         if last_provider_response:
             result_message += (
-                f" Last provider response: "
-                f"{last_provider_response}"
+                " Last provider response: "
+                + str(last_provider_response)
             )
 
         flash(result_message)
@@ -14402,10 +14890,13 @@ def send_pending_sms():
         )
 
         flash(
-            "SMS processing stopped because of an unexpected error."
+            "SMS processing stopped because "
+            "of an unexpected error."
         )
 
-    return redirect(url_for("communication_center"))
+    return redirect(
+        url_for("sms_messages")
+    )
 
 @app.route("/retry_failed_whatsapp")
 def retry_failed_whatsapp():
