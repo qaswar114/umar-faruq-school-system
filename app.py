@@ -1550,199 +1550,184 @@ def get_sms_wallet():
     return wallet
 
 def charge_sms_wallet(sms_count=1):
-    school_id = current_school_id()
     wallet = get_sms_wallet()
+
+    if not wallet:
+        return False, "SMS wallet was not found."
 
     if not wallet.sms_enabled:
         return False, "SMS service is disabled for this school."
 
-    if wallet.sms_balance < sms_count:
-        return False, "Insufficient SMS balance. Please buy SMS first."
+    sms_count = int(sms_count or 0)
 
-    wallet.sms_balance -= sms_count
-    wallet.sms_used += sms_count
+    if sms_count <= 0:
+        return False, "Invalid SMS quantity."
+
+    if int(wallet.sms_balance or 0) < sms_count:
+        return False, (
+            "Insufficient SMS balance. "
+            "Please buy SMS first."
+        )
+
+    wallet.sms_balance = (
+        int(wallet.sms_balance or 0)
+        - sms_count
+    )
+
+    wallet.sms_used = (
+        int(wallet.sms_used or 0)
+        + sms_count
+    )
+
     db.session.commit()
 
     return True, "SMS charged successfully."
 
-def create_sms(recipient_name, phone, message, category="General"):
+def create_sms(
+    recipient_name,
+    phone,
+    message,
+    category="General"
+):
+    school_id = current_school_id()
+
+    if not school_id:
+        return False, "No school has been selected."
+
     cleaned_phone = clean_phone_number(phone)
 
     if not cleaned_phone:
         return False, f"Invalid phone number: {phone}"
 
-    ok, msg = charge_sms_wallet(1)
+    message = str(message or "").strip()
 
-    if not ok:
-        return False, msg
+    if not message:
+        return False, "SMS message cannot be empty."
+
+    wallet = get_sms_wallet()
+
+    if not wallet:
+        return False, "SMS wallet was not found."
+
+    if not wallet.sms_enabled:
+        return False, "SMS service is disabled for this school."
+
+    # Check balance, but do NOT deduct yet.
+    # We only deduct after Africa's Talking accepts the SMS.
+    if int(wallet.sms_balance or 0) <= 0:
+        return False, (
+            "Insufficient SMS balance. "
+            "Please buy SMS first."
+        )
 
     sms = SMSMessage(
-        school_id=current_school_id(),
-        recipient_name=recipient_name,
+        school_id=school_id,
+        recipient_name=recipient_name or "",
         phone=cleaned_phone,
         message=message,
-        category=category,
+        category=category or "General",
         status="Pending",
         created_by=session.get("username", "")
     )
 
+    if hasattr(sms, "provider"):
+        sms.provider = "AfricasTalking"
+
+    if hasattr(sms, "delivery_status"):
+        sms.delivery_status = "Pending"
+
     db.session.add(sms)
     db.session.commit()
 
-    return True, "SMS saved successfully."
+    return True, "SMS queued successfully."
 
 def clean_phone_number(phone):
     if not phone:
         return None
 
     phone = str(phone).strip()
-    phone = phone.replace(" ", "").replace("-", "")
 
+    phone = (
+        phone
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("(", "")
+        .replace(")", "")
+    )
+
+    # +2547XXXXXXXX or +2541XXXXXXXX
     if phone.startswith("+254"):
-        return phone
+        local_part = phone[4:]
 
-    if phone.startswith("254") and len(phone) == 12:
-        return "+" + phone
+        if (
+            len(local_part) == 9
+            and local_part.isdigit()
+            and local_part.startswith(("7", "1"))
+        ):
+            return phone
 
-    if phone.startswith("0") and len(phone) == 10:
-        return "+254" + phone[1:]
+        return None
+
+    # 2547XXXXXXXX or 2541XXXXXXXX
+    if phone.startswith("254"):
+        local_part = phone[3:]
+
+        if (
+            len(local_part) == 9
+            and local_part.isdigit()
+            and local_part.startswith(("7", "1"))
+        ):
+            return "+" + phone
+
+        return None
+
+    # 07XXXXXXXX or 01XXXXXXXX
+    if phone.startswith("0"):
+        local_part = phone[1:]
+
+        if (
+            len(local_part) == 9
+            and local_part.isdigit()
+            and local_part.startswith(("7", "1"))
+        ):
+            return "+254" + local_part
+
+        return None
+
+    # 7XXXXXXXX or 1XXXXXXXX
+    if (
+        len(phone) == 9
+        and phone.isdigit()
+        and phone.startswith(("7", "1"))
+    ):
+        return "+254" + phone
 
     return None
     
-def send_sms_gateway(phone, message):
-    try:
-        phone = clean_phone_number(phone)
+def get_sms_wallet():
+    school_id = current_school_id()
 
-        if not phone:
-            return {
-                "success": False,
-                "status": "InvalidPhone",
-                "message_id": "",
-                "cost": "",
-                "response": "Invalid phone number"
-            }
+    if not school_id:
+        return None
 
-        if not message or not message.strip():
-            return {
-                "success": False,
-                "status": "EmptyMessage",
-                "message_id": "",
-                "cost": "",
-                "response": "Message cannot be empty"
-            }
+    wallet = SMSWallet.query.filter_by(
+        school_id=school_id
+    ).first()
 
-        username = os.environ.get(
-            "AT_USERNAME",
-            "sandbox"
+    if not wallet:
+        wallet = SMSWallet(
+            school_id=school_id,
+            sms_balance=0,
+            sms_loaded=0,
+            sms_used=0,
+            sms_low_alert=100,
+            sms_enabled=True
         )
 
-        api_key = os.environ.get(
-            "AT_API_KEY",
-            ""
-        )
+        db.session.add(wallet)
+        db.session.commit()
 
-        sender_id = os.environ.get(
-            "AT_SENDER_ID",
-            ""
-        ).strip()
-
-        if not api_key:
-            return {
-                "success": False,
-                "status": "MissingCredentials",
-                "message_id": "",
-                "cost": "",
-                "response": "Africa's Talking API key is missing"
-            }
-
-        africastalking.initialize(
-            username,
-            api_key
-        )
-
-        sms_service = africastalking.SMS
-
-        if sender_id:
-            response = sms_service.send(
-                message.strip(),
-                [phone],
-                sender_id=sender_id
-            )
-        else:
-            response = sms_service.send(
-                message.strip(),
-                [phone]
-            )
-
-        print(
-            "AFRICASTALKING RESPONSE:",
-            response,
-            flush=True
-        )
-
-        recipients = (
-            response
-            .get("SMSMessageData", {})
-            .get("Recipients", [])
-        )
-
-        if not recipients:
-            return {
-                "success": False,
-                "status": "NoRecipientResponse",
-                "message_id": "",
-                "cost": "",
-                "response": str(response)
-            }
-
-        recipient = recipients[0]
-
-        provider_status = str(
-            recipient.get("status", "")
-        ).strip()
-
-        normalized_status = provider_status.lower()
-
-        message_id = str(
-            recipient.get("messageId", "")
-            or recipient.get("message_id", "")
-        ).strip()
-
-        cost = str(
-            recipient.get("cost", "")
-        ).strip()
-
-        accepted_statuses = {
-            "success",
-            "sent",
-            "queued"
-        }
-
-        success = normalized_status in accepted_statuses
-
-        return {
-            "success": success,
-            "status": provider_status or "Unknown",
-            "message_id": message_id,
-            "cost": cost,
-            "response": str(response)
-        }
-
-    except Exception as error:
-        print(
-            "AFRICASTALKING ERROR:",
-            str(error),
-            flush=True
-        )
-
-        return {
-            "success": False,
-            "status": "Exception",
-            "message_id": "",
-            "cost": "",
-            "response": str(error)
-        }
-
+    return wallet
 def send_whatsapp_message(phone, message):
     try:
         import os
