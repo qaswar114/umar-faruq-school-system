@@ -14,15 +14,20 @@ import os
 import base64
 import requests
 
-AT_USERNAME = os.getenv("AT_USERNAME")
-AT_API_KEY = os.getenv("AT_API_KEY")
+AT_USERNAME = os.environ.get(
+    "AT_USERNAME",
+    ""
+).strip()
 
-africastalking.initialize(
-    AT_USERNAME,
-    AT_API_KEY
-)
+AT_API_KEY = os.environ.get(
+    "AT_API_KEY",
+    ""
+).strip()
 
-sms = africastalking.SMS
+AT_SENDER_ID = os.environ.get(
+    "AT_SENDER_ID",
+    ""
+).strip()
 
 
 # =========================
@@ -44,9 +49,6 @@ MPESA_ENVIRONMENT = "sandbox"
 # AFRICASTALKING CONFIGURATION
 # =========================
 
-AFRICASTALKING_USERNAME = os.environ.get("AT_USERNAME", "sandbox")
-AFRICASTALKING_API_KEY = os.environ.get("AT_API_KEY", "")
-AFRICASTALKING_SENDER_ID = os.environ.get("AT_SENDER_ID", "")
 
 database_url = os.environ.get(
     "DATABASE_URL",
@@ -2406,6 +2408,96 @@ def init_database():
 
             print(
                 f"SMS WALLET COLUMN ERROR "
+                f"({column_name}):",
+                str(error),
+                flush=True
+            )
+
+        # ---------------------------------------------------------
+    # ADD MISSING SMS MESSAGE COLUMNS
+    # ---------------------------------------------------------
+    sms_message_columns = [
+        (
+            "provider",
+            "VARCHAR(50) DEFAULT 'AfricasTalking'"
+        ),
+        (
+            "provider_message_id",
+            "VARCHAR(200) DEFAULT ''"
+        ),
+        (
+            "provider_status",
+            "VARCHAR(100) DEFAULT ''"
+        ),
+        (
+            "provider_response",
+            "TEXT DEFAULT ''"
+        ),
+        (
+            "cost",
+            "VARCHAR(50) DEFAULT ''"
+        ),
+        (
+            "retry_count",
+            "INTEGER DEFAULT 0"
+        ),
+        (
+            "delivery_status",
+            "VARCHAR(100) DEFAULT 'Pending'"
+        ),
+        (
+            "delivery_phone",
+            "VARCHAR(80) DEFAULT ''"
+        ),
+        (
+            "delivery_network_code",
+            "VARCHAR(50) DEFAULT ''"
+        ),
+        (
+            "delivery_failure_reason",
+            "VARCHAR(255) DEFAULT ''"
+        ),
+        (
+            "delivery_report",
+            "TEXT DEFAULT ''"
+        ),
+        (
+            "delivery_checked_at",
+            "TIMESTAMP"
+        ),
+        (
+            "delivered_at",
+            "TIMESTAMP"
+        ),
+        (
+            "sent_at",
+            "TIMESTAMP"
+        ),
+        (
+            "failed_at",
+            "TIMESTAMP"
+        )
+    ]
+
+    for column_name, column_type in sms_message_columns:
+        try:
+            db.session.execute(
+                db.text(
+                    f"""
+                    ALTER TABLE sms_message
+                    ADD COLUMN IF NOT EXISTS
+                    {column_name} {column_type}
+                    """
+                )
+            )
+
+            db.session.commit()
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                f"SMS MESSAGE COLUMN ERROR "
                 f"({column_name}):",
                 str(error),
                 flush=True
