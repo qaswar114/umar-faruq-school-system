@@ -10586,18 +10586,44 @@ def sms_wallet():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin"):
-        flash("Only Admin can manage SMS Wallet.")
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin"
+    ):
+        flash(
+            "Only Director, Manager or Admin "
+            "can manage the SMS Wallet."
+        )
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
+
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
     wallet = get_sms_wallet()
 
+    if not wallet:
+        flash("SMS wallet could not be found.")
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
-        action = request.form.get("action", "load_sms")
+
+        action = request.form.get(
+            "action",
+            "load_sms"
+        )
+
+        # ==================================================
+        # RESET BALANCE
+        # ==================================================
 
         if action == "reset_balance":
+
             wallet.sms_balance = 0
+
             db.session.commit()
 
             save_audit(
@@ -10606,25 +10632,64 @@ def sms_wallet():
             )
 
             flash("SMS balance reset to 0.")
-            return redirect(url_for("sms_wallet"))
 
-        provider = request.form.get("provider", "Other").strip()
-        sms_count = int(request.form.get("sms_count") or 0)
-        amount_paid = float(request.form.get("amount_paid") or 0)
-        reference_no = request.form.get("reference_no", "").strip()
-        purchase_date_raw = request.form.get("purchase_date", "")
+            return redirect(
+                url_for("sms_wallet")
+            )
+
+        # ==================================================
+        # LOAD SMS
+        # ==================================================
+
+        provider = request.form.get(
+            "provider",
+            "Other"
+        ).strip()
+
+        try:
+            sms_count = int(
+                request.form.get("sms_count") or 0
+            )
+        except (TypeError, ValueError):
+            sms_count = 0
+
+        try:
+            amount_paid = float(
+                request.form.get("amount_paid") or 0
+            )
+        except (TypeError, ValueError):
+            amount_paid = 0
+
+        reference_no = request.form.get(
+            "reference_no",
+            ""
+        ).strip()
+
+        purchase_date_raw = request.form.get(
+            "purchase_date",
+            ""
+        )
 
         if sms_count <= 0:
             flash("Enter a valid SMS quantity.")
-            return redirect(url_for("sms_wallet"))
+            return redirect(
+                url_for("sms_wallet")
+            )
 
         purchase_date = date.today()
 
         if purchase_date_raw:
-            purchase_date = datetime.strptime(
-                purchase_date_raw,
-                "%Y-%m-%d"
-            ).date()
+            try:
+                purchase_date = datetime.strptime(
+                    purchase_date_raw,
+                    "%Y-%m-%d"
+                ).date()
+
+            except ValueError:
+                flash("Invalid purchase date.")
+                return redirect(
+                    url_for("sms_wallet")
+                )
 
         load = SMSLoad(
             school_id=school_id,
@@ -10633,27 +10698,52 @@ def sms_wallet():
             amount_paid=amount_paid,
             reference_no=reference_no,
             purchase_date=purchase_date,
-            loaded_by=session.get("username", "")
+            loaded_by=session.get(
+                "username",
+                ""
+            )
         )
 
         db.session.add(load)
 
-        wallet.sms_balance += sms_count
-        wallet.sms_loaded += sms_count
+        wallet.sms_balance = (
+            int(wallet.sms_balance or 0)
+            + sms_count
+        )
+
+        wallet.sms_loaded = (
+            int(wallet.sms_loaded or 0)
+            + sms_count
+        )
+
         wallet.last_loaded = datetime.now()
-        wallet.last_loaded_by = session.get("username", "")
+
+        wallet.last_loaded_by = session.get(
+            "username",
+            ""
+        )
 
         db.session.commit()
 
         save_audit(
-            f"Loaded {sms_count} SMS from {provider}. "
+            f"Loaded {sms_count} SMS from "
+            f"{provider}. "
             f"Amount: KES {amount_paid:,.2f}. "
             f"Reference: {reference_no}.",
             "Communication"
         )
 
-        flash(f"{sms_count} SMS loaded successfully.")
-        return redirect(url_for("sms_wallet"))
+        flash(
+            f"{sms_count} SMS loaded successfully."
+        )
+
+        return redirect(
+            url_for("sms_wallet")
+        )
+
+    # ======================================================
+    # SMS STATISTICS
+    # ======================================================
 
     pending_sms = SMSMessage.query.filter_by(
         school_id=school_id,
@@ -10669,6 +10759,10 @@ def sms_wallet():
         school_id=school_id,
         status="Failed"
     ).count()
+
+    # ======================================================
+    # RECENT WALLET LOADS
+    # ======================================================
 
     sms_loads = SMSLoad.query.filter_by(
         school_id=school_id
@@ -10688,7 +10782,6 @@ def sms_wallet():
         today=date.today(),
         money=money
     )
-
 @app.route("/platform_communication")
 def platform_communication():
     if not login_required():
