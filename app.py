@@ -7,7 +7,7 @@ from xhtml2pdf import pisa
 from io import BytesIO
 import os
 
- app = Flask(__name__)
+app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
 
 app.config["UPLOAD_FOLDER"] = "static/uploads"
