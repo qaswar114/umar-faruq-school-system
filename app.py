@@ -10396,6 +10396,73 @@ def cleanup_invalid_sms():
 
     flash(f"{count} invalid pending SMS message(s) marked as Invalid.")
     return redirect(url_for("sms_messages"))
+
+@app.route(
+    "/cancel_old_pending_sms",
+    methods=["POST"]
+)
+def cancel_old_pending_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    cutoff_date = datetime.now() - timedelta(days=7)
+
+    old_messages = SMSMessage.query.filter(
+        SMSMessage.school_id == school_id,
+        SMSMessage.status == "Pending",
+        SMSMessage.created_at < cutoff_date
+    ).all()
+
+    cancelled = 0
+
+    for sms in old_messages:
+        sms.status = "Cancelled"
+
+        if hasattr(sms, "delivery_status"):
+            sms.delivery_status = "Cancelled"
+
+        cancelled += 1
+
+    try:
+        db.session.commit()
+
+        save_audit(
+            f"Cancelled {cancelled} old pending SMS "
+            f"older than 7 days.",
+            "Communication"
+        )
+
+        flash(
+            f"{cancelled} old pending SMS "
+            f"were cancelled successfully."
+        )
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "CANCEL OLD SMS ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "Old pending SMS could not be cancelled."
+        )
+
+    return redirect(
+        url_for("sms_messages")
+    )
     
 @app.route("/announcements", methods=["GET", "POST"])
 def announcements():
