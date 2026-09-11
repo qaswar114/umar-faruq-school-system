@@ -8,9 +8,22 @@
     align-items:center;
     margin-bottom:14px;
 }
-.def-head h2{margin:0;font-size:26px}
-.def-head p{margin:5px 0 0;color:#64748b}
-.def-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.def-head h2{
+    margin:0;
+    font-size:26px;
+}
+
+.def-head p{
+    margin:5px 0 0;
+    color:#64748b;
+}
+
+.def-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
 
 .def-panel{
     background:white;
@@ -28,9 +41,21 @@
     align-items:end;
 }
 
+.section-title{
+    margin:0 0 10px;
+    font-size:18px;
+    color:#0f172a;
+}
+
+.section-subtitle{
+    color:#64748b;
+    margin:0 0 12px;
+    font-size:13px;
+}
+
 .stats-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
     gap:12px;
     margin-bottom:14px;
 }
@@ -57,30 +82,76 @@
     flex-shrink:0;
 }
 
-.stat-card small{color:#64748b;font-weight:800;font-size:12px}
-.stat-card h2{margin:4px 0 0;font-size:22px;word-break:break-word}
+.stat-card small{
+    color:#64748b;
+    font-weight:800;
+    font-size:12px;
+}
 
-.bg-red{background:#fee2e2;color:#dc2626}
-.bg-orange{background:#ffedd5;color:#ea580c}
-.bg-blue{background:#dbeafe;color:#0b5ed7}
+.stat-card h2{
+    margin:4px 0 0;
+    font-size:21px;
+    word-break:break-word;
+}
 
-.table-wrap{overflow-x:auto}
+.bg-red{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.bg-orange{
+    background:#ffedd5;
+    color:#ea580c;
+}
+
+.bg-blue{
+    background:#dbeafe;
+    color:#0b5ed7;
+}
+
+.bg-green{
+    background:#dcfce7;
+    color:#15803d;
+}
+
+.bg-purple{
+    background:#ede9fe;
+    color:#6d28d9;
+}
+
+.bg-yellow{
+    background:#fef3c7;
+    color:#a16207;
+}
+
+.current-section{
+    border-left:5px solid #2563eb;
+}
+
+.arrears-section{
+    border-left:5px solid #ea580c;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
 
 .def-table{
     width:100%;
     border-collapse:collapse;
-    font-size:14px;
+    font-size:13px;
 }
 
 .def-table th{
     background:#f8fafc;
     color:#334155;
-    font-size:13px;
+    font-size:12px;
+    white-space:nowrap;
 }
 
 .def-table th,
 .def-table td{
-    padding:11px;
+    padding:10px;
     border-bottom:1px solid #e5e7eb;
     text-align:left;
     vertical-align:top;
@@ -89,6 +160,15 @@
 .balance{
     font-weight:900;
     color:#dc2626;
+}
+
+.month-balance{
+    font-weight:900;
+    color:#2563eb;
+}
+
+.zero{
+    color:#94a3b8;
 }
 
 .badge{
@@ -107,11 +187,28 @@
 }
 
 @media print{
-    .no-print,.sidebar,.topbar{display:none!important}
-    .main{margin-left:0!important}
-    .content{padding:0!important}
-    .def-panel{box-shadow:none!important;border:none!important}
-    .print-title{display:block}
+    .no-print,
+    .sidebar,
+    .topbar{
+        display:none!important;
+    }
+
+    .main{
+        margin-left:0!important;
+    }
+
+    .content{
+        padding:0!important;
+    }
+
+    .def-panel{
+        box-shadow:none!important;
+        border:none!important;
+    }
+
+    .print-title{
+        display:block;
+    }
 }
 
 @media(max-width:1000px){
@@ -127,142 +224,537 @@
 }
 </style>
 
+
+<!-- ===================================================== -->
+<!-- HEADER -->
+<!-- ===================================================== -->
+
 <div class="def-head no-print">
+
     <div>
         <h2>Defaulters Report</h2>
-        <p>Track fee balances and queue WhatsApp fee reminders for parents.</p>
+
+        <p>
+            View the selected month's unpaid fees separately
+            from cumulative arrears.
+        </p>
     </div>
 
-    <div class="def-actions">
-        <button class="btn" onclick="window.print()">Print</button>
 
-        <a class="btn green"
-           href="{{ url_for('send_defaulter_whatsapp_reminders', year=year, term=selected_term, month=selected_month, grade=selected_grade) }}"
-           onclick="return confirm('Queue WhatsApp reminders for all defaulters in this report?')">
+    <div class="def-actions">
+
+        <button
+            class="btn"
+            onclick="window.print()"
+        >
+            Print
+        </button>
+
+
+        <a
+            class="btn green"
+            href="{{ url_for(
+                'send_defaulter_whatsapp_reminders',
+                year=year,
+                term=selected_term,
+                month=selected_month,
+                grade=selected_grade
+            ) }}"
+            onclick="return confirm(
+                'Queue WhatsApp reminders for defaulters in this report?'
+            )"
+        >
             WhatsApp Reminders
         </a>
 
-        <a class="btn" href="{{ url_for('whatsapp_outbox') }}">
+
+        <a
+            class="btn"
+            href="{{ url_for('whatsapp_outbox') }}"
+        >
             WhatsApp Outbox
         </a>
+
     </div>
+
 </div>
 
+
+<!-- ===================================================== -->
+<!-- FILTER -->
+<!-- ===================================================== -->
+
 <div class="def-panel no-print">
-    <form method="get" class="filter-grid">
+
+    <form
+        method="get"
+        class="filter-grid"
+    >
+
         <div>
             <label>Year</label>
-            <input type="number" name="year" value="{{ year }}">
+
+            <input
+                type="number"
+                name="year"
+                value="{{ year }}"
+            >
         </div>
+
 
         <div>
             <label>Term</label>
-            <select name="term">
+
+            <select
+                name="term"
+                id="term_select"
+                onchange="updateMonths()"
+            >
+
                 {% for t in terms %}
-                <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>
+
+                <option
+                    value="{{ t }}"
+                    {% if selected_term == t %}
+                    selected
+                    {% endif %}
+                >
                     {{ t }}
                 </option>
+
                 {% endfor %}
+
             </select>
         </div>
+
 
         <div>
             <label>Month</label>
-            <select name="month">
+
+            <select
+                name="month"
+                id="month_select"
+            >
+
                 {% for m in term_months[selected_term] %}
-                <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>
+
+                <option
+                    value="{{ m }}"
+                    {% if selected_month == m %}
+                    selected
+                    {% endif %}
+                >
                     {{ m }}
                 </option>
+
                 {% endfor %}
+
             </select>
         </div>
+
 
         <div>
             <label>Grade</label>
+
             <select name="grade">
-                <option value="">All Grades</option>
+
+                <option value="">
+                    All Grades
+                </option>
+
                 {% for g in grades %}
-                <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>
+
+                <option
+                    value="{{ g }}"
+                    {% if selected_grade == g %}
+                    selected
+                    {% endif %}
+                >
                     {{ g }}
                 </option>
+
                 {% endfor %}
+
             </select>
         </div>
 
-        <button class="btn">Load</button>
+
+        <button class="btn">
+            Load
+        </button>
+
     </form>
+
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon bg-red">👥</div>
-        <div>
-            <small>Total Defaulters</small>
-            <h2>{{ total_defaulters }}</h2>
+
+<!-- ===================================================== -->
+<!-- CURRENT MONTH SUMMARY -->
+<!-- ===================================================== -->
+
+<div class="def-panel current-section">
+
+    <h3 class="section-title">
+        {{ selected_month }} {{ year }} Only
+    </h3>
+
+    <p class="section-subtitle">
+        These figures show only fees charged and paid
+        for {{ selected_month }}.
+    </p>
+
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-icon bg-red">👥</div>
+
+            <div>
+                <small>
+                    {{ selected_month }} Defaulters
+                </small>
+
+                <h2>
+                    {{ current_month_defaulters }}
+                </h2>
+            </div>
         </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-blue">📘</div>
+
+            <div>
+                <small>
+                    {{ selected_month }} Fees Due
+                </small>
+
+                <h2>
+                    {{ money(current_month_due_all) }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-green">✅</div>
+
+            <div>
+                <small>
+                    {{ selected_month }} Paid
+                </small>
+
+                <h2>
+                    {{ money(current_month_paid_all) }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-purple">🏷️</div>
+
+            <div>
+                <small>
+                    {{ selected_month }} Discounts
+                </small>
+
+                <h2>
+                    {{ money(current_month_discount_all) }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-orange">💰</div>
+
+            <div>
+                <small>
+                    {{ selected_month }} Outstanding
+                </small>
+
+                <h2>
+                    {{ money(current_month_balance_all) }}
+                </h2>
+            </div>
+        </div>
+
     </div>
 
-    <div class="stat-card">
-        <div class="stat-icon bg-orange">💰</div>
-        <div>
-            <small>Total Outstanding</small>
-            <h2>{{ money(total_balance) }}</h2>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon bg-blue">📅</div>
-        <div>
-            <small>Period</small>
-            <h2>{{ selected_month }} {{ year }}</h2>
-        </div>
-    </div>
 </div>
+
+
+<!-- ===================================================== -->
+<!-- CUMULATIVE ARREARS SUMMARY -->
+<!-- ===================================================== -->
+
+<div class="def-panel arrears-section">
+
+    <h3 class="section-title">
+        Cumulative Arrears up to {{ selected_month }} {{ year }}
+    </h3>
+
+    <p class="section-subtitle">
+        This includes all unpaid fees from the beginning
+        of EduManage billing up to {{ selected_month }}.
+    </p>
+
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-icon bg-red">👥</div>
+
+            <div>
+                <small>Cumulative Defaulters</small>
+
+                <h2>
+                    {{ cumulative_defaulters }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-blue">📚</div>
+
+            <div>
+                <small>Total Due to Date</small>
+
+                <h2>
+                    {{ money(cumulative_due_all) }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-green">💵</div>
+
+            <div>
+                <small>Total Paid</small>
+
+                <h2>
+                    {{ money(cumulative_paid_all) }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-purple">🏷️</div>
+
+            <div>
+                <small>Total Discounts</small>
+
+                <h2>
+                    {{ money(cumulative_discount_all) }}
+                </h2>
+            </div>
+        </div>
+
+
+        <div class="stat-card">
+            <div class="stat-icon bg-orange">⚠️</div>
+
+            <div>
+                <small>
+                    Total Arrears to {{ selected_month }}
+                </small>
+
+                <h2>
+                    {{ money(cumulative_balance_all) }}
+                </h2>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- DETAIL TABLE -->
+<!-- ===================================================== -->
 
 <div class="def-panel">
+
     <div class="print-title">
-        <h2>{{ settings.school_name }}</h2>
-        <h3>Defaulters Report</h3>
-        <p>{{ selected_term }} | {{ selected_month }} | {{ year }}</p>
+
+        <h2>
+            {{ settings.school_name }}
+        </h2>
+
+        <h3>
+            Defaulters Report
+        </h3>
+
+        <p>
+            {{ selected_term }}
+            |
+            {{ selected_month }}
+            |
+            {{ year }}
+        </p>
+
     </div>
 
+
     <div class="table-wrap">
+
         <table class="def-table">
+
             <tr>
                 <th>#</th>
                 <th>Admission No</th>
-                <th>Pupil Name</th>
+                <th>Pupil</th>
                 <th>Grade</th>
                 <th>Guardian</th>
                 <th>Phone</th>
-                <th>Total Due</th>
-                <th>Paid</th>
-                <th>Discount</th>
-                <th>Balance</th>
+
+                <th>
+                    {{ selected_month }} Due
+                </th>
+
+                <th>
+                    {{ selected_month }} Paid
+                </th>
+
+                <th>
+                    {{ selected_month }} Discount
+                </th>
+
+                <th>
+                    {{ selected_month }} Balance
+                </th>
+
+                <th>
+                    Arrears to {{ selected_month }}
+                </th>
             </tr>
 
+
             {% for row in rows %}
+
             <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ row.pupil.admission_no }}</td>
-                <td>{{ row.pupil.full_name }}</td>
-                <td><span class="badge">{{ row.pupil.grade }}</span></td>
-                <td>{{ row.pupil.guardian_name }}</td>
-                <td>{{ row.pupil.guardian_phone }}</td>
-                <td>{{ money(row.total_due) }}</td>
-                <td>{{ money(row.total_paid) }}</td>
-                <td>{{ money(row.discounts) }}</td>
-                <td class="balance">{{ money(row.balance) }}</td>
+
+                <td>
+                    {{ loop.index }}
+                </td>
+
+
+                <td>
+                    {{ row.pupil.admission_no }}
+                </td>
+
+
+                <td>
+                    {{ row.pupil.full_name }}
+                </td>
+
+
+                <td>
+                    <span class="badge">
+                        {{ row.pupil.grade }}
+                    </span>
+                </td>
+
+
+                <td>
+                    {{ row.pupil.guardian_name }}
+                </td>
+
+
+                <td>
+                    {{ row.pupil.guardian_phone }}
+                </td>
+
+
+                <td>
+                    {{ money(row.month_due) }}
+                </td>
+
+
+                <td>
+                    {{ money(row.month_paid) }}
+                </td>
+
+
+                <td>
+                    {{ money(row.month_discount) }}
+                </td>
+
+
+                <td
+                    class="{% if row.month_balance > 0 %}month-balance{% else %}zero{% endif %}"
+                >
+                    {{ money(row.month_balance) }}
+                </td>
+
+
+                <td
+                    class="{% if row.cumulative_balance > 0 %}balance{% else %}zero{% endif %}"
+                >
+                    {{ money(row.cumulative_balance) }}
+                </td>
+
             </tr>
+
+
             {% else %}
+
             <tr>
-                <td colspan="10" style="text-align:center;padding:20px;">
+                <td
+                    colspan="11"
+                    style="text-align:center;padding:20px;"
+                >
                     No fee defaulters found.
                 </td>
             </tr>
+
             {% endfor %}
+
         </table>
+
     </div>
+
 </div>
+
+
+<script>
+const termMonths = {{ term_months|tojson }};
+
+function updateMonths() {
+    const term = document.getElementById(
+        "term_select"
+    ).value;
+
+    const monthSelect = document.getElementById(
+        "month_select"
+    );
+
+    const months = termMonths[term] || [];
+
+    const currentMonth = "{{ selected_month }}";
+
+    monthSelect.innerHTML = "";
+
+    months.forEach(function(month) {
+        const option = document.createElement(
+            "option"
+        );
+
+        option.value = month;
+        option.textContent = month;
+
+        if (month === currentMonth) {
+            option.selected = true;
+        }
+
+        monthSelect.appendChild(option);
+    });
+}
+</script>
 
 {% endblock %}
