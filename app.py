@@ -6367,32 +6367,182 @@ def exams():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "teacher"):
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "teacher"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
+    # ---------------------------------------------------------
+    # ADD EXAM FOR ALL GRADES
+    # ---------------------------------------------------------
     if request.method == "POST":
-        exam = Exam(
-            school_id=school_id,
-            exam_name=request.form["exam_name"],
-            academic_year=int(request.form["academic_year"]),
-            term=request.form["term"],
-            grade=request.form["grade"],
-            total_marks=float(request.form.get("total_marks") or 100),
-            status=request.form.get("status", "Active")
-        )
+        try:
+            exam_name = request.form.get(
+                "exam_name",
+                ""
+            ).strip()
 
-        db.session.add(exam)
-        db.session.commit()
+            academic_year = int(
+                request.form.get(
+                    "academic_year",
+                    current_year()
+                )
+            )
 
-        flash("Exam added successfully.")
-        return redirect(url_for("exams"))
+            term = request.form.get(
+                "term",
+                ""
+            ).strip()
 
+            total_marks = float(
+                request.form.get(
+                    "total_marks"
+                )
+                or 100
+            )
+
+            status = request.form.get(
+                "status",
+                "Active"
+            ).strip()
+
+            # ---------------------------------------------
+            # VALIDATION
+            # ---------------------------------------------
+            if not exam_name:
+                flash("Enter the exam name.")
+                return redirect(
+                    url_for("exams")
+                )
+
+            if term not in TERMS:
+                flash("Select a valid term.")
+                return redirect(
+                    url_for("exams")
+                )
+
+            if total_marks <= 0:
+                flash(
+                    "Total marks must be greater than zero."
+                )
+                return redirect(
+                    url_for("exams")
+                )
+
+            # ---------------------------------------------
+            # CHECK WHICH GRADES ALREADY HAVE THIS EXAM
+            # ---------------------------------------------
+            existing_exams = Exam.query.filter(
+                Exam.school_id == school_id,
+                db.func.lower(Exam.exam_name)
+                == exam_name.lower(),
+                Exam.academic_year == academic_year,
+                Exam.term == term
+            ).all()
+
+            existing_grades = {
+                exam.grade
+                for exam in existing_exams
+            }
+
+            created_count = 0
+            skipped_count = 0
+
+            # ---------------------------------------------
+            # CREATE ONE RECORD FOR EVERY GRADE
+            # ---------------------------------------------
+            for grade in GRADES:
+
+                if grade in existing_grades:
+                    skipped_count += 1
+                    continue
+
+                exam = Exam(
+                    school_id=school_id,
+                    exam_name=exam_name,
+                    academic_year=academic_year,
+                    term=term,
+                    grade=grade,
+                    total_marks=total_marks,
+                    status=status
+                )
+
+                db.session.add(exam)
+
+                created_count += 1
+
+            db.session.commit()
+
+            try:
+                save_audit(
+                    f"Created exam '{exam_name}' "
+                    f"for {created_count} grade(s), "
+                    f"{academic_year}, {term}.",
+                    "Academics"
+                )
+            except Exception as audit_error:
+                print(
+                    "EXAM AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
+                )
+
+            if created_count > 0:
+                flash(
+                    f"{exam_name} created successfully "
+                    f"for {created_count} grade(s)."
+                )
+
+            if skipped_count > 0:
+                flash(
+                    f"{skipped_count} grade(s) already "
+                    f"had this exam and were skipped."
+                )
+
+            return redirect(
+                url_for("exams")
+            )
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "CREATE EXAM ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                "The exam could not be created."
+            )
+
+            return redirect(
+                url_for("exams")
+            )
+
+    # ---------------------------------------------------------
+    # REGISTERED EXAMS
+    # ---------------------------------------------------------
     rows = Exam.query.filter_by(
         school_id=school_id
-    ).order_by(Exam.academic_year.desc(), Exam.term, Exam.grade).all()
+    ).order_by(
+        Exam.academic_year.desc(),
+        Exam.term.asc(),
+        Exam.exam_name.asc(),
+        Exam.grade.asc()
+    ).all()
 
     return render_template(
         "exams.html",
