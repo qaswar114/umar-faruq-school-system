@@ -8209,57 +8209,250 @@ def defaulters_report():
     if not login_required():
         return redirect(url_for("login"))
 
-    if not role_allowed("admin", "bursar", "principal", "super admin"):
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "bursar",
+        "accountant"
+    ):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     school_id = current_school_id()
 
-    year = int(request.args.get("year", current_year()))
-    selected_grade = request.args.get("grade", "")
-    selected_term = request.args.get("term", "Term 2")
-    selected_month = request.args.get("month", "May")
+    year = int(
+        request.args.get(
+            "year",
+            current_year()
+        )
+    )
 
-    if selected_month not in term_months(selected_term):
-        months = term_months(selected_term)
-        selected_month = months[0] if months else "May"
+    selected_grade = request.args.get(
+        "grade",
+        ""
+    ).strip()
 
+    selected_term = request.args.get(
+        "term",
+        "Term 2"
+    ).strip()
+
+    selected_month = request.args.get(
+        "month",
+        "May"
+    ).strip()
+
+    # ---------------------------------------------------------
+    # VALIDATE TERM / MONTH
+    # ---------------------------------------------------------
+    if selected_term not in TERMS:
+        selected_term = "Term 2"
+
+    valid_months = term_months(
+        selected_term
+    )
+
+    if selected_month not in valid_months:
+        selected_month = (
+            valid_months[0]
+            if valid_months
+            else "May"
+        )
+
+    # ---------------------------------------------------------
+    # PUPILS
+    # ---------------------------------------------------------
     query = Pupil.query.filter_by(
         school_id=school_id,
         status="Active"
     )
 
     if selected_grade:
-        query = query.filter_by(grade=selected_grade)
+        query = query.filter_by(
+            grade=selected_grade
+        )
+
+    pupils = query.order_by(
+        Pupil.grade,
+        Pupil.full_name
+    ).all()
 
     rows = []
 
-    for pupil in query.order_by(Pupil.grade, Pupil.full_name).all():
-        total_due = due_until_month(
+    # ---------------------------------------------------------
+    # SUMMARY TOTALS
+    # ---------------------------------------------------------
+    current_month_due_all = 0
+    current_month_paid_all = 0
+    current_month_discount_all = 0
+    current_month_balance_all = 0
+
+    cumulative_due_all = 0
+    cumulative_paid_all = 0
+    cumulative_discount_all = 0
+    cumulative_balance_all = 0
+
+    # ---------------------------------------------------------
+    # CALCULATE PER PUPIL
+    # ---------------------------------------------------------
+    for pupil in pupils:
+
+        # =====================================================
+        # CURRENT MONTH ONLY
+        # =====================================================
+        month_due_data = monthly_due(
             pupil,
             year,
             selected_term,
             selected_month
         )
 
-        total_paid = paid_year(pupil.id, year)
-        discounts = discount_year(pupil.id, year)
-        balance = total_due - total_paid - discounts
+        month_due = round(
+            sum(
+                float(value or 0)
+                for value in month_due_data.values()
+            ),
+            2
+        )
 
-        if balance > 0:
+        month_paid = round(
+            float(
+                paid_month(
+                    pupil.id,
+                    year,
+                    selected_term,
+                    selected_month
+                )
+                or 0
+            ),
+            2
+        )
+
+        month_discount = round(
+            float(
+                discount_month(
+                    pupil.id,
+                    year,
+                    selected_term,
+                    selected_month
+                )
+                or 0
+            ),
+            2
+        )
+
+        month_balance = round(
+            month_due
+            - month_paid
+            - month_discount,
+            2
+        )
+
+        if month_balance < 0:
+            month_balance = 0
+
+        # =====================================================
+        # CUMULATIVE ARREARS UP TO SELECTED MONTH
+        # =====================================================
+        cumulative_due = round(
+            float(
+                due_until_month(
+                    pupil,
+                    year,
+                    selected_term,
+                    selected_month
+                )
+                or 0
+            ),
+            2
+        )
+
+        cumulative_paid = round(
+            float(
+                paid_year(
+                    pupil.id,
+                    year
+                )
+                or 0
+            ),
+            2
+        )
+
+        cumulative_discount = round(
+            float(
+                discount_until_month(
+                    pupil.id,
+                    year,
+                    selected_term,
+                    selected_month
+                )
+                or 0
+            ),
+            2
+        )
+
+        cumulative_balance = round(
+            cumulative_due
+            - cumulative_paid
+            - cumulative_discount,
+            2
+        )
+
+        if cumulative_balance < 0:
+            cumulative_balance = 0
+
+        # -----------------------------------------------------
+        # ONLY SHOW PUPILS WITH EITHER CURRENT MONTH BALANCE
+        # OR CUMULATIVE ARREARS
+        # -----------------------------------------------------
+        if (
+            month_balance > 0
+            or cumulative_balance > 0
+        ):
             rows.append({
                 "pupil": pupil,
-                "total_due": total_due,
-                "total_paid": total_paid,
-                "discounts": discounts,
-                "balance": balance
+
+                "month_due": month_due,
+                "month_paid": month_paid,
+                "month_discount": month_discount,
+                "month_balance": month_balance,
+
+                "cumulative_due": cumulative_due,
+                "cumulative_paid": cumulative_paid,
+                "cumulative_discount": cumulative_discount,
+                "cumulative_balance": cumulative_balance
             })
 
-    total_defaulters = len(rows)
-    total_due_all = sum(row["total_due"] for row in rows)
-    total_paid_all = sum(row["total_paid"] for row in rows)
-    total_discount_all = sum(row["discounts"] for row in rows)
-    total_balance = sum(row["balance"] for row in rows)
+            current_month_due_all += month_due
+            current_month_paid_all += month_paid
+            current_month_discount_all += month_discount
+            current_month_balance_all += month_balance
+
+            cumulative_due_all += cumulative_due
+            cumulative_paid_all += cumulative_paid
+            cumulative_discount_all += cumulative_discount
+            cumulative_balance_all += cumulative_balance
+
+    # ---------------------------------------------------------
+    # CURRENT-MONTH DEFAULTERS ONLY
+    # ---------------------------------------------------------
+    current_month_defaulters = sum(
+        1
+        for row in rows
+        if row["month_balance"] > 0
+    )
+
+    # ---------------------------------------------------------
+    # CUMULATIVE DEFAULTERS
+    # ---------------------------------------------------------
+    cumulative_defaulters = sum(
+        1
+        for row in rows
+        if row["cumulative_balance"] > 0
+    )
 
     return render_template(
         "defaulters_report.html",
@@ -8267,16 +8460,26 @@ def defaulters_report():
         grades=GRADES,
         terms=TERMS,
         term_months=TERM_MONTHS,
+
         selected_grade=selected_grade,
         selected_term=selected_term,
         selected_month=selected_month,
         year=year,
+
         rows=rows,
-        total_defaulters=total_defaulters,
-        total_due_all=total_due_all,
-        total_paid_all=total_paid_all,
-        total_discount_all=total_discount_all,
-        total_balance=total_balance,
+
+        current_month_defaulters=current_month_defaulters,
+        current_month_due_all=current_month_due_all,
+        current_month_paid_all=current_month_paid_all,
+        current_month_discount_all=current_month_discount_all,
+        current_month_balance_all=current_month_balance_all,
+
+        cumulative_defaulters=cumulative_defaulters,
+        cumulative_due_all=cumulative_due_all,
+        cumulative_paid_all=cumulative_paid_all,
+        cumulative_discount_all=cumulative_discount_all,
+        cumulative_balance_all=cumulative_balance_all,
+
         money=money
     )
  
