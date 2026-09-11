@@ -168,13 +168,13 @@
     width:100%;
     border-collapse:collapse;
     font-size:13px;
-    table-layout:fixed;
 }
 
 .sms-table th{
     background:#f8fafc;
     color:#334155;
     font-size:12px;
+    white-space:nowrap;
 }
 
 .sms-table th,
@@ -184,37 +184,8 @@
     vertical-align:top;
 }
 
-.sms-table th:nth-child(1),
-.sms-table td:nth-child(1){
-    width:45px;
-}
-
-.sms-table th:nth-child(2),
-.sms-table td:nth-child(2){
-    width:125px;
-}
-
-.sms-table th:nth-child(3),
-.sms-table td:nth-child(3){
-    width:130px;
-}
-
-.sms-table th:nth-child(4),
-.sms-table td:nth-child(4){
-    width:125px;
-}
-
-.sms-table th:nth-child(5),
-.sms-table td:nth-child(5){
-    width:130px;
-}
-
-.sms-table th:nth-child(7),
-.sms-table td:nth-child(7){
-    width:90px;
-}
-
 .msg-preview{
+    max-width:260px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -258,6 +229,16 @@
     font-weight:700;
 }
 
+.row-action{
+    padding:7px 10px;
+    width:auto;
+    min-width:80px;
+}
+
+.zero{
+    color:#94a3b8;
+}
+
 @media(max-width:1200px){
     .sms-grid{
         grid-template-columns:1fr;
@@ -286,11 +267,13 @@
 
     <div>
         <h2>Communication / SMS</h2>
+
         <p>
             Manage SMS balance, queue messages,
-            send pending SMS and view communication history.
+            send individual SMS safely and view delivery status.
         </p>
     </div>
+
 
     <div class="head-actions">
 
@@ -571,13 +554,11 @@
         <div class="action-grid">
 
 
-            <!-- SEND PENDING DIRECTLY TO SENDING ENGINE -->
-
             <form
                 method="post"
                 action="{{ url_for('send_pending_sms') }}"
                 onsubmit="return confirm(
-                    'Send all pending SMS messages now?'
+                    'WARNING: This will attempt to send ALL pending SMS for this school. Continue?'
                 );"
             >
 
@@ -585,19 +566,17 @@
                     type="submit"
                     class="action-btn action-green"
                 >
-                    ✈️ Send Pending SMS
+                    ✈️ Send All Pending
                 </button>
 
             </form>
 
 
-            <!-- CLEAN INVALID SMS -->
-
             <form
                 method="post"
                 action="{{ url_for('cleanup_invalid_sms') }}"
                 onsubmit="return confirm(
-                    'Mark invalid pending SMS as Invalid?'
+                    'Mark invalid pending SMS as invalid?'
                 );"
             >
 
@@ -611,8 +590,6 @@
             </form>
 
 
-            <!-- INVALID GUARDIAN NUMBERS -->
-
             <a
                 class="action-btn action-orange"
                 href="{{ url_for('invalid_guardian_phones') }}"
@@ -620,8 +597,6 @@
                 📞 Invalid Phones
             </a>
 
-
-            <!-- VIEW PENDING -->
 
             <a
                 class="action-btn"
@@ -634,8 +609,6 @@
             </a>
 
 
-            <!-- ATTENDANCE -->
-
             <a
                 class="action-btn action-purple"
                 href="{{ url_for(
@@ -647,8 +620,6 @@
             </a>
 
 
-            <!-- PAYMENT CONFIRMATIONS -->
-
             <a
                 class="action-btn"
                 href="{{ url_for(
@@ -659,8 +630,6 @@
                 💳 Payments
             </a>
 
-
-            <!-- FEE REMINDERS -->
 
             <a
                 class="action-btn"
@@ -696,7 +665,6 @@
         >
 
             <div>
-
                 <label>Status</label>
 
                 <select name="status">
@@ -733,12 +701,10 @@
                     </option>
 
                 </select>
-
             </div>
 
 
             <div>
-
                 <label>Category</label>
 
                 <select name="category">
@@ -802,7 +768,6 @@
                     </option>
 
                 </select>
-
             </div>
 
 
@@ -839,6 +804,8 @@
                 <th>Category</th>
                 <th>Message</th>
                 <th>Status</th>
+                <th>Delivery</th>
+                <th>Action</th>
             </tr>
 
 
@@ -850,6 +817,7 @@
                     {{ loop.index }}
                 </td>
 
+
                 <td>
                     {% if s.created_at %}
                         {{ s.created_at.strftime(
@@ -858,13 +826,16 @@
                     {% endif %}
                 </td>
 
+
                 <td>
                     {{ s.recipient_name }}
                 </td>
 
+
                 <td>
                     {{ s.phone }}
                 </td>
+
 
                 <td>
                     <span class="badge badge-cat">
@@ -872,12 +843,14 @@
                     </span>
                 </td>
 
+
                 <td
                     class="msg-preview"
                     title="{{ s.message }}"
                 >
                     {{ s.message }}
                 </td>
+
 
                 <td>
 
@@ -903,13 +876,124 @@
 
                 </td>
 
+
+                <td>
+
+                    {% if s.delivery_status %}
+
+                        {% if s.delivery_status|lower in [
+                            "success",
+                            "delivered"
+                        ] %}
+
+                            <span class="badge badge-sent">
+                                {{ s.delivery_status }}
+                            </span>
+
+                        {% elif s.delivery_status|lower in [
+                            "failed",
+                            "rejected"
+                        ] %}
+
+                            <span class="badge badge-failed">
+                                {{ s.delivery_status }}
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge badge-pending">
+                                {{ s.delivery_status }}
+                            </span>
+
+                        {% endif %}
+
+                    {% else %}
+
+                        <span class="zero">
+                            -
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+
+                    {% if s.status == "Pending" %}
+
+                        <form
+                            method="post"
+                            action="{{ url_for(
+                                'send_one_sms',
+                                sms_id=s.id
+                            ) }}"
+                            onsubmit="return confirm(
+                                'Send this SMS now?'
+                            );"
+                        >
+
+                            <button
+                                type="submit"
+                                class="action-btn action-green row-action"
+                            >
+                                Send Now
+                            </button>
+
+                        </form>
+
+
+                    {% elif s.status == "Failed" %}
+
+                        <form
+                            method="post"
+                            action="{{ url_for(
+                                'send_one_sms',
+                                sms_id=s.id
+                            ) }}"
+                            onsubmit="return confirm(
+                                'Retry this failed SMS?'
+                            );"
+                        >
+
+                            <button
+                                type="submit"
+                                class="action-btn action-orange row-action"
+                            >
+                                Retry
+                            </button>
+
+                        </form>
+
+
+                    {% elif s.status == "Sent" %}
+
+                        <span
+                            style="
+                                color:#16a34a;
+                                font-weight:900;
+                            "
+                        >
+                            ✓
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
             </tr>
 
 
             {% else %}
 
             <tr>
-                <td colspan="7">
+                <td
+                    colspan="9"
+                    style="
+                        text-align:center;
+                        padding:20px;
+                    "
+                >
                     No SMS messages found.
                 </td>
             </tr>
