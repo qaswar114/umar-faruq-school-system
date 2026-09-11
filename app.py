@@ -15343,6 +15343,245 @@ def send_pending_sms():
         url_for("sms_messages")
     )
 
+@app.route(
+    "/send_one_sms/<int:sms_id>",
+    methods=["POST"]
+)
+def send_one_sms(sms_id):
+    if not login_required():
+        return redirect(url_for("login"))
+
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin",
+        "headteacher",
+        "deputy headteacher",
+        "teacher",
+        "registrar",
+        "receptionist",
+        "accountant",
+        "bursar"
+    ):
+        flash("Access denied.")
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
+    # ---------------------------------------------------------
+    # GET SMS
+    # ---------------------------------------------------------
+    sms = SMSMessage.query.filter_by(
+        id=sms_id,
+        school_id=school_id
+    ).first_or_404()
+
+    if sms.status == "Sent":
+        flash("This SMS has already been sent.")
+        return redirect(
+            url_for("sms_messages")
+        )
+
+    # Allow Pending or Failed SMS to be sent manually.
+    if sms.status not in [
+        "Pending",
+        "Failed"
+    ]:
+        flash(
+            "This SMS cannot currently be sent."
+        )
+        return redirect(
+            url_for("sms_messages")
+        )
+
+    # ---------------------------------------------------------
+    # VALIDATE PHONE
+    # ---------------------------------------------------------
+    cleaned_phone = clean_phone_number(
+        sms.phone
+    )
+
+    if not cleaned_phone:
+        sms.status = "Failed"
+
+        if hasattr(sms, "provider_status"):
+            sms.provider_status = "InvalidPhone"
+
+        if hasattr(sms, "failed_at"):
+            sms.failed_at = datetime.now()
+
+        db.session.commit()
+
+        flash(
+            "SMS not sent because the phone number is invalid."
+        )
+
+        return redirect(
+            url_for("sms_messages")
+        )
+
+    # ---------------------------------------------------------
+    # WALLET
+    # ---------------------------------------------------------
+    wallet = get_sms_wallet()
+
+    if not wallet:
+        flash(
+            "This school does not have an SMS wallet."
+        )
+        return redirect(
+            url_for("sms_messages")
+        )
+
+    if not wallet.sms_enabled:
+        flash(
+            "SMS service is disabled for this school."
+        )
+        return redirect(
+            url_for("sms_messages")
+        )
+
+    if int(wallet.sms_balance or 0) <= 0:
+        flash(
+            "SMS balance is 0. "
+            "Please load SMS before sending."
+        )
+        return redirect(
+            url_for("sms_wallet")
+        )
+
+    # ---------------------------------------------------------
+    # SEND THROUGH AFRICA'S TALKING
+    # ---------------------------------------------------------
+    try:
+        result = send_sms_gateway(
+            cleaned_phone,
+            sms.message
+        )
+
+        sms.phone = cleaned_phone
+
+        if hasattr(sms, "provider"):
+            sms.provider = "AfricasTalking"
+
+        if hasattr(sms, "provider_status"):
+            sms.provider_status = result.get(
+                "status",
+                ""
+            )
+
+        if hasattr(sms, "provider_message_id"):
+            sms.provider_message_id = result.get(
+                "message_id",
+                ""
+            )
+
+        if hasattr(sms, "cost"):
+            sms.cost = result.get(
+                "cost",
+                ""
+            )
+
+        if hasattr(sms, "provider_response"):
+            sms.provider_response = result.get(
+                "response",
+                ""
+            )
+
+        # -----------------------------------------------------
+        # SUCCESS
+        # -----------------------------------------------------
+        if result.get("success"):
+
+            sms.status = "Sent"
+            sms.sent_at = datetime.now()
+
+            if hasattr(sms, "failed_at"):
+                sms.failed_at = None
+
+            if hasattr(sms, "delivery_status"):
+                sms.delivery_status = result.get(
+                    "status",
+                    "Sent"
+                )
+
+            # Charge exactly one SMS only after
+            # Africa's Talking accepts the message.
+            wallet.sms_balance = max(
+                0,
+                int(wallet.sms_balance or 0) - 1
+            )
+
+            wallet.sms_used = (
+                int(wallet.sms_used or 0) + 1
+            )
+
+            db.session.commit()
+
+            save_audit(
+                f"Sent individual SMS to "
+                f"{sms.recipient_name} "
+                f"({sms.phone}).",
+                "Communication"
+            )
+
+            flash(
+                "SMS sent successfully. "
+                f"Remaining balance: "
+                f"{wallet.sms_balance}."
+            )
+
+        # -----------------------------------------------------
+        # FAILED
+        # -----------------------------------------------------
+        else:
+            sms.status = "Failed"
+
+            if hasattr(sms, "failed_at"):
+                sms.failed_at = datetime.now()
+
+            if hasattr(sms, "retry_count"):
+                sms.retry_count = (
+                    int(sms.retry_count or 0)
+                    + 1
+                )
+
+            if hasattr(sms, "delivery_status"):
+                sms.delivery_status = result.get(
+                    "status",
+                    "Failed"
+                )
+
+            db.session.commit()
+
+            flash(
+                "SMS was not accepted by Africa's Talking. "
+                f"Status: "
+                f"{result.get('status', 'Unknown')}."
+            )
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "SEND ONE SMS ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "SMS could not be sent. "
+            "Check the application logs."
+        )
+
+    return redirect(
+        url_for("sms_messages")
+    )
+
 @app.route("/retry_failed_whatsapp")
 def retry_failed_whatsapp():
     if not login_required():
