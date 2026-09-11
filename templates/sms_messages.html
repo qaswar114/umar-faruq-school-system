@@ -140,6 +140,12 @@
     border-color:#ddd6fe;
 }
 
+.action-red{
+    background:#fff1f2;
+    color:#dc2626;
+    border-color:#fecdd3;
+}
+
 .history-head{
     display:flex;
     justify-content:space-between;
@@ -214,6 +220,11 @@
     color:#dc2626;
 }
 
+.badge-cancelled{
+    background:#f1f5f9;
+    color:#475569;
+}
+
 .badge-cat{
     background:#eff6ff;
     color:#0b5ed7;
@@ -226,6 +237,16 @@
     background:#fff7ed;
     color:#9a3412;
     border:1px solid #fed7aa;
+    font-weight:700;
+}
+
+.queue-warning{
+    margin-bottom:14px;
+    padding:12px 14px;
+    border-radius:10px;
+    background:#fff1f2;
+    color:#9f1239;
+    border:1px solid #fecdd3;
     font-weight:700;
 }
 
@@ -260,7 +281,7 @@
 
 
 <!-- ===================================================== -->
-<!-- PAGE HEADER -->
+<!-- HEADER -->
 <!-- ===================================================== -->
 
 <div class="sms-head">
@@ -269,11 +290,9 @@
         <h2>Communication / SMS</h2>
 
         <p>
-            Manage SMS balance, queue messages,
-            send individual SMS safely and view delivery status.
+            Create, queue, send and monitor school SMS messages.
         </p>
     </div>
-
 
     <div class="head-actions">
 
@@ -297,7 +316,7 @@
 
 
 <!-- ===================================================== -->
-<!-- LOW BALANCE WARNING -->
+<!-- WALLET WARNING -->
 <!-- ===================================================== -->
 
 {% if wallet.sms_balance|int <= wallet.sms_low_alert|int %}
@@ -307,6 +326,30 @@
     Current balance:
     <strong>{{ wallet.sms_balance }}</strong>
     SMS.
+</div>
+
+{% endif %}
+
+
+<!-- ===================================================== -->
+<!-- OLD QUEUE WARNING -->
+<!-- ===================================================== -->
+
+{% if pending_count|int > 20 %}
+
+<div class="queue-warning">
+
+    ⚠️ There are currently
+
+    <strong>
+        {{ pending_count }}
+    </strong>
+
+    pending SMS messages.
+
+    Review the queue before using
+    <strong>Send All Pending</strong>.
+
 </div>
 
 {% endif %}
@@ -410,6 +453,7 @@
             <div class="three">
 
                 <div>
+
                     <label>Send To</label>
 
                     <select
@@ -417,6 +461,7 @@
                         id="sms_send_to"
                         onchange="updateSmsFields()"
                     >
+
                         <option value="single">
                             One Parent
                         </option>
@@ -428,7 +473,9 @@
                         <option value="all">
                             All Parents
                         </option>
+
                     </select>
+
                 </div>
 
 
@@ -554,23 +601,20 @@
         <div class="action-grid">
 
 
-            <form
-                method="post"
-                action="{{ url_for('send_pending_sms') }}"
-                onsubmit="return confirm(
-                    'WARNING: This will attempt to send ALL pending SMS for this school. Continue?'
-                );"
+            <!-- VIEW PENDING -->
+
+            <a
+                class="action-btn"
+                href="{{ url_for(
+                    'sms_messages',
+                    status='Pending'
+                ) }}"
             >
+                👁️ View Pending
+            </a>
 
-                <button
-                    type="submit"
-                    class="action-btn action-green"
-                >
-                    ✈️ Send All Pending
-                </button>
 
-            </form>
-
+            <!-- CLEAN INVALID -->
 
             <form
                 method="post"
@@ -590,24 +634,41 @@
             </form>
 
 
+            <!-- CANCEL OLD -->
+
+            <form
+                method="post"
+                action="{{ url_for(
+                    'cancel_old_pending_sms'
+                ) }}"
+                onsubmit="return confirm(
+                    'Cancel ALL pending SMS older than 7 days? They will remain in SMS history as Cancelled.'
+                );"
+            >
+
+                <button
+                    type="submit"
+                    class="action-btn action-red"
+                >
+                    🗑️ Cancel Old Pending
+                </button>
+
+            </form>
+
+
+            <!-- INVALID PHONES -->
+
             <a
                 class="action-btn action-orange"
-                href="{{ url_for('invalid_guardian_phones') }}"
+                href="{{ url_for(
+                    'invalid_guardian_phones'
+                ) }}"
             >
                 📞 Invalid Phones
             </a>
 
 
-            <a
-                class="action-btn"
-                href="{{ url_for(
-                    'sms_messages',
-                    status='Pending'
-                ) }}"
-            >
-                👁️ View Pending
-            </a>
-
+            <!-- ATTENDANCE -->
 
             <a
                 class="action-btn action-purple"
@@ -620,6 +681,8 @@
             </a>
 
 
+            <!-- PAYMENT -->
+
             <a
                 class="action-btn"
                 href="{{ url_for(
@@ -631,6 +694,8 @@
             </a>
 
 
+            <!-- FEES -->
+
             <a
                 class="action-btn"
                 href="{{ url_for(
@@ -640,6 +705,26 @@
             >
                 📢 Fee Reminders
             </a>
+
+
+            <!-- SEND ALL LAST / DANGEROUS ACTION -->
+
+            <form
+                method="post"
+                action="{{ url_for('send_pending_sms') }}"
+                onsubmit="return confirm(
+                    'WARNING: This will send ALL remaining pending SMS for this school and consume SMS credits. Are you sure?'
+                );"
+            >
+
+                <button
+                    type="submit"
+                    class="action-btn action-green"
+                >
+                    ✈️ Send All Pending
+                </button>
+
+            </form>
 
         </div>
 
@@ -665,6 +750,7 @@
         >
 
             <div>
+
                 <label>Status</label>
 
                 <select name="status">
@@ -700,11 +786,22 @@
                         Failed
                     </option>
 
+                    <option
+                        value="Cancelled"
+                        {% if selected_status == "Cancelled" %}
+                        selected
+                        {% endif %}
+                    >
+                        Cancelled
+                    </option>
+
                 </select>
+
             </div>
 
 
             <div>
+
                 <label>Category</label>
 
                 <select name="category">
@@ -768,6 +865,7 @@
                     </option>
 
                 </select>
+
             </div>
 
 
@@ -780,7 +878,9 @@
 
 
             <a
-                href="{{ url_for('sms_messages') }}"
+                href="{{ url_for(
+                    'sms_messages'
+                ) }}"
                 class="btn"
                 style="background:#64748b;"
             >
@@ -819,11 +919,15 @@
 
 
                 <td>
+
                     {% if s.created_at %}
+
                         {{ s.created_at.strftime(
                             '%Y-%m-%d %H:%M'
                         ) }}
+
                     {% endif %}
+
                 </td>
 
 
@@ -838,9 +942,11 @@
 
 
                 <td>
+
                     <span class="badge badge-cat">
                         {{ s.category }}
                     </span>
+
                 </td>
 
 
@@ -851,6 +957,8 @@
                     {{ s.message }}
                 </td>
 
+
+                <!-- STATUS -->
 
                 <td>
 
@@ -866,6 +974,12 @@
                             Failed
                         </span>
 
+                    {% elif s.status == "Cancelled" %}
+
+                        <span class="badge badge-cancelled">
+                            Cancelled
+                        </span>
+
                     {% else %}
 
                         <span class="badge badge-pending">
@@ -876,6 +990,8 @@
 
                 </td>
 
+
+                <!-- DELIVERY -->
 
                 <td>
 
@@ -899,6 +1015,14 @@
                                 {{ s.delivery_status }}
                             </span>
 
+                        {% elif s.delivery_status|lower
+                            == "cancelled"
+                        %}
+
+                            <span class="badge badge-cancelled">
+                                Cancelled
+                            </span>
+
                         {% else %}
 
                             <span class="badge badge-pending">
@@ -918,6 +1042,8 @@
                 </td>
 
 
+                <!-- ACTION -->
+
                 <td>
 
                     {% if s.status == "Pending" %}
@@ -935,7 +1061,11 @@
 
                             <button
                                 type="submit"
-                                class="action-btn action-green row-action"
+                                class="
+                                    action-btn
+                                    action-green
+                                    row-action
+                                "
                             >
                                 Send Now
                             </button>
@@ -958,7 +1088,11 @@
 
                             <button
                                 type="submit"
-                                class="action-btn action-orange row-action"
+                                class="
+                                    action-btn
+                                    action-orange
+                                    row-action
+                                "
                             >
                                 Retry
                             </button>
@@ -974,7 +1108,19 @@
                                 font-weight:900;
                             "
                         >
-                            ✓
+                            ✓ Sent
+                        </span>
+
+
+                    {% elif s.status == "Cancelled" %}
+
+                        <span
+                            style="
+                                color:#64748b;
+                                font-weight:700;
+                            "
+                        >
+                            Cancelled
                         </span>
 
                     {% endif %}
@@ -987,6 +1133,7 @@
             {% else %}
 
             <tr>
+
                 <td
                     colspan="9"
                     style="
@@ -996,6 +1143,7 @@
                 >
                     No SMS messages found.
                 </td>
+
             </tr>
 
             {% endfor %}
@@ -1009,6 +1157,7 @@
 
 <script>
 function updateSmsFields() {
+
     const sendTo = document.getElementById(
         "sms_send_to"
     ).value;
@@ -1025,24 +1174,32 @@ function updateSmsFields() {
         "grade_box"
     );
 
+
     if (sendTo === "single") {
+
         nameBox.style.display = "block";
         phoneBox.style.display = "block";
         gradeBox.style.display = "none";
+
     }
 
     else if (sendTo === "grade") {
+
         nameBox.style.display = "none";
         phoneBox.style.display = "none";
         gradeBox.style.display = "block";
+
     }
 
     else {
+
         nameBox.style.display = "none";
         phoneBox.style.display = "none";
         gradeBox.style.display = "none";
+
     }
 }
+
 
 document.addEventListener(
     "DOMContentLoaded",
