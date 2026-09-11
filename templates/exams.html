@@ -3,82 +3,344 @@
 {% else %}
     {% extends "base.html" %}
 {% endif %}
+
 {% block content %}
 
+<style>
+.exam-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:18px;
+}
+
+.exam-header h2{
+    margin:0;
+}
+
+.exam-header p{
+    margin:5px 0 0;
+    color:#64748b;
+}
+
+.exam-note{
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    color:#1e40af;
+    padding:12px 14px;
+    border-radius:10px;
+    margin-bottom:18px;
+    font-weight:600;
+}
+
+.exam-form-grid{
+    display:grid;
+    grid-template-columns:
+        repeat(2, minmax(0,1fr));
+    gap:16px;
+}
+
+.exam-form-grid label{
+    display:block;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+.exam-form-grid input,
+.exam-form-grid select{
+    width:100%;
+    box-sizing:border-box;
+}
+
+.exam-table-wrap{
+    overflow-x:auto;
+}
+
+.exam-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.exam-table th{
+    background:#f8fafc;
+    color:#334155;
+    text-align:left;
+}
+
+.exam-table th,
+.exam-table td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.all-grades-badge{
+    display:inline-block;
+    background:#ecfdf5;
+    color:#15803d;
+    font-weight:800;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+}
+
+.status-active{
+    display:inline-block;
+    background:#ecfdf5;
+    color:#15803d;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.status-other{
+    display:inline-block;
+    background:#f1f5f9;
+    color:#475569;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:800;
+}
+
+@media(max-width:800px){
+    .exam-form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .exam-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+}
+</style>
+
+
+<!-- ===================================================== -->
+<!-- EXAM SETUP -->
+<!-- ===================================================== -->
+
 <div class="panel">
-    <h2>Exam Setup</h2>
+
+    <div class="exam-header">
+        <div>
+            <h2>Exam Setup</h2>
+
+            <p>
+                Create one examination for the whole school.
+            </p>
+        </div>
+    </div>
+
+
+    <div class="exam-note">
+        📘 The exam will automatically be created for
+        all grades from PP1 to Grade 9.
+        You do not need to create it separately for each class.
+    </div>
+
 
     <form method="post">
-        <div class="three">
+
+        <div class="exam-form-grid">
+
             <div>
                 <label>Exam Name</label>
-                <input name="exam_name" required placeholder="e.g. Mid Term Exam">
+
+                <input
+                    name="exam_name"
+                    required
+                    placeholder="e.g. Mid Term Exam"
+                >
             </div>
+
 
             <div>
                 <label>Academic Year</label>
-                <input name="academic_year" type="number" value="{{ year }}" required>
+
+                <input
+                    name="academic_year"
+                    type="number"
+                    value="{{ year }}"
+                    required
+                >
             </div>
+
 
             <div>
                 <label>Term</label>
-                <select name="term" required>
+
+                <select
+                    name="term"
+                    required
+                >
                     {% for t in terms %}
-                    <option>{{ t }}</option>
+                    <option value="{{ t }}">
+                        {{ t }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div>
-                <label>Grade/Class</label>
-                <select name="grade" required>
-                    {% for g in grades %}
-                    <option>{{ g }}</option>
-                    {% endfor %}
-                </select>
-            </div>
 
             <div>
                 <label>Total Marks</label>
-                <input name="total_marks" type="number" value="100" required>
+
+                <input
+                    name="total_marks"
+                    type="number"
+                    min="1"
+                    value="100"
+                    required
+                >
             </div>
+
         </div>
 
+
         <br>
-        <button class="btn">Add Exam</button>
+
+        <button
+            type="submit"
+            class="btn"
+        >
+            Add Exam for All Grades
+        </button>
+
     </form>
+
 </div>
 
+
+<!-- ===================================================== -->
+<!-- REGISTERED EXAMS -->
+<!-- ===================================================== -->
+
 <div class="panel">
+
     <h3>Registered Exams</h3>
 
-    <table>
-        <tr>
-            <th>#</th>
-            <th>Exam</th>
-            <th>Year</th>
-            <th>Term</th>
-            <th>Grade</th>
-            <th>Total Marks</th>
-            <th>Status</th>
-        </tr>
+    <p style="color:#64748b;margin-top:-5px;">
+        Each examination is shown once even though EduManage
+        keeps separate grade records for marks and report cards.
+    </p>
 
-        {% for e in rows %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ e.exam_name }}</td>
-            <td>{{ e.academic_year }}</td>
-            <td>{{ e.term }}</td>
-            <td>{{ e.grade }}</td>
-            <td>{{ e.total_marks }}</td>
-            <td>{{ e.status }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="7">No exams added yet.</td>
-        </tr>
-        {% endfor %}
-    </table>
+
+    <div class="exam-table-wrap">
+
+        <table class="exam-table">
+
+            <tr>
+                <th>#</th>
+                <th>Exam</th>
+                <th>Year</th>
+                <th>Term</th>
+                <th>Coverage</th>
+                <th>Total Marks</th>
+                <th>Status</th>
+            </tr>
+
+
+            {% set ns = namespace(
+                seen=[],
+                counter=0
+            ) %}
+
+
+            {% for e in rows %}
+
+                {% set exam_key =
+                    e.exam_name|string
+                    ~ "|" ~
+                    e.academic_year|string
+                    ~ "|" ~
+                    e.term|string
+                %}
+
+
+                {% if exam_key not in ns.seen %}
+
+                    {% set ns.seen =
+                        ns.seen + [exam_key]
+                    %}
+
+                    {% set ns.counter =
+                        ns.counter + 1
+                    %}
+
+                    <tr>
+
+                        <td>
+                            {{ ns.counter }}
+                        </td>
+
+
+                        <td>
+                            <strong>
+                                {{ e.exam_name }}
+                            </strong>
+                        </td>
+
+
+                        <td>
+                            {{ e.academic_year }}
+                        </td>
+
+
+                        <td>
+                            {{ e.term }}
+                        </td>
+
+
+                        <td>
+                            <span class="all-grades-badge">
+                                All Grades
+                            </span>
+                        </td>
+
+
+                        <td>
+                            {{ e.total_marks }}
+                        </td>
+
+
+                        <td>
+
+                            {% if e.status == "Active" %}
+
+                                <span class="status-active">
+                                    Active
+                                </span>
+
+                            {% else %}
+
+                                <span class="status-other">
+                                    {{ e.status }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% endif %}
+
+            {% else %}
+
+                <tr>
+                    <td colspan="7">
+                        No exams added yet.
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
 </div>
 
 {% endblock %}
