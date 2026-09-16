@@ -8,93 +8,83 @@
     color: #0f172a;
 }
 
-/* =========================================================
-   HERO
-========================================================= */
+/* HERO */
 .sms-hero {
-    background:
-        linear-gradient(
-            135deg,
-            #071a3d 0%,
-            #075ac8 48%,
-            #0f9f6e 100%
-        );
+    background: linear-gradient(
+        135deg,
+        #071a3d 0%,
+        #075ac8 48%,
+        #0f9f6e 100%
+    );
     color: white;
-    border-radius: 24px;
-    padding: 25px 28px;
+    border-radius: 22px;
+    padding: 24px 27px;
     margin-bottom: 18px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     gap: 20px;
-    box-shadow: 0 16px 34px rgba(15, 23, 42, .14);
+    box-shadow: 0 14px 30px rgba(15,23,42,.13);
 }
 
 .sms-hero-left {
     display: flex;
     align-items: center;
-    gap: 17px;
+    gap: 16px;
 }
 
 .sms-hero-icon {
-    width: 66px;
-    height: 66px;
-    border-radius: 18px;
+    width: 62px;
+    height: 62px;
+    border-radius: 17px;
     background: rgba(255,255,255,.17);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 34px;
-    flex-shrink: 0;
+    font-size: 31px;
 }
 
 .sms-hero h2 {
     margin: 0;
+    font-size: 29px;
     color: white;
-    font-size: 31px;
-    line-height: 1.1;
 }
 
 .sms-hero p {
-    margin: 8px 0 0;
+    margin: 7px 0 0;
     color: #dbeafe;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .hero-actions {
     display: flex;
-    gap: 9px;
+    gap: 8px;
     flex-wrap: wrap;
-    justify-content: flex-end;
 }
 
 .hero-btn {
     border: 1px solid rgba(255,255,255,.30);
-    background: rgba(255,255,255,.16);
+    background: rgba(255,255,255,.15);
     color: white;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-weight: 900;
+    padding: 10px 13px;
+    border-radius: 11px;
+    font-weight: 800;
     cursor: pointer;
-    text-decoration: none;
 }
 
 .hero-btn:hover {
     background: rgba(255,255,255,.24);
-    color: white;
 }
 
-/* =========================================================
-   ALERTS
-========================================================= */
+/* ALERTS */
 .alert-box {
-    border-radius: 16px;
-    padding: 14px 16px;
+    border-radius: 14px;
+    padding: 13px 15px;
     margin-bottom: 16px;
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    font-weight: 800;
+    gap: 11px;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .alert-box.warning {
@@ -115,17 +105,10 @@
     color: #166534;
 }
 
-.alert-icon {
-    font-size: 21px;
-    line-height: 1;
-}
-
-/* =========================================================
-   KPI CARDS
-========================================================= */
+/* KPI */
 .sms-kpis {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 13px;
     margin-bottom: 18px;
 }
@@ -133,178 +116,90 @@
 .kpi-card {
     background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 19px;
+    border-radius: 17px;
     padding: 17px;
-    box-shadow: 0 8px 20px rgba(15,23,42,.06);
-    position: relative;
-    overflow: hidden;
-    min-height: 140px;
-}
-
-.kpi-card::after {
-    content: "";
-    position: absolute;
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    right: -32px;
-    top: -32px;
-    background: #eff6ff;
-}
-
-.kpi-card.green::after {
-    background: #ecfdf5;
-}
-
-.kpi-card.orange::after {
-    background: #fff7ed;
-}
-
-.kpi-card.red::after {
-    background: #fef2f2;
-}
-
-.kpi-card.purple::after {
-    background: #faf5ff;
-}
-
-.kpi-card.cyan::after {
-    background: #ecfeff;
-}
-
-.kpi-card.yellow::after {
-    background: #fffbeb;
+    box-shadow: 0 6px 18px rgba(15,23,42,.05);
 }
 
 .kpi-icon {
-    width: 43px;
-    height: 43px;
-    border-radius: 13px;
-    background: #dbeafe;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     font-size: 22px;
-    position: relative;
-    z-index: 2;
-}
-
-.green .kpi-icon {
-    background: #dcfce7;
-}
-
-.orange .kpi-icon {
-    background: #ffedd5;
-}
-
-.red .kpi-icon {
-    background: #fee2e2;
-}
-
-.purple .kpi-icon {
-    background: #f3e8ff;
-}
-
-.cyan .kpi-icon {
-    background: #cffafe;
-}
-
-.yellow .kpi-icon {
-    background: #fef3c7;
 }
 
 .kpi-label {
-    margin-top: 13px;
+    margin-top: 9px;
     color: #64748b;
-    font-size: 13px;
-    font-weight: 900;
-    position: relative;
-    z-index: 2;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
 }
 
 .kpi-value {
     margin-top: 5px;
+    font-size: 26px;
+    font-weight: 900;
     color: #0f172a;
-    font-size: 27px;
-    line-height: 1.1;
-    font-weight: 950;
-    position: relative;
-    z-index: 2;
 }
 
 .kpi-note {
-    margin-top: 5px;
     color: #94a3b8;
-    font-size: 12px;
-    position: relative;
-    z-index: 2;
+    font-size: 11px;
+    margin-top: 4px;
 }
 
-/* =========================================================
-   GENERAL PANELS
-========================================================= */
+/* PANELS */
 .sms-panel {
     background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 21px;
-    padding: 19px;
-    box-shadow: 0 8px 22px rgba(15,23,42,.06);
+    border-radius: 18px;
+    padding: 18px;
     margin-bottom: 18px;
+    box-shadow: 0 6px 18px rgba(15,23,42,.05);
 }
 
 .panel-heading {
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 16px;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 15px;
 }
 
 .panel-heading h3 {
     margin: 0;
+    font-size: 19px;
     color: #0f172a;
-    font-size: 21px;
 }
 
 .panel-heading p {
     margin: 5px 0 0;
     color: #64748b;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .heading-badge {
     background: #eff6ff;
     color: #1d4ed8;
-    padding: 7px 11px;
+    padding: 6px 10px;
     border-radius: 999px;
-    font-weight: 900;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.heading-badge.orange {
-    background: #fff7ed;
-    color: #c2410c;
+    font-size: 11px;
+    font-weight: 800;
 }
 
 .heading-badge.green {
-    background: #f0fdf4;
-    color: #15803d;
+    background: #dcfce7;
+    color: #166534;
 }
 
-.heading-badge.red {
-    background: #fef2f2;
-    color: #b91c1c;
+.heading-badge.orange {
+    background: #ffedd5;
+    color: #c2410c;
 }
 
-/* =========================================================
-   MAIN GRID
-========================================================= */
+/* GRIDS */
 .sms-main-grid {
     display: grid;
     grid-template-columns: 410px 1fr;
     gap: 18px;
-    align-items: start;
 }
 
 .sms-two-grid {
@@ -319,66 +214,64 @@
     gap: 18px;
 }
 
-/* =========================================================
-   FORMS
-========================================================= */
+/* FORMS */
 .form-group {
-    margin-bottom: 14px;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 11px;
+    margin-bottom: 13px;
 }
 
 label {
     display: block;
     margin-bottom: 6px;
-    color: #0f172a;
-    font-size: 13px;
-    font-weight: 900;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 input,
-select,
-textarea {
+select {
     width: 100%;
     border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    padding: 11px 12px;
-    background: white;
-    color: #0f172a;
-    font-size: 14px;
+    border-radius: 10px;
+    padding: 10px 11px;
     box-sizing: border-box;
+    background: white;
 }
 
 input:focus,
-select:focus,
-textarea:focus {
+select:focus {
     outline: none;
-    border-color: #0b5ed7;
-    box-shadow: 0 0 0 3px rgba(11,94,215,.11);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+input[readonly] {
+    background: #f8fafc;
 }
 
 .form-help {
     color: #64748b;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.45;
-    margin-top: 6px;
+    margin-top: 5px;
+}
+
+.provider-note {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    padding: 12px;
+    border-radius: 11px;
+    font-size: 11px;
+    line-height: 1.5;
+    margin-bottom: 13px;
 }
 
 .btn {
     border: none;
-    border-radius: 12px;
-    padding: 11px 15px;
-    font-weight: 900;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 800;
     cursor: pointer;
     text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
 }
 
 .btn.green {
@@ -388,61 +281,36 @@ textarea:focus {
 
 .btn.green:hover {
     background: #15803d;
-    color: white;
-}
-
-.btn.blue {
-    background: #0b5ed7;
-    color: white;
-}
-
-.btn.blue:hover {
-    background: #084db4;
-    color: white;
-}
-
-.btn.red {
-    background: #dc2626;
-    color: white;
-}
-
-.btn.gray {
-    background: #e2e8f0;
-    color: #334155;
 }
 
 .btn.full {
     width: 100%;
 }
 
-/* =========================================================
-   SUMMARY BLOCKS
-========================================================= */
+/* SUMMARY */
 .summary-list {
     display: grid;
-    gap: 9px;
+    gap: 8px;
 }
 
 .summary-row {
     background: #f8fafc;
     border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 12px 13px;
+    border-radius: 11px;
+    padding: 10px 12px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     gap: 15px;
 }
 
 .summary-row span {
     color: #64748b;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .summary-row strong {
-    color: #0f172a;
-    font-size: 14px;
+    font-size: 13px;
     text-align: right;
 }
 
@@ -454,16 +322,12 @@ textarea:focus {
     color: #dc2626 !important;
 }
 
-/* =========================================================
-   TABLES
-========================================================= */
+/* TABLE */
 .table-tools {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     gap: 10px;
     margin-bottom: 12px;
-    flex-wrap: wrap;
 }
 
 .table-search {
@@ -477,91 +341,69 @@ textarea:focus {
 
 .sms-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 9px;
-    min-width: 760px;
+    border-collapse: collapse;
+    min-width: 720px;
 }
 
 .sms-table th {
     text-align: left;
+    padding: 10px;
+    background: #f8fafc;
     color: #64748b;
-    font-size: 12px;
-    font-weight: 900;
-    padding: 0 10px 6px;
-    white-space: nowrap;
+    font-size: 11px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .sms-table td {
-    background: #f8fafc;
-    border-top: 1px solid #e5e7eb;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 12px 10px;
+    padding: 11px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12px;
     color: #334155;
-    font-size: 13px;
-    vertical-align: middle;
-}
-
-.sms-table tr td:first-child {
-    border-left: 1px solid #e5e7eb;
-    border-radius: 13px 0 0 13px;
-}
-
-.sms-table tr td:last-child {
-    border-right: 1px solid #e5e7eb;
-    border-radius: 0 13px 13px 0;
 }
 
 .cell-title {
     color: #0f172a;
-    font-weight: 900;
+    font-weight: 800;
 }
 
 .cell-muted {
-    color: #64748b;
-    font-size: 11px;
+    color: #94a3b8;
+    font-size: 10px;
     margin-top: 3px;
 }
 
 .money-value {
     color: #166534;
-    font-weight: 900;
+    font-weight: 800;
 }
 
-/* =========================================================
-   BADGES
-========================================================= */
+/* BADGES */
 .badge {
     display: inline-block;
     border-radius: 999px;
     padding: 5px 9px;
-    font-size: 11px;
-    font-weight: 900;
-    white-space: nowrap;
+    font-size: 10px;
+    font-weight: 800;
 }
 
 .badge.pending {
-    background: #fff7ed;
-    color: #c2410c;
+    background: #fef3c7;
+    color: #92400e;
 }
 
-.badge.sent,
 .badge.completed,
-.badge.enabled,
-.badge.good {
+.badge.sent,
+.badge.enabled {
     background: #dcfce7;
     color: #166534;
 }
 
 .badge.failed,
-.badge.disabled,
-.badge.low {
+.badge.low,
+.badge.disabled {
     background: #fee2e2;
     color: #991b1b;
-}
-
-.badge.neutral {
-    background: #e2e8f0;
-    color: #475569;
 }
 
 .badge.blue {
@@ -569,41 +411,18 @@ textarea:focus {
     color: #1d4ed8;
 }
 
-/* =========================================================
-   PROGRESS BARS
-========================================================= */
-.progress-track {
-    height: 8px;
-    background: #e2e8f0;
-    border-radius: 999px;
-    overflow: hidden;
-    margin-top: 7px;
-}
-
-.progress-bar {
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg,#0b5ed7,#16a34a);
-}
-
-.progress-bar.low {
-    background: linear-gradient(90deg,#f97316,#dc2626);
-}
-
-/* =========================================================
-   SCHOOL WALLETS
-========================================================= */
+/* WALLETS */
 .wallet-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
 }
 
 .wallet-card {
     border: 1px solid #e5e7eb;
     background: #f8fafc;
-    border-radius: 16px;
-    padding: 14px;
+    border-radius: 14px;
+    padding: 13px;
 }
 
 .wallet-card.low-wallet {
@@ -615,151 +434,108 @@ textarea:focus {
     display: flex;
     justify-content: space-between;
     gap: 10px;
-    align-items: flex-start;
 }
 
 .wallet-school {
-    color: #0f172a;
-    font-weight: 950;
-    font-size: 14px;
+    font-weight: 900;
+    font-size: 13px;
 }
 
 .wallet-balance {
-    margin-top: 13px;
-    font-size: 24px;
-    font-weight: 950;
-    color: #0b5ed7;
+    margin-top: 11px;
+    font-size: 23px;
+    font-weight: 900;
+    color: #1d4ed8;
 }
 
 .wallet-meta {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 11px;
+    gap: 7px;
+    margin-top: 10px;
 }
 
 .wallet-meta-box {
     background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 11px;
-    padding: 8px;
+    border-radius: 9px;
+    padding: 7px;
 }
 
 .wallet-meta-box small {
     display: block;
     color: #64748b;
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 9px;
 }
 
 .wallet-meta-box strong {
     display: block;
-    color: #0f172a;
     margin-top: 3px;
-    font-size: 13px;
+    font-size: 12px;
 }
 
-/* =========================================================
-   RECENT SMS
-========================================================= */
+/* MESSAGES */
 .message-list {
     display: grid;
-    gap: 9px;
+    gap: 8px;
 }
 
 .message-card {
-    border: 1px solid #e5e7eb;
     background: #f8fafc;
-    border-radius: 14px;
-    padding: 12px 13px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 11px 12px;
 }
 
 .message-top {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
-    align-items: flex-start;
 }
 
 .message-recipient {
-    color: #0f172a;
-    font-weight: 900;
+    font-weight: 800;
 }
 
-.message-phone {
-    color: #64748b;
-    font-size: 11px;
+.message-phone,
+.message-footer {
+    color: #94a3b8;
+    font-size: 10px;
     margin-top: 3px;
 }
 
 .message-text {
     color: #475569;
-    font-size: 12px;
-    line-height: 1.5;
-    margin-top: 9px;
+    font-size: 11px;
+    line-height: 1.45;
+    margin-top: 7px;
 }
 
-.message-footer {
-    color: #94a3b8;
-    font-size: 10px;
-    margin-top: 8px;
-}
-
-/* =========================================================
-   EMPTY STATE
-========================================================= */
 .empty-state {
-    padding: 27px;
+    padding: 24px;
     text-align: center;
     border: 1px dashed #cbd5e1;
+    border-radius: 12px;
     background: #f8fafc;
-    border-radius: 15px;
     color: #64748b;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 700;
 }
 
-/* =========================================================
-   PRINT
-========================================================= */
-@media print {
-    .no-print,
-    .sidebar,
-    nav,
-    header,
-    .hero-actions,
-    form,
-    button {
-        display: none !important;
-    }
-
-    .platform-sms-page {
-        max-width: 100% !important;
-    }
-
-    .sms-panel,
-    .kpi-card {
-        box-shadow: none !important;
-        break-inside: avoid;
-    }
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-@media (max-width: 1250px) {
+/* RESPONSIVE */
+@media (max-width: 1200px) {
     .sms-kpis {
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .wallet-grid {
-        grid-template-columns: repeat(2, minmax(0,1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 1050px) {
+@media (max-width: 1000px) {
     .sms-main-grid,
-    .sms-wide-grid,
-    .sms-two-grid {
+    .sms-two-grid,
+    .sms-wide-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -769,105 +545,133 @@ textarea:focus {
         display: block;
     }
 
-    .sms-hero-left {
-        align-items: flex-start;
-    }
-
     .hero-actions {
-        justify-content: flex-start;
-        margin-top: 16px;
+        margin-top: 15px;
     }
 
     .sms-kpis,
-    .wallet-grid,
-    .form-row {
+    .wallet-grid {
         grid-template-columns: 1fr;
     }
+}
 
-    .sms-hero h2 {
-        font-size: 25px;
+@media print {
+    .no-print,
+    .sidebar,
+    nav,
+    header,
+    button,
+    form {
+        display: none !important;
     }
 }
 </style>
 
+
 <div class="platform-sms-page">
 
-    <!-- =====================================================
-         HERO
-    ====================================================== -->
+    <!-- HERO -->
     <div class="sms-hero">
+
         <div class="sms-hero-left">
-            <div class="sms-hero-icon">📲</div>
+
+            <div class="sms-hero-icon">
+                📲
+            </div>
 
             <div>
                 <h2>Platform SMS Command Center</h2>
+
                 <p>
-                    Procure SMS stock, approve school purchases,
-                    monitor wallets and review platform messaging activity.
+                    Mobitech procurement · EduManage SMS Pool ·
+                    School purchases · Wallet monitoring
                 </p>
             </div>
+
         </div>
 
         <div class="hero-actions no-print">
-            <button type="button"
-                    class="hero-btn"
-                    onclick="window.print()">
+
+            <button
+                type="button"
+                class="hero-btn"
+                onclick="window.print()"
+            >
                 🖨 Print
             </button>
 
-            <button type="button"
-                    class="hero-btn"
-                    onclick="exportProcurementsToCSV()">
+            <button
+                type="button"
+                class="hero-btn"
+                onclick="exportProcurementsToCSV()"
+            >
                 📥 Export Procurement
             </button>
 
-            <button type="button"
-                    class="hero-btn"
-                    onclick="exportWalletsToCSV()">
+            <button
+                type="button"
+                class="hero-btn"
+                onclick="exportWalletsToCSV()"
+            >
                 📊 Export Wallets
             </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- WARNINGS -->
+    {% if low_balance %}
+
+    <div class="alert-box warning">
+        ⚠️
+
+        <div>
+            Platform SMS balance is
+            <strong>{{ "{:,}".format(pool.sms_balance or 0) }}</strong>.
+
+            The configured low-alert level is
+            {{ "{:,}".format(pool.low_alert_level or 0) }} SMS.
+
+            Procure additional SMS from Mobitech before
+            approving large school requests.
         </div>
     </div>
 
-    <!-- =====================================================
-         WARNINGS
-    ====================================================== -->
-    {% if low_balance %}
-    <div class="alert-box warning">
-        <div class="alert-icon">⚠️</div>
-        <div>
-            Platform SMS balance is {{ pool.sms_balance or 0 }},
-            which is at or below the low-alert level of
-            {{ pool.low_alert_level or 0 }} SMS.
-            Procure additional provider credit before approving
-            large school requests.
-        </div>
-    </div>
     {% endif %}
+
 
     {% if low_wallet_schools %}
+
     <div class="alert-box danger">
-        <div class="alert-icon">🚨</div>
+        🚨
+
         <div>
-            {{ low_wallet_schools|length }} enabled school wallet(s)
-            are currently at or below their configured low-balance level.
+            {{ low_wallet_schools|length }}
+            school wallet(s) are at or below
+            their low-balance level.
         </div>
     </div>
+
     {% endif %}
+
 
     {% if not low_balance and not low_wallet_schools %}
+
     <div class="alert-box success">
-        <div class="alert-icon">✅</div>
+        ✅
+
         <div>
-            Platform and active school SMS balances are currently
-            above their configured warning levels.
+            Platform and active school SMS balances
+            are currently above their warning levels.
         </div>
     </div>
+
     {% endif %}
 
-    <!-- =====================================================
-         KPI CARDS
-    ====================================================== -->
+
+    <!-- KPI CARDS -->
     <div class="sms-kpis">
 
         <div class="kpi-card">
@@ -881,29 +685,32 @@ textarea:focus {
             </div>
         </div>
 
-        <div class="kpi-card green">
+
+        <div class="kpi-card">
             <div class="kpi-icon">⬆️</div>
-            <div class="kpi-label">Total SMS Loaded</div>
+            <div class="kpi-label">Total Procured</div>
             <div class="kpi-value">
                 {{ "{:,}".format(pool.sms_loaded or 0) }}
             </div>
             <div class="kpi-note">
-                Lifetime platform procurement
+                Lifetime Mobitech procurement
             </div>
         </div>
 
-        <div class="kpi-card purple">
+
+        <div class="kpi-card">
             <div class="kpi-icon">🏫</div>
-            <div class="kpi-label">Total SMS Sold</div>
+            <div class="kpi-label">SMS Sold</div>
             <div class="kpi-value">
                 {{ "{:,}".format(pool.sms_sold or 0) }}
             </div>
             <div class="kpi-note">
-                Credited to school wallets
+                Transferred to school wallets
             </div>
         </div>
 
-        <div class="kpi-card orange">
+
+        <div class="kpi-card">
             <div class="kpi-icon">⏳</div>
             <div class="kpi-label">Pending Requests</div>
             <div class="kpi-value">
@@ -915,7 +722,8 @@ textarea:focus {
             </div>
         </div>
 
-        <div class="kpi-card cyan">
+
+        <div class="kpi-card">
             <div class="kpi-icon">💰</div>
             <div class="kpi-label">Sales Revenue</div>
             <div class="kpi-value">
@@ -926,18 +734,20 @@ textarea:focus {
             </div>
         </div>
 
-        <div class="kpi-card yellow">
+
+        <div class="kpi-card">
             <div class="kpi-icon">📈</div>
             <div class="kpi-label">Gross SMS Profit</div>
             <div class="kpi-value">
                 {{ money(gross_sms_profit or 0) }}
             </div>
             <div class="kpi-note">
-                Sales less procurement cost
+                Revenue less procurement cost
             </div>
         </div>
 
-        <div class="kpi-card green">
+
+        <div class="kpi-card">
             <div class="kpi-icon">✅</div>
             <div class="kpi-label">SMS Sent</div>
             <div class="kpi-value">
@@ -948,205 +758,310 @@ textarea:focus {
             </div>
         </div>
 
-        <div class="kpi-card red">
+
+        <div class="kpi-card">
             <div class="kpi-icon">❌</div>
             <div class="kpi-label">Failed / Pending</div>
             <div class="kpi-value">
                 {{ (failed_sms_count or 0) + (pending_sms_count or 0) }}
             </div>
             <div class="kpi-note">
-                {{ failed_sms_count or 0 }} failed,
+                {{ failed_sms_count or 0 }} failed ·
                 {{ pending_sms_count or 0 }} pending
             </div>
         </div>
 
     </div>
 
-    <!-- =====================================================
-         PROCUREMENT + FINANCIAL SUMMARY
-    ====================================================== -->
+
+    <!-- PROCUREMENT + FINANCIAL SUMMARY -->
     <div class="sms-main-grid">
 
+        <!-- MOBITECH PROCUREMENT -->
         <div class="sms-panel">
+
             <div class="panel-heading">
+
                 <div>
-                    <h3>🛒 Record Provider Procurement</h3>
+                    <h3>🛒 Mobitech Procurement</h3>
+
                     <p>
-                        Use this only after purchasing real SMS credit
-                        from Africa’s Talking or another provider.
+                        Record SMS stock purchased by
+                        EduManage from Mobitech Technologies.
                     </p>
                 </div>
+
+                <span class="heading-badge green">
+                    Mobitech
+                </span>
+
             </div>
+
 
             <form method="post" class="no-print">
 
                 <div class="form-group">
-                    <label>Supplier</label>
+
+                    <label>Provider</label>
+
                     <input
                         type="text"
-                        name="supplier"
-                        value="Africa's Talking"
-                        required>
+                        value="Mobitech Technologies"
+                        readonly
+                    >
+
+                    <div class="form-help">
+                        Provider is controlled by EduManage.
+                    </div>
+
                 </div>
 
+
                 <div class="form-group">
-                    <label>SMS Quantity Purchased</label>
+
+                    <label>
+                        SMS Quantity Purchased
+                    </label>
+
                     <input
                         type="number"
                         name="sms_count"
                         min="1"
                         step="1"
-                        placeholder="Example: 5000"
-                        required>
+                        placeholder="Example: 10000"
+                        required
+                    >
+
                 </div>
 
+
                 <div class="form-group">
-                    <label>Amount Paid (KES)</label>
+
+                    <label>
+                        Amount Paid to Mobitech (KES)
+                    </label>
+
                     <input
                         type="number"
                         name="amount_paid"
                         min="0"
                         step="0.01"
-                        placeholder="Example: 4000"
-                        required>
+                        placeholder="Example: 5000"
+                        required
+                    >
+
                 </div>
 
+
                 <div class="form-group">
-                    <label>Receipt / Payment Reference</label>
+
+                    <label>
+                        Payment / Procurement Reference
+                    </label>
+
                     <input
                         type="text"
                         name="reference_no"
-                        placeholder="Example: MPESA123ABC or AT receipt number"
-                        required>
+                        placeholder="Enter Mobitech payment reference"
+                        required
+                    >
 
                     <div class="form-help">
                         Each reference can only be recorded once.
-                        Confirm the provider account balance before saving.
                     </div>
+
                 </div>
 
-                <button class="btn green full">
+
+                <div class="provider-note">
+
+                    <strong>Procurement flow:</strong><br>
+
+                    Mobitech → EduManage Platform SMS Pool.
+
+                    <br><br>
+
+                    Recording this procurement increases
+                    the Platform SMS Pool only.
+
+                    It does not credit any individual school.
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn green full"
+                    onclick="
+                        return confirm(
+                            'Confirm this Mobitech SMS procurement?'
+                        );
+                    "
+                >
                     ➕ Add SMS to Platform Pool
                 </button>
+
             </form>
+
         </div>
 
+
+        <!-- FINANCIAL SUMMARY -->
         <div class="sms-panel">
+
             <div class="panel-heading">
+
                 <div>
                     <h3>📊 Platform Financial Summary</h3>
+
                     <p>
-                        Procurement cost, sales performance and
-                        platform usage indicators.
+                        Procurement cost, school sales
+                        and SMS business performance.
                     </p>
                 </div>
 
-                <span class="heading-badge green">
+                <span class="heading-badge">
                     {{ total_schools }} Schools
                 </span>
+
             </div>
+
 
             <div class="summary-list">
 
                 <div class="summary-row">
                     <span>Total SMS procured</span>
+
                     <strong>
                         {{ "{:,}".format(total_procured_sms or 0) }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
                     <span>Total procurement cost</span>
+
                     <strong>
                         {{ money(total_procurement_cost or 0) }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Total SMS sold</span>
+                    <span>Total SMS sold to schools</span>
+
                     <strong>
                         {{ "{:,}".format(total_sms_sold or 0) }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Total sales revenue</span>
+                    <span>School sales revenue</span>
+
                     <strong>
                         {{ money(total_sales_revenue or 0) }}
                     </strong>
                 </div>
 
-                <div class="summary-row">
-                    <span>Gross profit</span>
 
-                    <strong class="{% if (gross_sms_profit or 0) >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <div class="summary-row">
+                    <span>Gross SMS profit</span>
+
+                    <strong
+                        class="
+                            {% if (gross_sms_profit or 0) >= 0 %}
+                                profit-positive
+                            {% else %}
+                                profit-negative
+                            {% endif %}
+                        "
+                    >
                         {{ money(gross_sms_profit or 0) }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Average procurement cost per SMS</span>
+                    <span>Average Mobitech cost / SMS</span>
+
                     <strong>
-                        KES {{ "%.4f"|format(average_procurement_cost or 0) }}
+                        KES
+                        {{ "%.4f"|format(average_procurement_cost or 0) }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Average selling price per SMS</span>
+                    <span>Average school selling price / SMS</span>
+
                     <strong>
-                        KES {{ "%.4f"|format(average_selling_price or 0) }}
+                        KES
+                        {{ "%.4f"|format(average_selling_price or 0) }}
                     </strong>
                 </div>
+
 
                 <div class="summary-row">
                     <span>Schools using SMS</span>
+
                     <strong>
-                        {{ schools_using_sms }} /
-                        {{ total_schools }}
+                        {{ schools_using_sms }} / {{ total_schools }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
                     <span>Schools not using SMS</span>
+
                     <strong>
                         {{ schools_not_using_sms }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
                     <span>SMS created today</span>
+
                     <strong>
                         {{ today_sms_count or 0 }}
                     </strong>
                 </div>
 
             </div>
+
         </div>
 
     </div>
 
-    <!-- =====================================================
-         PENDING PURCHASES
-    ====================================================== -->
+
+    <!-- PENDING SCHOOL PURCHASES -->
     <div class="sms-panel">
 
         <div class="panel-heading">
+
             <div>
                 <h3>⏳ Pending School SMS Purchases</h3>
+
                 <p>
-                    Review payment information before crediting
-                    the school wallet.
+                    Approving a request transfers SMS
+                    from the Platform Pool to the school's wallet.
                 </p>
             </div>
 
             <span class="heading-badge orange">
                 {{ pending_purchase_count or 0 }} Pending
             </span>
+
         </div>
 
+
         {% if pending_purchases %}
+
         <div class="table-wrap">
+
             <table class="sms-table">
+
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -1159,44 +1074,69 @@ textarea:focus {
                     </tr>
                 </thead>
 
+
                 <tbody>
-                    {% for purchase in pending_purchases %}
+
+                {% for purchase in pending_purchases %}
+
                     <tr>
+
                         <td>
                             <div class="cell-title">
-                                {{ purchase.request_date.strftime("%d-%m-%Y")
-                                   if purchase.request_date else "-" }}
+                                {{
+                                    purchase.request_date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                    if purchase.request_date
+                                    else "-"
+                                }}
                             </div>
 
                             <div class="cell-muted">
-                                {{ purchase.request_date.strftime("%H:%M")
-                                   if purchase.request_date else "" }}
+                                {{
+                                    purchase.request_date.strftime(
+                                        "%H:%M"
+                                    )
+                                    if purchase.request_date
+                                    else ""
+                                }}
                             </div>
                         </td>
+
 
                         <td>
                             <div class="cell-title">
-                                {{ schools_dict.get(
-                                    purchase.school_id,
-                                    "School #" ~ purchase.school_id
-                                ) }}
+                                {{
+                                    schools_dict.get(
+                                        purchase.school_id,
+                                        "School #" ~ purchase.school_id
+                                    )
+                                }}
                             </div>
                         </td>
 
+
                         <td>
                             <span class="badge blue">
-                                {{ "{:,}".format(purchase.package_sms or 0) }}
+                                {{
+                                    "{:,}".format(
+                                        purchase.package_sms or 0
+                                    )
+                                }}
                                 SMS
                             </span>
                         </td>
+
 
                         <td class="money-value">
                             {{ money(purchase.amount or 0) }}
                         </td>
 
+
                         <td>
                             {{ purchase.requested_by or "-" }}
                         </td>
+
 
                         <td>
                             <span class="badge pending">
@@ -1204,91 +1144,139 @@ textarea:focus {
                             </span>
                         </td>
 
+
                         <td class="no-print">
+
                             <form
                                 method="post"
-                                action="{{ url_for(
-                                    'approve_sms_purchase',
-                                    purchase_id=purchase.id
-                                ) }}"
-                                onsubmit="return confirmSmsApproval(
-                                    '{{ schools_dict.get(
-                                        purchase.school_id,
-                                        'this school'
-                                    )|e }}',
-                                    '{{ purchase.package_sms or 0 }}'
-                                );">
+                                action="{{
+                                    url_for(
+                                        'approve_sms_purchase',
+                                        purchase_id=purchase.id
+                                    )
+                                }}"
+                                onsubmit="
+                                    return confirmSmsApproval(
+                                        '{{ schools_dict.get(
+                                            purchase.school_id,
+                                            'this school'
+                                        )|e }}',
+                                        '{{ purchase.package_sms or 0 }}'
+                                    );
+                                "
+                            >
 
-                                <button class="btn green">
+                                <button
+                                    type="submit"
+                                    class="btn green"
+                                >
                                     ✅ Approve
                                 </button>
+
                             </form>
+
                         </td>
+
                     </tr>
-                    {% endfor %}
+
+                {% endfor %}
+
                 </tbody>
+
             </table>
+
         </div>
 
+
         {% else %}
+
         <div class="empty-state">
-            There are no pending SMS purchase requests.
+            There are no pending school SMS purchase requests.
         </div>
+
         {% endif %}
 
     </div>
 
-    <!-- =====================================================
-         SCHOOL WALLETS
-    ====================================================== -->
+
+    <!-- SCHOOL WALLETS -->
     <div class="sms-panel">
 
         <div class="panel-heading">
+
             <div>
                 <h3>🏫 School SMS Wallets</h3>
+
                 <p>
-                    Monitor balances, lifetime loaded SMS and usage
-                    for every school.
+                    Monitor SMS balances and usage
+                    across all EduManage schools.
                 </p>
             </div>
 
             <span class="heading-badge">
                 {{ school_wallet_rows|length }} Wallets
             </span>
+
         </div>
 
+
         <div class="table-tools no-print">
+
             <input
                 type="text"
                 id="walletSearch"
                 class="table-search"
                 placeholder="Search school..."
-                onkeyup="filterWallets()">
+                onkeyup="filterWallets()"
+            >
 
-            <select id="walletStatusFilter"
-                    onchange="filterWallets()">
+            <select
+                id="walletStatusFilter"
+                onchange="filterWallets()"
+            >
                 <option value="">All Wallets</option>
                 <option value="enabled">Enabled</option>
                 <option value="disabled">Disabled</option>
                 <option value="low">Low Balance</option>
             </select>
+
         </div>
 
-        {% if school_wallet_rows %}
-        <div class="wallet-grid" id="walletGrid">
 
-            {% for row in school_wallet_rows %}
+        {% if school_wallet_rows %}
+
+        <div
+            class="wallet-grid"
+            id="walletGrid"
+        >
+
+        {% for row in school_wallet_rows %}
+
             {% set is_low =
                 row.enabled and
                 (row.balance or 0) <= (row.low_alert or 0)
             %}
 
-            <div class="wallet-card
-                        {% if is_low %}low-wallet{% endif %}"
-                 data-school="{{ row.school_name|lower }}"
-                 data-status="{% if is_low %}low{% elif row.enabled %}enabled{% else %}disabled{% endif %}">
+
+            <div
+                class="
+                    wallet-card
+                    {% if is_low %}low-wallet{% endif %}
+                "
+                data-school="{{ row.school_name|lower }}"
+                data-status="
+                    {% if is_low %}
+                        low
+                    {% elif row.enabled %}
+                        enabled
+                    {% else %}
+                        disabled
+                    {% endif %}
+                "
+            >
 
                 <div class="wallet-card-top">
+
                     <div>
                         <div class="wallet-school">
                             {{ row.school_name }}
@@ -1299,45 +1287,45 @@ textarea:focus {
                         </div>
                     </div>
 
+
                     {% if is_low %}
-                    <span class="badge low">Low Balance</span>
+
+                        <span class="badge low">
+                            Low Balance
+                        </span>
 
                     {% elif row.enabled %}
-                    <span class="badge enabled">Enabled</span>
+
+                        <span class="badge enabled">
+                            Enabled
+                        </span>
 
                     {% else %}
-                    <span class="badge disabled">Disabled</span>
+
+                        <span class="badge disabled">
+                            Disabled
+                        </span>
+
                     {% endif %}
+
                 </div>
+
 
                 <div class="wallet-balance">
                     {{ "{:,}".format(row.balance or 0) }}
-                    <span style="font-size:12px;color:#64748b;">
-                        SMS
-                    </span>
+                    <small>SMS</small>
                 </div>
 
-                {% set used_percent =
-                    ((row.used or 0) / (row.loaded or 1) * 100)
-                    if (row.loaded or 0) > 0
-                    else 0
-                %}
-
-                <div class="progress-track">
-                    <div class="progress-bar
-                                {% if is_low %}low{% endif %}"
-                         style="width:
-                         {{ [used_percent, 100]|min }}%;">
-                    </div>
-                </div>
 
                 <div class="wallet-meta">
+
                     <div class="wallet-meta-box">
                         <small>Loaded</small>
                         <strong>
                             {{ "{:,}".format(row.loaded or 0) }}
                         </strong>
                     </div>
+
 
                     <div class="wallet-meta-box">
                         <small>Used</small>
@@ -1346,6 +1334,7 @@ textarea:focus {
                         </strong>
                     </div>
 
+
                     <div class="wallet-meta-box">
                         <small>Low Alert</small>
                         <strong>
@@ -1353,176 +1342,262 @@ textarea:focus {
                         </strong>
                     </div>
 
+
                     <div class="wallet-meta-box">
-                        <small>Usage Rate</small>
+                        <small>Available</small>
                         <strong>
-                            {{ "%.1f"|format(used_percent) }}%
+                            {{ "{:,}".format(row.balance or 0) }}
                         </strong>
                     </div>
+
                 </div>
+
             </div>
-            {% endfor %}
+
+        {% endfor %}
 
         </div>
+
+
         {% else %}
+
         <div class="empty-state">
-            No school SMS wallet records were found.
+            No school SMS wallets were found.
         </div>
+
         {% endif %}
 
     </div>
 
-    <!-- =====================================================
-         PROCUREMENT + COMPLETED SALES
-    ====================================================== -->
+
+    <!-- PROCUREMENT + APPROVED SALES -->
     <div class="sms-two-grid">
 
+        <!-- PROCUREMENT HISTORY -->
         <div class="sms-panel">
+
             <div class="panel-heading">
+
                 <div>
-                    <h3>📥 Procurement History</h3>
-                    <p>Latest provider SMS stock purchases.</p>
+                    <h3>📥 Mobitech Procurement History</h3>
+
+                    <p>
+                        Latest EduManage SMS stock purchases.
+                    </p>
                 </div>
 
                 <span class="heading-badge green">
                     {{ procurements|length }} Records
                 </span>
+
             </div>
 
+
             {% if procurements %}
+
             <div class="table-wrap">
-                <table class="sms-table"
-                       id="procurementTable">
+
+                <table
+                    class="sms-table"
+                    id="procurementTable"
+                >
+
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Supplier</th>
+                            <th>Provider</th>
                             <th>SMS</th>
                             <th>Cost</th>
                             <th>Reference</th>
                         </tr>
                     </thead>
 
+
                     <tbody>
-                        {% for procurement in procurements %}
+
+                    {% for procurement in procurements %}
+
                         <tr>
+
                             <td>
-                                {{ procurement.purchase_date.strftime(
-                                    "%d-%m-%Y"
-                                ) if procurement.purchase_date else "-" }}
+                                {{
+                                    procurement.purchase_date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                    if procurement.purchase_date
+                                    else "-"
+                                }}
                             </td>
+
 
                             <td>
                                 <div class="cell-title">
-                                    {{ procurement.supplier or "-" }}
+                                    {{ procurement.supplier or "Mobitech" }}
                                 </div>
                             </td>
 
+
                             <td>
                                 <span class="badge blue">
-                                    {{ "{:,}".format(
-                                        procurement.sms_count or 0
-                                    ) }}
+                                    {{
+                                        "{:,}".format(
+                                            procurement.sms_count or 0
+                                        )
+                                    }}
                                 </span>
                             </td>
 
+
                             <td class="money-value">
-                                {{ money(procurement.amount_paid or 0) }}
+                                {{
+                                    money(
+                                        procurement.amount_paid or 0
+                                    )
+                                }}
                             </td>
+
 
                             <td>
                                 {{ procurement.reference_no or "-" }}
                             </td>
+
                         </tr>
-                        {% endfor %}
+
+                    {% endfor %}
+
                     </tbody>
+
                 </table>
+
             </div>
+
 
             {% else %}
+
             <div class="empty-state">
-                No platform SMS procurement has been recorded.
+                No Mobitech procurement has been recorded yet.
             </div>
+
             {% endif %}
+
         </div>
 
+
+        <!-- APPROVED SCHOOL PURCHASES -->
         <div class="sms-panel">
+
             <div class="panel-heading">
+
                 <div>
-                    <h3>✅ Recent Approved Purchases</h3>
-                    <p>Latest school wallets credited by Super Admin.</p>
+                    <h3>✅ Approved School Purchases</h3>
+
+                    <p>
+                        Recent transfers from the Platform Pool
+                        to school SMS wallets.
+                    </p>
                 </div>
 
                 <span class="heading-badge green">
                     {{ completed_purchases|length }} Records
                 </span>
+
             </div>
 
+
             {% if completed_purchases %}
+
             <div class="table-wrap">
+
                 <table class="sms-table">
+
                     <thead>
                         <tr>
                             <th>School</th>
                             <th>SMS</th>
                             <th>Amount</th>
-                            <th>Paid At</th>
+                            <th>Approved</th>
                         </tr>
                     </thead>
 
+
                     <tbody>
-                        {% for purchase in completed_purchases %}
+
+                    {% for purchase in completed_purchases %}
+
                         <tr>
+
                             <td>
                                 <div class="cell-title">
-                                    {{ schools_dict.get(
-                                        purchase.school_id,
-                                        "School #" ~ purchase.school_id
-                                    ) }}
+                                    {{
+                                        schools_dict.get(
+                                            purchase.school_id,
+                                            "School #" ~ purchase.school_id
+                                        )
+                                    }}
                                 </div>
                             </td>
 
+
                             <td>
                                 <span class="badge completed">
-                                    {{ "{:,}".format(
-                                        purchase.package_sms or 0
-                                    ) }}
+                                    {{
+                                        "{:,}".format(
+                                            purchase.package_sms or 0
+                                        )
+                                    }}
                                 </span>
                             </td>
+
 
                             <td class="money-value">
                                 {{ money(purchase.amount or 0) }}
                             </td>
 
+
                             <td>
-                                {{ purchase.paid_at.strftime(
-                                    "%d-%m-%Y %H:%M"
-                                ) if purchase.paid_at else "-" }}
+                                {{
+                                    purchase.paid_at.strftime(
+                                        "%d-%m-%Y %H:%M"
+                                    )
+                                    if purchase.paid_at
+                                    else "-"
+                                }}
                             </td>
+
                         </tr>
-                        {% endfor %}
+
+                    {% endfor %}
+
                     </tbody>
+
                 </table>
+
             </div>
 
+
             {% else %}
+
             <div class="empty-state">
-                No school SMS purchase has been approved yet.
+                No school SMS purchases have been approved yet.
             </div>
+
             {% endif %}
+
         </div>
 
     </div>
 
-    <!-- =====================================================
-         SMS ACTIVITY
-    ====================================================== -->
+
+    <!-- SMS ACTIVITY -->
     <div class="sms-wide-grid">
 
         <div class="sms-panel">
+
             <div class="panel-heading">
+
                 <div>
-                    <h3>📩 Recent Platform SMS Activity</h3>
+                    <h3>📩 Recent SMS Activity</h3>
+
                     <p>
                         Latest messages across all schools.
                     </p>
@@ -1531,211 +1606,356 @@ textarea:focus {
                 <span class="heading-badge">
                     {{ recent_sms_messages|length }} Recent
                 </span>
+
             </div>
 
+
             {% if recent_sms_messages %}
+
             <div class="message-list">
 
-                {% for message in recent_sms_messages %}
+            {% for message in recent_sms_messages %}
+
                 <div class="message-card">
 
                     <div class="message-top">
+
                         <div>
                             <div class="message-recipient">
-                                {{ message.recipient_name or "Recipient" }}
+                                {{
+                                    message.recipient_name
+                                    or "Recipient"
+                                }}
                             </div>
 
                             <div class="message-phone">
                                 {{ message.phone or "-" }}
+
                                 {% if message.category %}
-                                · {{ message.category }}
+                                    · {{ message.category }}
                                 {% endif %}
                             </div>
                         </div>
 
+
                         <div>
+
                             {% if message.status == "Sent" %}
-                            <span class="badge sent">Sent</span>
+
+                                <span class="badge sent">
+                                    Sent
+                                </span>
 
                             {% elif message.status == "Failed" %}
-                            <span class="badge failed">Failed</span>
+
+                                <span class="badge failed">
+                                    Failed
+                                </span>
 
                             {% else %}
-                            <span class="badge pending">
-                                {{ message.status or "Pending" }}
-                            </span>
+
+                                <span class="badge pending">
+                                    {{ message.status or "Pending" }}
+                                </span>
+
                             {% endif %}
+
                         </div>
+
                     </div>
+
 
                     <div class="message-text">
                         {{ message.message[:180] }}
+
                         {% if message.message and
                               message.message|length > 180 %}
                             ...
                         {% endif %}
                     </div>
 
+
                     <div class="message-footer">
-                        School ID: {{ message.school_id or "-" }}
+
+                        School ID:
+                        {{ message.school_id or "-" }}
+
                         ·
-                        {{ message.created_at.strftime(
-                            "%d-%m-%Y %H:%M"
-                        ) if message.created_at else "-" }}
+
+                        {{
+                            message.created_at.strftime(
+                                "%d-%m-%Y %H:%M"
+                            )
+                            if message.created_at
+                            else "-"
+                        }}
+
                     </div>
 
                 </div>
-                {% endfor %}
+
+            {% endfor %}
 
             </div>
+
 
             {% else %}
+
             <div class="empty-state">
-                No SMS message activity is available.
+                No SMS activity is available.
             </div>
+
             {% endif %}
+
         </div>
 
+
+        <!-- OPERATIONAL STATUS -->
         <div class="sms-panel">
+
             <div class="panel-heading">
+
                 <div>
                     <h3>📌 Operational Status</h3>
+
                     <p>
-                        Platform readiness and messaging health.
+                        Platform inventory and SMS health.
                     </p>
                 </div>
+
             </div>
+
 
             <div class="summary-list">
 
                 <div class="summary-row">
+                    <span>Upstream provider</span>
+                    <strong>Mobitech Technologies</strong>
+                </div>
+
+
+                <div class="summary-row">
+                    <span>Platform SMS balance</span>
+
+                    <strong>
+                        {{ "{:,}".format(pool.sms_balance or 0) }}
+                    </strong>
+                </div>
+
+
+                <div class="summary-row">
                     <span>Platform low alert</span>
+
                     <strong>
-                        {{ "{:,}".format(pool.low_alert_level or 0) }}
-                        SMS
+                        {{
+                            "{:,}".format(
+                                pool.low_alert_level or 0
+                            )
+                        }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Last platform load</span>
+                    <span>Last procurement recorded</span>
+
                     <strong>
-                        {{ pool.last_loaded.strftime(
-                            "%d-%m-%Y %H:%M"
-                        ) if pool.last_loaded else "Never" }}
+                        {{
+                            pool.last_loaded.strftime(
+                                "%d-%m-%Y %H:%M"
+                            )
+                            if pool.last_loaded
+                            else "Never"
+                        }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Last loaded by</span>
+                    <span>Last recorded by</span>
+
                     <strong>
                         {{ pool.last_loaded_by or "-" }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
-                    <span>Pending outbox</span>
+                    <span>Pending school purchases</span>
+
+                    <strong>
+                        {{ pending_purchase_count or 0 }}
+                    </strong>
+                </div>
+
+
+                <div class="summary-row">
+                    <span>Pending SMS outbox</span>
+
                     <strong>
                         {{ pending_sms_count or 0 }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
                     <span>Failed SMS</span>
-                    <strong class="{% if failed_sms_count %}profit-negative{% endif %}">
+
+                    <strong
+                        class="
+                            {% if failed_sms_count %}
+                                profit-negative
+                            {% endif %}
+                        "
+                    >
                         {{ failed_sms_count or 0 }}
                     </strong>
                 </div>
 
+
                 <div class="summary-row">
                     <span>Successful SMS</span>
+
                     <strong class="profit-positive">
                         {{ sent_sms_count or 0 }}
                     </strong>
                 </div>
 
-                <div class="summary-row">
-                    <span>Enabled low wallets</span>
-                    <strong>
-                        {{ low_wallet_schools|length }}
-                    </strong>
-                </div>
-
             </div>
+
         </div>
 
     </div>
 
 </div>
 
+
 <script>
 function confirmSmsApproval(schoolName, smsCount) {
+
     return confirm(
-        "Approve " + smsCount + " SMS for " + schoolName + "?\n\n" +
-        "This will deduct SMS from the platform pool and credit " +
-        "the school's wallet."
+        "Approve " +
+        smsCount +
+        " SMS for " +
+        schoolName +
+        "?\n\n" +
+        "This will deduct the SMS from the " +
+        "EduManage Platform Pool and credit " +
+        "the school's SMS Wallet."
     );
 }
 
+
 function filterWallets() {
+
     const search =
-        document.getElementById("walletSearch").value.toLowerCase();
+        document
+        .getElementById("walletSearch")
+        .value
+        .toLowerCase();
 
     const status =
-        document.getElementById("walletStatusFilter").value.toLowerCase();
+        document
+        .getElementById("walletStatusFilter")
+        .value
+        .toLowerCase();
 
     const cards =
-        document.querySelectorAll("#walletGrid .wallet-card");
+        document.querySelectorAll(
+            "#walletGrid .wallet-card"
+        );
 
     cards.forEach(function(card) {
-        const school = card.dataset.school || "";
-        const cardStatus = card.dataset.status || "";
+
+        const school =
+            card.dataset.school || "";
+
+        const cardStatus =
+            (card.dataset.status || "")
+            .trim();
 
         const matchesSearch =
             school.includes(search);
 
         const matchesStatus =
-            !status || cardStatus === status;
+            !status ||
+            cardStatus === status;
 
         card.style.display =
-            matchesSearch && matchesStatus ? "" : "none";
+            matchesSearch && matchesStatus
+            ? ""
+            : "none";
     });
 }
 
+
 function downloadCSV(filename, rows) {
-    const csvContent = rows.map(function(row) {
-        return row.map(function(value) {
-            const safeValue =
-                String(value == null ? "" : value)
-                .replace(/"/g, '""');
 
-            return '"' + safeValue + '"';
-        }).join(",");
-    }).join("\n");
+    const csvContent =
+        rows.map(function(row) {
 
-    const blob = new Blob(
-        [csvContent],
-        {type: "text/csv;charset=utf-8;"}
+            return row.map(function(value) {
+
+                const safeValue =
+                    String(
+                        value == null
+                        ? ""
+                        : value
+                    )
+                    .replace(/"/g, '""');
+
+                return '"' +
+                    safeValue +
+                    '"';
+
+            }).join(",");
+
+        }).join("\n");
+
+
+    const blob =
+        new Blob(
+            [csvContent],
+            {
+                type:
+                "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const link =
+        document.createElement("a");
+
+    const url =
+        URL.createObjectURL(blob);
+
+    link.setAttribute(
+        "href",
+        url
     );
 
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = "hidden";
+    link.setAttribute(
+        "download",
+        filename
+    );
 
     document.body.appendChild(link);
+
     link.click();
+
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
 }
 
+
 function exportProcurementsToCSV() {
+
     const rows = [
+
         [
             "Date",
-            "Supplier",
+            "Provider",
             "SMS Count",
             "Amount Paid",
             "Reference",
@@ -1744,6 +1964,7 @@ function exportProcurementsToCSV() {
         ]
 
         {% for procurement in procurements %}
+
         ,[
             "{{ procurement.purchase_date.strftime('%d-%m-%Y %H:%M') if procurement.purchase_date else '' }}",
             "{{ (procurement.supplier or '')|replace('\"', '\"\"') }}",
@@ -1753,17 +1974,23 @@ function exportProcurementsToCSV() {
             "{{ (procurement.purchased_by or '')|replace('\"', '\"\"') }}",
             "{{ procurement.status or '' }}"
         ]
+
         {% endfor %}
+
     ];
 
+
     downloadCSV(
-        "platform_sms_procurement.csv",
+        "mobitech_sms_procurement.csv",
         rows
     );
 }
 
+
 function exportWalletsToCSV() {
+
     const rows = [
+
         [
             "School",
             "SMS Balance",
@@ -1774,6 +2001,7 @@ function exportWalletsToCSV() {
         ]
 
         {% for row in school_wallet_rows %}
+
         ,[
             "{{ row.school_name|replace('\"', '\"\"') }}",
             "{{ row.balance or 0 }}",
@@ -1782,8 +2010,11 @@ function exportWalletsToCSV() {
             "{{ row.low_alert or 0 }}",
             "{{ 'Yes' if row.enabled else 'No' }}"
         ]
+
         {% endfor %}
+
     ];
+
 
     downloadCSV(
         "school_sms_wallets.csv",
