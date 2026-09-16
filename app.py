@@ -10623,7 +10623,7 @@ def announcements():
         rows=rows
     )
 
-@app.route("/sms_wallet", methods=["GET", "POST"])
+@app.route("/sms_wallet")
 def sms_wallet():
     if not login_required():
         return redirect(url_for("login"))
@@ -10635,7 +10635,7 @@ def sms_wallet():
     ):
         flash(
             "Only Director, Manager or Admin "
-            "can manage the SMS Wallet."
+            "can access the SMS Wallet."
         )
         return redirect(url_for("dashboard"))
 
@@ -10645,148 +10645,20 @@ def sms_wallet():
         flash("No school has been selected.")
         return redirect(url_for("dashboard"))
 
-    wallet = get_sms_wallet()
+    school = School.query.get(school_id)
 
-    if not wallet:
-        flash("SMS wallet could not be found.")
+    if not school:
+        flash("School was not found.")
         return redirect(url_for("dashboard"))
 
-    if request.method == "POST":
+    # =========================================================
+    # SCHOOL SMS WALLET
+    # =========================================================
+    wallet = get_sms_wallet()
 
-        action = request.form.get(
-            "action",
-            "load_sms"
-        )
-
-        # ==================================================
-        # RESET BALANCE
-        # ==================================================
-
-        if action == "reset_balance":
-
-            wallet.sms_balance = 0
-
-            db.session.commit()
-
-            save_audit(
-                "Reset SMS wallet balance to 0.",
-                "Communication"
-            )
-
-            flash("SMS balance reset to 0.")
-
-            return redirect(
-                url_for("sms_wallet")
-            )
-
-        # ==================================================
-        # LOAD SMS
-        # ==================================================
-
-        provider = request.form.get(
-            "provider",
-            "Other"
-        ).strip()
-
-        try:
-            sms_count = int(
-                request.form.get("sms_count") or 0
-            )
-        except (TypeError, ValueError):
-            sms_count = 0
-
-        try:
-            amount_paid = float(
-                request.form.get("amount_paid") or 0
-            )
-        except (TypeError, ValueError):
-            amount_paid = 0
-
-        reference_no = request.form.get(
-            "reference_no",
-            ""
-        ).strip()
-
-        purchase_date_raw = request.form.get(
-            "purchase_date",
-            ""
-        )
-
-        if sms_count <= 0:
-            flash("Enter a valid SMS quantity.")
-            return redirect(
-                url_for("sms_wallet")
-            )
-
-        purchase_date = date.today()
-
-        if purchase_date_raw:
-            try:
-                purchase_date = datetime.strptime(
-                    purchase_date_raw,
-                    "%Y-%m-%d"
-                ).date()
-
-            except ValueError:
-                flash("Invalid purchase date.")
-                return redirect(
-                    url_for("sms_wallet")
-                )
-
-        load = SMSLoad(
-            school_id=school_id,
-            provider=provider or "Other",
-            sms_count=sms_count,
-            amount_paid=amount_paid,
-            reference_no=reference_no,
-            purchase_date=purchase_date,
-            loaded_by=session.get(
-                "username",
-                ""
-            )
-        )
-
-        db.session.add(load)
-
-        wallet.sms_balance = (
-            int(wallet.sms_balance or 0)
-            + sms_count
-        )
-
-        wallet.sms_loaded = (
-            int(wallet.sms_loaded or 0)
-            + sms_count
-        )
-
-        wallet.last_loaded = datetime.now()
-
-        wallet.last_loaded_by = session.get(
-            "username",
-            ""
-        )
-
-        db.session.commit()
-
-        save_audit(
-            f"Loaded {sms_count} SMS from "
-            f"{provider}. "
-            f"Amount: KES {amount_paid:,.2f}. "
-            f"Reference: {reference_no}.",
-            "Communication"
-        )
-
-        flash(
-            f"{sms_count} SMS loaded successfully."
-        )
-
-        return redirect(
-            url_for("sms_wallet")
-        )
-
-    # ======================================================
+    # =========================================================
     # SMS STATISTICS
-    # ======================================================
-
+    # =========================================================
     pending_sms = SMSMessage.query.filter_by(
         school_id=school_id,
         status="Pending"
@@ -10802,25 +10674,98 @@ def sms_wallet():
         status="Failed"
     ).count()
 
-    # ======================================================
-    # RECENT WALLET LOADS
-    # ======================================================
+    # =========================================================
+    # SCHOOL PURCHASE HISTORY
+    # =========================================================
+    sms_purchases = (
+        SMSPurchase.query
+        .filter_by(
+            school_id=school_id
+        )
+        .order_by(
+            SMSPurchase.request_date.desc()
+        )
+        .limit(20)
+        .all()
+    )
 
-    sms_loads = SMSLoad.query.filter_by(
-        school_id=school_id
-    ).order_by(
-        SMSLoad.purchase_date.desc(),
-        SMSLoad.id.desc()
-    ).limit(20).all()
+    pending_purchases = (
+        SMSPurchase.query
+        .filter_by(
+            school_id=school_id,
+            status="Pending"
+        )
+        .count()
+    )
 
+    completed_purchases = (
+        SMSPurchase.query
+        .filter_by(
+            school_id=school_id,
+            status="Completed"
+        )
+        .count()
+    )
+
+    total_purchased = (
+        db.session.query(
+            db.func.coalesce(
+                db.func.sum(
+                    SMSPurchase.package_sms
+                ),
+                0
+            )
+        )
+        .filter(
+            SMSPurchase.school_id == school_id,
+            SMSPurchase.status == "Completed"
+        )
+        .scalar()
+    )
+
+    total_spent = (
+        db.session.query(
+            db.func.coalesce(
+                db.func.sum(
+                    SMSPurchase.amount
+                ),
+                0
+            )
+        )
+        .filter(
+            SMSPurchase.school_id == school_id,
+            SMSPurchase.status == "Completed"
+        )
+        .scalar()
+    )
+
+    # =========================================================
+    # PAGE
+    # =========================================================
     return render_template(
         "sms_wallet.html",
+
         settings=get_settings(),
+
+        school=school,
         wallet=wallet,
+
         pending_sms=pending_sms,
         sent_sms=sent_sms,
         failed_sms=failed_sms,
-        sms_loads=sms_loads,
+
+        sms_purchases=sms_purchases,
+        pending_purchases=pending_purchases,
+        completed_purchases=completed_purchases,
+
+        total_purchased=int(
+            total_purchased or 0
+        ),
+
+        total_spent=float(
+            total_spent or 0
+        ),
+
         today=date.today(),
         money=money
     )
