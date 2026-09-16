@@ -307,19 +307,61 @@ class PlatformSMSPool(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 class SMSProcurement(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "sms_procurement"
 
-    sms_count = db.Column(db.Integer, nullable=False)
-    amount_paid = db.Column(db.Float, default=0)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
-    supplier = db.Column(db.String(100), default="Africastalking")
-    reference_no = db.Column(db.String(100), default="")
+    # Number of SMS credits purchased by Super Admin
+    sms_count = db.Column(
+        db.Integer,
+        nullable=False
+    )
 
-    purchased_by = db.Column(db.String(100), default="")
-    purchase_date = db.Column(db.DateTime, default=datetime.now)
+    # Amount paid to the upstream SMS provider
+    amount_paid = db.Column(
+        db.Float,
+        default=0
+    )
 
-    status = db.Column(db.String(20), default="Completed")
+    # Upstream provider used by EduManage
+    supplier = db.Column(
+        db.String(100),
+        default="Mobitech"
+    )
 
+    # Provider payment / transaction reference
+    reference_no = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    # Super Admin username who recorded the purchase
+    purchased_by = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    # Date/time of procurement
+    purchase_date = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
+
+    # Completed / Pending / Cancelled / Failed
+    status = db.Column(
+        db.String(20),
+        default="Completed"
+    )
+
+    def __repr__(self):
+        return (
+            f"<SMSProcurement "
+            f"{self.sms_count} SMS "
+            f"from {self.supplier}>"
+        )
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), default=1)
@@ -11076,6 +11118,9 @@ def platform_sms():
     if not login_required():
         return redirect(url_for("login"))
 
+    # =========================================================
+    # SUPER ADMIN ONLY
+    # =========================================================
     if not role_allowed("super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
@@ -11083,7 +11128,7 @@ def platform_sms():
     pool = get_platform_sms_pool()
 
     # =========================================================
-    # RECORD SMS PROCURED FROM AFRICA'S TALKING
+    # RECORD SMS PROCURED FROM MOBITECH
     # =========================================================
     if request.method == "POST":
         try:
@@ -11095,25 +11140,34 @@ def platform_sms():
                 request.form.get("amount_paid") or 0
             )
 
-            supplier = request.form.get(
-                "supplier",
-                "Africa's Talking"
-            ).strip()
-
             reference_no = request.form.get(
                 "reference_no",
                 ""
             ).strip()
 
+            # Mobitech is the platform upstream provider
+            supplier = "Mobitech"
+
+            # -------------------------------------------------
+            # VALIDATION
+            # -------------------------------------------------
             if sms_count <= 0:
                 flash("Enter a valid SMS quantity.")
-                return redirect(url_for("platform_sms"))
+                return redirect(
+                    url_for("platform_sms")
+                )
 
             if amount_paid < 0:
-                flash("Amount paid cannot be negative.")
-                return redirect(url_for("platform_sms"))
+                flash(
+                    "Amount paid cannot be negative."
+                )
+                return redirect(
+                    url_for("platform_sms")
+                )
 
-            # Prevent accidentally recording the same receipt twice.
+            # -------------------------------------------------
+            # PREVENT DUPLICATE PROCUREMENT
+            # -------------------------------------------------
             if reference_no:
                 existing_procurement = (
                     SMSProcurement.query.filter_by(
@@ -11123,32 +11177,47 @@ def platform_sms():
 
                 if existing_procurement:
                     flash(
-                        "This procurement reference has already "
-                        "been recorded."
+                        "This Mobitech procurement "
+                        "reference has already been recorded."
                     )
-                    return redirect(url_for("platform_sms"))
 
+                    return redirect(
+                        url_for("platform_sms")
+                    )
+
+            # -------------------------------------------------
+            # CREATE PROCUREMENT RECORD
+            # -------------------------------------------------
             procurement = SMSProcurement(
                 sms_count=sms_count,
                 amount_paid=amount_paid,
-                supplier=supplier or "Africa's Talking",
+                supplier="Mobitech",
                 reference_no=reference_no,
-                purchased_by=session.get("username", ""),
+                purchased_by=session.get(
+                    "username",
+                    ""
+                ),
                 purchase_date=datetime.now(),
                 status="Completed"
             )
 
             db.session.add(procurement)
 
+            # -------------------------------------------------
+            # ADD SMS TO PLATFORM POOL
+            # -------------------------------------------------
             pool.sms_balance = (
-                pool.sms_balance or 0
-            ) + sms_count
+                int(pool.sms_balance or 0)
+                + sms_count
+            )
 
             pool.sms_loaded = (
-                pool.sms_loaded or 0
-            ) + sms_count
+                int(pool.sms_loaded or 0)
+                + sms_count
+            )
 
             pool.last_loaded = datetime.now()
+
             pool.last_loaded_by = session.get(
                 "username",
                 ""
@@ -11156,14 +11225,22 @@ def platform_sms():
 
             db.session.commit()
 
+            # -------------------------------------------------
+            # AUDIT
+            # -------------------------------------------------
             try:
                 save_audit(
-                    f"Procured {sms_count} SMS from "
-                    f"{supplier or 'Africa’s Talking'}. "
-                    f"Amount paid: KES {amount_paid:,.2f}. "
-                    f"Platform balance: {pool.sms_balance}.",
+                    f"Super Admin procured "
+                    f"{sms_count:,} SMS from Mobitech. "
+                    f"Amount paid: "
+                    f"KES {amount_paid:,.2f}. "
+                    f"Reference: "
+                    f"{reference_no or 'N/A'}. "
+                    f"Platform SMS balance: "
+                    f"{pool.sms_balance:,}.",
                     "Communication"
                 )
+
             except Exception as audit_error:
                 print(
                     "SMS PROCUREMENT AUDIT ERROR:",
@@ -11172,13 +11249,18 @@ def platform_sms():
                 )
 
             flash(
-                f"{sms_count:,} SMS were added to the "
-                f"platform pool successfully."
+                f"{sms_count:,} Mobitech SMS "
+                f"successfully added to the "
+                f"EduManage Platform SMS Pool."
             )
 
         except (TypeError, ValueError):
             db.session.rollback()
-            flash("Enter valid SMS quantity and amount values.")
+
+            flash(
+                "Enter valid SMS quantity "
+                "and amount values."
+            )
 
         except Exception as e:
             db.session.rollback()
@@ -11191,10 +11273,12 @@ def platform_sms():
 
             flash(
                 "SMS procurement could not be recorded. "
-                "No platform balance was changed."
+                "The Platform SMS Pool was not changed."
             )
 
-        return redirect(url_for("platform_sms"))
+        return redirect(
+            url_for("platform_sms")
+        )
 
     # =========================================================
     # PLATFORM AND SCHOOL INFORMATION
@@ -11210,6 +11294,9 @@ def platform_sms():
         for school in schools
     }
 
+    # =========================================================
+    # SCHOOL SMS WALLETS
+    # =========================================================
     wallets = SMSWallet.query.order_by(
         SMSWallet.school_id.asc()
     ).all()
@@ -11237,27 +11324,35 @@ def platform_sms():
     school_wallet_rows = []
 
     for school in schools:
-        wallet = wallet_by_school.get(school.id)
+        wallet = wallet_by_school.get(
+            school.id
+        )
 
         school_wallet_rows.append({
             "school_id": school.id,
+
             "school_name": school.school_name,
+
             "balance": (
                 wallet.sms_balance
                 if wallet else 0
             ),
+
             "loaded": (
                 wallet.sms_loaded
                 if wallet else 0
             ),
+
             "used": (
                 wallet.sms_used
                 if wallet else 0
             ),
+
             "low_alert": (
                 wallet.sms_low_alert
                 if wallet else 100
             ),
+
             "enabled": (
                 wallet.sms_enabled
                 if wallet else False
@@ -11265,75 +11360,104 @@ def platform_sms():
         })
 
     # =========================================================
-    # SCHOOL PURCHASE REQUESTS
+    # SCHOOL SMS PURCHASE REQUESTS
     # =========================================================
-    pending_purchases = SMSPurchase.query.filter_by(
-        status="Pending"
-    ).order_by(
-        SMSPurchase.request_date.desc()
-    ).all()
+    pending_purchases = (
+        SMSPurchase.query.filter_by(
+            status="Pending"
+        )
+        .order_by(
+            SMSPurchase.request_date.desc()
+        )
+        .all()
+    )
 
-    completed_purchases = SMSPurchase.query.filter_by(
-        status="Completed"
-    ).order_by(
-        SMSPurchase.paid_at.desc()
-    ).limit(20).all()
+    completed_purchases = (
+        SMSPurchase.query.filter_by(
+            status="Completed"
+        )
+        .order_by(
+            SMSPurchase.paid_at.desc()
+        )
+        .limit(20)
+        .all()
+    )
 
-    pending_purchase_count = len(pending_purchases)
+    pending_purchase_count = len(
+        pending_purchases
+    )
 
     pending_sms_requested = sum(
         purchase.package_sms or 0
         for purchase in pending_purchases
     )
 
-    total_sms_sold = sum(
-        purchase.package_sms or 0
-        for purchase in SMSPurchase.query.filter_by(
+    # =========================================================
+    # SMS SALES
+    # =========================================================
+    completed_sales = (
+        SMSPurchase.query.filter_by(
             status="Completed"
         ).all()
+    )
+
+    total_sms_sold = sum(
+        purchase.package_sms or 0
+        for purchase in completed_sales
     )
 
     total_sales_revenue = sum(
         purchase.amount or 0
-        for purchase in SMSPurchase.query.filter_by(
-            status="Completed"
-        ).all()
+        for purchase in completed_sales
     )
 
     # =========================================================
-    # PROCUREMENT INFORMATION
+    # MOBITECH PROCUREMENT HISTORY
     # =========================================================
-    all_procurements = SMSProcurement.query.order_by(
-        SMSProcurement.purchase_date.desc()
-    ).all()
+    all_procurements = (
+        SMSProcurement.query
+        .order_by(
+            SMSProcurement.purchase_date.desc()
+        )
+        .all()
+    )
 
     procurements = all_procurements[:20]
 
-    total_procured_sms = sum(
-        procurement.sms_count or 0
+    completed_procurements = [
+        procurement
         for procurement in all_procurements
         if procurement.status == "Completed"
+    ]
+
+    total_procured_sms = sum(
+        procurement.sms_count or 0
+        for procurement in completed_procurements
     )
 
     total_procurement_cost = sum(
         procurement.amount_paid or 0
-        for procurement in all_procurements
-        if procurement.status == "Completed"
+        for procurement in completed_procurements
     )
 
+    # =========================================================
+    # SMS BUSINESS PERFORMANCE
+    # =========================================================
     gross_sms_profit = (
         total_sales_revenue
         - total_procurement_cost
     )
 
     average_procurement_cost = (
-        total_procurement_cost / total_procured_sms
+        total_procurement_cost
+        / total_procured_sms
         if total_procured_sms > 0
         else 0
     )
 
     average_selling_price = (
-        total_sales_revenue / total_sms_sold
+        total_sales_revenue
+        / total_sms_sold
         if total_sms_sold > 0
         else 0
     )
@@ -11341,42 +11465,57 @@ def platform_sms():
     # =========================================================
     # SMS OUTBOX STATISTICS
     # =========================================================
-    sent_sms_count = SMSMessage.query.filter_by(
-        status="Sent"
-    ).count()
+    sent_sms_count = (
+        SMSMessage.query.filter_by(
+            status="Sent"
+        ).count()
+    )
 
-    pending_sms_count = SMSMessage.query.filter_by(
-        status="Pending"
-    ).count()
+    pending_sms_count = (
+        SMSMessage.query.filter_by(
+            status="Pending"
+        ).count()
+    )
 
-    failed_sms_count = SMSMessage.query.filter_by(
-        status="Failed"
-    ).count()
+    failed_sms_count = (
+        SMSMessage.query.filter_by(
+            status="Failed"
+        ).count()
+    )
 
     today_start = datetime.combine(
         date.today(),
         datetime.min.time()
     )
 
-    today_sms_count = SMSMessage.query.filter(
-        SMSMessage.created_at >= today_start
-    ).count()
+    today_sms_count = (
+        SMSMessage.query.filter(
+            SMSMessage.created_at >= today_start
+        ).count()
+    )
 
-    today_sent_count = SMSMessage.query.filter(
-        SMSMessage.created_at >= today_start,
-        SMSMessage.status == "Sent"
-    ).count()
+    today_sent_count = (
+        SMSMessage.query.filter(
+            SMSMessage.created_at >= today_start,
+            SMSMessage.status == "Sent"
+        ).count()
+    )
 
-    recent_sms_messages = SMSMessage.query.order_by(
-        SMSMessage.created_at.desc()
-    ).limit(15).all()
+    recent_sms_messages = (
+        SMSMessage.query
+        .order_by(
+            SMSMessage.created_at.desc()
+        )
+        .limit(15)
+        .all()
+    )
 
     # =========================================================
     # LOW BALANCE INFORMATION
     # =========================================================
     low_balance = (
-        (pool.sms_balance or 0)
-        <= (pool.low_alert_level or 0)
+        int(pool.sms_balance or 0)
+        <= int(pool.low_alert_level or 0)
     )
 
     low_wallet_schools = [
@@ -11384,7 +11523,8 @@ def platform_sms():
         for row in school_wallet_rows
         if (
             row["enabled"]
-            and row["balance"] <= row["low_alert"]
+            and row["balance"]
+            <= row["low_alert"]
         )
     ]
 
@@ -11393,35 +11533,44 @@ def platform_sms():
     # =========================================================
     return render_template(
         "platform_sms.html",
+
         settings=get_settings(),
 
+        # Platform pool
         pool=pool,
         low_balance=low_balance,
 
+        # Schools
         total_schools=total_schools,
         schools_using_sms=schools_using_sms,
         schools_not_using_sms=schools_not_using_sms,
 
         schools=schools,
         schools_dict=schools_dict,
+
+        # School wallets
         school_wallet_rows=school_wallet_rows,
         low_wallet_schools=low_wallet_schools,
 
+        # Purchases
         pending_purchases=pending_purchases,
         completed_purchases=completed_purchases,
         pending_purchase_count=pending_purchase_count,
         pending_sms_requested=pending_sms_requested,
 
+        # Procurement
         procurements=procurements,
         total_procured_sms=total_procured_sms,
         total_procurement_cost=total_procurement_cost,
 
+        # SMS business
         total_sms_sold=total_sms_sold,
         total_sales_revenue=total_sales_revenue,
         gross_sms_profit=gross_sms_profit,
         average_procurement_cost=average_procurement_cost,
         average_selling_price=average_selling_price,
 
+        # Messaging
         sent_sms_count=sent_sms_count,
         pending_sms_count=pending_sms_count,
         failed_sms_count=failed_sms_count,
@@ -11432,6 +11581,237 @@ def platform_sms():
         money=money
     )
 
+@app.route("/buy_sms", methods=["GET", "POST"])
+def buy_sms():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    # =========================================================
+    # SCHOOL MANAGEMENT ONLY
+    # =========================================================
+    if not role_allowed(
+        "director",
+        "manager",
+        "admin"
+    ):
+        flash(
+            "Only Director, Manager or Admin "
+            "can purchase SMS credits."
+        )
+        return redirect(url_for("dashboard"))
+
+    school_id = current_school_id()
+
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
+    school = School.query.get(school_id)
+
+    if not school:
+        flash("School was not found.")
+        return redirect(url_for("dashboard"))
+
+    wallet = get_sms_wallet()
+
+    # =========================================================
+    # SMS PACKAGES
+    # =========================================================
+    packages = [
+        {
+            "sms": 100,
+            "price": 70
+        },
+        {
+            "sms": 500,
+            "price": 350
+        },
+        {
+            "sms": 1000,
+            "price": 700
+        },
+        {
+            "sms": 2500,
+            "price": 1750
+        },
+        {
+            "sms": 5000,
+            "price": 3500
+        },
+        {
+            "sms": 10000,
+            "price": 7000
+        }
+    ]
+
+    # =========================================================
+    # CREATE PURCHASE REQUEST
+    # =========================================================
+    if request.method == "POST":
+
+        try:
+            package_sms = int(
+                request.form.get(
+                    "package_sms"
+                ) or 0
+            )
+
+        except (TypeError, ValueError):
+            package_sms = 0
+
+        # -----------------------------------------------------
+        # VERIFY PACKAGE SERVER-SIDE
+        # -----------------------------------------------------
+        selected_package = next(
+            (
+                package
+                for package in packages
+                if package["sms"] == package_sms
+            ),
+            None
+        )
+
+        if not selected_package:
+            flash(
+                "Please select a valid SMS package."
+            )
+
+            return redirect(
+                url_for("buy_sms")
+            )
+
+        amount = float(
+            selected_package["price"]
+        )
+
+        # -----------------------------------------------------
+        # PREVENT ACCIDENTAL DUPLICATE PENDING REQUEST
+        # -----------------------------------------------------
+        existing_pending = (
+            SMSPurchase.query.filter_by(
+                school_id=school_id,
+                package_sms=package_sms,
+                status="Pending"
+            ).first()
+        )
+
+        if existing_pending:
+            flash(
+                "You already have a pending request "
+                f"for {package_sms:,} SMS. "
+                "Please wait for Super Admin approval."
+            )
+
+            return redirect(
+                url_for("buy_sms")
+            )
+
+        # -----------------------------------------------------
+        # CREATE REQUEST
+        # -----------------------------------------------------
+        purchase = SMSPurchase(
+            school_id=school_id,
+            package_sms=package_sms,
+            amount=amount,
+            requested_by=session.get(
+                "username",
+                ""
+            ),
+            request_date=datetime.now(),
+            status="Pending"
+        )
+
+        db.session.add(purchase)
+
+        try:
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+
+            print(
+                "SMS PURCHASE REQUEST ERROR:",
+                str(e),
+                flush=True
+            )
+
+            flash(
+                "SMS purchase request could not "
+                "be submitted."
+            )
+
+            return redirect(
+                url_for("buy_sms")
+            )
+
+        # -----------------------------------------------------
+        # AUDIT
+        # -----------------------------------------------------
+        try:
+            save_audit(
+                f"Requested {package_sms:,} SMS "
+                f"from EduManage Platform. "
+                f"Amount: KES {amount:,.2f}. "
+                f"Purchase ID: {purchase.id}.",
+                "Communication"
+            )
+
+        except Exception as audit_error:
+            print(
+                "SMS PURCHASE REQUEST AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
+
+        flash(
+            f"Your request for {package_sms:,} SMS "
+            f"has been submitted to Super Admin "
+            f"for approval."
+        )
+
+        return redirect(
+            url_for("buy_sms")
+        )
+
+    # =========================================================
+    # PURCHASE HISTORY
+    # =========================================================
+    purchases = (
+        SMSPurchase.query.filter_by(
+            school_id=school_id
+        )
+        .order_by(
+            SMSPurchase.request_date.desc()
+        )
+        .limit(30)
+        .all()
+    )
+
+    pending_count = (
+        SMSPurchase.query.filter_by(
+            school_id=school_id,
+            status="Pending"
+        ).count()
+    )
+
+    completed_count = (
+        SMSPurchase.query.filter_by(
+            school_id=school_id,
+            status="Completed"
+        ).count()
+    )
+
+    return render_template(
+        "buy_sms.html",
+        settings=get_settings(),
+        school=school,
+        wallet=wallet,
+        packages=packages,
+        purchases=purchases,
+        pending_count=pending_count,
+        completed_count=completed_count,
+        money=money
+    )
 
 @app.route(
     "/approve_sms_purchase/<int:purchase_id>",
@@ -11441,35 +11821,64 @@ def approve_sms_purchase(purchase_id):
     if not login_required():
         return redirect(url_for("login"))
 
+    # =========================================================
+    # SUPER ADMIN ONLY
+    # =========================================================
     if not role_allowed("super admin"):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     try:
+        # =====================================================
+        # LOCK PURCHASE
+        # =====================================================
         purchase = (
             db.session.query(SMSPurchase)
-            .filter(SMSPurchase.id == purchase_id)
+            .filter(
+                SMSPurchase.id == purchase_id
+            )
             .with_for_update()
             .first()
         )
 
         if not purchase:
-            flash("SMS purchase request was not found.")
-            return redirect(url_for("platform_sms"))
+            flash(
+                "SMS purchase request was not found."
+            )
+            return redirect(
+                url_for("platform_sms")
+            )
 
+        # =====================================================
+        # PURCHASE MUST STILL BE PENDING
+        # =====================================================
         if purchase.status != "Pending":
             flash(
-                f"This purchase cannot be approved because its "
-                f"current status is {purchase.status}."
+                f"This SMS purchase cannot be approved "
+                f"because its current status is "
+                f"{purchase.status}."
             )
-            return redirect(url_for("platform_sms"))
 
-        quantity = int(purchase.package_sms or 0)
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        quantity = int(
+            purchase.package_sms or 0
+        )
 
         if quantity <= 0:
-            flash("Invalid SMS purchase quantity.")
-            return redirect(url_for("platform_sms"))
+            flash(
+                "Invalid SMS purchase quantity."
+            )
 
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        # =====================================================
+        # PREVENT DOUBLE CREDITING
+        # =====================================================
         existing_transaction = (
             SMSTransaction.query.filter_by(
                 purchase_id=purchase.id
@@ -11478,38 +11887,75 @@ def approve_sms_purchase(purchase_id):
 
         if existing_transaction:
             flash(
-                "This SMS purchase has already been credited. "
-                "The school wallet was not credited again."
+                "This SMS purchase has already been "
+                "credited to the school. "
+                "No additional SMS were added."
             )
-            return redirect(url_for("platform_sms"))
 
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        # =====================================================
+        # LOCK PLATFORM SMS POOL
+        # =====================================================
         pool = (
-            db.session.query(PlatformSMSPool)
-            .order_by(PlatformSMSPool.id.asc())
+            db.session.query(
+                PlatformSMSPool
+            )
+            .order_by(
+                PlatformSMSPool.id.asc()
+            )
             .with_for_update()
             .first()
         )
 
         if not pool:
-            flash("Platform SMS pool has not been created.")
-            return redirect(url_for("platform_sms"))
-
-        if (pool.sms_balance or 0) < quantity:
             flash(
-                "Not enough SMS in the platform pool. "
-                "Please procure and load more SMS first."
+                "Platform SMS Pool has not been created."
             )
-            return redirect(url_for("platform_sms"))
 
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        platform_balance = int(
+            pool.sms_balance or 0
+        )
+
+        # =====================================================
+        # CHECK PLATFORM STOCK
+        # =====================================================
+        if platform_balance < quantity:
+            flash(
+                f"Insufficient Platform SMS balance. "
+                f"School requested {quantity:,} SMS, "
+                f"but only {platform_balance:,} SMS "
+                f"are currently available."
+            )
+
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        # =====================================================
+        # LOCK SCHOOL WALLET
+        # =====================================================
         wallet = (
-            db.session.query(SMSWallet)
+            db.session.query(
+                SMSWallet
+            )
             .filter(
-                SMSWallet.school_id == purchase.school_id
+                SMSWallet.school_id
+                == purchase.school_id
             )
             .with_for_update()
             .first()
         )
 
+        # =====================================================
+        # CREATE WALLET IF SCHOOL DOES NOT HAVE ONE
+        # =====================================================
         if not wallet:
             wallet = SMSWallet(
                 school_id=purchase.school_id,
@@ -11523,51 +11969,84 @@ def approve_sms_purchase(purchase_id):
             db.session.add(wallet)
             db.session.flush()
 
+        # =====================================================
+        # PLATFORM POOL - SCHOOL PURCHASE
+        # =====================================================
         pool.sms_balance = (
-            pool.sms_balance or 0
-        ) - quantity
-
-        pool.sms_sold = (
-            pool.sms_sold or 0
-        ) + quantity
-
-        wallet.sms_balance = (
-            wallet.sms_balance or 0
-        ) + quantity
-
-        wallet.sms_loaded = (
-            wallet.sms_loaded or 0
-        ) + quantity
-
-        wallet.last_loaded = datetime.now()
-        wallet.last_loaded_by = session.get(
-            "username",
-            ""
+            int(pool.sms_balance or 0)
+            - quantity
         )
 
+        pool.sms_sold = (
+            int(pool.sms_sold or 0)
+            + quantity
+        )
+
+        # =====================================================
+        # CREDIT SCHOOL WALLET
+        # =====================================================
+        wallet.sms_balance = (
+            int(wallet.sms_balance or 0)
+            + quantity
+        )
+
+        wallet.sms_loaded = (
+            int(wallet.sms_loaded or 0)
+            + quantity
+        )
+
+        wallet.last_loaded = datetime.now()
+
+        wallet.last_loaded_by = (
+            session.get("username", "")
+        )
+
+        # =====================================================
+        # COMPLETE PURCHASE
+        # =====================================================
         purchase.status = "Completed"
         purchase.paid_at = datetime.now()
 
+        # =====================================================
+        # PERMANENT TRANSACTION RECORD
+        # =====================================================
         transaction = SMSTransaction(
             purchase_id=purchase.id,
             school_id=purchase.school_id,
             sms_count=quantity,
-            amount=purchase.amount or 0,
-            purchased_by=purchase.requested_by or "",
+            amount=float(
+                purchase.amount or 0
+            ),
+            purchased_by=(
+                purchase.requested_by or ""
+            ),
             status="Completed"
         )
 
         db.session.add(transaction)
+
+        # =====================================================
+        # COMMIT EVERYTHING TOGETHER
+        # =====================================================
         db.session.commit()
 
+        # =====================================================
+        # AUDIT
+        # =====================================================
         try:
             save_audit(
-                f"Approved SMS purchase ID {purchase.id}: "
-                f"{quantity} SMS credited to school ID "
-                f"{purchase.school_id}. Platform balance now "
-                f"{pool.sms_balance}.",
+                f"Super Admin approved SMS purchase "
+                f"ID {purchase.id}. "
+                f"{quantity:,} SMS transferred from "
+                f"Platform SMS Pool to school ID "
+                f"{purchase.school_id}. "
+                f"Platform balance: "
+                f"{pool.sms_balance:,}. "
+                f"School wallet balance: "
+                f"{wallet.sms_balance:,}.",
                 "Communication"
             )
+
         except Exception as audit_error:
             print(
                 "SMS APPROVAL AUDIT ERROR:",
@@ -11577,7 +12056,8 @@ def approve_sms_purchase(purchase_id):
 
         flash(
             f"SMS purchase approved successfully. "
-            f"{quantity} SMS were credited to the school."
+            f"{quantity:,} SMS were transferred "
+            f"to the school's SMS Wallet."
         )
 
     except Exception as e:
@@ -11591,10 +12071,13 @@ def approve_sms_purchase(purchase_id):
 
         flash(
             "The SMS purchase could not be approved. "
-            "No SMS balance was changed."
+            "No Platform or School SMS balance "
+            "was changed."
         )
 
-    return redirect(url_for("platform_sms"))
+    return redirect(
+        url_for("platform_sms")
+    )
 @app.route("/staff_dashboard")
 def staff_dashboard():
     if not login_required():
