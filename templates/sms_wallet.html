@@ -1,282 +1,585 @@
 {% extends "base.html" %}
+
+{% block title %}SMS Wallet{% endblock %}
+
 {% block content %}
 
 <style>
-.wallet-header{
-    background:white;
-    border-radius:18px;
-    padding:24px;
-    margin-bottom:20px;
-    box-shadow:0 6px 18px rgba(15,23,42,.06);
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.wallet-header h2{
-    margin:0;
-    color:#0f172a;
-}
-
-.wallet-header p{
-    margin:5px 0 0;
-    color:#64748b;
-}
-
-.wallet-actions{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-.stats-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:16px;
-    margin-bottom:20px;
-}
-
-.stat-card{
-    background:white;
-    border-radius:16px;
-    padding:20px;
-    box-shadow:0 6px 18px rgba(15,23,42,.06);
-}
-
-.stat-card small{
-    color:#64748b;
-    font-weight:bold;
-}
-
-.stat-card h2{
-    margin:10px 0 0;
-    font-size:30px;
-    color:#0f172a;
-}
-
-.form-panel,
-.history-panel{
-    background:white;
-    border-radius:18px;
-    padding:24px;
-    margin-bottom:20px;
-    box-shadow:0 6px 18px rgba(15,23,42,.06);
-}
-
-.form-panel h3,
-.history-panel h3{
-    margin-top:0;
-    color:#0f172a;
-}
-
-.reset-box{
-    background:#fff1f2;
-    border:1px solid #fecdd3;
-    padding:14px;
-    border-radius:12px;
-    margin-top:15px;
-}
-
-.reset-box p{
-    margin:0 0 10px;
-    color:#991b1b;
-    font-weight:bold;
-}
-
-.btn-danger{
-    background:#dc2626;
-    color:white;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th{
-    background:#f8fafc;
-}
-
-th,td{
-    padding:12px;
-    border-bottom:1px solid #e5e7eb;
-    text-align:left;
-}
-
-@media(max-width:900px){
-    .wallet-header{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:15px;
+    .wallet-page {
+        max-width: 1400px;
+        margin: 0 auto;
     }
-}
+
+    .wallet-header {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: white;
+        border-radius: 18px;
+        padding: 24px;
+        margin-bottom: 20px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .wallet-header h2 {
+        margin: 0 0 5px 0;
+        font-weight: 800;
+    }
+
+    .wallet-header p {
+        margin: 0;
+        opacity: .85;
+    }
+
+    .buy-sms-btn {
+        display: inline-block;
+        background: white;
+        color: #1d4ed8;
+        padding: 11px 18px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .buy-sms-btn:hover {
+        background: #eff6ff;
+        color: #1e40af;
+    }
+
+    .wallet-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .wallet-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 15px;
+        padding: 18px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .05);
+    }
+
+    .wallet-label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .wallet-value {
+        font-size: 28px;
+        font-weight: 900;
+        color: #0f172a;
+        margin-top: 6px;
+    }
+
+    .wallet-sub {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .balance-card {
+        border: 2px solid #bfdbfe;
+    }
+
+    .balance-card .wallet-value {
+        color: #1d4ed8;
+    }
+
+    .section-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .04);
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+
+    .section-subtitle {
+        color: #64748b;
+        font-size: 13px;
+        margin-bottom: 17px;
+    }
+
+    .sms-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    .sms-stat {
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .sms-stat-label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .sms-stat-value {
+        font-size: 23px;
+        font-weight: 900;
+        margin-top: 4px;
+        color: #0f172a;
+    }
+
+    .low-balance {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        padding: 13px 15px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        font-size: 13px;
+    }
+
+    .pending-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+        padding: 13px 15px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        font-size: 13px;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #475569;
+        text-align: left;
+        font-size: 12px;
+        text-transform: uppercase;
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    td {
+        padding: 13px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        font-size: 14px;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-completed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-cancelled,
+    .status-failed {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 28px;
+        color: #64748b;
+    }
+
+    .wallet-note {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 14px 16px;
+        color: #1e40af;
+        font-size: 13px;
+        margin-top: 16px;
+    }
+
+    @media (max-width: 1000px) {
+        .wallet-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 700px) {
+        .wallet-grid,
+        .sms-stats {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
-<div class="wallet-header">
 
-    <div>
-        <h2>📱 SMS Wallet</h2>
-        <p>Manage SMS balance and communication services for {{ settings.school_name }}</p>
+<div class="wallet-page">
+
+    <!-- ============================================== -->
+    <!-- HEADER -->
+    <!-- ============================================== -->
+
+    <div class="wallet-header">
+
+        <div>
+            <h2>SMS Wallet</h2>
+
+            <p>
+                {{ school.school_name }}
+                · EduManage SMS Credits
+            </p>
+        </div>
+
+        <a
+            href="{{ url_for('buy_sms') }}"
+            class="buy-sms-btn"
+        >
+            Buy SMS Credits
+        </a>
+
     </div>
 
-    <div class="wallet-actions">
-        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
-        <a class="btn" href="{{ url_for('sms_messages') }}">SMS Messages</a>
-        <a class="btn green" href="{{ url_for('bulk_sms') }}">Bulk SMS</a>
-    </div>
 
-</div>
+    <!-- ============================================== -->
+    <!-- LOW BALANCE WARNING -->
+    <!-- ============================================== -->
 
-<div class="stats-grid">
+    {% if (wallet.sms_balance or 0) <= (wallet.sms_low_alert or 100) %}
 
-    <div class="stat-card">
-        <small>Available SMS</small>
-        <h2>{{ wallet.sms_balance }}</h2>
-    </div>
+        <div class="low-balance">
+            <strong>Low SMS balance.</strong>
+            Your school currently has
+            {{ "{:,}".format(wallet.sms_balance or 0) }}
+            SMS credits remaining.
+            Consider purchasing additional credits.
+        </div>
 
-    <div class="stat-card">
-        <small>SMS Used</small>
-        <h2>{{ wallet.sms_used }}</h2>
-    </div>
+    {% endif %}
 
-    <div class="stat-card">
-        <small>SMS Loaded</small>
-        <h2>{{ wallet.sms_loaded }}</h2>
-    </div>
 
-    <div class="stat-card">
-        <small>Pending SMS</small>
-        <h2>{{ pending_sms }}</h2>
-    </div>
+    <!-- ============================================== -->
+    <!-- PENDING PURCHASE WARNING -->
+    <!-- ============================================== -->
 
-    <div class="stat-card">
-        <small>Sent SMS</small>
-        <h2>{{ sent_sms }}</h2>
-    </div>
+    {% if pending_purchases > 0 %}
 
-    <div class="stat-card">
-        <small>Failed SMS</small>
-        <h2>{{ failed_sms }}</h2>
-    </div>
+        <div class="pending-box">
+            <strong>
+                {{ pending_purchases }}
+                SMS purchase request{% if pending_purchases != 1 %}s{% endif %}
+                pending.
+            </strong>
 
-</div>
+            Waiting for EduManage Super Admin approval.
+        </div>
 
-<div class="form-panel">
+    {% endif %}
 
-    <h3>➕ Load SMS Credits</h3>
 
-    <form method="post">
+    <!-- ============================================== -->
+    <!-- WALLET SUMMARY -->
+    <!-- ============================================== -->
 
-        <div class="three">
+    <div class="wallet-grid">
 
-            <div>
-                <label>Provider</label>
-                <select name="provider" required>
-                    <option>Africa's Talking</option>
-                    <option>Safaricom Bulk SMS</option>
-                    <option>Advanta Africa</option>
-                    <option>HostPinnacle</option>
-                    <option>Mobitelea</option>
-                    <option>Other</option>
-                </select>
+        <div class="wallet-card balance-card">
+
+            <div class="wallet-label">
+                Available SMS
             </div>
 
-            <div>
-                <label>SMS Purchased</label>
-                <input type="number"
-                       name="sms_count"
-                       min="1"
-                       required
-                       placeholder="5000">
+            <div class="wallet-value">
+                {{ "{:,}".format(wallet.sms_balance or 0) }}
             </div>
 
-            <div>
-                <label>Amount Paid (KES)</label>
-                <input type="number"
-                       name="amount_paid"
-                       step="0.01"
-                       placeholder="5000">
+            <div class="wallet-sub">
+                Current wallet balance
             </div>
 
         </div>
 
-        <div class="two">
 
-            <div>
-                <label>Reference Number</label>
-                <input name="reference_no"
-                       placeholder="Receipt / Transaction No">
+        <div class="wallet-card">
+
+            <div class="wallet-label">
+                Total Purchased
             </div>
 
-            <div>
-                <label>Purchase Date</label>
-                <input type="date"
-                       name="purchase_date"
-                       value="{{ today }}">
+            <div class="wallet-value">
+                {{ "{:,}".format(total_purchased or 0) }}
+            </div>
+
+            <div class="wallet-sub">
+                Approved SMS purchases
             </div>
 
         </div>
 
-        <button class="btn green" type="submit">
-            Load SMS Credits
-        </button>
 
-    </form>
+        <div class="wallet-card">
 
-    <div class="reset-box">
+            <div class="wallet-label">
+                SMS Used
+            </div>
 
-        <p>⚠ Reset SMS Balance (Use only if wrong balance was entered)</p>
+            <div class="wallet-value">
+                {{ "{:,}".format(wallet.sms_used or 0) }}
+            </div>
 
-        <form method="post"
-              onsubmit="return confirm('Reset SMS balance to 0?')">
+            <div class="wallet-sub">
+                SMS consumed
+            </div>
 
-            <input type="hidden"
-                   name="action"
-                   value="reset_balance">
+        </div>
 
-            <button class="btn btn-danger">
-                Reset Wrong SMS Balance
-            </button>
 
-        </form>
+        <div class="wallet-card">
+
+            <div class="wallet-label">
+                Total Spent
+            </div>
+
+            <div class="wallet-value">
+                KES {{ "{:,.0f}".format(total_spent or 0) }}
+            </div>
+
+            <div class="wallet-sub">
+                Completed purchases
+            </div>
+
+        </div>
 
     </div>
 
-</div>
 
-<div class="history-panel">
+    <!-- ============================================== -->
+    <!-- SMS ACTIVITY -->
+    <!-- ============================================== -->
 
-    <h3>📜 SMS Loading History</h3>
+    <div class="section-card">
 
-    <table>
+        <div class="section-title">
+            SMS Activity
+        </div>
 
-        <tr>
-            <th>Date</th>
-            <th>Provider</th>
-            <th>SMS</th>
-            <th>Amount</th>
-            <th>Reference</th>
-            <th>Loaded By</th>
-        </tr>
+        <div class="section-subtitle">
+            Current SMS message activity for this school.
+        </div>
 
-        {% for r in sms_loads %}
-        <tr>
-            <td>{{ r.purchase_date }}</td>
-            <td>{{ r.provider }}</td>
-            <td>{{ "{:,}".format(r.sms_count) }}</td>
-            <td>{{ money(r.amount_paid) }}</td>
-            <td>{{ r.reference_no or "-" }}</td>
-            <td>{{ r.loaded_by }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6">
-                No SMS loading history found.
-            </td>
-        </tr>
-        {% endfor %}
 
-    </table>
+        <div class="sms-stats">
+
+            <div class="sms-stat">
+
+                <div class="sms-stat-label">
+                    Pending SMS
+                </div>
+
+                <div class="sms-stat-value">
+                    {{ pending_sms }}
+                </div>
+
+            </div>
+
+
+            <div class="sms-stat">
+
+                <div class="sms-stat-label">
+                    Sent SMS
+                </div>
+
+                <div class="sms-stat-value">
+                    {{ sent_sms }}
+                </div>
+
+            </div>
+
+
+            <div class="sms-stat">
+
+                <div class="sms-stat-label">
+                    Failed SMS
+                </div>
+
+                <div class="sms-stat-value">
+                    {{ failed_sms }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="wallet-note">
+            SMS credits can only be added to this wallet
+            through an approved EduManage SMS purchase.
+            Schools cannot manually modify their SMS balance.
+        </div>
+
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- PURCHASE HISTORY -->
+    <!-- ============================================== -->
+
+    <div class="section-card">
+
+        <div class="section-title">
+            Purchase History
+        </div>
+
+        <div class="section-subtitle">
+            Recent SMS credit requests and completed purchases.
+        </div>
+
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>SMS Credits</th>
+                        <th>Amount</th>
+                        <th>Requested By</th>
+                        <th>Status</th>
+                        <th>Approved</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for purchase in sms_purchases %}
+
+                        <tr>
+
+                            <td>
+                                {% if purchase.request_date %}
+                                    {{
+                                        purchase.request_date.strftime(
+                                            "%d %b %Y %H:%M"
+                                        )
+                                    }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+
+
+                            <td>
+                                <strong>
+                                    {{
+                                        "{:,}".format(
+                                            purchase.package_sms or 0
+                                        )
+                                    }}
+                                </strong>
+                            </td>
+
+
+                            <td>
+                                KES
+                                {{
+                                    "{:,.2f}".format(
+                                        purchase.amount or 0
+                                    )
+                                }}
+                            </td>
+
+
+                            <td>
+                                {{ purchase.requested_by or "-" }}
+                            </td>
+
+
+                            <td>
+
+                                {% set purchase_status =
+                                    (purchase.status or "Pending")|lower
+                                %}
+
+                                <span
+                                    class="
+                                        status
+                                        status-{{ purchase_status }}
+                                    "
+                                >
+                                    {{ purchase.status or "Pending" }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if purchase.paid_at %}
+
+                                    {{
+                                        purchase.paid_at.strftime(
+                                            "%d %b %Y %H:%M"
+                                        )
+                                    }}
+
+                                {% else %}
+
+                                    -
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% else %}
+
+                        <tr>
+                            <td
+                                colspan="6"
+                                class="empty-state"
+                            >
+                                No SMS purchases recorded yet.
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
 
 </div>
 
