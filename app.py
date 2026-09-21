@@ -1983,40 +1983,6 @@ def get_sms_wallet():
 
     return wallet
 
-def charge_sms_wallet(sms_count=1):
-    wallet = get_sms_wallet()
-
-    if not wallet:
-        return False, "SMS wallet was not found."
-
-    if not wallet.sms_enabled:
-        return False, "SMS service is disabled for this school."
-
-    sms_count = int(sms_count or 0)
-
-    if sms_count <= 0:
-        return False, "Invalid SMS quantity."
-
-    if int(wallet.sms_balance or 0) < sms_count:
-        return False, (
-            "Insufficient SMS balance. "
-            "Please buy SMS first."
-        )
-
-    wallet.sms_balance = (
-        int(wallet.sms_balance or 0)
-        - sms_count
-    )
-
-    wallet.sms_used = (
-        int(wallet.sms_used or 0)
-        + sms_count
-    )
-
-    db.session.commit()
-
-    return True, "SMS charged successfully."
-
 def create_sms(
     recipient_name,
     phone,
