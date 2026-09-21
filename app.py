@@ -9,23 +9,20 @@ from sqlalchemy import text
 from flask import jsonify
 from flask import request
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-import africastalking
 import os
 import base64
 import requests
+# =============================================================
+# MOBITECH SMS CONFIGURATION
+# =============================================================
 
-AT_USERNAME = os.environ.get(
-    "AT_USERNAME",
+MOBITECH_API_KEY = os.environ.get(
+    "MOBITECH_API_KEY",
     ""
 ).strip()
 
-AT_API_KEY = os.environ.get(
-    "AT_API_KEY",
-    ""
-).strip()
-
-AT_SENDER_ID = os.environ.get(
-    "AT_SENDER_ID",
+MOBITECH_SENDER_NAME = os.environ.get(
+    "MOBITECH_SENDER_NAME",
     ""
 ).strip()
 
@@ -45,9 +42,7 @@ MPESA_PASSKEY = ""
 MPESA_CALLBACK_URL = ""
 
 MPESA_ENVIRONMENT = "sandbox"
-# =========================
-# AFRICASTALKING CONFIGURATION
-# =========================
+
 
 
 database_url = os.environ.get(
@@ -123,21 +118,59 @@ class SMSWallet(db.Model):
         unique=True
     )
 
-    sms_balance = db.Column(db.Integer, default=0)
-    sms_loaded = db.Column(db.Integer, default=0)
-    sms_used = db.Column(db.Integer, default=0)
+    # =====================================================
+    # SCHOOL SMS CREDIT WALLET
+    # =====================================================
+    sms_balance = db.Column(
+        db.Integer,
+        default=0,
+        nullable=False
+    )
 
-    sms_low_alert = db.Column(db.Integer, default=100)
-    sms_username = db.Column(db.String(100), default="")
-    sms_api_key = db.Column(db.String(255), default="")
-    sms_sender_id = db.Column(db.String(50), default="")
-    sms_enabled = db.Column(db.Boolean, default=True)
+    sms_loaded = db.Column(
+        db.Integer,
+        default=0,
+        nullable=False
+    )
 
-    last_loaded = db.Column(db.DateTime)
-    last_loaded_by = db.Column(db.String(100), default="")
+    sms_used = db.Column(
+        db.Integer,
+        default=0,
+        nullable=False
+    )
 
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    # =====================================================
+    # WALLET SETTINGS
+    # =====================================================
+    sms_low_alert = db.Column(
+        db.Integer,
+        default=100,
+        nullable=False
+    )
 
+    sms_enabled = db.Column(
+        db.Boolean,
+        default=True,
+        nullable=False
+    )
+
+    # =====================================================
+    # LAST CREDIT LOAD
+    # =====================================================
+    last_loaded = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    last_loaded_by = db.Column(
+        db.String(100),
+        default=""
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now
+    )
 class SMSLoad(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -190,47 +223,84 @@ class SMSPackage(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 class SMSTransaction(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "sms_transaction"
 
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    # =====================================================
+    # RELATED SCHOOL PURCHASE
+    # =====================================================
+    # One completed purchase should create only
+    # one permanent SMS transaction.
     purchase_id = db.Column(
         db.Integer,
         db.ForeignKey("sms_purchase.id"),
+        nullable=False,
         unique=True,
-        nullable=True
+        index=True
     )
 
+    # =====================================================
+    # SCHOOL
+    # =====================================================
     school_id = db.Column(
         db.Integer,
         db.ForeignKey("school.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
+    # =====================================================
+    # TRANSACTION DETAILS
+    # =====================================================
+    # Number of SMS credits transferred from
+    # Platform SMS Pool to the school's wallet.
     sms_count = db.Column(
         db.Integer,
         nullable=False
     )
 
+    # Amount paid by the school.
     amount = db.Column(
         db.Float,
         nullable=False,
         default=0
     )
 
+    # User who initiated/purchased the SMS package.
     purchased_by = db.Column(
         db.String(100),
+        nullable=False,
         default=""
     )
 
+    # =====================================================
+    # TRANSACTION DATE
+    # =====================================================
     purchase_date = db.Column(
         db.DateTime,
+        nullable=False,
         default=datetime.now
     )
 
+    # =====================================================
+    # STATUS
+    # =====================================================
+    # Normally Completed because this record is created
+    # only after successful payment and credit transfer.
     status = db.Column(
         db.String(20),
-        default="Completed"
+        nullable=False,
+        default="Completed",
+        index=True
     )
 
+    # =====================================================
+    # RELATIONSHIP
+    # =====================================================
     purchase = db.relationship(
         "SMSPurchase",
         backref=db.backref(
@@ -238,47 +308,85 @@ class SMSTransaction(db.Model):
             uselist=False
         )
     )
-    
-class SMSPurchase(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
 
-    school_id = db.Column(
+    def __repr__(self):
+        return (
+            f"<SMSTransaction "
+            f"id={self.id} "
+            f"purchase_id={self.purchase_id} "
+            f"school_id={self.school_id} "
+            f"sms_count={self.sms_count} "
+            f"status={self.status}>"
+        )
+class SMSPurchase(db.Model):
+    __tablename__ = "sms_purchase"
+
+    id = db.Column(
         db.Integer,
-        default=1
+        primary_key=True
     )
 
+    # =====================================================
+    # SCHOOL MAKING THE PURCHASE
+    # =====================================================
+    school_id = db.Column(
+        db.Integer,
+        db.ForeignKey("school.id"),
+        nullable=False,
+        index=True
+    )
+
+    # =====================================================
+    # SMS PACKAGE
+    # =====================================================
+    # Number of SMS credits being purchased
     package_sms = db.Column(
         db.Integer,
         nullable=False
     )
 
+    # Amount payable by the school
     amount = db.Column(
         db.Float,
         nullable=False
     )
 
+    # User who initiated the purchase
     requested_by = db.Column(
         db.String(100),
+        nullable=False,
         default=""
     )
 
+    # =====================================================
+    # M-PESA PAYMENT DETAILS
+    # =====================================================
     mpesa_phone = db.Column(
         db.String(20),
+        nullable=False,
         default=""
     )
 
     mpesa_checkout_request_id = db.Column(
         db.String(100),
-        default=""
+        nullable=False,
+        default="",
+        index=True
     )
 
     mpesa_receipt_no = db.Column(
         db.String(100),
-        default=""
+        nullable=False,
+        default="",
+        index=True
     )
 
+    # =====================================================
+    # DATES
+    # =====================================================
     request_date = db.Column(
         db.DateTime,
+        nullable=False,
         default=datetime.now
     )
 
@@ -287,24 +395,103 @@ class SMSPurchase(db.Model):
         nullable=True
     )
 
+    # =====================================================
+    # STATUS
+    # =====================================================
+    # Pending
+    # Completed
+    # Failed
+    # Cancelled
     status = db.Column(
         db.String(30),
-        default="Pending"
+        nullable=False,
+        default="Pending",
+        index=True
     )
 
+    def __repr__(self):
+        return (
+            f"<SMSPurchase "
+            f"id={self.id} "
+            f"school_id={self.school_id} "
+            f"sms={self.package_sms} "
+            f"amount={self.amount} "
+            f"status={self.status}>"
+        )
 class PlatformSMSPool(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "platform_sms_pool"
 
-    sms_balance = db.Column(db.Integer, default=0)
-    sms_loaded = db.Column(db.Integer, default=0)
-    sms_sold = db.Column(db.Integer, default=0)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
-    low_alert_level = db.Column(db.Integer, default=2000)
+    # =====================================================
+    # CENTRAL PLATFORM SMS POOL
+    # =====================================================
 
-    last_loaded = db.Column(db.DateTime)
-    last_loaded_by = db.Column(db.String(100), default="")
+    # SMS credits currently available for sale to schools
+    sms_balance = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0
+    )
 
-    created_at = db.Column(db.DateTime, default=datetime.now)
+    # Lifetime SMS credits purchased by Super Admin
+    # from Mobitech
+    sms_loaded = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0
+    )
+
+    # Lifetime SMS credits sold/transferred to schools
+    sms_sold = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0
+    )
+
+    # =====================================================
+    # LOW BALANCE ALERT
+    # =====================================================
+    low_alert_level = db.Column(
+        db.Integer,
+        nullable=False,
+        default=2000
+    )
+
+    # =====================================================
+    # LAST PROCUREMENT
+    # =====================================================
+    last_loaded = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    last_loaded_by = db.Column(
+        db.String(100),
+        nullable=False,
+        default=""
+    )
+
+    # =====================================================
+    # CREATED
+    # =====================================================
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.now
+    )
+
+    def __repr__(self):
+        return (
+            f"<PlatformSMSPool "
+            f"balance={self.sms_balance} "
+            f"loaded={self.sms_loaded} "
+            f"sold={self.sms_sold}>"
+        )
+
 
 class SMSProcurement(db.Model):
     __tablename__ = "sms_procurement"
@@ -314,53 +501,65 @@ class SMSProcurement(db.Model):
         primary_key=True
     )
 
-    # Number of SMS credits purchased by Super Admin
+    # =====================================================
+    # SUPER ADMIN PURCHASE FROM MOBITECH
+    # =====================================================
+
+    # Number of SMS credits purchased from Mobitech
     sms_count = db.Column(
         db.Integer,
         nullable=False
     )
 
-    # Amount paid to the upstream SMS provider
+    # Total amount paid to Mobitech
     amount_paid = db.Column(
         db.Float,
+        nullable=False,
         default=0
     )
 
-    # Upstream provider used by EduManage
+    # Upstream provider
     supplier = db.Column(
         db.String(100),
+        nullable=False,
         default="Mobitech"
     )
 
-    # Provider payment / transaction reference
+    # Mobitech/payment transaction reference
     reference_no = db.Column(
         db.String(100),
+        nullable=False,
         default=""
     )
 
-    # Super Admin username who recorded the purchase
+    # Super Admin who recorded the procurement
     purchased_by = db.Column(
         db.String(100),
+        nullable=False,
         default=""
     )
 
-    # Date/time of procurement
+    # Procurement date/time
     purchase_date = db.Column(
         db.DateTime,
+        nullable=False,
         default=datetime.now
     )
 
     # Completed / Pending / Cancelled / Failed
     status = db.Column(
         db.String(20),
+        nullable=False,
         default="Completed"
     )
 
     def __repr__(self):
         return (
             f"<SMSProcurement "
-            f"{self.sms_count} SMS "
-            f"from {self.supplier}>"
+            f"id={self.id} "
+            f"sms_count={self.sms_count} "
+            f"supplier={self.supplier} "
+            f"status={self.status}>"
         )
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -687,7 +886,7 @@ class SMSMessage(db.Model):
 
     provider = db.Column(
         db.String(50),
-        default="AfricasTalking"
+        default="Mobitech"
     )
 
     provider_message_id = db.Column(
@@ -716,7 +915,7 @@ class SMSMessage(db.Model):
         default=0
     )
 
-    # Final delivery information received from Africa's Talking.
+    # Final delivery information received from Mobitech.
     delivery_status = db.Column(
         db.String(100),
         default="Pending",
@@ -1596,31 +1795,15 @@ def send_sms_gateway(phone, message):
                 "response": "Message cannot be empty"
             }
 
-        username = os.environ.get(
-            "AT_USERNAME",
-            ""
-        ).strip()
-
         api_key = os.environ.get(
-            "AT_API_KEY",
+            "MOBITECH_API_KEY",
             ""
         ).strip()
 
-        sender_id = os.environ.get(
-            "AT_SENDER_ID",
+        sender_name = os.environ.get(
+            "MOBITECH_SENDER_NAME",
             ""
         ).strip()
-
-        if not username:
-            return {
-                "success": False,
-                "status": "MissingUsername",
-                "message_id": "",
-                "cost": "",
-                "response": (
-                    "Africa's Talking username is missing."
-                )
-            }
 
         if not api_key:
             return {
@@ -1628,86 +1811,146 @@ def send_sms_gateway(phone, message):
                 "status": "MissingCredentials",
                 "message_id": "",
                 "cost": "",
-                "response": (
-                    "Africa's Talking API key is missing."
-                )
+                "response": "Mobitech API key is missing."
             }
 
-        africastalking.initialize(
-            username,
-            api_key
+        if not sender_name:
+            return {
+                "success": False,
+                "status": "MissingSenderName",
+                "message_id": "",
+                "cost": "",
+                "response": "Mobitech sender name is missing."
+            }
+
+        url = "https://app.mobitechtechnologies.com/sms/sendsms"
+
+        headers = {
+            "h_api_key": api_key,
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "mobile": cleaned_phone,
+            "response_type": "json",
+            "sender_name": sender_name,
+            "service_id": 0,
+            "message": message
+        }
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=30
         )
 
-        sms_service = africastalking.SMS
-
-        if sender_id:
-            response = sms_service.send(
-                message,
-                [cleaned_phone],
-                sender_id=sender_id
-            )
-        else:
-            response = sms_service.send(
-                message,
-                [cleaned_phone]
-            )
-
         print(
-            "AFRICASTALKING RESPONSE:",
-            response,
+            "MOBITECH HTTP STATUS:",
+            response.status_code,
             flush=True
         )
 
-        recipients = (
-            response
-            .get("SMSMessageData", {})
-            .get("Recipients", [])
+        print(
+            "MOBITECH RESPONSE:",
+            response.text,
+            flush=True
         )
 
-        if not recipients:
-            return {
-                "success": False,
-                "status": "NoRecipientResponse",
-                "message_id": "",
-                "cost": "",
-                "response": str(response)
+        try:
+            response_data = response.json()
+        except Exception:
+            response_data = {
+                "raw_response": response.text
             }
 
-        recipient = recipients[0]
+        # HTTP request itself failed
+        if not response.ok:
+            return {
+                "success": False,
+                "status": f"HTTP_{response.status_code}",
+                "message_id": "",
+                "cost": "",
+                "response": str(response_data)
+            }
+
+        # Mobitech response field names may vary.
+        # We preserve the complete provider response while
+        # extracting common message/status fields where available.
 
         provider_status = str(
-            recipient.get("status", "")
+            response_data.get("status")
+            or response_data.get("response")
+            or response_data.get("message")
+            or "Submitted"
         ).strip()
 
         message_id = str(
-            recipient.get("messageId", "")
-            or recipient.get("message_id", "")
+            response_data.get("message_id")
+            or response_data.get("messageId")
+            or response_data.get("id")
+            or ""
         ).strip()
 
         cost = str(
-            recipient.get("cost", "")
+            response_data.get("cost")
+            or response_data.get("price")
+            or ""
         ).strip()
 
-        success = (
-            provider_status.lower()
-            in {
-                "success",
-                "sent",
-                "queued"
-            }
+        # A successful HTTP response means Mobitech accepted
+        # the request unless its response explicitly reports failure.
+        status_lower = provider_status.lower()
+
+        failure_words = {
+            "failed",
+            "failure",
+            "error",
+            "rejected",
+            "invalid",
+            "unauthorized"
+        }
+
+        success = not any(
+            word in status_lower
+            for word in failure_words
         )
 
         return {
             "success": success,
-            "status": provider_status or "Unknown",
+            "status": provider_status,
             "message_id": message_id,
             "cost": cost,
-            "response": str(response)
+            "response": str(response_data)
+        }
+
+    except requests.exceptions.Timeout:
+        return {
+            "success": False,
+            "status": "Timeout",
+            "message_id": "",
+            "cost": "",
+            "response": "Mobitech request timed out."
+        }
+
+    except requests.exceptions.RequestException as error:
+        print(
+            "MOBITECH REQUEST ERROR:",
+            str(error),
+            flush=True
+        )
+
+        return {
+            "success": False,
+            "status": "RequestException",
+            "message_id": "",
+            "cost": "",
+            "response": str(error)
         }
 
     except Exception as error:
         print(
-            "AFRICASTALKING ERROR:",
+            "MOBITECH ERROR:",
             str(error),
             flush=True
         )
@@ -1719,7 +1962,6 @@ def send_sms_gateway(phone, message):
             "cost": "",
             "response": str(error)
         }
-
 def get_sms_wallet():
     school_id = current_school_id()
 
@@ -1805,7 +2047,7 @@ def create_sms(
         return False, "SMS service is disabled for this school."
 
     # Check balance, but do NOT deduct yet.
-    # We only deduct after Africa's Talking accepts the SMS.
+    # We only deduct after Mobitech accepts the SMS.
     if int(wallet.sms_balance or 0) <= 0:
         return False, (
             "Insufficient SMS balance. "
@@ -1823,7 +2065,7 @@ def create_sms(
     )
 
     if hasattr(sms, "provider"):
-        sms.provider = "AfricasTalking"
+        sms.provider = "Mobitech"
 
     if hasattr(sms, "delivery_status"):
         sms.delivery_status = "Pending"
@@ -2461,7 +2703,7 @@ def init_database():
     sms_message_columns = [
         (
             "provider",
-            "VARCHAR(50) DEFAULT 'AfricasTalking'"
+            "VARCHAR(50) DEFAULT 'Mobitech'"
         ),
         (
             "provider_message_id",
@@ -11070,32 +11312,33 @@ def platform_sms():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
-    pool = get_platform_sms_pool()
-
     # =========================================================
-    # RECORD SMS PROCURED FROM MOBITECH
+    # RECORD SUPER ADMIN PROCUREMENT FROM MOBITECH
     # =========================================================
     if request.method == "POST":
         try:
-            sms_count = int(
-                request.form.get("sms_count") or 0
-            )
+            # -------------------------------------------------
+            # VALIDATE INPUT
+            # -------------------------------------------------
+            try:
+                sms_count = int(
+                    request.form.get("sms_count") or 0
+                )
+            except (TypeError, ValueError):
+                sms_count = 0
 
-            amount_paid = float(
-                request.form.get("amount_paid") or 0
-            )
+            try:
+                amount_paid = float(
+                    request.form.get("amount_paid") or 0
+                )
+            except (TypeError, ValueError):
+                amount_paid = -1
 
             reference_no = request.form.get(
                 "reference_no",
                 ""
             ).strip()
 
-            # Mobitech is the platform upstream provider
-            supplier = "Mobitech"
-
-            # -------------------------------------------------
-            # VALIDATION
-            # -------------------------------------------------
             if sms_count <= 0:
                 flash("Enter a valid SMS quantity.")
                 return redirect(
@@ -11104,20 +11347,22 @@ def platform_sms():
 
             if amount_paid < 0:
                 flash(
-                    "Amount paid cannot be negative."
+                    "Enter a valid procurement amount."
                 )
                 return redirect(
                     url_for("platform_sms")
                 )
 
             # -------------------------------------------------
-            # PREVENT DUPLICATE PROCUREMENT
+            # PREVENT DUPLICATE MOBITECH PROCUREMENT
             # -------------------------------------------------
             if reference_no:
                 existing_procurement = (
-                    SMSProcurement.query.filter_by(
+                    SMSProcurement.query
+                    .filter_by(
                         reference_no=reference_no
-                    ).first()
+                    )
+                    .first()
                 )
 
                 if existing_procurement:
@@ -11125,14 +11370,36 @@ def platform_sms():
                         "This Mobitech procurement "
                         "reference has already been recorded."
                     )
-
                     return redirect(
                         url_for("platform_sms")
                     )
 
-            # -------------------------------------------------
-            # CREATE PROCUREMENT RECORD
-            # -------------------------------------------------
+            # =================================================
+            # LOCK PLATFORM SMS POOL
+            # =================================================
+            pool = (
+                PlatformSMSPool.query
+                .with_for_update()
+                .first()
+            )
+
+            if not pool:
+                pool = PlatformSMSPool(
+                    sms_balance=0,
+                    sms_loaded=0,
+                    sms_sold=0,
+                    low_alert_level=2000,
+                    last_loaded=None,
+                    last_loaded_by="",
+                    created_at=datetime.now()
+                )
+
+                db.session.add(pool)
+                db.session.flush()
+
+            # =================================================
+            # CREATE PERMANENT PROCUREMENT RECORD
+            # =================================================
             procurement = SMSProcurement(
                 sms_count=sms_count,
                 amount_paid=amount_paid,
@@ -11148,9 +11415,9 @@ def platform_sms():
 
             db.session.add(procurement)
 
-            # -------------------------------------------------
-            # ADD SMS TO PLATFORM POOL
-            # -------------------------------------------------
+            # =================================================
+            # ADD MOBITECH STOCK TO CENTRAL PLATFORM POOL
+            # =================================================
             pool.sms_balance = (
                 int(pool.sms_balance or 0)
                 + sms_count
@@ -11161,6 +11428,12 @@ def platform_sms():
                 + sms_count
             )
 
+            # IMPORTANT:
+            # sms_sold does NOT change here.
+            #
+            # Mobitech -> Platform = PROCUREMENT
+            # Platform -> School   = SALE
+
             pool.last_loaded = datetime.now()
 
             pool.last_loaded_by = session.get(
@@ -11168,11 +11441,14 @@ def platform_sms():
                 ""
             )
 
+            # =================================================
+            # ATOMIC COMMIT
+            # =================================================
             db.session.commit()
 
-            # -------------------------------------------------
+            # =================================================
             # AUDIT
-            # -------------------------------------------------
+            # =================================================
             try:
                 save_audit(
                     f"Super Admin procured "
@@ -11196,23 +11472,17 @@ def platform_sms():
             flash(
                 f"{sms_count:,} Mobitech SMS "
                 f"successfully added to the "
-                f"EduManage Platform SMS Pool."
+                f"EduManage Platform SMS Pool. "
+                f"New platform balance: "
+                f"{pool.sms_balance:,}."
             )
 
-        except (TypeError, ValueError):
-            db.session.rollback()
-
-            flash(
-                "Enter valid SMS quantity "
-                "and amount values."
-            )
-
-        except Exception as e:
+        except Exception as error:
             db.session.rollback()
 
             print(
                 "PLATFORM SMS PROCUREMENT ERROR:",
-                str(e),
+                str(error),
                 flush=True
             )
 
@@ -11224,6 +11494,11 @@ def platform_sms():
         return redirect(
             url_for("platform_sms")
         )
+
+    # =========================================================
+    # GET PLATFORM SMS POOL
+    # =========================================================
+    pool = get_platform_sms_pool()
 
     # =========================================================
     # PLATFORM AND SCHOOL INFORMATION
@@ -11255,9 +11530,9 @@ def platform_sms():
         1
         for wallet in wallets
         if (
-            (wallet.sms_loaded or 0) > 0
-            or (wallet.sms_balance or 0) > 0
-            or (wallet.sms_used or 0) > 0
+            int(wallet.sms_loaded or 0) > 0
+            or int(wallet.sms_balance or 0) > 0
+            or int(wallet.sms_used or 0) > 0
         )
     )
 
@@ -11279,27 +11554,27 @@ def platform_sms():
             "school_name": school.school_name,
 
             "balance": (
-                wallet.sms_balance
+                int(wallet.sms_balance or 0)
                 if wallet else 0
             ),
 
             "loaded": (
-                wallet.sms_loaded
+                int(wallet.sms_loaded or 0)
                 if wallet else 0
             ),
 
             "used": (
-                wallet.sms_used
+                int(wallet.sms_used or 0)
                 if wallet else 0
             ),
 
             "low_alert": (
-                wallet.sms_low_alert
+                int(wallet.sms_low_alert or 0)
                 if wallet else 100
             ),
 
             "enabled": (
-                wallet.sms_enabled
+                bool(wallet.sms_enabled)
                 if wallet else False
             )
         })
@@ -11308,7 +11583,8 @@ def platform_sms():
     # SCHOOL SMS PURCHASE REQUESTS
     # =========================================================
     pending_purchases = (
-        SMSPurchase.query.filter_by(
+        SMSPurchase.query
+        .filter_by(
             status="Pending"
         )
         .order_by(
@@ -11318,7 +11594,8 @@ def platform_sms():
     )
 
     completed_purchases = (
-        SMSPurchase.query.filter_by(
+        SMSPurchase.query
+        .filter_by(
             status="Completed"
         )
         .order_by(
@@ -11333,26 +11610,28 @@ def platform_sms():
     )
 
     pending_sms_requested = sum(
-        purchase.package_sms or 0
+        int(purchase.package_sms or 0)
         for purchase in pending_purchases
     )
 
     # =========================================================
-    # SMS SALES
+    # COMPLETED SCHOOL SMS SALES
     # =========================================================
     completed_sales = (
-        SMSPurchase.query.filter_by(
+        SMSPurchase.query
+        .filter_by(
             status="Completed"
-        ).all()
+        )
+        .all()
     )
 
     total_sms_sold = sum(
-        purchase.package_sms or 0
+        int(purchase.package_sms or 0)
         for purchase in completed_sales
     )
 
     total_sales_revenue = sum(
-        purchase.amount or 0
+        float(purchase.amount or 0)
         for purchase in completed_sales
     )
 
@@ -11376,12 +11655,12 @@ def platform_sms():
     ]
 
     total_procured_sms = sum(
-        procurement.sms_count or 0
+        int(procurement.sms_count or 0)
         for procurement in completed_procurements
     )
 
     total_procurement_cost = sum(
-        procurement.amount_paid or 0
+        float(procurement.amount_paid or 0)
         for procurement in completed_procurements
     )
 
@@ -11411,21 +11690,27 @@ def platform_sms():
     # SMS OUTBOX STATISTICS
     # =========================================================
     sent_sms_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             status="Sent"
-        ).count()
+        )
+        .count()
     )
 
     pending_sms_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             status="Pending"
-        ).count()
+        )
+        .count()
     )
 
     failed_sms_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             status="Failed"
-        ).count()
+        )
+        .count()
     )
 
     today_start = datetime.combine(
@@ -11434,16 +11719,20 @@ def platform_sms():
     )
 
     today_sms_count = (
-        SMSMessage.query.filter(
+        SMSMessage.query
+        .filter(
             SMSMessage.created_at >= today_start
-        ).count()
+        )
+        .count()
     )
 
     today_sent_count = (
-        SMSMessage.query.filter(
+        SMSMessage.query
+        .filter(
             SMSMessage.created_at >= today_start,
             SMSMessage.status == "Sent"
-        ).count()
+        )
+        .count()
     )
 
     recent_sms_messages = (
@@ -11525,7 +11814,7 @@ def platform_sms():
 
         money=money
     )
-
+    
 @app.route("/buy_sms", methods=["GET", "POST"])
 def buy_sms():
     if not login_required():
@@ -11545,6 +11834,9 @@ def buy_sms():
         )
         return redirect(url_for("dashboard"))
 
+    # =========================================================
+    # CURRENT SCHOOL
+    # =========================================================
     school_id = current_school_id()
 
     if not school_id:
@@ -11557,10 +11849,27 @@ def buy_sms():
         flash("School was not found.")
         return redirect(url_for("dashboard"))
 
+    # =========================================================
+    # SCHOOL SMS WALLET
+    # =========================================================
     wallet = get_sms_wallet()
 
+    if not wallet:
+        flash(
+            "SMS Wallet could not be created "
+            "for this school."
+        )
+        return redirect(url_for("dashboard"))
+
     # =========================================================
-    # SMS PACKAGES
+    # SMS PACKAGES SOLD BY EDUMANAGE
+    # =========================================================
+    #
+    # IMPORTANT:
+    # Schools buy SMS from EduManage / Super Admin.
+    # Schools do NOT buy directly from Mobitech.
+    #
+    # Mobitech supplies the central Platform SMS Pool.
     # =========================================================
     packages = [
         {
@@ -11590,10 +11899,13 @@ def buy_sms():
     ]
 
     # =========================================================
-    # CREATE PURCHASE REQUEST
+    # CREATE SCHOOL PURCHASE REQUEST
     # =========================================================
     if request.method == "POST":
 
+        # -----------------------------------------------------
+        # READ PACKAGE
+        # -----------------------------------------------------
         try:
             package_sms = int(
                 request.form.get(
@@ -11611,7 +11923,7 @@ def buy_sms():
             (
                 package
                 for package in packages
-                if package["sms"] == package_sms
+                if int(package["sms"]) == package_sms
             ),
             None
         )
@@ -11625,19 +11937,24 @@ def buy_sms():
                 url_for("buy_sms")
             )
 
+        # -----------------------------------------------------
+        # PRICE COMES FROM SERVER
+        # -----------------------------------------------------
         amount = float(
             selected_package["price"]
         )
 
         # -----------------------------------------------------
-        # PREVENT ACCIDENTAL DUPLICATE PENDING REQUEST
+        # PREVENT DUPLICATE PENDING REQUEST
         # -----------------------------------------------------
         existing_pending = (
-            SMSPurchase.query.filter_by(
+            SMSPurchase.query
+            .filter_by(
                 school_id=school_id,
                 package_sms=package_sms,
                 status="Pending"
-            ).first()
+            )
+            .first()
         )
 
         if existing_pending:
@@ -11652,22 +11969,40 @@ def buy_sms():
             )
 
         # -----------------------------------------------------
-        # CREATE REQUEST
+        # CREATE PURCHASE REQUEST
+        # -----------------------------------------------------
+        #
+        # This does NOT credit the school wallet.
+        #
+        # The SMS remains Pending until Super Admin approves it.
         # -----------------------------------------------------
         purchase = SMSPurchase(
             school_id=school_id,
             package_sms=package_sms,
             amount=amount,
+
             requested_by=session.get(
                 "username",
                 ""
             ),
+
+            # M-Pesa is not active for this workflow yet.
+            # Keep fields ready for future automation.
+            mpesa_phone="",
+            mpesa_checkout_request_id="",
+            mpesa_receipt_no="",
+
             request_date=datetime.now(),
+            paid_at=None,
+
             status="Pending"
         )
 
         db.session.add(purchase)
 
+        # -----------------------------------------------------
+        # SAVE REQUEST
+        # -----------------------------------------------------
         try:
             db.session.commit()
 
@@ -11694,8 +12029,9 @@ def buy_sms():
         # -----------------------------------------------------
         try:
             save_audit(
-                f"Requested {package_sms:,} SMS "
-                f"from EduManage Platform. "
+                f"{school.school_name} requested "
+                f"{package_sms:,} SMS from "
+                f"EduManage Platform. "
                 f"Amount: KES {amount:,.2f}. "
                 f"Purchase ID: {purchase.id}.",
                 "Communication"
@@ -11708,10 +12044,13 @@ def buy_sms():
                 flush=True
             )
 
+        # -----------------------------------------------------
+        # SUCCESS
+        # -----------------------------------------------------
         flash(
             f"Your request for {package_sms:,} SMS "
-            f"has been submitted to Super Admin "
-            f"for approval."
+            f"worth KES {amount:,.2f} has been "
+            f"submitted to Super Admin for approval."
         )
 
         return redirect(
@@ -11719,10 +12058,11 @@ def buy_sms():
         )
 
     # =========================================================
-    # PURCHASE HISTORY
+    # SCHOOL PURCHASE HISTORY
     # =========================================================
     purchases = (
-        SMSPurchase.query.filter_by(
+        SMSPurchase.query
+        .filter_by(
             school_id=school_id
         )
         .order_by(
@@ -11732,32 +12072,46 @@ def buy_sms():
         .all()
     )
 
+    # =========================================================
+    # PURCHASE STATISTICS
+    # =========================================================
     pending_count = (
-        SMSPurchase.query.filter_by(
+        SMSPurchase.query
+        .filter_by(
             school_id=school_id,
             status="Pending"
-        ).count()
+        )
+        .count()
     )
 
     completed_count = (
-        SMSPurchase.query.filter_by(
+        SMSPurchase.query
+        .filter_by(
             school_id=school_id,
             status="Completed"
-        ).count()
+        )
+        .count()
     )
 
+    # =========================================================
+    # PAGE
+    # =========================================================
     return render_template(
         "buy_sms.html",
+
         settings=get_settings(),
+
         school=school,
         wallet=wallet,
+
         packages=packages,
         purchases=purchases,
+
         pending_count=pending_count,
         completed_count=completed_count,
+
         money=money
     )
-
 @app.route(
     "/approve_sms_purchase/<int:purchase_id>",
     methods=["POST"]
@@ -11795,7 +12149,7 @@ def approve_sms_purchase(purchase_id):
             )
 
         # =====================================================
-        # PURCHASE MUST STILL BE PENDING
+        # VERIFY PURCHASE STATUS
         # =====================================================
         if purchase.status != "Pending":
             flash(
@@ -11803,11 +12157,38 @@ def approve_sms_purchase(purchase_id):
                 f"because its current status is "
                 f"{purchase.status}."
             )
-
             return redirect(
                 url_for("platform_sms")
             )
 
+        # =====================================================
+        # VALIDATE SCHOOL
+        # =====================================================
+        if not purchase.school_id:
+            flash(
+                "This SMS purchase is not linked "
+                "to a valid school."
+            )
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        school = School.query.get(
+            purchase.school_id
+        )
+
+        if not school:
+            flash(
+                "The school linked to this SMS "
+                "purchase could not be found."
+            )
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        # =====================================================
+        # VALIDATE QUANTITY
+        # =====================================================
         quantity = int(
             purchase.package_sms or 0
         )
@@ -11816,7 +12197,6 @@ def approve_sms_purchase(purchase_id):
             flash(
                 "Invalid SMS purchase quantity."
             )
-
             return redirect(
                 url_for("platform_sms")
             )
@@ -11836,7 +12216,6 @@ def approve_sms_purchase(purchase_id):
                 "credited to the school. "
                 "No additional SMS were added."
             )
-
             return redirect(
                 url_for("platform_sms")
             )
@@ -11845,9 +12224,7 @@ def approve_sms_purchase(purchase_id):
         # LOCK PLATFORM SMS POOL
         # =====================================================
         pool = (
-            db.session.query(
-                PlatformSMSPool
-            )
+            db.session.query(PlatformSMSPool)
             .order_by(
                 PlatformSMSPool.id.asc()
             )
@@ -11859,7 +12236,6 @@ def approve_sms_purchase(purchase_id):
             flash(
                 "Platform SMS Pool has not been created."
             )
-
             return redirect(
                 url_for("platform_sms")
             )
@@ -11869,16 +12245,15 @@ def approve_sms_purchase(purchase_id):
         )
 
         # =====================================================
-        # CHECK PLATFORM STOCK
+        # VERIFY PLATFORM STOCK
         # =====================================================
         if platform_balance < quantity:
             flash(
                 f"Insufficient Platform SMS balance. "
-                f"School requested {quantity:,} SMS, "
+                f"The school requested {quantity:,} SMS, "
                 f"but only {platform_balance:,} SMS "
                 f"are currently available."
             )
-
             return redirect(
                 url_for("platform_sms")
             )
@@ -11887,9 +12262,7 @@ def approve_sms_purchase(purchase_id):
         # LOCK SCHOOL WALLET
         # =====================================================
         wallet = (
-            db.session.query(
-                SMSWallet
-            )
+            db.session.query(SMSWallet)
             .filter(
                 SMSWallet.school_id
                 == purchase.school_id
@@ -11899,7 +12272,7 @@ def approve_sms_purchase(purchase_id):
         )
 
         # =====================================================
-        # CREATE WALLET IF SCHOOL DOES NOT HAVE ONE
+        # CREATE SCHOOL WALLET IF NECESSARY
         # =====================================================
         if not wallet:
             wallet = SMSWallet(
@@ -11915,26 +12288,51 @@ def approve_sms_purchase(purchase_id):
             db.session.flush()
 
         # =====================================================
-        # PLATFORM POOL - SCHOOL PURCHASE
+        # FINAL DOUBLE-CREDIT CHECK
         # =====================================================
+        # This is intentionally checked again after the
+        # relevant rows have been locked.
+        duplicate = (
+            SMSTransaction.query.filter_by(
+                purchase_id=purchase.id
+            ).first()
+        )
+
+        if duplicate:
+            db.session.rollback()
+
+            flash(
+                "This purchase has already been processed. "
+                "No SMS credits were added."
+            )
+
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        # =====================================================
+        # TRANSFER SMS FROM PLATFORM TO SCHOOL
+        # =====================================================
+
+        # Platform loses available stock
         pool.sms_balance = (
             int(pool.sms_balance or 0)
             - quantity
         )
 
+        # Platform lifetime sales increase
         pool.sms_sold = (
             int(pool.sms_sold or 0)
             + quantity
         )
 
-        # =====================================================
-        # CREDIT SCHOOL WALLET
-        # =====================================================
+        # School receives SMS credits
         wallet.sms_balance = (
             int(wallet.sms_balance or 0)
             + quantity
         )
 
+        # School lifetime purchased/loaded credits increase
         wallet.sms_loaded = (
             int(wallet.sms_loaded or 0)
             + quantity
@@ -11947,13 +12345,13 @@ def approve_sms_purchase(purchase_id):
         )
 
         # =====================================================
-        # COMPLETE PURCHASE
+        # COMPLETE SCHOOL PURCHASE
         # =====================================================
         purchase.status = "Completed"
         purchase.paid_at = datetime.now()
 
         # =====================================================
-        # PERMANENT TRANSACTION RECORD
+        # CREATE PERMANENT SALE/TRANSFER RECORD
         # =====================================================
         transaction = SMSTransaction(
             purchase_id=purchase.id,
@@ -11965,30 +12363,31 @@ def approve_sms_purchase(purchase_id):
             purchased_by=(
                 purchase.requested_by or ""
             ),
+            purchase_date=datetime.now(),
             status="Completed"
         )
 
         db.session.add(transaction)
 
         # =====================================================
-        # COMMIT EVERYTHING TOGETHER
+        # COMMIT THE WHOLE TRANSFER AT ONCE
         # =====================================================
         db.session.commit()
 
         # =====================================================
-        # AUDIT
+        # AUDIT LOG
         # =====================================================
         try:
             save_audit(
                 f"Super Admin approved SMS purchase "
                 f"ID {purchase.id}. "
                 f"{quantity:,} SMS transferred from "
-                f"Platform SMS Pool to school ID "
-                f"{purchase.school_id}. "
+                f"Platform SMS Pool to "
+                f"{school.school_name}. "
                 f"Platform balance: "
-                f"{pool.sms_balance:,}. "
+                f"{int(pool.sms_balance or 0):,}. "
                 f"School wallet balance: "
-                f"{wallet.sms_balance:,}.",
+                f"{int(wallet.sms_balance or 0):,}.",
                 "Communication"
             )
 
@@ -12001,8 +12400,10 @@ def approve_sms_purchase(purchase_id):
 
         flash(
             f"SMS purchase approved successfully. "
-            f"{quantity:,} SMS were transferred "
-            f"to the school's SMS Wallet."
+            f"{quantity:,} SMS were transferred to "
+            f"{school.school_name}. "
+            f"New school SMS balance: "
+            f"{int(wallet.sms_balance or 0):,}."
         )
 
     except Exception as e:
@@ -15713,12 +16114,18 @@ def send_pending_sms():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    # =========================================================
+    # CURRENT SCHOOL
+    # =========================================================
     school_id = current_school_id()
 
     if not school_id:
         flash("No school has been selected.")
         return redirect(url_for("dashboard"))
 
+    # =========================================================
+    # SCHOOL SMS WALLET
+    # =========================================================
     wallet = get_sms_wallet()
 
     if not wallet:
@@ -15737,19 +16144,32 @@ def send_pending_sms():
             url_for("communication_center")
         )
 
-    pending_messages = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).order_by(
-        SMSMessage.created_at.asc()
-    ).all()
+    # =========================================================
+    # GET PENDING SMS FOR THIS SCHOOL ONLY
+    # =========================================================
+    pending_messages = (
+        SMSMessage.query
+        .filter_by(
+            school_id=school_id,
+            status="Pending"
+        )
+        .order_by(
+            SMSMessage.created_at.asc()
+        )
+        .all()
+    )
 
     if not pending_messages:
-        flash("There are no pending SMS messages.")
+        flash(
+            "There are no pending SMS messages."
+        )
         return redirect(
             url_for("sms_messages")
         )
 
+    # =========================================================
+    # CHECK WALLET BALANCE
+    # =========================================================
     if int(wallet.sms_balance or 0) <= 0:
         flash(
             "Your SMS wallet is empty. "
@@ -15767,48 +16187,102 @@ def send_pending_sms():
     last_provider_response = ""
 
     try:
+
+        # =====================================================
+        # PROCESS PENDING SMS
+        # =====================================================
         for message_record in pending_messages:
 
+            # -------------------------------------------------
+            # STOP USING CREDITS WHEN WALLET IS EMPTY
+            # -------------------------------------------------
             if int(wallet.sms_balance or 0) <= 0:
                 skipped += 1
                 continue
 
             attempted += 1
 
+            # -------------------------------------------------
+            # SEND THROUGH MOBITECH
+            # -------------------------------------------------
             result = send_sms_gateway(
                 message_record.phone,
                 message_record.message
             )
 
-            message_record.provider = (
-                "AfricasTalking"
-            )
+            # -------------------------------------------------
+            # SAVE PROVIDER INFORMATION
+            # -------------------------------------------------
+            if hasattr(
+                message_record,
+                "provider"
+            ):
+                message_record.provider = "Mobitech"
 
-            message_record.provider_status = (
-                result.get("status", "")
-            )
+            if hasattr(
+                message_record,
+                "provider_status"
+            ):
+                message_record.provider_status = (
+                    result.get(
+                        "status",
+                        ""
+                    )
+                )
 
-            message_record.provider_message_id = (
-                result.get("message_id", "")
-            )
+            if hasattr(
+                message_record,
+                "provider_message_id"
+            ):
+                message_record.provider_message_id = (
+                    result.get(
+                        "message_id",
+                        ""
+                    )
+                )
 
-            message_record.cost = (
-                result.get("cost", "")
-            )
+            if hasattr(
+                message_record,
+                "cost"
+            ):
+                message_record.cost = (
+                    result.get(
+                        "cost",
+                        ""
+                    )
+                )
 
-            message_record.provider_response = (
-                result.get("response", "")
-            )
+            if hasattr(
+                message_record,
+                "provider_response"
+            ):
+                message_record.provider_response = (
+                    result.get(
+                        "response",
+                        ""
+                    )
+                )
 
+            # =================================================
+            # MOBITECH ACCEPTED SMS
+            # =================================================
             if result.get("success"):
 
                 message_record.status = "Sent"
 
-                message_record.sent_at = (
-                    datetime.now()
-                )
+                if hasattr(
+                    message_record,
+                    "sent_at"
+                ):
+                    message_record.sent_at = (
+                        datetime.now()
+                    )
 
-                message_record.failed_at = None
+                if hasattr(
+                    message_record,
+                    "failed_at"
+                ):
+                    message_record.failed_at = None
 
                 if hasattr(
                     message_record,
@@ -15821,24 +16295,35 @@ def send_pending_sms():
                         )
                     )
 
-                # Charge only AFTER provider acceptance.
-                wallet.sms_balance = max(
-                    0,
-                    int(wallet.sms_balance or 0) - 1
+                # =============================================
+                # CHARGE SCHOOL WALLET ONLY AFTER SUCCESS
+                # =============================================
+                wallet.sms_balance = (
+                    int(wallet.sms_balance or 0)
+                    - 1
                 )
 
                 wallet.sms_used = (
-                    int(wallet.sms_used or 0) + 1
+                    int(wallet.sms_used or 0)
+                    + 1
                 )
 
                 sent += 1
 
+            # =================================================
+            # MOBITECH REJECTED / FAILED
+            # =================================================
             else:
+
                 message_record.status = "Failed"
 
-                message_record.failed_at = (
-                    datetime.now()
-                )
+                if hasattr(
+                    message_record,
+                    "failed_at"
+                ):
+                    message_record.failed_at = (
+                        datetime.now()
+                    )
 
                 if hasattr(
                     message_record,
@@ -15872,12 +16357,18 @@ def send_pending_sms():
                     )
                 )
 
+            # -------------------------------------------------
+            # SAVE THIS SMS RESULT
+            # -------------------------------------------------
             db.session.commit()
 
+        # =====================================================
+        # AUDIT
+        # =====================================================
         try:
             save_audit(
-                f"Processed pending SMS for school "
-                f"ID {school_id}. "
+                f"Processed pending SMS through Mobitech "
+                f"for school ID {school_id}. "
                 f"Attempted: {attempted}, "
                 f"Sent: {sent}, "
                 f"Failed: {failed}, "
@@ -15894,6 +16385,9 @@ def send_pending_sms():
                 flush=True
             )
 
+        # =====================================================
+        # RESULT MESSAGE
+        # =====================================================
         result_message = (
             f"SMS processing completed. "
             f"Attempted: {attempted}. "
@@ -15907,7 +16401,7 @@ def send_pending_sms():
 
         if last_provider_response:
             result_message += (
-                " Last provider response: "
+                " Last Mobitech response: "
                 + str(last_provider_response)
             )
 
@@ -15930,7 +16424,6 @@ def send_pending_sms():
     return redirect(
         url_for("sms_messages")
     )
-
 @app.route(
     "/send_one_sms/<int:sms_id>",
     methods=["POST"]
@@ -15954,27 +16447,33 @@ def send_one_sms(sms_id):
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    # =========================================================
+    # CURRENT SCHOOL
+    # =========================================================
     school_id = current_school_id()
 
     if not school_id:
         flash("No school has been selected.")
         return redirect(url_for("dashboard"))
 
-    # ---------------------------------------------------------
-    # GET SMS
-    # ---------------------------------------------------------
+    # =========================================================
+    # GET SMS - CURRENT SCHOOL ONLY
+    # =========================================================
     sms = SMSMessage.query.filter_by(
         id=sms_id,
         school_id=school_id
     ).first_or_404()
 
+    # =========================================================
+    # PREVENT DOUBLE SENDING
+    # =========================================================
     if sms.status == "Sent":
         flash("This SMS has already been sent.")
         return redirect(
             url_for("sms_messages")
         )
 
-    # Allow Pending or Failed SMS to be sent manually.
+    # Only Pending or Failed SMS can be sent/retried.
     if sms.status not in [
         "Pending",
         "Failed"
@@ -15986,9 +16485,9 @@ def send_one_sms(sms_id):
             url_for("sms_messages")
         )
 
-    # ---------------------------------------------------------
-    # VALIDATE PHONE
-    # ---------------------------------------------------------
+    # =========================================================
+    # VALIDATE PHONE NUMBER
+    # =========================================================
     cleaned_phone = clean_phone_number(
         sms.phone
     )
@@ -15996,25 +16495,38 @@ def send_one_sms(sms_id):
     if not cleaned_phone:
         sms.status = "Failed"
 
+        if hasattr(sms, "provider"):
+            sms.provider = "Mobitech"
+
         if hasattr(sms, "provider_status"):
             sms.provider_status = "InvalidPhone"
+
+        if hasattr(sms, "delivery_status"):
+            sms.delivery_status = "InvalidPhone"
 
         if hasattr(sms, "failed_at"):
             sms.failed_at = datetime.now()
 
+        if hasattr(sms, "retry_count"):
+            sms.retry_count = (
+                int(sms.retry_count or 0)
+                + 1
+            )
+
         db.session.commit()
 
         flash(
-            "SMS not sent because the phone number is invalid."
+            "SMS not sent because the phone number "
+            "is invalid."
         )
 
         return redirect(
             url_for("sms_messages")
         )
 
-    # ---------------------------------------------------------
-    # WALLET
-    # ---------------------------------------------------------
+    # =========================================================
+    # SCHOOL SMS WALLET
+    # =========================================================
     wallet = get_sms_wallet()
 
     if not wallet:
@@ -16036,15 +16548,15 @@ def send_one_sms(sms_id):
     if int(wallet.sms_balance or 0) <= 0:
         flash(
             "SMS balance is 0. "
-            "Please load SMS before sending."
+            "Please purchase SMS before sending."
         )
         return redirect(
             url_for("sms_wallet")
         )
 
-    # ---------------------------------------------------------
-    # SEND THROUGH AFRICA'S TALKING
-    # ---------------------------------------------------------
+    # =========================================================
+    # SEND THROUGH MOBITECH
+    # =========================================================
     try:
         result = send_sms_gateway(
             cleaned_phone,
@@ -16053,8 +16565,11 @@ def send_one_sms(sms_id):
 
         sms.phone = cleaned_phone
 
+        # -----------------------------------------------------
+        # SAVE PROVIDER DETAILS
+        # -----------------------------------------------------
         if hasattr(sms, "provider"):
-            sms.provider = "AfricasTalking"
+            sms.provider = "Mobitech"
 
         if hasattr(sms, "provider_status"):
             sms.provider_status = result.get(
@@ -16080,13 +16595,15 @@ def send_one_sms(sms_id):
                 ""
             )
 
-        # -----------------------------------------------------
-        # SUCCESS
-        # -----------------------------------------------------
+        # =====================================================
+        # MOBITECH ACCEPTED SMS
+        # =====================================================
         if result.get("success"):
 
             sms.status = "Sent"
-            sms.sent_at = datetime.now()
+
+            if hasattr(sms, "sent_at"):
+                sms.sent_at = datetime.now()
 
             if hasattr(sms, "failed_at"):
                 sms.failed_at = None
@@ -16097,35 +16614,51 @@ def send_one_sms(sms_id):
                     "Sent"
                 )
 
-            # Charge exactly one SMS only after
-            # Africa's Talking accepts the message.
-            wallet.sms_balance = max(
-                0,
-                int(wallet.sms_balance or 0) - 1
+            # =================================================
+            # CHARGE SCHOOL WALLET ONLY AFTER SUCCESS
+            # =================================================
+            wallet.sms_balance = (
+                int(wallet.sms_balance or 0)
+                - 1
             )
 
             wallet.sms_used = (
-                int(wallet.sms_used or 0) + 1
+                int(wallet.sms_used or 0)
+                + 1
             )
 
             db.session.commit()
 
-            save_audit(
-                f"Sent individual SMS to "
-                f"{sms.recipient_name} "
-                f"({sms.phone}).",
-                "Communication"
-            )
+            # -------------------------------------------------
+            # AUDIT
+            # -------------------------------------------------
+            try:
+                save_audit(
+                    f"Sent individual SMS through "
+                    f"Mobitech to "
+                    f"{sms.recipient_name} "
+                    f"({sms.phone}). "
+                    f"Remaining SMS balance: "
+                    f"{wallet.sms_balance}.",
+                    "Communication"
+                )
+
+            except Exception as audit_error:
+                print(
+                    "SEND ONE SMS AUDIT ERROR:",
+                    str(audit_error),
+                    flush=True
+                )
 
             flash(
-                "SMS sent successfully. "
+                "SMS sent successfully through Mobitech. "
                 f"Remaining balance: "
                 f"{wallet.sms_balance}."
             )
 
-        # -----------------------------------------------------
-        # FAILED
-        # -----------------------------------------------------
+        # =====================================================
+        # MOBITECH REJECTED / FAILED
+        # =====================================================
         else:
             sms.status = "Failed"
 
@@ -16146,8 +16679,12 @@ def send_one_sms(sms_id):
 
             db.session.commit()
 
+            # IMPORTANT:
+            # Wallet is NOT charged when Mobitech rejects
+            # or fails to accept the SMS.
+
             flash(
-                "SMS was not accepted by Africa's Talking. "
+                "SMS was not accepted by Mobitech. "
                 f"Status: "
                 f"{result.get('status', 'Unknown')}."
             )
@@ -16169,7 +16706,6 @@ def send_one_sms(sms_id):
     return redirect(
         url_for("sms_messages")
     )
-
 @app.route("/retry_failed_whatsapp")
 def retry_failed_whatsapp():
     if not login_required():
@@ -16267,6 +16803,9 @@ def delete_failed_whatsapp():
     return redirect(url_for("communication_center"))
 
 
+# =============================================================
+# RETRY FAILED SMS
+# =============================================================
 @app.route("/retry_failed_sms", methods=["POST"])
 def retry_failed_sms():
     if not login_required():
@@ -16285,6 +16824,13 @@ def retry_failed_sms():
 
     school_id = current_school_id()
 
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
+
+    # =========================================================
+    # SCHOOL SMS WALLET
+    # =========================================================
     wallet = SMSWallet.query.filter_by(
         school_id=school_id
     ).first()
@@ -16294,37 +16840,65 @@ def retry_failed_sms():
             "This school does not have an SMS wallet. "
             "Please purchase SMS first."
         )
-        return redirect(url_for("communication_center"))
+        return redirect(
+            url_for("communication_center")
+        )
 
     if not wallet.sms_enabled:
-        flash("SMS service is disabled for this school.")
-        return redirect(url_for("communication_center"))
+        flash(
+            "SMS service is disabled for this school."
+        )
+        return redirect(
+            url_for("communication_center")
+        )
 
-    failed_messages = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).order_by(
-        SMSMessage.created_at.asc()
-    ).all()
+    # =========================================================
+    # GET FAILED SMS
+    # =========================================================
+    failed_messages = (
+        SMSMessage.query
+        .filter_by(
+            school_id=school_id,
+            status="Failed"
+        )
+        .order_by(
+            SMSMessage.created_at.asc()
+        )
+        .all()
+    )
 
     if not failed_messages:
-        flash("There are no failed SMS messages to retry.")
-        return redirect(url_for("communication_center"))
+        flash(
+            "There are no failed SMS messages to retry."
+        )
+        return redirect(
+            url_for("communication_center")
+        )
 
+    # =========================================================
+    # CHECK WALLET
+    # =========================================================
     if int(wallet.sms_balance or 0) <= 0:
         flash(
             "Your SMS wallet is empty. "
             "Please purchase more SMS before retrying."
         )
-        return redirect(url_for("sms_wallet"))
+        return redirect(
+            url_for("sms_wallet")
+        )
 
     attempted = 0
     sent = 0
     failed = 0
     skipped = 0
+
     last_provider_response = ""
 
     try:
+
+        # =====================================================
+        # RETRY FAILED SMS
+        # =====================================================
         for message_record in failed_messages:
 
             if int(wallet.sms_balance or 0) <= 0:
@@ -16333,74 +16907,182 @@ def retry_failed_sms():
 
             attempted += 1
 
-            message_record.retry_count = (
-                int(message_record.retry_count or 0) + 1
-            )
+            # -------------------------------------------------
+            # INCREASE RETRY COUNT
+            # -------------------------------------------------
+            if hasattr(
+                message_record,
+                "retry_count"
+            ):
+                message_record.retry_count = (
+                    int(
+                        message_record.retry_count
+                        or 0
+                    )
+                    + 1
+                )
 
+            # -------------------------------------------------
+            # SEND THROUGH MOBITECH
+            # -------------------------------------------------
             result = send_sms_gateway(
                 message_record.phone,
                 message_record.message
             )
 
-            message_record.provider = "AfricasTalking"
+            # -------------------------------------------------
+            # PROVIDER DETAILS
+            # -------------------------------------------------
+            if hasattr(
+                message_record,
+                "provider"
+            ):
+                message_record.provider = "Mobitech"
 
-            message_record.provider_status = result.get(
-                "status",
-                ""
-            )
+            if hasattr(
+                message_record,
+                "provider_status"
+            ):
+                message_record.provider_status = (
+                    result.get(
+                        "status",
+                        ""
+                    )
+                )
 
-            message_record.provider_message_id = result.get(
-                "message_id",
-                ""
-            )
+            if hasattr(
+                message_record,
+                "provider_message_id"
+            ):
+                message_record.provider_message_id = (
+                    result.get(
+                        "message_id",
+                        ""
+                    )
+                )
 
-            message_record.cost = result.get(
-                "cost",
-                ""
-            )
+            if hasattr(
+                message_record,
+                "cost"
+            ):
+                message_record.cost = (
+                    result.get(
+                        "cost",
+                        ""
+                    )
+                )
 
-            message_record.provider_response = result.get(
-                "response",
-                ""
-            )
+            if hasattr(
+                message_record,
+                "provider_response"
+            ):
+                message_record.provider_response = (
+                    result.get(
+                        "response",
+                        ""
+                    )
+                )
 
+            # =================================================
+            # MOBITECH SUCCESS
+            # =================================================
             if result.get("success"):
 
                 message_record.status = "Sent"
-                message_record.sent_at = datetime.now()
-                message_record.failed_at = None
 
+                if hasattr(
+                    message_record,
+                    "sent_at"
+                ):
+                    message_record.sent_at = (
+                        datetime.now()
+                    )
+
+                if hasattr(
+                    message_record,
+                    "failed_at"
+                ):
+                    message_record.failed_at = None
+
+                if hasattr(
+                    message_record,
+                    "delivery_status"
+                ):
+                    message_record.delivery_status = (
+                        result.get(
+                            "status",
+                            "Sent"
+                        )
+                    )
+
+                # =============================================
+                # CHARGE SCHOOL ONLY AFTER SUCCESS
+                # =============================================
                 wallet.sms_balance = (
-                    int(wallet.sms_balance or 0) - 1
+                    int(wallet.sms_balance or 0)
+                    - 1
                 )
 
                 wallet.sms_used = (
-                    int(wallet.sms_used or 0) + 1
+                    int(wallet.sms_used or 0)
+                    + 1
                 )
 
                 sent += 1
 
+            # =================================================
+            # MOBITECH FAILED
+            # =================================================
             else:
+
                 message_record.status = "Failed"
-                message_record.failed_at = datetime.now()
+
+                if hasattr(
+                    message_record,
+                    "failed_at"
+                ):
+                    message_record.failed_at = (
+                        datetime.now()
+                    )
+
+                if hasattr(
+                    message_record,
+                    "delivery_status"
+                ):
+                    message_record.delivery_status = (
+                        result.get(
+                            "status",
+                            "Failed"
+                        )
+                    )
 
                 failed += 1
 
-                last_provider_response = result.get(
-                    "response",
-                    ""
+                last_provider_response = (
+                    result.get(
+                        "response",
+                        ""
+                    )
                 )
 
             db.session.commit()
 
+        # =====================================================
+        # AUDIT
+        # =====================================================
         try:
             save_audit(
-                f"Retried failed SMS for school ID {school_id}. "
-                f"Attempted: {attempted}, Sent: {sent}, "
-                f"Still failed: {failed}, Skipped: {skipped}, "
-                f"Wallet balance: {wallet.sms_balance}.",
+                f"Retried failed SMS through Mobitech "
+                f"for school ID {school_id}. "
+                f"Attempted: {attempted}, "
+                f"Sent: {sent}, "
+                f"Still failed: {failed}, "
+                f"Skipped: {skipped}, "
+                f"Wallet balance: "
+                f"{wallet.sms_balance or 0}.",
                 "Communication"
             )
+
         except Exception as audit_error:
             print(
                 "SMS RETRY AUDIT ERROR:",
@@ -16408,19 +17090,24 @@ def retry_failed_sms():
                 flush=True
             )
 
+        # =====================================================
+        # RESULT
+        # =====================================================
         result_message = (
             f"SMS retry completed. "
-            f"Attempted: {attempted}, "
-            f"Sent: {sent}, "
-            f"Still failed: {failed}, "
-            f"Not retried because of insufficient balance: {skipped}. "
-            f"Remaining balance: {wallet.sms_balance or 0}."
+            f"Attempted: {attempted}. "
+            f"Sent: {sent}. "
+            f"Still failed: {failed}. "
+            f"Not retried because of insufficient "
+            f"balance: {skipped}. "
+            f"Remaining balance: "
+            f"{wallet.sms_balance or 0}."
         )
 
         if last_provider_response:
             result_message += (
-                f" Last provider response: "
-                f"{last_provider_response}"
+                " Last Mobitech response: "
+                + str(last_provider_response)
             )
 
         flash(result_message)
@@ -16435,11 +17122,18 @@ def retry_failed_sms():
         )
 
         flash(
-            "SMS retry stopped because of an unexpected error."
+            "SMS retry stopped because of "
+            "an unexpected error."
         )
 
-    return redirect(url_for("communication_center"))
+    return redirect(
+        url_for("communication_center")
+    )
 
+
+# =============================================================
+# DELETE PENDING SMS
+# =============================================================
 @app.route("/delete_pending_sms", methods=["POST"])
 def delete_pending_sms():
     if not login_required():
@@ -16458,29 +17152,54 @@ def delete_pending_sms():
 
     school_id = current_school_id()
 
-    try:
-        pending_messages = SMSMessage.query.filter_by(
-            school_id=school_id,
-            status="Pending"
-        ).all()
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
 
-        deleted_count = len(pending_messages)
+    try:
+        # =====================================================
+        # DELETE CURRENT SCHOOL PENDING SMS ONLY
+        # =====================================================
+        pending_messages = (
+            SMSMessage.query
+            .filter_by(
+                school_id=school_id,
+                status="Pending"
+            )
+            .all()
+        )
+
+        deleted_count = len(
+            pending_messages
+        )
 
         if deleted_count == 0:
-            flash("There are no pending SMS messages to delete.")
-            return redirect(url_for("communication_center"))
+            flash(
+                "There are no pending SMS messages "
+                "to delete."
+            )
+            return redirect(
+                url_for("communication_center")
+            )
 
         for message_record in pending_messages:
-            db.session.delete(message_record)
+            db.session.delete(
+                message_record
+            )
 
         db.session.commit()
 
+        # =====================================================
+        # AUDIT
+        # =====================================================
         try:
             save_audit(
-                f"Deleted {deleted_count} pending SMS message(s) "
-                f"for school ID {school_id}.",
+                f"Deleted {deleted_count} pending "
+                f"SMS message(s) for school "
+                f"ID {school_id}.",
                 "Communication"
             )
+
         except Exception as audit_error:
             print(
                 "DELETE PENDING SMS AUDIT ERROR:",
@@ -16507,9 +17226,14 @@ def delete_pending_sms():
             "No changes were saved."
         )
 
-    return redirect(url_for("communication_center"))
+    return redirect(
+        url_for("communication_center")
+    )
 
 
+# =============================================================
+# DELETE FAILED SMS
+# =============================================================
 @app.route("/delete_failed_sms", methods=["POST"])
 def delete_failed_sms():
     if not login_required():
@@ -16528,29 +17252,54 @@ def delete_failed_sms():
 
     school_id = current_school_id()
 
-    try:
-        failed_messages = SMSMessage.query.filter_by(
-            school_id=school_id,
-            status="Failed"
-        ).all()
+    if not school_id:
+        flash("No school has been selected.")
+        return redirect(url_for("dashboard"))
 
-        deleted_count = len(failed_messages)
+    try:
+        # =====================================================
+        # DELETE CURRENT SCHOOL FAILED SMS ONLY
+        # =====================================================
+        failed_messages = (
+            SMSMessage.query
+            .filter_by(
+                school_id=school_id,
+                status="Failed"
+            )
+            .all()
+        )
+
+        deleted_count = len(
+            failed_messages
+        )
 
         if deleted_count == 0:
-            flash("There are no failed SMS messages to delete.")
-            return redirect(url_for("communication_center"))
+            flash(
+                "There are no failed SMS messages "
+                "to delete."
+            )
+            return redirect(
+                url_for("communication_center")
+            )
 
         for message_record in failed_messages:
-            db.session.delete(message_record)
+            db.session.delete(
+                message_record
+            )
 
         db.session.commit()
 
+        # =====================================================
+        # AUDIT
+        # =====================================================
         try:
             save_audit(
-                f"Deleted {deleted_count} failed SMS message(s) "
-                f"for school ID {school_id}.",
+                f"Deleted {deleted_count} failed "
+                f"SMS message(s) for school "
+                f"ID {school_id}.",
                 "Communication"
             )
+
         except Exception as audit_error:
             print(
                 "DELETE FAILED SMS AUDIT ERROR:",
@@ -16577,7 +17326,10 @@ def delete_failed_sms():
             "No changes were saved."
         )
 
-    return redirect(url_for("communication_center"))
+    return redirect(
+        url_for("communication_center")
+    )
+    
 @app.route("/whatsapp_messages", methods=["GET", "POST"])
 def whatsapp_messages():
     if not login_required():
