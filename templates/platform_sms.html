@@ -1393,93 +1393,125 @@ input[readonly] {
             </div>
 
 
-            {% if procurements %}
+           {% if procurements %}
 
-            <div class="table-wrap">
+<div class="table-wrap">
 
-                <table
-                    class="sms-table"
-                    id="procurementTable"
-                >
+    <table
+        class="sms-table"
+        id="procurementTable"
+    >
 
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Provider</th>
-                            <th>SMS</th>
-                            <th>Cost</th>
-                            <th>Reference</th>
-                        </tr>
-                    </thead>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Provider</th>
+                <th>SMS</th>
+                <th>Cost</th>
+                <th>Reference</th>
+                <th class="no-print">Action</th>
+            </tr>
+        </thead>
 
+        <tbody>
 
-                    <tbody>
+        {% for procurement in procurements %}
 
-                    {% for procurement in procurements %}
+            <tr>
 
-                        <tr>
+                <td>
+                    {{
+                        procurement.purchase_date.strftime(
+                            "%d-%m-%Y"
+                        )
+                        if procurement.purchase_date
+                        else "-"
+                    }}
+                </td>
 
-                            <td>
-                                {{
-                                    procurement.purchase_date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                    if procurement.purchase_date
-                                    else "-"
-                                }}
-                            </td>
+                <td>
+                    <div class="cell-title">
+                        {{ procurement.supplier or "Mobitech" }}
+                    </div>
+                </td>
 
+                <td>
+                    <span class="badge blue">
+                        {{
+                            "{:,}".format(
+                                procurement.sms_count or 0
+                            )
+                        }}
+                    </span>
+                </td>
 
-                            <td>
-                                <div class="cell-title">
-                                    {{ procurement.supplier or "Mobitech" }}
-                                </div>
-                            </td>
+                <td class="money-value">
+                    {{
+                        money(
+                            procurement.amount_paid or 0
+                        )
+                    }}
+                </td>
 
+                <td>
+                    {{ procurement.reference_no or "-" }}
+                </td>
 
-                            <td>
-                                <span class="badge blue">
-                                    {{
-                                        "{:,}".format(
-                                            procurement.sms_count or 0
-                                        )
-                                    }}
-                                </span>
-                            </td>
+                <td class="no-print">
 
+                    <form
+                        method="post"
+                        action="{{
+                            url_for(
+                                'delete_sms_procurement',
+                                procurement_id=procurement.id
+                            )
+                        }}"
+                        onsubmit="
+                            return confirm(
+                                'Delete this Mobitech procurement?\n\n' +
+                                'SMS: {{ procurement.sms_count or 0 }}\n' +
+                                'Amount: KES {{ procurement.amount_paid or 0 }}\n' +
+                                'Reference: {{ procurement.reference_no or '-' }}\n\n' +
+                                'The SMS credits will be removed from the Platform Pool.'
+                            );
+                        "
+                        style="margin:0;"
+                    >
 
-                            <td class="money-value">
-                                {{
-                                    money(
-                                        procurement.amount_paid or 0
-                                    )
-                                }}
-                            </td>
+                        <button
+                            type="submit"
+                            class="btn"
+                            style="
+                                background:#dc2626;
+                                color:white;
+                                padding:7px 11px;
+                            "
+                        >
+                            🗑 Delete
+                        </button>
 
+                    </form>
 
-                            <td>
-                                {{ procurement.reference_no or "-" }}
-                            </td>
+                </td>
 
-                        </tr>
+            </tr>
 
-                    {% endfor %}
+        {% endfor %}
 
-                    </tbody>
+        </tbody>
 
-                </table>
+    </table>
 
-            </div>
+</div>
 
+{% else %}
 
-            {% else %}
+<div class="empty-state">
+    No Mobitech procurement has been recorded yet.
+</div>
 
-            <div class="empty-state">
-                No Mobitech procurement has been recorded yet.
-            </div>
-
-            {% endif %}
-
+{% endif %}
         </div>
 
 
