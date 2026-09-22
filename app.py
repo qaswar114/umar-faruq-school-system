@@ -1733,6 +1733,9 @@ def get_settings():
 
 def send_sms_gateway(phone, message):
     try:
+        # =====================================================
+        # VALIDATE PHONE
+        # =====================================================
         cleaned_phone = clean_phone_number(phone)
 
         if not cleaned_phone:
@@ -1744,6 +1747,9 @@ def send_sms_gateway(phone, message):
                 "response": "Invalid phone number"
             }
 
+        # =====================================================
+        # VALIDATE MESSAGE
+        # =====================================================
         message = str(message or "").strip()
 
         if not message:
@@ -1755,6 +1761,9 @@ def send_sms_gateway(phone, message):
                 "response": "Message cannot be empty"
             }
 
+        # =====================================================
+        # MOBITECH CREDENTIALS
+        # =====================================================
         api_key = os.environ.get(
             "MOBITECH_API_KEY",
             ""
@@ -1783,11 +1792,18 @@ def send_sms_gateway(phone, message):
                 "response": "Mobitech sender name is missing."
             }
 
-        url = "https://app.mobitechtechnologies.com/sms/sendsms"
+        # =====================================================
+        # MOBITECH ENDPOINT
+        # =====================================================
+        url = (
+            "https://app.mobitechtechnologies.com/"
+            "sms/sendsms"
+        )
 
         headers = {
             "h_api_key": api_key,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         }
 
         payload = {
@@ -1798,11 +1814,23 @@ def send_sms_gateway(phone, message):
             "message": message
         }
 
+        # =====================================================
+        # SEND REQUEST
+        # =====================================================
         response = requests.post(
             url,
             headers=headers,
             json=payload,
             timeout=30
+        )
+
+        raw_response = str(
+            response.text or ""
+        ).strip()
+
+        print(
+            "========================================",
+            flush=True
         )
 
         print(
@@ -1812,37 +1840,92 @@ def send_sms_gateway(phone, message):
         )
 
         print(
-            "MOBITECH RESPONSE:",
-            response.text,
+            "MOBITECH CONTENT TYPE:",
+            response.headers.get(
+                "Content-Type",
+                ""
+            ),
             flush=True
         )
 
-        try:
-            response_data = response.json()
-        except Exception:
-            response_data = {
-                "raw_response": response.text
-            }
+        print(
+            "MOBITECH RAW RESPONSE:",
+            raw_response,
+            flush=True
+        )
 
-        # HTTP request itself failed
+        print(
+            "========================================",
+            flush=True
+        )
+
+        # =====================================================
+        # HTTP FAILURE
+        # =====================================================
         if not response.ok:
             return {
                 "success": False,
-                "status": f"HTTP_{response.status_code}",
+                "status": (
+                    f"HTTP_{response.status_code}"
+                ),
+                "message_id": "",
+                "cost": "",
+                "response": raw_response
+            }
+
+        # =====================================================
+        # PARSE JSON
+        # =====================================================
+        try:
+            response_data = response.json()
+
+        except Exception:
+
+            # -------------------------------------------------
+            # IMPORTANT:
+            # HTTP 200 alone is NOT enough to charge the
+            # school's SMS wallet.
+            #
+            # If Mobitech does not return valid JSON, we treat
+            # the result as unconfirmed.
+            # -------------------------------------------------
+            return {
+                "success": False,
+                "status": "InvalidProviderResponse",
+                "message_id": "",
+                "cost": "",
+                "response": raw_response
+            }
+
+        print(
+            "MOBITECH JSON RESPONSE:",
+            response_data,
+            flush=True
+        )
+
+        # =====================================================
+        # RESPONSE MUST BE A DICTIONARY
+        # =====================================================
+        if not isinstance(
+            response_data,
+            dict
+        ):
+            return {
+                "success": False,
+                "status": "UnexpectedProviderResponse",
                 "message_id": "",
                 "cost": "",
                 "response": str(response_data)
             }
 
-        # Mobitech response field names may vary.
-        # We preserve the complete provider response while
-        # extracting common message/status fields where available.
-
+        # =====================================================
+        # EXTRACT PROVIDER INFORMATION
+        # =====================================================
         provider_status = str(
             response_data.get("status")
             or response_data.get("response")
             or response_data.get("message")
-            or "Submitted"
+            or ""
         ).strip()
 
         message_id = str(
@@ -1858,42 +1941,124 @@ def send_sms_gateway(phone, message):
             or ""
         ).strip()
 
-        # A successful HTTP response means Mobitech accepted
-        # the request unless its response explicitly reports failure.
-        status_lower = provider_status.lower()
+        status_lower = (
+            provider_status
+            .lower()
+            .strip()
+        )
 
-        failure_words = {
+        # =====================================================
+        # EXPLICIT FAILURE
+        # =====================================================
+        failure_words = (
             "failed",
             "failure",
             "error",
             "rejected",
             "invalid",
-            "unauthorized"
-        }
-
-        success = not any(
-            word in status_lower
-            for word in failure_words
+            "unauthorized",
+            "denied",
+            "insufficient",
+            "not allowed"
         )
 
+        if any(
+            word in status_lower
+            for word in failure_words
+        ):
+            return {
+                "success": False,
+                "status": (
+                    provider_status
+                    or "Rejected"
+                ),
+                "message_id": message_id,
+                "cost": cost,
+                "response": str(
+                    response_data
+                )
+            }
+
+        # =====================================================
+        # EXPLICIT ACCEPTANCE ONLY
+        # =====================================================
+        #
+        # IMPORTANT:
+        #
+        # We no longer assume that HTTP 200 = SMS accepted.
+        #
+        # Mobitech must explicitly return a recognizable
+        # acceptance/success state.
+        # =====================================================
+        success_words = (
+            "success",
+            "successful",
+            "submitted",
+            "accepted",
+            "sent",
+            "queued"
+        )
+
+        explicitly_accepted = any(
+            word in status_lower
+            for word in success_words
+        )
+
+        if not explicitly_accepted:
+
+            print(
+                "MOBITECH RESPONSE NOT CONFIRMED "
+                "AS ACCEPTED:",
+                response_data,
+                flush=True
+            )
+
+            return {
+                "success": False,
+                "status": (
+                    provider_status
+                    or "Unconfirmed"
+                ),
+                "message_id": message_id,
+                "cost": cost,
+                "response": str(
+                    response_data
+                )
+            }
+
+        # =====================================================
+        # MOBITECH ACCEPTED MESSAGE
+        # =====================================================
         return {
-            "success": success,
+            "success": True,
             "status": provider_status,
             "message_id": message_id,
             "cost": cost,
-            "response": str(response_data)
+            "response": str(
+                response_data
+            )
         }
 
+    # =========================================================
+    # TIMEOUT
+    # =========================================================
     except requests.exceptions.Timeout:
+
         return {
             "success": False,
             "status": "Timeout",
             "message_id": "",
             "cost": "",
-            "response": "Mobitech request timed out."
+            "response": (
+                "Mobitech request timed out."
+            )
         }
 
+    # =========================================================
+    # REQUEST ERROR
+    # =========================================================
     except requests.exceptions.RequestException as error:
+
         print(
             "MOBITECH REQUEST ERROR:",
             str(error),
@@ -1908,7 +2073,11 @@ def send_sms_gateway(phone, message):
             "response": str(error)
         }
 
+    # =========================================================
+    # UNEXPECTED ERROR
+    # =========================================================
     except Exception as error:
+
         print(
             "MOBITECH ERROR:",
             str(error),
@@ -1922,31 +2091,6 @@ def send_sms_gateway(phone, message):
             "cost": "",
             "response": str(error)
         }
-# =========================================================
-# SMS SINGLE-SEGMENT VALIDATION
-# =========================================================
-
-# GSM-7 basic alphabet.
-# Characters in this set use 1 septet.
-GSM7_BASIC_CHARS = set(
-    "@£$¥èéùìòÇ\nØø\rÅå"
-    "Δ_ΦΓΛΩΠΨΣΘΞ"
-    "ÆæßÉ"
-    " !\"#¤%&'()*+,-./"
-    "0123456789:;<=>?"
-    "¡ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "ÄÖÑÜ§¿"
-    "abcdefghijklmnopqrstuvwxyz"
-    "äöñüà"
-)
-
-# GSM-7 extension characters.
-# These require the escape character and therefore
-# consume 2 septets each.
-GSM7_EXTENDED_CHARS = set(
-    "^{}\\[~]|€"
-)
-
 
 def get_sms_segment_info(message):
     """
