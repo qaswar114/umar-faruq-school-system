@@ -11008,6 +11008,15 @@ def fee_reminders():
     ).strip()
 
     # =========================================================
+    # VALIDATE GRADE
+    # =========================================================
+    if (
+        selected_grade
+        and selected_grade not in GRADES
+    ):
+        selected_grade = ""
+
+    # =========================================================
     # VALIDATE TERM / MONTH
     # =========================================================
     if selected_term not in TERMS:
@@ -11038,27 +11047,31 @@ def fee_reminders():
             grade=selected_grade
         )
 
-    pupils = query.order_by(
-        Pupil.grade,
-        Pupil.full_name
-    ).all()
+    pupils = (
+        query
+        .order_by(
+            Pupil.grade,
+            Pupil.full_name
+        )
+        .all()
+    )
 
-    for p in pupils:
+    for pupil in pupils:
 
         total_due = due_until_month(
-            p,
+            pupil,
             year,
             selected_term,
             selected_month
         )
 
         total_paid = paid_year(
-            p.id,
+            pupil.id,
             year
         )
 
         discounts = discount_year(
-            p.id,
+            pupil.id,
             year
         )
 
@@ -11071,7 +11084,7 @@ def fee_reminders():
 
         if balance > 0:
             rows.append({
-                "pupil": p,
+                "pupil": pupil,
                 "total_due": total_due,
                 "total_paid": total_paid,
                 "discounts": discounts,
@@ -11087,6 +11100,7 @@ def fee_reminders():
         sms_failed = 0
         whatsapp_count = 0
         skipped = 0
+        duplicates = 0
 
         school_name = (
             school.school_name
@@ -11096,32 +11110,36 @@ def fee_reminders():
 
         for row in rows:
 
-            p = row["pupil"]
+            pupil = row["pupil"]
             balance = row["balance"]
 
-            # -------------------------------------------------
-            # PHONE REQUIRED
-            # -------------------------------------------------
-            if not p.guardian_phone:
+            # =================================================
+            # PHONE
+            # =================================================
+            if not pupil.guardian_phone:
                 skipped += 1
                 continue
 
             cleaned_phone = clean_phone_number(
-                p.guardian_phone
+                pupil.guardian_phone
             )
 
             if not cleaned_phone:
                 skipped += 1
                 continue
 
+            pupil_name = str(
+                pupil.full_name or "Pupil"
+            ).strip()
+
             # =================================================
-            # FULL WHATSAPP MESSAGE
+            # WHATSAPP MESSAGE
             # =================================================
             whatsapp_message = (
                 f"{school_name}\n\n"
                 f"FEE REMINDER\n\n"
                 f"Dear Parent,\n\n"
-                f"{p.full_name} has an outstanding "
+                f"{pupil_name} has an outstanding "
                 f"school fee balance of "
                 f"{money(balance)} for "
                 f"{selected_term}, "
@@ -11135,14 +11153,8 @@ def fee_reminders():
             # =================================================
             # SMS MESSAGE
             # =================================================
-            #
-            # IMPORTANT:
-            # The pupil name must always remain in the SMS.
+            # Pupil name must remain in every version.
             # =================================================
-            pupil_name = str(
-                p.full_name or "Pupil"
-            ).strip()
-
             sms_message = (
                 f"Fees: {pupil_name} balance "
                 f"KES {balance:,.0f} for "
@@ -11150,19 +11162,12 @@ def fee_reminders():
                 f"Please clear or contact school."
             )
 
-            # =================================================
-            # ONE-SEGMENT CHECK
-            # =================================================
-            segment_info = (
-                get_sms_segment_info(
-                    sms_message
-                )
+            segment_info = get_sms_segment_info(
+                sms_message
             )
 
             # -------------------------------------------------
             # FALLBACK 1
-            # Keep full pupil name.
-            # Shorten the surrounding wording.
             # -------------------------------------------------
             if not segment_info["fits"]:
 
@@ -11173,22 +11178,16 @@ def fee_reminders():
                     f"Please clear."
                 )
 
-                segment_info = (
-                    get_sms_segment_info(
-                        sms_message
-                    )
+                segment_info = get_sms_segment_info(
+                    sms_message
                 )
 
             # -------------------------------------------------
             # FALLBACK 2
-            # Keep pupil name but shorten only if necessary.
             # -------------------------------------------------
             if not segment_info["fits"]:
 
-                short_name = (
-                    pupil_name[:35]
-                    .strip()
-                )
+                short_name = pupil_name[:35].strip()
 
                 sms_message = (
                     f"Fees: {short_name}. "
@@ -11196,22 +11195,16 @@ def fee_reminders():
                     f"{selected_month} {year}."
                 )
 
-                segment_info = (
-                    get_sms_segment_info(
-                        sms_message
-                    )
+                segment_info = get_sms_segment_info(
+                    sms_message
                 )
 
             # -------------------------------------------------
             # FALLBACK 3
-            # Very compact, but pupil name is STILL retained.
             # -------------------------------------------------
             if not segment_info["fits"]:
 
-                short_name = (
-                    pupil_name[:25]
-                    .strip()
-                )
+                short_name = pupil_name[:25].strip()
 
                 sms_message = (
                     f"{short_name}: fees "
@@ -11219,25 +11212,16 @@ def fee_reminders():
                     f"{selected_month} {year}."
                 )
 
-                segment_info = (
-                    get_sms_segment_info(
-                        sms_message
-                    )
+                segment_info = get_sms_segment_info(
+                    sms_message
                 )
 
             # -------------------------------------------------
-            # FINAL SAFETY
-            #
-            # This should almost never be needed, but we still
-            # retain part of the pupil name rather than sending
-            # an anonymous fee reminder.
+            # FINAL FALLBACK
             # -------------------------------------------------
             if not segment_info["fits"]:
 
-                short_name = (
-                    pupil_name[:18]
-                    .strip()
-                )
+                short_name = pupil_name[:18].strip()
 
                 sms_message = (
                     f"{short_name}: fee bal "
@@ -11245,14 +11229,17 @@ def fee_reminders():
                     f"{selected_month} {year}."
                 )
 
-                segment_info = (
-                    get_sms_segment_info(
-                        sms_message
-                    )
+                segment_info = get_sms_segment_info(
+                    sms_message
                 )
 
             # =================================================
             # WHATSAPP DUPLICATE CHECK
+            # =================================================
+            #
+            # Exact message matching means:
+            # - same reminder is not queued twice
+            # - siblings sharing a phone remain independent
             # =================================================
             duplicate_whatsapp = (
                 WhatsAppMessage.query
@@ -11261,7 +11248,7 @@ def fee_reminders():
                     == school_id,
 
                     WhatsAppMessage.phone
-                    == p.guardian_phone,
+                    == pupil.guardian_phone,
 
                     WhatsAppMessage.category
                     == "Fees",
@@ -11269,13 +11256,8 @@ def fee_reminders():
                     WhatsAppMessage.status
                     == "Pending",
 
-                    WhatsAppMessage.message.ilike(
-                        f"%{p.full_name}%"
-                    ),
-
-                    WhatsAppMessage.message.ilike(
-                        f"%{selected_month}%"
-                    )
+                    WhatsAppMessage.message
+                    == whatsapp_message
                 )
                 .first()
             )
@@ -11285,36 +11267,67 @@ def fee_reminders():
             # =================================================
             if not duplicate_whatsapp:
 
-                wa = WhatsAppMessage(
-                    school_id=school_id,
-                    recipient_name=(
-                        p.guardian_name
-                        or p.full_name
-                    ),
-                    phone=p.guardian_phone,
-                    message=whatsapp_message,
-                    category="Fees",
-                    status="Pending",
-                    created_by=session.get(
-                        "username",
-                        ""
+                try:
+                    wa = WhatsAppMessage(
+                        school_id=school_id,
+                        recipient_name=(
+                            pupil.guardian_name
+                            or pupil_name
+                        ),
+                        phone=pupil.guardian_phone,
+                        message=whatsapp_message,
+                        category="Fees",
+                        status="Pending",
+                        created_by=session.get(
+                            "username",
+                            ""
+                        )
                     )
+
+                    db.session.add(wa)
+
+                    whatsapp_count += 1
+
+                except Exception as whatsapp_error:
+
+                    print(
+                        "FEE REMINDER WHATSAPP "
+                        "QUEUE ERROR:",
+                        pupil_name,
+                        str(whatsapp_error),
+                        flush=True
+                    )
+
+            # =================================================
+            # FINAL SMS SEGMENT SAFETY
+            # =================================================
+            if not segment_info["fits"]:
+
+                sms_failed += 1
+
+                print(
+                    "FEE REMINDER SMS TOO LONG:",
+                    pupil_name,
+                    segment_info,
+                    flush=True
                 )
 
-                db.session.add(wa)
-
-                whatsapp_count += 1
+                continue
 
             # =================================================
             # SMS DUPLICATE CHECK
             # =================================================
             #
-            # We do NOT depend on the full pupil name here,
-            # because an unusually long name may have been
-            # shortened to keep the SMS within one segment.
+            # IMPORTANT:
+            # Use the actual final SMS message.
             #
-            # Phone + category + month/year identify the
-            # pending reminder.
+            # Therefore:
+            #
+            # Ahmed + same parent phone = one reminder
+            # Amina + same parent phone = separate reminder
+            #
+            # Pressing Send again while Ahmed's identical
+            # reminder is Pending will NOT duplicate it.
             # =================================================
             duplicate_sms = (
                 SMSMessage.query
@@ -11331,13 +11344,8 @@ def fee_reminders():
                     SMSMessage.status
                     == "Pending",
 
-                    SMSMessage.message.ilike(
-                        f"%{selected_month}%"
-                    ),
-
-                    SMSMessage.message.ilike(
-                        f"%{year}%"
-                    )
+                    SMSMessage.message
+                    == sms_message
                 )
                 .first()
             )
@@ -11345,13 +11353,17 @@ def fee_reminders():
             # =================================================
             # QUEUE SMS
             # =================================================
-            if not duplicate_sms:
+            if duplicate_sms:
+
+                duplicates += 1
+
+            else:
 
                 try:
                     ok, sms_result = create_sms(
                         (
-                            p.guardian_name
-                            or p.full_name
+                            pupil.guardian_name
+                            or pupil_name
                         ),
                         cleaned_phone,
                         sms_message,
@@ -11367,7 +11379,7 @@ def fee_reminders():
                         print(
                             "FEE REMINDER SMS "
                             "NOT QUEUED:",
-                            p.full_name,
+                            pupil_name,
                             sms_result,
                             flush=True
                         )
@@ -11379,15 +11391,39 @@ def fee_reminders():
                     print(
                         "FEE REMINDER SMS "
                         "QUEUE ERROR:",
-                        p.full_name,
+                        pupil_name,
                         str(sms_error),
                         flush=True
                     )
 
         # =====================================================
-        # COMMIT WHATSAPP RECORDS
+        # COMMIT REMINDERS
         # =====================================================
-        db.session.commit()
+        try:
+            db.session.commit()
+
+        except Exception as error:
+            db.session.rollback()
+
+            print(
+                "FEE REMINDER COMMIT ERROR:",
+                str(error),
+                flush=True
+            )
+
+            flash(
+                "Fee reminders could not be completed."
+            )
+
+            return redirect(
+                url_for(
+                    "fee_reminders",
+                    year=year,
+                    grade=selected_grade,
+                    term=selected_term,
+                    month=selected_month
+                )
+            )
 
         # =====================================================
         # AUDIT
@@ -11401,6 +11437,7 @@ def fee_reminders():
                     f"WhatsApp: {whatsapp_count}. "
                     f"SMS: {sms_count}. "
                     f"SMS failed: {sms_failed}. "
+                    f"SMS duplicates: {duplicates}. "
                     f"Skipped: {skipped}."
                 ),
                 "Communication"
@@ -11423,6 +11460,7 @@ def fee_reminders():
                 f"WhatsApp: {whatsapp_count}. "
                 f"SMS: {sms_count}. "
                 f"SMS failed: {sms_failed}. "
+                f"Duplicates skipped: {duplicates}. "
                 f"Skipped/no phone: {skipped}."
             )
         )
