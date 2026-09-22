@@ -11680,17 +11680,26 @@ def platform_sms():
         money=money
     )
 
-@app.route("/delete_sms_procurement/<int:procurement_id>", methods=["POST"])
+@app.route(
+    "/delete_sms_procurement/<int:procurement_id>",
+    methods=["POST"]
+)
 def delete_sms_procurement(procurement_id):
-    if "user_id" not in session:
+
+    # =====================================================
+    # LOGIN / PERMISSION
+    # =====================================================
+    if not login_required():
         return redirect(url_for("login"))
 
-    if session.get("role") != "super admin":
-        flash("Only the Super Admin can delete SMS procurement records.", "danger")
+    if not role_allowed("super admin"):
+        flash("Access denied.")
         return redirect(url_for("dashboard"))
 
     try:
-        # Lock the procurement record
+        # =================================================
+        # LOCK PROCUREMENT RECORD
+        # =================================================
         procurement = (
             SMSProcurement.query
             .filter_by(id=procurement_id)
@@ -11699,13 +11708,27 @@ def delete_sms_procurement(procurement_id):
         )
 
         if not procurement:
-            flash("SMS procurement record not found.", "danger")
+            flash(
+                "SMS procurement record not found.",
+                "danger"
+            )
             return redirect(url_for("platform_sms"))
 
-        sms_count = int(procurement.sms_count or 0)
-        amount_paid = float(procurement.amount_paid or 0)
+        sms_count = int(
+            procurement.sms_count or 0
+        )
 
-        # Lock the central platform SMS pool
+        amount_paid = float(
+            procurement.amount_paid or 0
+        )
+
+        reference_no = (
+            procurement.reference_no or ""
+        )
+
+        # =================================================
+        # LOCK PLATFORM SMS POOL
+        # =================================================
         pool = (
             PlatformSMSPool.query
             .with_for_update()
@@ -11713,73 +11736,104 @@ def delete_sms_procurement(procurement_id):
         )
 
         if not pool:
-            flash("Platform SMS pool was not found.", "danger")
-            return redirect(url_for("platform_sms"))
-
-        # -----------------------------------------------------
-        # SAFETY CHECK
-        # -----------------------------------------------------
-        # We must not reverse SMS stock that has already been
-        # sold/transferred to schools.
-        if int(pool.sms_balance or 0) < sms_count:
             flash(
-                "This procurement cannot be deleted because some of its "
-                "SMS credits may already have been sold or transferred "
-                "to schools.",
+                "Platform SMS pool was not found.",
                 "danger"
             )
             return redirect(url_for("platform_sms"))
 
-        # -----------------------------------------------------
+        current_balance = int(
+            pool.sms_balance or 0
+        )
+
+        current_loaded = int(
+            pool.sms_loaded or 0
+        )
+
+        # =================================================
+        # SAFETY CHECK
+        # =================================================
+        if current_balance < sms_count:
+
+            flash(
+                "This procurement cannot be deleted because "
+                "some of these SMS credits may already have "
+                "been transferred to schools.",
+                "danger"
+            )
+
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        if current_loaded < sms_count:
+
+            flash(
+                "Platform procurement totals are inconsistent. "
+                "The record was not deleted.",
+                "danger"
+            )
+
+            return redirect(
+                url_for("platform_sms")
+            )
+
+        # =================================================
         # REVERSE PLATFORM STOCK
-        # -----------------------------------------------------
-        pool.sms_balance = max(
-            0,
-            int(pool.sms_balance or 0) - sms_count
+        # =================================================
+        pool.sms_balance = (
+            current_balance - sms_count
         )
 
-        pool.sms_loaded = max(
-            0,
-            int(pool.sms_loaded or 0) - sms_count
+        pool.sms_loaded = (
+            current_loaded - sms_count
         )
 
-        # sms_sold is NOT changed because deleting procurement
-        # does not reverse any school purchase.
+        # IMPORTANT:
+        # sms_sold is NOT changed.
+        # This route reverses procurement only.
 
-        reference_no = procurement.reference_no or ""
         procurement_id_value = procurement.id
 
-        # -----------------------------------------------------
-        # DELETE PROCUREMENT RECORD
-        # -----------------------------------------------------
+        # =================================================
+        # DELETE PROCUREMENT
+        # =================================================
         db.session.delete(procurement)
 
         db.session.commit()
 
-        # -----------------------------------------------------
-        # AUDIT LOG
-        # -----------------------------------------------------
+        # =================================================
+        # AUDIT
+        # =================================================
         try:
-            log_audit(
-                "Delete SMS Procurement",
+            save_audit(
                 (
-                    f"Deleted Mobitech procurement ID "
-                    f"{procurement_id_value}; "
-                    f"{sms_count} SMS; "
-                    f"KES {amount_paid:,.2f}; "
-                    f"Reference {reference_no}"
-                )
+                    f"Deleted Mobitech SMS procurement "
+                    f"#{procurement_id_value}. "
+                    f"SMS: {sms_count}. "
+                    f"Amount: KES {amount_paid:,.2f}. "
+                    f"Reference: {reference_no}. "
+                    f"New platform balance: "
+                    f"{pool.sms_balance}"
+                ),
+                "Communication"
             )
-        except Exception:
-            pass
+        except Exception as audit_error:
+            print(
+                "SMS PROCUREMENT AUDIT ERROR:",
+                str(audit_error),
+                flush=True
+            )
 
         flash(
-            f"Procurement deleted successfully. "
-            f"{sms_count:,} SMS removed from the Platform SMS Pool.",
+            f"Mobitech procurement deleted. "
+            f"{sms_count:,} SMS removed from the "
+            f"Platform SMS Pool.",
             "success"
         )
 
     except Exception as e:
+
         db.session.rollback()
 
         print(
@@ -11793,7 +11847,9 @@ def delete_sms_procurement(procurement_id):
             "danger"
         )
 
-    return redirect(url_for("platform_sms"))
+    return redirect(
+        url_for("platform_sms")
+    )
     
 @app.route("/buy_sms", methods=["GET", "POST"])
 def buy_sms():
