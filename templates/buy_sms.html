@@ -79,6 +79,74 @@
         margin-bottom: 18px;
     }
 
+    /* =====================================================
+       PAYMENT
+       ===================================================== */
+
+    .payment-box {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .payment-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 14px;
+    }
+
+    .payment-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .payment-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .payment-label {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 800;
+        margin-bottom: 5px;
+    }
+
+    .payment-value {
+        font-size: 20px;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .payment-steps {
+        margin-top: 16px;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.8;
+    }
+
+    .payment-warning {
+        margin-top: 14px;
+        padding: 12px 14px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 10px;
+        color: #9a3412;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    /* =====================================================
+       PACKAGES
+       ===================================================== */
+
     .packages-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -91,6 +159,7 @@
         padding: 20px;
         transition: .2s ease;
         position: relative;
+        background: white;
     }
 
     .package-card:hover {
@@ -115,7 +184,7 @@
         font-size: 20px;
         font-weight: 800;
         color: #16a34a;
-        margin-bottom: 15px;
+        margin-bottom: 5px;
     }
 
     .package-rate {
@@ -124,7 +193,7 @@
         margin-bottom: 16px;
     }
 
-    .buy-btn {
+    .select-package-btn {
         width: 100%;
         border: 0;
         border-radius: 9px;
@@ -135,8 +204,108 @@
         cursor: pointer;
     }
 
-    .buy-btn:hover {
+    .select-package-btn:hover {
         background: #1d4ed8;
+    }
+
+    .package-card.selected {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+
+    /* =====================================================
+       PURCHASE FORM
+       ===================================================== */
+
+    .purchase-form {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+    }
+
+    .selected-summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .selected-box {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px;
+    }
+
+    .selected-label {
+        color: #64748b;
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 800;
+    }
+
+    .selected-value {
+        color: #0f172a;
+        font-size: 21px;
+        font-weight: 900;
+        margin-top: 4px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 7px;
+    }
+
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        padding: 12px 13px;
+        font-size: 15px;
+        outline: none;
+        text-transform: uppercase;
+    }
+
+    .form-control:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+    }
+
+    .form-help {
+        margin-top: 6px;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        border: 0;
+        border-radius: 10px;
+        padding: 13px 16px;
+        background: #16a34a;
+        color: white;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .submit-btn:hover {
+        background: #15803d;
+    }
+
+    .submit-btn:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
     }
 
     .info-box {
@@ -148,6 +317,10 @@
         font-size: 13px;
         margin-bottom: 18px;
     }
+
+    /* =====================================================
+       HISTORY
+       ===================================================== */
 
     .table-wrap {
         overflow-x: auto;
@@ -194,9 +367,16 @@
     }
 
     .status-failed,
-    .status-cancelled {
+    .status-cancelled,
+    .status-rejected {
         background: #fee2e2;
         color: #991b1b;
+    }
+
+    .receipt-code {
+        font-family: monospace;
+        font-weight: 800;
+        color: #0f172a;
     }
 
     .empty-state {
@@ -207,11 +387,14 @@
 
     @media (max-width: 900px) {
         .summary-grid,
-        .packages-grid {
+        .packages-grid,
+        .payment-grid,
+        .selected-summary {
             grid-template-columns: 1fr;
         }
     }
 </style>
+
 
 <div class="sms-buy-page">
 
@@ -220,12 +403,14 @@
     <!-- ================================================== -->
 
     <div class="sms-header">
+
         <h2>Buy SMS Credits</h2>
 
         <p>
             {{ school.school_name }}
             · Purchase SMS credits from the EduManage Platform
         </p>
+
     </div>
 
 
@@ -236,6 +421,7 @@
     <div class="summary-grid">
 
         <div class="summary-card">
+
             <div class="summary-label">
                 Current SMS Balance
             </div>
@@ -243,10 +429,12 @@
             <div class="summary-value">
                 {{ "{:,}".format(wallet.sms_balance or 0) }}
             </div>
+
         </div>
 
 
         <div class="summary-card">
+
             <div class="summary-label">
                 Pending Purchases
             </div>
@@ -254,10 +442,12 @@
             <div class="summary-value">
                 {{ pending_count }}
             </div>
+
         </div>
 
 
         <div class="summary-card">
+
             <div class="summary-label">
                 Completed Purchases
             </div>
@@ -265,6 +455,119 @@
             <div class="summary-value">
                 {{ completed_count }}
             </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- PAYMENT INSTRUCTIONS -->
+    <!-- ================================================== -->
+
+    <div class="section-card">
+
+        <div class="section-title">
+            Payment Instructions
+        </div>
+
+        <div class="section-subtitle">
+            Pay for the SMS package through M-Pesa before
+            submitting your purchase request.
+        </div>
+
+
+        <div class="payment-box">
+
+            <div class="payment-title">
+                M-Pesa → Lipa na M-Pesa → Pay Bill
+            </div>
+
+
+            <div class="payment-grid">
+
+                <div class="payment-item">
+
+                    <div class="payment-label">
+                        Business Number
+                    </div>
+
+                    <div class="payment-value">
+                        {{ equity_paybill }}
+                    </div>
+
+                </div>
+
+
+                <div class="payment-item">
+
+                    <div class="payment-label">
+                        Account Number
+                    </div>
+
+                    <div class="payment-value">
+                        {{ equity_account }}
+                    </div>
+
+                </div>
+
+
+                <div class="payment-item">
+
+                    <div class="payment-label">
+                        SMS Price
+                    </div>
+
+                    <div class="payment-value">
+                        KES {{ "{:.2f}".format(sms_selling_price) }}
+                    </div>
+
+                    <div style="
+                        font-size:12px;
+                        color:#64748b;
+                        margin-top:3px;
+                    ">
+                        per SMS
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="payment-steps">
+
+                <strong>How to purchase:</strong><br>
+
+                1. Select your preferred SMS package below.<br>
+
+                2. Pay the exact package amount using
+                M-Pesa Paybill
+                <strong>{{ equity_paybill }}</strong>.<br>
+
+                3. Use Equity account
+                <strong>{{ equity_account }}</strong>.<br>
+
+                4. Enter the M-Pesa transaction code
+                received after payment.<br>
+
+                5. Submit the purchase request.<br>
+
+                6. Super Admin will verify the payment
+                before approving the SMS credits.
+
+            </div>
+
+
+            <div class="payment-warning">
+
+                SMS credits are not added immediately after
+                submitting a request. Your payment must first
+                be verified and approved by the EduManage
+                Super Admin.
+
+            </div>
+
         </div>
 
     </div>
@@ -287,10 +590,16 @@
 
 
         <div class="info-box">
-            SMS credits are supplied by the EduManage Platform.
-            After submitting your request, the Super Admin will
-            verify and approve the purchase. Your school's SMS
-            Wallet will then be credited automatically.
+
+            All packages are charged at
+            <strong>
+                KES {{ "{:.2f}".format(sms_selling_price) }}
+                per SMS
+            </strong>.
+
+            Schools purchase SMS credits from EduManage.
+            Mobitech remains the platform SMS provider.
+
         </div>
 
 
@@ -298,7 +607,10 @@
 
             {% for package in packages %}
 
-            <div class="package-card">
+            <div
+                class="package-card"
+                id="package-card-{{ package.sms }}"
+            >
 
                 <div class="package-qty">
                     {{ "{:,}".format(package.sms) }}
@@ -325,34 +637,134 @@
                 </div>
 
 
-                <form
-                    method="POST"
-                    action="{{ url_for('buy_sms') }}"
-                    onsubmit="
-                        return confirm(
-                            'Submit request for {{ package.sms }} SMS at KES {{ package.price }}?'
-                        );
+                <button
+                    type="button"
+                    class="select-package-btn"
+                    onclick="
+                        selectSmsPackage(
+                            {{ package.sms }},
+                            {{ package.price }}
+                        )
                     "
                 >
-
-                    <input
-                        type="hidden"
-                        name="package_sms"
-                        value="{{ package.sms }}"
-                    >
-
-                    <button
-                        type="submit"
-                        class="buy-btn"
-                    >
-                        Buy {{ "{:,}".format(package.sms) }} SMS
-                    </button>
-
-                </form>
+                    Select {{ "{:,}".format(package.sms) }} SMS
+                </button>
 
             </div>
 
             {% endfor %}
+
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- PAYMENT CONFIRMATION FORM -->
+        <!-- ============================================== -->
+
+        <div
+            class="purchase-form"
+            id="purchaseFormSection"
+        >
+
+            <div class="section-title">
+                Complete Purchase Request
+            </div>
+
+            <div class="section-subtitle">
+                Select a package above, make the payment,
+                then enter the M-Pesa transaction code.
+            </div>
+
+
+            <form
+                method="POST"
+                action="{{ url_for('buy_sms') }}"
+                onsubmit="return confirmSmsPurchase();"
+            >
+
+                <input
+                    type="hidden"
+                    name="package_sms"
+                    id="package_sms"
+                    value=""
+                >
+
+
+                <div class="selected-summary">
+
+                    <div class="selected-box">
+
+                        <div class="selected-label">
+                            Selected SMS
+                        </div>
+
+                        <div
+                            class="selected-value"
+                            id="selectedSms"
+                        >
+                            Not selected
+                        </div>
+
+                    </div>
+
+
+                    <div class="selected-box">
+
+                        <div class="selected-label">
+                            Amount to Pay
+                        </div>
+
+                        <div
+                            class="selected-value"
+                            id="selectedAmount"
+                        >
+                            KES 0.00
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="mpesa_receipt_no">
+                        M-Pesa Transaction Code
+                    </label>
+
+                    <input
+                        type="text"
+                        name="mpesa_receipt_no"
+                        id="mpesa_receipt_no"
+                        class="form-control"
+                        placeholder="Enter M-Pesa transaction code"
+                        maxlength="30"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <div class="form-help">
+
+                        Enter the transaction code from the
+                        M-Pesa confirmation message after
+                        paying through Paybill
+                        {{ equity_paybill }}.
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="submit-btn"
+                    id="submitPurchaseButton"
+                    disabled
+                >
+                    Submit Purchase Request
+                </button>
+
+            </form>
 
         </div>
 
@@ -379,15 +791,19 @@
             <table>
 
                 <thead>
+
                     <tr>
                         <th>Date</th>
                         <th>SMS</th>
                         <th>Amount</th>
+                        <th>M-Pesa Code</th>
                         <th>Requested By</th>
                         <th>Status</th>
                         <th>Completed</th>
                     </tr>
+
                 </thead>
+
 
                 <tbody>
 
@@ -396,19 +812,26 @@
                     <tr>
 
                         <td>
+
                             {% if purchase.request_date %}
-                                {{
-                                    purchase.request_date.strftime(
-                                        "%d %b %Y %H:%M"
-                                    )
-                                }}
+
+                            {{
+                                purchase.request_date.strftime(
+                                    "%d %b %Y %H:%M"
+                                )
+                            }}
+
                             {% else %}
-                                -
+
+                            -
+
                             {% endif %}
+
                         </td>
 
 
                         <td>
+
                             <strong>
                                 {{
                                     "{:,}".format(
@@ -416,16 +839,36 @@
                                     )
                                 }}
                             </strong>
+
                         </td>
 
 
                         <td>
+
                             KES
                             {{
                                 "{:,.2f}".format(
                                     purchase.amount or 0
                                 )
                             }}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if purchase.mpesa_receipt_no %}
+
+                            <span class="receipt-code">
+                                {{ purchase.mpesa_receipt_no }}
+                            </span>
+
+                            {% else %}
+
+                            -
+
+                            {% endif %}
+
                         </td>
 
 
@@ -456,15 +899,15 @@
 
                             {% if purchase.paid_at %}
 
-                                {{
-                                    purchase.paid_at.strftime(
-                                        "%d %b %Y %H:%M"
-                                    )
-                                }}
+                            {{
+                                purchase.paid_at.strftime(
+                                    "%d %b %Y %H:%M"
+                                )
+                            }}
 
                             {% else %}
 
-                                -
+                            -
 
                             {% endif %}
 
@@ -472,15 +915,18 @@
 
                     </tr>
 
+
                     {% else %}
 
                     <tr>
+
                         <td
-                            colspan="6"
+                            colspan="7"
                             class="empty-state"
                         >
                             No SMS purchases have been made yet.
                         </td>
+
                     </tr>
 
                     {% endfor %}
@@ -494,5 +940,135 @@
     </div>
 
 </div>
+
+
+<script>
+
+    let selectedPackageSms = 0;
+    let selectedPackageAmount = 0;
+
+
+    function selectSmsPackage(sms, amount) {
+
+        selectedPackageSms = parseInt(sms);
+        selectedPackageAmount = parseFloat(amount);
+
+
+        document.getElementById(
+            "package_sms"
+        ).value = selectedPackageSms;
+
+
+        document.getElementById(
+            "selectedSms"
+        ).textContent =
+            selectedPackageSms.toLocaleString() +
+            " SMS";
+
+
+        document.getElementById(
+            "selectedAmount"
+        ).textContent =
+            "KES " +
+            selectedPackageAmount.toLocaleString(
+                undefined,
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+
+        document.querySelectorAll(
+            ".package-card"
+        ).forEach(function(card) {
+
+            card.classList.remove(
+                "selected"
+            );
+
+        });
+
+
+        const selectedCard =
+            document.getElementById(
+                "package-card-" +
+                selectedPackageSms
+            );
+
+
+        if (selectedCard) {
+            selectedCard.classList.add(
+                "selected"
+            );
+        }
+
+
+        document.getElementById(
+            "submitPurchaseButton"
+        ).disabled = false;
+
+
+        document.getElementById(
+            "purchaseFormSection"
+        ).scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+    }
+
+
+    function confirmSmsPurchase() {
+
+        const receipt =
+            document.getElementById(
+                "mpesa_receipt_no"
+            ).value.trim();
+
+
+        if (!selectedPackageSms) {
+
+            alert(
+                "Please select an SMS package."
+            );
+
+            return false;
+        }
+
+
+        if (!receipt) {
+
+            alert(
+                "Please enter the M-Pesa transaction code."
+            );
+
+            return false;
+        }
+
+
+        return confirm(
+            "Submit purchase request?\n\n" +
+            "SMS: " +
+            selectedPackageSms.toLocaleString() +
+            "\n" +
+            "Amount paid: KES " +
+            selectedPackageAmount.toLocaleString(
+                undefined,
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            ) +
+            "\n" +
+            "M-Pesa Code: " +
+            receipt.toUpperCase() +
+            "\n\n" +
+            "Super Admin will verify the payment before approval."
+        );
+
+    }
+
+</script>
 
 {% endblock %}
