@@ -6272,37 +6272,30 @@ def notify_exam_results():
         flash("No school has been selected.")
         return redirect(url_for("dashboard"))
 
-    school = get_settings()
+    # =========================================================
+    # EXAM AND GRADE
+    # =========================================================
+    try:
+        exam_id = int(
+            request.form.get("exam_id")
+            or 0
+        )
 
-    # =========================================================
-    # FORM VALUES
-    # =========================================================
-    exam_id_raw = request.form.get(
-        "exam_id",
-        ""
-    ).strip()
+    except (TypeError, ValueError):
+        exam_id = 0
 
     grade = request.form.get(
         "grade",
         ""
     ).strip()
 
-    if not exam_id_raw or not grade:
-        flash(
-            "Please select an exam and grade."
-        )
-        return redirect(
-            url_for("report_cards")
-        )
+    if not exam_id:
+        flash("Please select an exam.")
+        return redirect(url_for("report_cards"))
 
-    try:
-        exam_id = int(exam_id_raw)
-
-    except (ValueError, TypeError):
-        flash("Invalid exam selected.")
-        return redirect(
-            url_for("report_cards")
-        )
+    if grade not in GRADES:
+        flash("Please select a valid grade.")
+        return redirect(url_for("report_cards"))
 
     # =========================================================
     # EXAM
@@ -6315,66 +6308,93 @@ def notify_exam_results():
 
     if not exam:
         flash("Invalid exam selected.")
-        return redirect(
-            url_for("report_cards")
-        )
+        return redirect(url_for("report_cards"))
 
     # =========================================================
     # PUPILS
     # =========================================================
-    pupils = Pupil.query.filter_by(
-        school_id=school_id,
-        grade=grade,
-        status="Active"
-    ).order_by(
-        Pupil.full_name.asc()
-    ).all()
-
-    sms_count = 0
-    sms_failed = 0
-    whatsapp_count = 0
-    skipped = 0
-
-    school_name = (
-        school.school_name
-        if school
-        else "School"
+    pupils = (
+        Pupil.query
+        .filter_by(
+            school_id=school_id,
+            grade=grade,
+            status="Active"
+        )
+        .order_by(
+            Pupil.full_name.asc()
+        )
+        .all()
     )
 
+    if not pupils:
+        flash(
+            "No active pupils were found "
+            "for the selected grade."
+        )
+
+        return redirect(
+            url_for(
+                "report_cards",
+                exam_id=exam_id,
+                grade=grade
+            )
+        )
+
+    school = get_settings()
+
+    sms_count = 0
+    whatsapp_count = 0
+    skipped = 0
+    sms_failed = 0
+
     # =========================================================
-    # PROCESS PUPILS
+    # PROCESS EACH PUPIL
     # =========================================================
     for pupil in pupils:
 
         # -----------------------------------------------------
-        # PHONE REQUIRED
+        # GUARDIAN PHONE REQUIRED
         # -----------------------------------------------------
         if not pupil.guardian_phone:
             skipped += 1
             continue
 
         # -----------------------------------------------------
-        # ONLY NOTIFY IF RESULTS EXIST
+        # PUPIL MUST HAVE RESULTS
         # -----------------------------------------------------
-        marks_count = Mark.query.filter_by(
-            school_id=school_id,
-            pupil_id=pupil.id,
-            exam_id=exam.id
-        ).count()
+        marks_count = (
+            Mark.query
+            .filter_by(
+                school_id=school_id,
+                pupil_id=pupil.id,
+                exam_id=exam.id
+            )
+            .count()
+        )
 
         if marks_count == 0:
             skipped += 1
             continue
 
+        pupil_name = (
+            pupil.full_name
+            or "Pupil"
+        ).strip()
+
+        exam_name = (
+            exam.exam_name
+            or "Exam"
+        ).strip()
+
         # =====================================================
-        # FULL WHATSAPP MESSAGE
+        # DETAILED WHATSAPP MESSAGE
         # =====================================================
         whatsapp_message = (
-            f"{school_name}\n\n"
+            f"{school.school_name}\n\n"
             f"EXAM RESULTS NOTICE\n\n"
             f"Dear Parent,\n\n"
-            f"The {exam.exam_name} results for "
-            f"{pupil.full_name} "
+            f"The {exam_name} results for "
+            f"{pupil_name} "
             f"({exam.term}, "
             f"{exam.academic_year}) "
             f"are now available.\n\n"
@@ -6385,97 +6405,7 @@ def notify_exam_results():
         )
 
         # =====================================================
-        # SHORT SMS MESSAGE
-        # =====================================================
-        pupil_name = str(
-            pupil.full_name or "Pupil"
-        ).strip()
-
-        exam_name = str(
-            exam.exam_name or "exam"
-        ).strip()
-
-        sms_message = (
-            f"Results: {pupil_name}'s "
-            f"{exam_name} results are ready. "
-            f"View report card on parent portal "
-            f"or contact school."
-        )
-
-        # =====================================================
-        # CHECK ONE-SEGMENT LIMIT
-        # =====================================================
-        segment_info = get_sms_segment_info(
-            sms_message
-        )
-
-        # -----------------------------------------------------
-        # FIRST FALLBACK:
-        # SHORTEN PUPIL AND EXAM NAMES
-        # -----------------------------------------------------
-        if not segment_info["fits"]:
-
-            short_name = (
-                pupil_name[:25]
-                .strip()
-            )
-
-            short_exam = (
-                exam_name[:25]
-                .strip()
-            )
-
-            sms_message = (
-                f"Results: {short_name}'s "
-                f"{short_exam} results are ready. "
-                f"View parent portal or "
-                f"contact school."
-            )
-
-            segment_info = (
-                get_sms_segment_info(
-                    sms_message
-                )
-            )
-
-        # -----------------------------------------------------
-        # SECOND FALLBACK:
-        # KEEP PUPIL NAME ONLY
-        # -----------------------------------------------------
-        if not segment_info["fits"]:
-
-            short_name = (
-                pupil_name[:25]
-                .strip()
-            )
-
-            sms_message = (
-                f"Results: {short_name}'s "
-                f"exam results are ready. "
-                f"View parent portal or "
-                f"contact school."
-            )
-
-            segment_info = (
-                get_sms_segment_info(
-                    sms_message
-                )
-            )
-
-        # -----------------------------------------------------
-        # FINAL FALLBACK:
-        # REMOVE DYNAMIC NAMES
-        # -----------------------------------------------------
-        if not segment_info["fits"]:
-
-            sms_message = (
-                "Exam results are ready. "
-                "View the report card on the "
-                "parent portal or contact school."
-            )
-
-        # =====================================================
-        # WHATSAPP DUPLICATE CHECK
+        # DUPLICATE WHATSAPP CHECK
         # =====================================================
         duplicate_whatsapp = (
             WhatsAppMessage.query
@@ -6490,11 +6420,11 @@ def notify_exam_results():
                 == "Exam Results",
 
                 WhatsAppMessage.message.ilike(
-                    f"%{pupil.full_name}%"
+                    f"%{pupil_name}%"
                 ),
 
                 WhatsAppMessage.message.ilike(
-                    f"%{exam.exam_name}%"
+                    f"%{exam_name}%"
                 )
             )
             .first()
@@ -6505,25 +6435,34 @@ def notify_exam_results():
         # =====================================================
         if not duplicate_whatsapp:
 
-            wa = WhatsAppMessage(
-                school_id=school_id,
-                recipient_name=(
-                    pupil.guardian_name
-                    or pupil.full_name
-                ),
-                phone=pupil.guardian_phone,
-                message=whatsapp_message,
-                category="Exam Results",
-                status="Pending",
-                created_by=session.get(
-                    "username",
-                    ""
+            try:
+                wa = WhatsAppMessage(
+                    school_id=school_id,
+                    recipient_name=(
+                        pupil.guardian_name
+                        or pupil_name
+                    ),
+                    phone=pupil.guardian_phone,
+                    message=whatsapp_message,
+                    category="Exam Results",
+                    status="Pending",
+                    created_by=session.get(
+                        "username",
+                        ""
+                    )
                 )
-            )
 
-            db.session.add(wa)
+                db.session.add(wa)
 
-            whatsapp_count += 1
+                whatsapp_count += 1
+
+            except Exception as whatsapp_error:
+                print(
+                    "EXAM WHATSAPP QUEUE ERROR:",
+                    pupil_name,
+                    str(whatsapp_error),
+                    flush=True
+                )
 
         # =====================================================
         # CLEAN SMS PHONE
@@ -6533,18 +6472,159 @@ def notify_exam_results():
         )
 
         if not cleaned_phone:
-            skipped += 1
+            sms_failed += 1
             continue
 
         # =====================================================
-        # SMS DUPLICATE CHECK
+        # ONE-SEGMENT SMS
         # =====================================================
         #
-        # We deliberately do not depend on the pupil's full
-        # name here because the SMS may shorten/remove it.
-        # Exam ID + pupil ID are not stored directly in the
-        # SMS record, so we use phone/category plus exam name
-        # where possible.
+        # RULE:
+        # The pupil name must NEVER disappear.
+        #
+        # We shorten other wording first.
+        # If still necessary, the pupil name itself is
+        # shortened, but never completely removed.
+        # =====================================================
+
+        # -----------------------------------------------------
+        # VERSION 1
+        # Full pupil + full exam name
+        # -----------------------------------------------------
+        sms_message = (
+            f"Results: {pupil_name}'s "
+            f"{exam_name} results are ready. "
+            f"View report card on parent portal "
+            f"or contact school."
+        )
+
+        segment_info = get_sms_segment_info(
+            sms_message
+        )
+
+        # -----------------------------------------------------
+        # VERSION 2
+        # Shorter wording, full pupil + exam
+        # -----------------------------------------------------
+        if not segment_info["fits"]:
+
+            sms_message = (
+                f"Results: {pupil_name}. "
+                f"{exam_name} results ready. "
+                f"View report card or contact school."
+            )
+
+            segment_info = get_sms_segment_info(
+                sms_message
+            )
+
+        # -----------------------------------------------------
+        # VERSION 3
+        # Shorten exam name first
+        # Keep full pupil name
+        # -----------------------------------------------------
+        if not segment_info["fits"]:
+
+            short_exam = (
+                exam_name[:25]
+                .strip()
+            )
+
+            sms_message = (
+                f"Results: {pupil_name}. "
+                f"{short_exam} results ready. "
+                f"View report card."
+            )
+
+            segment_info = get_sms_segment_info(
+                sms_message
+            )
+
+        # -----------------------------------------------------
+        # VERSION 4
+        # Keep pupil name, remove exam name if necessary
+        # -----------------------------------------------------
+        if not segment_info["fits"]:
+
+            sms_message = (
+                f"Results for {pupil_name} "
+                f"are ready. "
+                f"View report card or contact school."
+            )
+
+            segment_info = get_sms_segment_info(
+                sms_message
+            )
+
+        # -----------------------------------------------------
+        # VERSION 5
+        # Shorten pupil name, but NEVER remove it
+        # -----------------------------------------------------
+        if not segment_info["fits"]:
+
+            short_name = (
+                pupil_name[:30]
+                .strip()
+            )
+
+            sms_message = (
+                f"{short_name}: exam results "
+                f"are ready. View report card."
+            )
+
+            segment_info = get_sms_segment_info(
+                sms_message
+            )
+
+        # -----------------------------------------------------
+        # VERSION 6
+        # More compact
+        # -----------------------------------------------------
+        if not segment_info["fits"]:
+
+            short_name = (
+                pupil_name[:22]
+                .strip()
+            )
+
+            sms_message = (
+                f"{short_name}: results ready. "
+                f"View report card."
+            )
+
+            segment_info = get_sms_segment_info(
+                sms_message
+            )
+
+        # -----------------------------------------------------
+        # FINAL DEFENSIVE FALLBACK
+        # Pupil identity still retained
+        # -----------------------------------------------------
+        if not segment_info["fits"]:
+
+            short_name = (
+                pupil_name[:16]
+                .strip()
+            )
+
+            sms_message = (
+                f"{short_name}: results ready. "
+                f"Contact school."
+            )
+
+            segment_info = get_sms_segment_info(
+                sms_message
+            )
+
+        # =====================================================
+        # DUPLICATE SMS CHECK
+        # =====================================================
+        #
+        # Important:
+        # Do NOT identify duplicates only by phone.
+        #
+        # Two siblings may share the same guardian phone.
+        # Each pupil must still receive their own result alert.
         # =====================================================
         duplicate_sms = (
             SMSMessage.query
@@ -6558,99 +6638,114 @@ def notify_exam_results():
                 SMSMessage.category
                 == "Exam Results",
 
-                SMSMessage.message.ilike(
-                    f"%{exam_name[:25]}%"
-                )
+                SMSMessage.message
+                == sms_message
             )
             .first()
         )
 
-        # If the fallback SMS removed the exam name,
-        # check the exact generated message instead.
-        if (
-            not duplicate_sms
-            and exam_name[:25].lower()
-            not in sms_message.lower()
-        ):
-            duplicate_sms = (
-                SMSMessage.query
-                .filter(
-                    SMSMessage.school_id
-                    == school_id,
-
-                    SMSMessage.phone
-                    == cleaned_phone,
-
-                    SMSMessage.category
-                    == "Exam Results",
-
-                    SMSMessage.message
-                    == sms_message
-                )
-                .first()
-            )
-
         # =====================================================
         # QUEUE SMS
         # =====================================================
-        if not duplicate_sms:
+        if (
+            not duplicate_sms
+            and segment_info["fits"]
+        ):
 
-            ok, sms_result = create_sms(
-                (
+            try:
+                ok, sms_result = create_sms(
                     pupil.guardian_name
-                    or pupil.full_name
-                ),
-                cleaned_phone,
-                sms_message,
-                "Exam Results"
-            )
+                    or pupil_name,
+                    cleaned_phone,
+                    sms_message,
+                    "Exam Results"
+                )
 
-            if ok:
-                sms_count += 1
+                if ok:
+                    sms_count += 1
 
-            else:
+                else:
+                    sms_failed += 1
+
+                    print(
+                        "EXAM SMS NOT QUEUED:",
+                        pupil_name,
+                        sms_result,
+                        flush=True
+                    )
+
+            except Exception as sms_error:
                 sms_failed += 1
 
                 print(
-                    "EXAM RESULT SMS "
-                    "NOT QUEUED:",
-                    pupil.full_name,
-                    sms_result,
+                    "EXAM SMS QUEUE ERROR:",
+                    pupil_name,
+                    str(sms_error),
                     flush=True
                 )
 
+        elif not segment_info["fits"]:
+            sms_failed += 1
+
     # =========================================================
-    # COMMIT WHATSAPP / OTHER PENDING CHANGES
+    # SAVE WHATSAPP QUEUE
     # =========================================================
-    db.session.commit()
+    try:
+        db.session.commit()
+
+    except Exception as error:
+        db.session.rollback()
+
+        print(
+            "EXAM ALERT COMMIT ERROR:",
+            str(error),
+            flush=True
+        )
+
+        flash(
+            "Exam alerts could not be completed."
+        )
+
+        return redirect(
+            url_for(
+                "report_cards",
+                exam_id=exam_id,
+                grade=grade
+            )
+        )
 
     # =========================================================
     # AUDIT
     # =========================================================
-    save_audit(
-        (
-            f"Queued exam result alerts for "
-            f"{grade}. "
-            f"Exam: {exam.exam_name}. "
-            f"WhatsApp: {whatsapp_count}. "
-            f"SMS: {sms_count}. "
-            f"SMS failed: {sms_failed}. "
-            f"Skipped: {skipped}."
-        ),
-        "Communication"
-    )
+    try:
+        save_audit(
+            (
+                f"Queued exam result alerts for "
+                f"{grade}. "
+                f"WhatsApp: {whatsapp_count}, "
+                f"SMS: {sms_count}, "
+                f"SMS Failed: {sms_failed}, "
+                f"Skipped: {skipped}."
+            ),
+            "Communication"
+        )
+
+    except Exception as audit_error:
+        print(
+            "EXAM ALERT AUDIT ERROR:",
+            str(audit_error),
+            flush=True
+        )
 
     # =========================================================
     # RESULT
     # =========================================================
     flash(
-        (
-            f"Exam result alerts queued. "
-            f"WhatsApp: {whatsapp_count}. "
-            f"SMS: {sms_count}. "
-            f"SMS failed: {sms_failed}. "
-            f"Skipped: {skipped}."
-        )
+        f"Exam result alerts queued. "
+        f"WhatsApp: {whatsapp_count}, "
+        f"SMS: {sms_count}, "
+        f"SMS Failed: {sms_failed}, "
+        f"Skipped: {skipped}."
     )
 
     return redirect(
@@ -8656,9 +8751,10 @@ def payments():
     # =========================================================
     if request.method == "POST":
         try:
-            # -------------------------------------------------
+
+            # =================================================
             # BASIC PAYMENT DETAILS
-            # -------------------------------------------------
+            # =================================================
             year = int(
                 request.form.get("academic_year")
                 or current_year()
@@ -8690,9 +8786,9 @@ def payments():
                 )
                 return redirect(url_for("payments"))
 
-            # -------------------------------------------------
-            # LOCK PUPIL
-            # -------------------------------------------------
+            # =================================================
+            # PUPIL
+            # =================================================
             pupil = (
                 Pupil.query
                 .filter_by(
@@ -8708,41 +8804,37 @@ def payments():
                 flash("Invalid pupil selected.")
                 return redirect(url_for("payments"))
 
-            # -------------------------------------------------
+            # =================================================
             # PAYMENT AMOUNTS
-            # -------------------------------------------------
+            # =================================================
             tuition_paid = round(
                 float(
-                    request.form.get(
-                        "tuition_paid"
-                    ) or 0
+                    request.form.get("tuition_paid")
+                    or 0
                 ),
                 2
             )
 
             bus_paid = round(
                 float(
-                    request.form.get(
-                        "bus_paid"
-                    ) or 0
+                    request.form.get("bus_paid")
+                    or 0
                 ),
                 2
             )
 
             exam_paid = round(
                 float(
-                    request.form.get(
-                        "exam_paid"
-                    ) or 0
+                    request.form.get("exam_paid")
+                    or 0
                 ),
                 2
             )
 
             admission_paid = round(
                 float(
-                    request.form.get(
-                        "admission_paid"
-                    ) or 0
+                    request.form.get("admission_paid")
+                    or 0
                 ),
                 2
             )
@@ -8761,9 +8853,7 @@ def payments():
                 flash(
                     "Payment amounts cannot be negative."
                 )
-                return redirect(
-                    url_for("payments")
-                )
+                return redirect(url_for("payments"))
 
             amount_paid = round(
                 tuition_paid
@@ -8777,9 +8867,7 @@ def payments():
                 flash(
                     "Enter at least one payment amount."
                 )
-                return redirect(
-                    url_for("payments")
-                )
+                return redirect(url_for("payments"))
 
             # =================================================
             # FEES DUE FOR SELECTED MONTH
@@ -8824,7 +8912,7 @@ def payments():
             )
 
             # =================================================
-            # AMOUNT ALREADY PAID FOR THIS MONTH
+            # ALREADY PAID FOR THIS MONTH
             # =================================================
             previous_totals = (
                 db.session.query(
@@ -8854,20 +8942,11 @@ def payments():
                     )
                 )
                 .filter(
-                    Payment.school_id
-                    == school_id,
-
-                    Payment.pupil_id
-                    == pupil.id,
-
-                    Payment.academic_year
-                    == year,
-
-                    Payment.term
-                    == term,
-
-                    Payment.month
-                    == month
+                    Payment.school_id == school_id,
+                    Payment.pupil_id == pupil.id,
+                    Payment.academic_year == year,
+                    Payment.term == term,
+                    Payment.month == month
                 )
                 .first()
             )
@@ -8944,7 +9023,7 @@ def payments():
             )
 
             # =================================================
-            # PREVENT EXCESS PAYMENT
+            # PREVENT OVERPAYMENT
             # =================================================
             errors = []
 
@@ -8969,10 +9048,7 @@ def payments():
                     f"{money(exam_remaining)}."
                 )
 
-            if (
-                admission_paid
-                > admission_remaining
-            ):
+            if admission_paid > admission_remaining:
                 errors.append(
                     "Admission payment exceeds the "
                     f"remaining amount of "
@@ -8980,12 +9056,11 @@ def payments():
                 )
 
             if errors:
+
                 for error_message in errors:
                     flash(error_message)
 
-                return redirect(
-                    url_for("payments")
-                )
+                return redirect(url_for("payments"))
 
             # =================================================
             # PREVENT PAYMENT AFTER MONTH COMPLETED
@@ -8998,43 +9073,36 @@ def payments():
                 2
             )
 
-            if (
-                total_remaining_before_payment
-                <= 0
-            ):
+            if total_remaining_before_payment <= 0:
                 flash(
                     f"{pupil.full_name} has already "
                     f"completed all fees charged for "
                     f"{month} {year}."
                 )
 
-                return redirect(
-                    url_for("payments")
-                )
+                return redirect(url_for("payments"))
 
             # =================================================
             # PAYMENT DATE
             # =================================================
-            payment_date_text = (
-                request.form.get(
-                    "payment_date",
-                    ""
-                ).strip()
-            )
+            payment_date_text = request.form.get(
+                "payment_date",
+                ""
+            ).strip()
 
             if payment_date_text:
+
                 try:
-                    payment_date = (
-                        datetime.strptime(
-                            payment_date_text,
-                            "%Y-%m-%d"
-                        ).date()
-                    )
+                    payment_date = datetime.strptime(
+                        payment_date_text,
+                        "%Y-%m-%d"
+                    ).date()
 
                 except ValueError:
                     flash(
                         "Enter a valid payment date."
                     )
+
                     return redirect(
                         url_for("payments")
                     )
@@ -9045,23 +9113,22 @@ def payments():
             # =================================================
             # PAYMENT METHOD
             # =================================================
-            payment_method = (
-                request.form.get(
-                    "payment_method",
-                    ""
-                ).strip()
-            )
+            payment_method = request.form.get(
+                "payment_method",
+                ""
+            ).strip()
 
             if not payment_method:
                 flash(
                     "Select a payment method."
                 )
+
                 return redirect(
                     url_for("payments")
                 )
 
             # =================================================
-            # RECEIPT NUMBER
+            # GENERATE RECEIPT NUMBER
             # =================================================
             receipt_number = unique_receipt_no(
                 year,
@@ -9070,7 +9137,7 @@ def payments():
             )
 
             # =================================================
-            # CREATE PAYMENT
+            # SAVE PAYMENT
             # =================================================
             pay = Payment(
                 school_id=school_id,
@@ -9093,9 +9160,17 @@ def payments():
 
             db.session.add(pay)
 
-            # IMPORTANT:
-            # Save the valid financial transaction first.
-            # Messaging failure must never reverse it.
+            # =================================================
+            # COMMIT PAYMENT FIRST
+            # =================================================
+            #
+            # Very important:
+            # Once the payment is valid, save it BEFORE
+            # attempting WhatsApp or SMS.
+            #
+            # Communication failure must never cancel a
+            # valid financial transaction.
+            # =================================================
             db.session.commit()
 
             # =================================================
@@ -9110,17 +9185,14 @@ def payments():
 
             school = get_settings()
 
-            school_name = (
-                school.school_name
-                if school
-                else "School"
-            )
-
             # =================================================
-            # FULL WHATSAPP CONFIRMATION
+            # DETAILED WHATSAPP CONFIRMATION
             # =================================================
-            whatsapp_message = (
-                f"{school_name}\n\n"
+            #
+            # WhatsApp does not need the one-SMS restriction.
+            # =================================================
+            confirmation_message = (
+                f"{school.school_name}\n\n"
                 f"PAYMENT CONFIRMATION\n\n"
                 f"Dear Parent,\n"
                 f"We have received "
@@ -9135,107 +9207,18 @@ def payments():
                 f"Thank you."
             )
 
-            # =================================================
-            # SHORT SMS CONFIRMATION
-            # =================================================
-            pupil_name = str(
-                pupil.full_name
-                or "Pupil"
-            ).strip()
-
-            sms_message = (
-                f"Payment: KES "
-                f"{amount_paid:,.0f} received "
-                f"for {pupil_name}. "
-                f"Rcpt {receipt_number}. "
-                f"Bal KES {balance:,.0f}. "
-                f"Thank you."
-            )
-
-            # =================================================
-            # GUARANTEE ONE SMS SEGMENT
-            # =================================================
-            segment_info = (
-                get_sms_segment_info(
-                    sms_message
-                )
-            )
-
-            # -------------------------------------------------
-            # FIRST FALLBACK:
-            # SHORTEN PUPIL NAME
-            # -------------------------------------------------
-            if not segment_info["fits"]:
-
-                short_name = (
-                    pupil_name[:25]
-                    .strip()
-                )
-
-                sms_message = (
-                    f"Payment: KES "
-                    f"{amount_paid:,.0f} received "
-                    f"for {short_name}. "
-                    f"Rcpt {receipt_number}. "
-                    f"Bal KES "
-                    f"{balance:,.0f}."
-                )
-
-                segment_info = (
-                    get_sms_segment_info(
-                        sms_message
-                    )
-                )
-
-            # -------------------------------------------------
-            # SECOND FALLBACK:
-            # REMOVE PUPIL NAME
-            # -------------------------------------------------
-            if not segment_info["fits"]:
-
-                sms_message = (
-                    f"Payment KES "
-                    f"{amount_paid:,.0f} received. "
-                    f"Rcpt {receipt_number}. "
-                    f"Bal KES "
-                    f"{balance:,.0f}."
-                )
-
-                segment_info = (
-                    get_sms_segment_info(
-                        sms_message
-                    )
-                )
-
-            # -------------------------------------------------
-            # FINAL FALLBACK:
-            # PRESERVE PAYMENT, RECEIPT AND BALANCE
-            # -------------------------------------------------
-            if not segment_info["fits"]:
-
-                sms_message = (
-                    f"Paid KES "
-                    f"{amount_paid:,.0f}. "
-                    f"Rcpt {receipt_number}. "
-                    f"Bal KES "
-                    f"{balance:,.0f}."
-                )
-
-            # =================================================
-            # MESSAGE STATUS
-            # =================================================
             whatsapp_queued = False
             sms_queued = False
             sms_note = ""
 
             # =================================================
-            # QUEUE CONFIRMATIONS
+            # GUARDIAN COMMUNICATION
             # =================================================
             if pupil.guardian_phone:
 
-                # ---------------------------------------------
+                # =============================================
                 # WHATSAPP
-                # ---------------------------------------------
+                # =============================================
                 try:
                     wa = WhatsAppMessage(
                         school_id=school_id,
@@ -9243,10 +9226,8 @@ def payments():
                             pupil.guardian_name
                             or pupil.full_name
                         ),
-                        phone=(
-                            pupil.guardian_phone
-                        ),
-                        message=whatsapp_message,
+                        phone=pupil.guardian_phone,
+                        message=confirmation_message,
                         category=(
                             "Payment Confirmation"
                         ),
@@ -9263,7 +9244,6 @@ def payments():
                     whatsapp_queued = True
 
                 except Exception as whatsapp_error:
-
                     db.session.rollback()
 
                     print(
@@ -9273,39 +9253,198 @@ def payments():
                         flush=True
                     )
 
+                # =============================================
+                # ONE-SEGMENT SMS
+                # =============================================
+                #
+                # Pupil name is mandatory.
+                # It is NEVER completely removed.
+                # =============================================
+                pupil_name = (
+                    pupil.full_name
+                    or "Pupil"
+                ).strip()
+
                 # ---------------------------------------------
-                # SMS
+                # VERSION 1
+                # Full pupil name
                 # ---------------------------------------------
-                try:
-                    sms_ok, sms_result = (
-                        create_sms(
-                            (
-                                pupil.guardian_name
-                                or pupil.full_name
-                            ),
+                sms_message = (
+                    f"Payment: KES "
+                    f"{amount_paid:,.0f} received "
+                    f"for {pupil_name}. "
+                    f"Rcpt {receipt_number}. "
+                    f"Bal KES {balance:,.0f}. "
+                    f"Thank you."
+                )
+
+                segment_info = (
+                    get_sms_segment_info(
+                        sms_message
+                    )
+                )
+
+                # ---------------------------------------------
+                # VERSION 2
+                # Shorter wording, full pupil name
+                # ---------------------------------------------
+                if not segment_info["fits"]:
+
+                    sms_message = (
+                        f"Payment: {pupil_name}. "
+                        f"KES {amount_paid:,.0f} "
+                        f"received. "
+                        f"Rcpt {receipt_number}. "
+                        f"Bal KES "
+                        f"{balance:,.0f}."
+                    )
+
+                    segment_info = (
+                        get_sms_segment_info(
+                            sms_message
+                        )
+                    )
+
+                # ---------------------------------------------
+                # VERSION 3
+                # Shorten name to 30 characters
+                # ---------------------------------------------
+                if not segment_info["fits"]:
+
+                    short_name = (
+                        pupil_name[:30]
+                        .strip()
+                    )
+
+                    sms_message = (
+                        f"Payment: {short_name}. "
+                        f"KES {amount_paid:,.0f}. "
+                        f"Rcpt {receipt_number}. "
+                        f"Bal KES "
+                        f"{balance:,.0f}."
+                    )
+
+                    segment_info = (
+                        get_sms_segment_info(
+                            sms_message
+                        )
+                    )
+
+                # ---------------------------------------------
+                # VERSION 4
+                # Shorten name to 22 characters
+                # ---------------------------------------------
+                if not segment_info["fits"]:
+
+                    short_name = (
+                        pupil_name[:22]
+                        .strip()
+                    )
+
+                    sms_message = (
+                        f"{short_name}: "
+                        f"Paid KES "
+                        f"{amount_paid:,.0f}. "
+                        f"Rcpt {receipt_number}. "
+                        f"Bal KES "
+                        f"{balance:,.0f}."
+                    )
+
+                    segment_info = (
+                        get_sms_segment_info(
+                            sms_message
+                        )
+                    )
+
+                # ---------------------------------------------
+                # VERSION 5
+                # Compact, still keeps pupil name
+                # ---------------------------------------------
+                if not segment_info["fits"]:
+
+                    short_name = (
+                        pupil_name[:16]
+                        .strip()
+                    )
+
+                    sms_message = (
+                        f"{short_name}: "
+                        f"KES {amount_paid:,.0f} "
+                        f"paid. "
+                        f"Rcpt {receipt_number}. "
+                        f"Bal {balance:,.0f}."
+                    )
+
+                    segment_info = (
+                        get_sms_segment_info(
+                            sms_message
+                        )
+                    )
+
+                # ---------------------------------------------
+                # FINAL DEFENSIVE FALLBACK
+                #
+                # Drop receipt number only if absolutely
+                # necessary, but retain pupil identity.
+                # ---------------------------------------------
+                if not segment_info["fits"]:
+
+                    short_name = (
+                        pupil_name[:12]
+                        .strip()
+                    )
+
+                    sms_message = (
+                        f"{short_name}: "
+                        f"Paid KES "
+                        f"{amount_paid:,.0f}. "
+                        f"Bal KES "
+                        f"{balance:,.0f}."
+                    )
+
+                    segment_info = (
+                        get_sms_segment_info(
+                            sms_message
+                        )
+                    )
+
+                # ---------------------------------------------
+                # QUEUE SMS
+                # ---------------------------------------------
+                if segment_info["fits"]:
+
+                    try:
+                        sms_ok, sms_msg = create_sms(
+                            pupil.guardian_name
+                            or pupil.full_name,
                             pupil.guardian_phone,
                             sms_message,
                             "Payment Confirmation"
                         )
-                    )
 
-                    if sms_ok:
-                        sms_queued = True
+                        if sms_ok:
+                            sms_queued = True
 
-                    else:
-                        sms_note = sms_result
+                        else:
+                            sms_note = sms_msg
 
-                except Exception as sms_error:
+                    except Exception as sms_error:
+                        sms_note = str(
+                            sms_error
+                        )
 
-                    sms_note = str(
-                        sms_error
-                    )
+                        print(
+                            "PAYMENT SMS "
+                            "QUEUE ERROR:",
+                            str(sms_error),
+                            flush=True
+                        )
 
-                    print(
-                        "PAYMENT SMS "
-                        "QUEUE ERROR:",
-                        str(sms_error),
-                        flush=True
+                else:
+                    sms_note = (
+                        "Payment confirmation "
+                        "could not fit within "
+                        "one SMS segment."
                     )
 
             # =================================================
@@ -9313,15 +9452,13 @@ def payments():
             # =================================================
             try:
                 save_audit(
-                    (
-                        f"Payment recorded for "
-                        f"{pupil.full_name}: "
-                        f"{money(amount_paid)}. "
-                        f"Receipt: "
-                        f"{receipt_number}. "
-                        f"Period: "
-                        f"{month} {year}."
-                    ),
+                    f"Payment recorded for "
+                    f"{pupil.full_name}: "
+                    f"{money(amount_paid)}. "
+                    f"Receipt: "
+                    f"{receipt_number}. "
+                    f"Period: "
+                    f"{month} {year}.",
                     "Finance"
                 )
 
@@ -9333,7 +9470,7 @@ def payments():
                 )
 
             # =================================================
-            # RESULT MESSAGE
+            # SUCCESS MESSAGE
             # =================================================
             flash_message = (
                 f"Payment of "
@@ -9360,6 +9497,9 @@ def payments():
 
             flash(flash_message)
 
+            # =================================================
+            # RECEIPT
+            # =================================================
             return redirect(
                 url_for(
                     "receipt",
@@ -9368,10 +9508,9 @@ def payments():
             )
 
         # =====================================================
-        # INVALID INPUT
+        # INVALID NUMERIC INPUT
         # =====================================================
         except (TypeError, ValueError):
-
             db.session.rollback()
 
             flash(
@@ -9384,10 +9523,9 @@ def payments():
             )
 
         # =====================================================
-        # UNEXPECTED ERROR
+        # GENERAL PAYMENT ERROR
         # =====================================================
         except Exception as error:
-
             db.session.rollback()
 
             print(
@@ -9419,15 +9557,17 @@ def payments():
     )
 
     if selected_grade != "All":
-        pupil_query = (
-            pupil_query.filter_by(
-                grade=selected_grade
-            )
+        pupil_query = pupil_query.filter_by(
+            grade=selected_grade
         )
 
-    pupils = pupil_query.order_by(
-        Pupil.full_name.asc()
-    ).all()
+    pupils = (
+        pupil_query
+        .order_by(
+            Pupil.full_name.asc()
+        )
+        .all()
+    )
 
     # =========================================================
     # RECENT PAYMENTS
