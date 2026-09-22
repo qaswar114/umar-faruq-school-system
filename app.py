@@ -11698,6 +11698,9 @@ def sms_messages():
         flash("Access denied.")
         return redirect(url_for("dashboard"))
 
+    # =========================================================
+    # CURRENT SCHOOL
+    # =========================================================
     school_id = current_school_id()
 
     if not school_id:
@@ -11706,15 +11709,18 @@ def sms_messages():
 
     today = date.today()
 
+    # =========================================================
+    # SCHOOL SMS WALLET
+    # =========================================================
     wallet = get_sms_wallet()
 
     if not wallet:
         flash("SMS wallet could not be loaded.")
         return redirect(url_for("dashboard"))
 
-    # ---------------------------------------------------------
+    # =========================================================
     # CREATE / MANAGE SMS
-    # ---------------------------------------------------------
+    # =========================================================
     if request.method == "POST":
 
         action = request.form.get(
@@ -11722,9 +11728,9 @@ def sms_messages():
             "create_sms"
         ).strip()
 
-        # -----------------------------------------------------
+        # =====================================================
         # RESET SCHOOL SMS BALANCE
-        # -----------------------------------------------------
+        # =====================================================
         if action == "reset_balance":
 
             current_role = (
@@ -11740,6 +11746,7 @@ def sms_messages():
                     "Only the Director or Manager "
                     "may reset the school SMS balance."
                 )
+
                 return redirect(
                     url_for("sms_messages")
                 )
@@ -11755,10 +11762,13 @@ def sms_messages():
 
                 try:
                     save_audit(
-                        f"SMS wallet balance reset "
-                        f"from {old_balance} to 0.",
+                        (
+                            f"SMS wallet balance reset "
+                            f"from {old_balance} to 0."
+                        ),
                         "Communication"
                     )
+
                 except Exception as audit_error:
                     print(
                         "SMS RESET AUDIT ERROR:",
@@ -11787,12 +11797,15 @@ def sms_messages():
                 url_for("sms_messages")
             )
 
-        # -----------------------------------------------------
+        # =====================================================
         # SEND PENDING
-        # -----------------------------------------------------
-        # We no longer send SMS from inside this route.
-        # /send_pending_sms is the single sending engine.
+        # =====================================================
+        #
+        # Sending is handled only by /send_pending_sms.
+        # This prevents multiple sending engines.
+        # =====================================================
         if action == "send_pending":
+
             flash(
                 "Use the Send Pending SMS button "
                 "to process queued messages."
@@ -11802,9 +11815,9 @@ def sms_messages():
                 url_for("sms_messages")
             )
 
-        # -----------------------------------------------------
+        # =====================================================
         # CREATE NEW SMS
-        # -----------------------------------------------------
+        # =====================================================
         send_to = request.form.get(
             "send_to",
             "single"
@@ -11820,17 +11833,61 @@ def sms_messages():
             "General"
         ).strip()
 
+        # =====================================================
+        # MESSAGE REQUIRED
+        # =====================================================
         if not message:
-            flash("Please type the SMS message.")
+
+            flash(
+                "Please type the SMS message."
+            )
+
             return redirect(
                 url_for("sms_messages")
             )
 
+        # =====================================================
+        # ONE SMS SEGMENT VALIDATION
+        # =====================================================
+        #
+        # GSM-7:
+        # maximum 160 units
+        #
+        # UCS-2 / Unicode:
+        # maximum 70 characters according to the central
+        # get_sms_segment_info() helper.
+        #
+        # Reject before building/queueing recipients.
+        # =====================================================
+        segment_info = get_sms_segment_info(
+            message
+        )
+
+        if not segment_info["fits"]:
+
+            flash(
+                f"Message is too long for one SMS. "
+                f"Encoding: "
+                f"{segment_info['encoding']}. "
+                f"Used: "
+                f"{segment_info['used']} units. "
+                f"Maximum: "
+                f"{segment_info['limit']} units. "
+                f"Please shorten the message."
+            )
+
+            return redirect(
+                url_for("sms_messages")
+            )
+
+        # =====================================================
+        # RECIPIENTS
+        # =====================================================
         recipients = []
 
-        # -----------------------------------------------------
-        # SINGLE RECIPIENT
-        # -----------------------------------------------------
+        # =====================================================
+        # ONE PARENT
+        # =====================================================
         if send_to == "single":
 
             phone = request.form.get(
@@ -11843,11 +11900,23 @@ def sms_messages():
                 ""
             ).strip()
 
+            if not phone:
+
+                flash(
+                    "Phone number is required "
+                    "for one-parent SMS."
+                )
+
+                return redirect(
+                    url_for("sms_messages")
+                )
+
             cleaned_phone = clean_phone_number(
                 phone
             )
 
             if not cleaned_phone:
+
                 flash(
                     "Invalid phone number. "
                     "Use a valid Kenyan mobile number."
@@ -11865,9 +11934,9 @@ def sms_messages():
                 "phone": cleaned_phone
             })
 
-        # -----------------------------------------------------
-        # GRADE RECIPIENTS
-        # -----------------------------------------------------
+        # =====================================================
+        # ONE GRADE / CLASS
+        # =====================================================
         elif send_to == "grade":
 
             grade = request.form.get(
@@ -11876,119 +11945,185 @@ def sms_messages():
             ).strip()
 
             if grade not in GRADES:
-                flash("Select a valid grade.")
+
+                flash(
+                    "Select a valid grade."
+                )
+
                 return redirect(
                     url_for("sms_messages")
                 )
 
-            pupils = Pupil.query.filter_by(
-                school_id=school_id,
-                grade=grade,
-                status="Active"
-            ).order_by(
-                Pupil.full_name.asc()
-            ).all()
+            pupils = (
+                Pupil.query
+                .filter_by(
+                    school_id=school_id,
+                    grade=grade,
+                    status="Active"
+                )
+                .order_by(
+                    Pupil.full_name.asc()
+                )
+                .all()
+            )
 
+            # -------------------------------------------------
+            # UNIQUE GUARDIAN NUMBERS
+            # -------------------------------------------------
+            #
+            # A general SMS should not be sent twice when
+            # siblings share the same guardian number.
+            # -------------------------------------------------
             seen_numbers = set()
 
             for pupil in pupils:
 
-                cleaned_phone = clean_phone_number(
-                    pupil.guardian_phone
+                cleaned_phone = (
+                    clean_phone_number(
+                        pupil.guardian_phone
+                    )
                 )
 
-                if (
+                if not cleaned_phone:
+                    continue
+
+                if cleaned_phone in seen_numbers:
+                    continue
+
+                recipients.append({
+                    "name": (
+                        pupil.guardian_name
+                        or pupil.full_name
+                    ),
+                    "phone": cleaned_phone
+                })
+
+                seen_numbers.add(
                     cleaned_phone
-                    and cleaned_phone not in seen_numbers
-                ):
-                    recipients.append({
-                        "name": (
-                            pupil.guardian_name
-                            or pupil.full_name
-                        ),
-                        "phone": cleaned_phone
-                    })
+                )
 
-                    seen_numbers.add(
-                        cleaned_phone
-                    )
-
-        # -----------------------------------------------------
+        # =====================================================
         # ALL ACTIVE PARENTS
-        # -----------------------------------------------------
+        # =====================================================
         elif send_to == "all":
 
-            pupils = Pupil.query.filter_by(
-                school_id=school_id,
-                status="Active"
-            ).order_by(
-                Pupil.full_name.asc()
-            ).all()
+            pupils = (
+                Pupil.query
+                .filter_by(
+                    school_id=school_id,
+                    status="Active"
+                )
+                .order_by(
+                    Pupil.full_name.asc()
+                )
+                .all()
+            )
 
+            # -------------------------------------------------
+            # UNIQUE GUARDIAN NUMBERS
+            # -------------------------------------------------
             seen_numbers = set()
 
             for pupil in pupils:
 
-                cleaned_phone = clean_phone_number(
-                    pupil.guardian_phone
+                cleaned_phone = (
+                    clean_phone_number(
+                        pupil.guardian_phone
+                    )
                 )
 
-                if (
+                if not cleaned_phone:
+                    continue
+
+                if cleaned_phone in seen_numbers:
+                    continue
+
+                recipients.append({
+                    "name": (
+                        pupil.guardian_name
+                        or pupil.full_name
+                    ),
+                    "phone": cleaned_phone
+                })
+
+                seen_numbers.add(
                     cleaned_phone
-                    and cleaned_phone not in seen_numbers
-                ):
-                    recipients.append({
-                        "name": (
-                            pupil.guardian_name
-                            or pupil.full_name
-                        ),
-                        "phone": cleaned_phone
-                    })
+                )
 
-                    seen_numbers.add(
-                        cleaned_phone
-                    )
-
+        # =====================================================
+        # INVALID RECIPIENT TYPE
+        # =====================================================
         else:
+
             flash(
                 "Invalid SMS recipient selection."
             )
+
             return redirect(
                 url_for("sms_messages")
             )
 
-        required_sms = len(recipients)
+        # =====================================================
+        # NUMBER OF SMS REQUIRED
+        # =====================================================
+        required_sms = len(
+            recipients
+        )
 
         if required_sms <= 0:
+
             flash(
                 "No valid recipient phone numbers found."
             )
+
             return redirect(
                 url_for("sms_messages")
             )
 
+        # =====================================================
+        # SMS SERVICE ENABLED
+        # =====================================================
         if not wallet.sms_enabled:
+
             flash(
-                "SMS service is disabled for this school."
+                "SMS service is disabled "
+                "for this school."
             )
+
             return redirect(
                 url_for("sms_messages")
             )
 
-        # We check available credits before queueing.
-        # No credits are deducted here.
-        if int(wallet.sms_balance or 0) < required_sms:
+        # =====================================================
+        # CHECK AVAILABLE SCHOOL SMS CREDITS
+        # =====================================================
+        #
+        # IMPORTANT:
+        # Credits are NOT deducted here.
+        #
+        # They are deducted only after Mobitech accepts
+        # each SMS through the sending engine.
+        # =====================================================
+        available_sms = int(
+            wallet.sms_balance or 0
+        )
+
+        if available_sms < required_sms:
+
             flash(
                 f"Insufficient SMS balance. "
                 f"You need {required_sms} SMS, "
                 f"but your current balance is "
-                f"{wallet.sms_balance or 0}."
+                f"{available_sms}."
             )
 
             return redirect(
                 url_for("sms_messages")
             )
 
+        # =====================================================
+        # QUEUE SMS
+        # =====================================================
         queued_count = 0
         failed_count = 0
         failure_messages = []
@@ -11996,7 +12131,7 @@ def sms_messages():
         for recipient in recipients:
 
             try:
-                ok, sms_message = create_sms(
+                ok, sms_result = create_sms(
                     recipient["name"],
                     recipient["phone"],
                     message,
@@ -12009,12 +12144,13 @@ def sms_messages():
                 else:
                     failed_count += 1
 
-                    if sms_message:
+                    if sms_result:
                         failure_messages.append(
-                            str(sms_message)
+                            str(sms_result)
                         )
 
             except Exception as error:
+
                 failed_count += 1
 
                 failure_messages.append(
@@ -12023,50 +12159,72 @@ def sms_messages():
 
                 print(
                     "CREATE SMS LOOP ERROR:",
+                    recipient["phone"],
                     str(error),
                     flush=True
                 )
 
+        # =====================================================
+        # AUDIT
+        # =====================================================
         try:
             save_audit(
-                f"Queued {queued_count} SMS message(s). "
-                f"Failed: {failed_count}. "
-                f"Category: {category}.",
+                (
+                    f"Queued {queued_count} "
+                    f"SMS message(s). "
+                    f"Failed: {failed_count}. "
+                    f"Send to: {send_to}. "
+                    f"Category: {category}. "
+                    f"Encoding: "
+                    f"{segment_info['encoding']}. "
+                    f"Units: "
+                    f"{segment_info['used']}/"
+                    f"{segment_info['limit']}."
+                ),
                 "Communication"
             )
 
         except Exception as audit_error:
+
             print(
                 "SMS CREATE AUDIT ERROR:",
                 str(audit_error),
                 flush=True
             )
 
+        # =====================================================
+        # RESULT MESSAGE
+        # =====================================================
         flash_message = (
             f"{queued_count} SMS message(s) "
             f"queued successfully."
         )
 
         if failed_count:
+
             flash_message += (
-                f" {failed_count} could not be queued."
+                f" {failed_count} could not "
+                f"be queued."
             )
 
         if failure_messages:
+
             flash_message += (
                 " Last error: "
                 + failure_messages[-1]
             )
 
-        flash(flash_message)
+        flash(
+            flash_message
+        )
 
         return redirect(
             url_for("sms_messages")
         )
 
-    # ---------------------------------------------------------
-    # FILTERS
-    # ---------------------------------------------------------
+    # =========================================================
+    # HISTORY FILTERS
+    # =========================================================
     selected_status = request.args.get(
         "status",
         ""
@@ -12082,96 +12240,155 @@ def sms_messages():
     )
 
     if selected_status:
+
         query = query.filter(
             SMSMessage.status
             == selected_status
         )
 
     if selected_category:
+
         query = query.filter(
             SMSMessage.category
             == selected_category
         )
 
-    rows = query.order_by(
-        SMSMessage.created_at.desc()
-    ).limit(100).all()
+    # =========================================================
+    # SMS HISTORY
+    # =========================================================
+    rows = (
+        query
+        .order_by(
+            SMSMessage.created_at.desc()
+        )
+        .limit(100)
+        .all()
+    )
 
-    # ---------------------------------------------------------
+    # =========================================================
     # DASHBOARD COUNTS
-    # ---------------------------------------------------------
-    pending_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Pending"
-    ).count()
+    # =========================================================
+    pending_count = (
+        SMSMessage.query
+        .filter_by(
+            school_id=school_id,
+            status="Pending"
+        )
+        .count()
+    )
 
-    sent_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Sent"
-    ).count()
+    sent_count = (
+        SMSMessage.query
+        .filter_by(
+            school_id=school_id,
+            status="Sent"
+        )
+        .count()
+    )
 
-    failed_count = SMSMessage.query.filter_by(
-        school_id=school_id,
-        status="Failed"
-    ).count()
+    failed_count = (
+        SMSMessage.query
+        .filter_by(
+            school_id=school_id,
+            status="Failed"
+        )
+        .count()
+    )
 
+    # =========================================================
+    # PENDING CATEGORY COUNTS
+    # =========================================================
     attendance_alert_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             school_id=school_id,
             status="Pending",
             category="Attendance Alert"
-        ).count()
+        )
+        .count()
     )
 
     payment_alert_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             school_id=school_id,
             status="Pending",
             category="Payment Confirmation"
-        ).count()
+        )
+        .count()
     )
 
     fee_alert_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             school_id=school_id,
             status="Pending",
             category="Fees"
-        ).count()
+        )
+        .count()
     )
 
     announcement_alert_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             school_id=school_id,
             status="Pending",
             category="Announcement"
-        ).count()
+        )
+        .count()
     )
 
     exam_alert_count = (
-        SMSMessage.query.filter_by(
+        SMSMessage.query
+        .filter_by(
             school_id=school_id,
             status="Pending",
             category="Exam"
-        ).count()
+        )
+        .count()
     )
 
+    # =========================================================
+    # TODAY COUNTS
+    # =========================================================
     today_start = datetime.combine(
         today,
         datetime.min.time()
     )
 
-    today_created = SMSMessage.query.filter(
-        SMSMessage.school_id == school_id,
-        SMSMessage.created_at >= today_start
-    ).count()
+    today_created = (
+        SMSMessage.query
+        .filter(
+            SMSMessage.school_id
+            == school_id,
 
-    today_sent = SMSMessage.query.filter(
-        SMSMessage.school_id == school_id,
-        SMSMessage.status == "Sent",
-        SMSMessage.sent_at != None,
-        SMSMessage.sent_at >= today_start
-    ).count()
+            SMSMessage.created_at
+            >= today_start
+        )
+        .count()
+    )
 
+    today_sent = (
+        SMSMessage.query
+        .filter(
+            SMSMessage.school_id
+            == school_id,
+
+            SMSMessage.status
+            == "Sent",
+
+            SMSMessage.sent_at
+            != None,
+
+            SMSMessage.sent_at
+            >= today_start
+        )
+        .count()
+    )
+
+    # =========================================================
+    # PAGE
+    # =========================================================
     return render_template(
         "sms_messages.html",
         settings=get_settings(),
