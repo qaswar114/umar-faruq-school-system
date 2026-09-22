@@ -1,385 +1,935 @@
 {% extends "base.html" %}
+
+{% block title %}
+Bulk SMS
+{% endblock %}
+
 {% block content %}
 
-<!-- =========================================================
-     BULK SMS - GRADE SELECTION
-========================================================= -->
-<div class="panel">
+<style>
+    .bulk-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-    <h2>Bulk SMS</h2>
+    .page-header {
+        margin-bottom: 20px;
+    }
 
-    <p style="color:#666; margin-bottom:20px;">
-        Send one SMS message to parents in a selected grade.
-        Each message is limited to 160 characters.
-    </p>
+    .page-header h2 {
+        margin: 0 0 6px 0;
+        font-size: 26px;
+        font-weight: 700;
+    }
 
-    <form method="get">
+    .page-header p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
 
-        <label>Select Grade/Class</label>
+    .sms-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 22px;
+        margin-bottom: 20px;
+    }
 
-        <select name="grade" required>
-            <option value="">Select Grade</option>
+    .sms-card h3 {
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 18px;
+    }
 
-            {% for g in grades %}
-            <option
-                value="{{ g }}"
-                {% if selected_grade == g %}selected{% endif %}
-            >
-                {{ g }}
-            </option>
-            {% endfor %}
-        </select>
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
 
-        <br><br>
+    .form-group {
+        margin-bottom: 16px;
+    }
 
-        <button
-            type="submit"
-            class="btn"
-        >
-            Load Parents
-        </button>
+    .form-group label {
+        display: block;
+        margin-bottom: 7px;
+        font-weight: 600;
+        font-size: 14px;
+    }
 
-    </form>
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 11px 12px;
+        font-size: 14px;
+        background: #ffffff;
+    }
 
-</div>
+    .form-control:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+    textarea.form-control {
+        min-height: 145px;
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+    .sms-counter {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+    }
+
+    .counter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: center;
+    }
+
+    .counter-item {
+        font-size: 13px;
+        color: #374151;
+    }
+
+    .counter-item strong {
+        color: #111827;
+    }
+
+    .counter-status {
+        margin-top: 8px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .counter-ok {
+        color: #15803d;
+    }
+
+    .counter-danger {
+        color: #b91c1c;
+    }
+
+    .sms-warning {
+        display: none;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        font-size: 13px;
+    }
+
+    .info-box {
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+    }
+
+    .btn-primary {
+        border: 0;
+        border-radius: 8px;
+        padding: 11px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.92;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        display: inline-block;
+        text-decoration: none;
+        border-radius: 8px;
+        padding: 11px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .stat-box {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 6px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .pupil-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .pupil-table th,
+    .pupil-table td {
+        padding: 11px 10px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        font-size: 13px;
+    }
+
+    .pupil-table th {
+        background: #f9fafb;
+        color: #374151;
+        font-weight: 600;
+    }
+
+    .valid-phone {
+        color: #15803d;
+        font-weight: 600;
+    }
+
+    .missing-phone {
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    .small-note {
+        color: #6b7280;
+        font-size: 12px;
+        margin-top: 7px;
+    }
+
+    @media (max-width: 800px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sms-card {
+            padding: 16px;
+        }
+    }
+</style>
 
 
-{% if selected_grade %}
+<div class="bulk-page">
 
-<!-- =========================================================
-     BULK SMS COMPOSER
-========================================================= -->
-<div class="panel">
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
 
-    <h3>
-        Send SMS to {{ selected_grade }} Parents
-    </h3>
+    <div class="page-header">
 
-    <div style="
-        background:#f7f9fc;
-        border:1px solid #e2e8f0;
-        border-radius:8px;
-        padding:14px 16px;
-        margin-bottom:20px;
-    ">
+        <h2>Bulk SMS</h2>
 
-        <strong>Grade:</strong>
-        {{ selected_grade }}
-
-        <br>
-
-        <strong>Parents/Pupils Found:</strong>
-        {{ pupils|length }}
-
-        <br>
-
-        <strong>SMS Limit:</strong>
-        1 SMS per parent
+        <p>
+            Send one SMS message to the parents or guardians
+            of pupils in a selected grade.
+        </p>
 
     </div>
 
 
-    <form
-        method="post"
-        id="bulkSmsForm"
-    >
+    <!-- ===================================================== -->
+    <!-- MESSAGE FORM -->
+    <!-- ===================================================== -->
 
-        <input
-            type="hidden"
-            name="grade"
-            value="{{ selected_grade }}"
+    <div class="sms-card">
+
+        <h3>Create Bulk SMS</h3>
+
+        <div class="info-box">
+            Each message must fit within
+            <strong>one SMS segment</strong>.
+            GSM-7 messages allow up to 160 units.
+            Unicode messages, including Arabic and many special
+            characters, allow up to 70 characters.
+            SMS credits are deducted only after Mobitech
+            successfully accepts each message.
+        </div>
+
+
+        <form
+            method="post"
+            id="bulkSmsForm"
+            onsubmit="return validateBulkSms();"
         >
 
+            <div class="form-grid">
 
-        <!-- =================================================
-             CATEGORY
-        ================================================= -->
-        <label>Category</label>
+                <!-- GRADE -->
 
-        <select
-            name="category"
-            required
-        >
-            <option value="General">
-                General
-            </option>
+                <div class="form-group">
 
-            <option value="Fees">
-                Fees
-            </option>
+                    <label for="grade">
+                        Grade / Class
+                    </label>
 
-            <option value="Attendance">
-                Attendance
-            </option>
+                    <select
+                        name="grade"
+                        id="grade"
+                        class="form-control"
+                        required
+                    >
 
-            <option value="Announcement">
-                Announcement
-            </option>
+                        <option value="">
+                            Select Grade
+                        </option>
 
-            <option value="Exam">
-                Exam
-            </option>
-        </select>
+                        {% for grade in grades %}
 
+                        <option
+                            value="{{ grade }}"
+                            {% if selected_grade == grade %}
+                            selected
+                            {% endif %}
+                        >
+                            {{ grade }}
+                        </option>
 
-        <br><br>
+                        {% endfor %}
 
+                    </select>
 
-        <!-- =================================================
-             MESSAGE
-        ================================================= -->
-        <label>
-            SMS Message
-        </label>
-
-        <textarea
-            name="message"
-            id="smsMessage"
-            rows="5"
-            maxlength="160"
-            placeholder="Type your SMS message here..."
-            style="
-                width:100%;
-                resize:vertical;
-                box-sizing:border-box;
-            "
-            required
-        ></textarea>
+                </div>
 
 
-        <!-- =================================================
-             CHARACTER COUNTER
-        ================================================= -->
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-top:7px;
-            gap:15px;
-        ">
+                <!-- CATEGORY -->
 
-            <small
-                id="smsStatus"
-                style="color:#64748b;"
-            >
-                One SMS message
-            </small>
+                <div class="form-group">
 
-            <strong
-                id="characterCounter"
-                style="color:#16a34a;"
-            >
-                0 / 160
-            </strong>
+                    <label for="category">
+                        Category
+                    </label>
+
+                    <select
+                        name="category"
+                        id="category"
+                        class="form-control"
+                    >
+
+                        <option value="General">
+                            General
+                        </option>
+
+                        <option value="Fees">
+                            Fees
+                        </option>
+
+                        <option value="Attendance Alert">
+                            Attendance Alert
+                        </option>
+
+                        <option value="Announcement">
+                            Announcement
+                        </option>
+
+                        <option value="Exam">
+                            Exam
+                        </option>
+
+                        <option value="Homework">
+                            Homework
+                        </option>
+
+                        <option value="Transport">
+                            Transport
+                        </option>
+
+                        <option value="Emergency">
+                            Emergency
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- MESSAGE -->
+
+            <div class="form-group">
+
+                <label for="message">
+                    SMS Message
+                </label>
+
+                <textarea
+                    name="message"
+                    id="message"
+                    class="form-control"
+                    required
+                    placeholder="Type your SMS message here..."
+                    oninput="updateSmsCounter();"
+                ></textarea>
+
+
+                <!-- LIVE SMS COUNTER -->
+
+                <div
+                    class="sms-counter"
+                    id="smsCounter"
+                >
+
+                    <div class="counter-row">
+
+                        <div class="counter-item">
+                            Encoding:
+                            <strong id="encodingValue">
+                                GSM-7
+                            </strong>
+                        </div>
+
+                        <div class="counter-item">
+                            Used:
+                            <strong id="usedValue">
+                                0
+                            </strong>
+                        </div>
+
+                        <div class="counter-item">
+                            Maximum:
+                            <strong id="limitValue">
+                                160
+                            </strong>
+                        </div>
+
+                        <div class="counter-item">
+                            Remaining:
+                            <strong id="remainingValue">
+                                160
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div
+                        id="counterStatus"
+                        class="counter-status counter-ok"
+                    >
+                        One SMS segment
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="smsWarning"
+                    class="sms-warning"
+                >
+                    This message is too long for one SMS.
+                    Please shorten it before sending.
+                </div>
+
+
+                <div class="small-note">
+                    Some symbols use two GSM-7 units.
+                    Arabic, emoji and unsupported GSM characters
+                    change the message to Unicode with a
+                    70-character one-SMS limit.
+                </div>
+
+            </div>
+
+
+            <!-- BUTTONS -->
+
+            <div class="btn-row">
+
+                <button
+                    type="submit"
+                    class="btn-primary"
+                    id="sendButton"
+                >
+                    Queue Bulk SMS
+                </button>
+
+                <a
+                    href="{{ url_for('sms_messages') }}"
+                    class="btn-secondary"
+                >
+                    SMS Outbox
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- SELECTED GRADE SUMMARY -->
+    <!-- ===================================================== -->
+
+    {% if selected_grade %}
+
+    {% set phone_count = namespace(value=0) %}
+
+    {% for pupil in pupils %}
+        {% if pupil.guardian_phone %}
+            {% set phone_count.value = phone_count.value + 1 %}
+        {% endif %}
+    {% endfor %}
+
+
+    <div class="stats-grid">
+
+        <div class="stat-box">
+
+            <div class="stat-label">
+                Selected Grade
+            </div>
+
+            <div class="stat-value">
+                {{ selected_grade }}
+            </div>
 
         </div>
 
 
-        <!-- =================================================
-             WARNING
-        ================================================= -->
-        <div
-            id="smsWarning"
-            style="
-                display:none;
-                margin-top:10px;
-                padding:10px 12px;
-                border-radius:6px;
-                background:#fff7ed;
-                border:1px solid #fed7aa;
-                color:#9a3412;
-            "
-        >
-            You are approaching the 160-character
-            limit for one SMS.
+        <div class="stat-box">
+
+            <div class="stat-label">
+                Active Pupils
+            </div>
+
+            <div class="stat-value">
+                {{ pupils|length }}
+            </div>
+
         </div>
 
 
-        <div style="
-            margin-top:15px;
-            padding:12px;
-            background:#f8fafc;
-            border-radius:7px;
-            color:#475569;
-            font-size:13px;
-        ">
-            <strong>Note:</strong>
-            One SMS credit will be charged for each
-            successfully accepted parent message.
-            Credits are deducted only after Mobitech
-            accepts the SMS.
+        <div class="stat-box">
+
+            <div class="stat-label">
+                Pupils With Guardian Phone
+            </div>
+
+            <div class="stat-value">
+                {{ phone_count.value }}
+            </div>
+
         </div>
 
+    </div>
 
-        <br>
 
+    <!-- ===================================================== -->
+    <!-- PUPIL PREVIEW -->
+    <!-- ===================================================== -->
 
-        <!-- =================================================
-             SUBMIT
-        ================================================= -->
-        <button
-            type="submit"
-            class="btn green"
-            id="sendSmsButton"
-        >
-            Save Bulk SMS
-        </button>
+    <div class="sms-card">
 
-    </form>
+        <h3>
+            {{ selected_grade }} Recipients
+        </h3>
+
+        {% if pupils %}
+
+        <div class="table-wrap">
+
+            <table class="pupil-table">
+
+                <thead>
+
+                    <tr>
+                        <th>#</th>
+                        <th>Pupil</th>
+                        <th>Guardian</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for pupil in pupils %}
+
+                    <tr>
+
+                        <td>
+                            {{ loop.index }}
+                        </td>
+
+                        <td>
+                            {{ pupil.full_name }}
+                        </td>
+
+                        <td>
+                            {{ pupil.guardian_name or "-" }}
+                        </td>
+
+                        <td>
+                            {{ pupil.guardian_phone or "-" }}
+                        </td>
+
+                        <td>
+
+                            {% if pupil.guardian_phone %}
+
+                            <span class="valid-phone">
+                                Ready
+                            </span>
+
+                            {% else %}
+
+                            <span class="missing-phone">
+                                No Phone
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <p>
+            No active pupils were found in this grade.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+    {% endif %}
 
 </div>
 
-{% endif %}
 
-
-<!-- =========================================================
-     SMS CHARACTER COUNTER
-========================================================= -->
 <script>
+
+/* ============================================================
+   GSM-7 CHARACTER SET
+
+   Must match the Python get_sms_segment_info() logic
+   in app.py.
+   ============================================================ */
+
+const GSM7_BASIC =
+    "@£$¥èéùìòÇ\nØø\rÅå" +
+    "Δ_ΦΓΛΩΠΨΣΘΞ" +
+    "ÆæßÉ" +
+    " !\"#¤%&'()*+,-./" +
+    "0123456789:;<=>?" +
+    "¡ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+    "ÄÖÑÜ§¿" +
+    "abcdefghijklmnopqrstuvwxyz" +
+    "äöñüà";
+
+
+const GSM7_EXTENDED =
+    "^{}\\[~]|€";
+
+
+/* ============================================================
+   GET SMS SEGMENT INFORMATION
+   ============================================================ */
+
+function getSmsSegmentInfo(text) {
+
+    let gsmUnits = 0;
+    let isUnicode = false;
+
+    for (const char of text) {
+
+        if (GSM7_BASIC.includes(char)) {
+
+            gsmUnits += 1;
+
+        } else if (
+            GSM7_EXTENDED.includes(char)
+        ) {
+
+            gsmUnits += 2;
+
+        } else {
+
+            isUnicode = true;
+            break;
+        }
+    }
+
+
+    /* --------------------------------------------------------
+       UNICODE / UCS-2
+
+       Array.from() counts visible Unicode code points.
+       This matches the current server-side helper closely.
+       -------------------------------------------------------- */
+
+    if (isUnicode) {
+
+        const unicodeUnits =
+            Array.from(text).length;
+
+        return {
+            fits: unicodeUnits <= 70,
+            encoding: "UCS-2",
+            used: unicodeUnits,
+            limit: 70
+        };
+    }
+
+
+    /* --------------------------------------------------------
+       GSM-7
+       -------------------------------------------------------- */
+
+    return {
+        fits: gsmUnits <= 160,
+        encoding: "GSM-7",
+        used: gsmUnits,
+        limit: 160
+    };
+}
+
+
+/* ============================================================
+   UPDATE LIVE COUNTER
+   ============================================================ */
+
+function updateSmsCounter() {
+
+    const textarea =
+        document.getElementById("message");
+
+    const sendButton =
+        document.getElementById("sendButton");
+
+    const warning =
+        document.getElementById("smsWarning");
+
+    const status =
+        document.getElementById("counterStatus");
+
+    const info =
+        getSmsSegmentInfo(
+            textarea.value
+        );
+
+    const remaining =
+        Math.max(
+            info.limit - info.used,
+            0
+        );
+
+
+    document.getElementById(
+        "encodingValue"
+    ).textContent =
+        info.encoding;
+
+
+    document.getElementById(
+        "usedValue"
+    ).textContent =
+        info.used;
+
+
+    document.getElementById(
+        "limitValue"
+    ).textContent =
+        info.limit;
+
+
+    document.getElementById(
+        "remainingValue"
+    ).textContent =
+        remaining;
+
+
+    if (info.fits) {
+
+        warning.style.display =
+            "none";
+
+        status.textContent =
+            "One SMS segment";
+
+        status.className =
+            "counter-status counter-ok";
+
+        sendButton.disabled =
+            false;
+
+    } else {
+
+        warning.style.display =
+            "block";
+
+        status.textContent =
+            "Too long - shorten message";
+
+        status.className =
+            "counter-status counter-danger";
+
+        sendButton.disabled =
+            true;
+    }
+}
+
+
+/* ============================================================
+   FORM VALIDATION
+   ============================================================ */
+
+function validateBulkSms() {
+
+    const grade =
+        document.getElementById(
+            "grade"
+        ).value.trim();
+
+    const message =
+        document.getElementById(
+            "message"
+        ).value.trim();
+
+
+    if (!grade) {
+
+        alert(
+            "Please select a grade."
+        );
+
+        return false;
+    }
+
+
+    if (!message) {
+
+        alert(
+            "Please type the SMS message."
+        );
+
+        return false;
+    }
+
+
+    const info =
+        getSmsSegmentInfo(
+            message
+        );
+
+
+    if (!info.fits) {
+
+        alert(
+            "This message is too long for one SMS. " +
+            "Please shorten it before sending."
+        );
+
+        return false;
+    }
+
+
+    return confirm(
+        "Queue this SMS for all valid guardians " +
+        "in the selected grade?"
+    );
+}
+
+
+/* ============================================================
+   CHANGE GRADE
+   ============================================================ */
+
+document.getElementById(
+    "grade"
+).addEventListener(
+    "change",
+    function () {
+
+        const grade =
+            this.value;
+
+        if (!grade) {
+            return;
+        }
+
+        window.location.href =
+            "{{ url_for('bulk_sms') }}" +
+            "?grade=" +
+            encodeURIComponent(
+                grade
+            );
+    }
+);
+
+
+/* ============================================================
+   INITIAL COUNTER
+   ============================================================ */
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        const messageBox =
-            document.getElementById("smsMessage");
-
-        const counter =
-            document.getElementById("characterCounter");
-
-        const warning =
-            document.getElementById("smsWarning");
-
-        const status =
-            document.getElementById("smsStatus");
-
-        const form =
-            document.getElementById("bulkSmsForm");
-
-        if (!messageBox) {
-            return;
-        }
-
-        const MAX_LENGTH = 160;
-        const WARNING_LENGTH = 140;
-
-
-        function updateCounter() {
-
-            const length =
-                messageBox.value.length;
-
-            counter.textContent =
-                length + " / " + MAX_LENGTH;
-
-
-            // -----------------------------------------
-            // NORMAL
-            // -----------------------------------------
-            if (length < WARNING_LENGTH) {
-
-                counter.style.color = "#16a34a";
-
-                warning.style.display = "none";
-
-                status.textContent =
-                    "One SMS message";
-
-            }
-
-            // -----------------------------------------
-            // APPROACHING LIMIT
-            // -----------------------------------------
-            else if (length < MAX_LENGTH) {
-
-                counter.style.color = "#d97706";
-
-                warning.style.display = "block";
-
-                status.textContent =
-                    (MAX_LENGTH - length)
-                    + " characters remaining";
-
-            }
-
-            // -----------------------------------------
-            // LIMIT REACHED
-            // -----------------------------------------
-            else {
-
-                counter.style.color = "#dc2626";
-
-                warning.style.display = "block";
-
-                warning.textContent =
-                    "Maximum length reached. "
-                    + "This message is limited "
-                    + "to one SMS.";
-
-                status.textContent =
-                    "Maximum 160 characters reached";
-
-            }
-        }
-
-
-        // =================================================
-        // LIVE COUNTER
-        // =================================================
-        messageBox.addEventListener(
-            "input",
-            updateCounter
-        );
-
-
-        // =================================================
-        // FINAL BROWSER VALIDATION
-        // =================================================
-        if (form) {
-
-            form.addEventListener(
-                "submit",
-                function (event) {
-
-                    const message =
-                        messageBox.value.trim();
-
-                    if (!message) {
-
-                        event.preventDefault();
-
-                        alert(
-                            "Please type the SMS message."
-                        );
-
-                        messageBox.focus();
-
-                        return;
-                    }
-
-
-                    if (message.length > MAX_LENGTH) {
-
-                        event.preventDefault();
-
-                        alert(
-                            "The SMS is longer than "
-                            + MAX_LENGTH
-                            + " characters."
-                        );
-
-                        messageBox.focus();
-
-                        return;
-                    }
-
-                }
-            );
-
-        }
-
-
-        updateCounter();
+        updateSmsCounter();
 
     }
 );
