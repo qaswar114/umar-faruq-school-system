@@ -1044,8 +1044,8 @@ input[readonly] {
                 <h3>⏳ Pending School SMS Purchases</h3>
 
                 <p>
-                    Approving a request transfers SMS
-                    from the Platform Pool to the school's wallet.
+                    Verify the school's M-Pesa payment reference before approving.
+                    Approval transfers SMS from the Platform Pool to the school's wallet.
                 </p>
             </div>
 
@@ -1068,6 +1068,7 @@ input[readonly] {
                         <th>School</th>
                         <th>SMS</th>
                         <th>Amount</th>
+                        <th>M-Pesa Reference</th>
                         <th>Requested By</th>
                         <th>Status</th>
                         <th class="no-print">Action</th>
@@ -1134,6 +1135,18 @@ input[readonly] {
 
 
                         <td>
+                            {% if purchase.mpesa_receipt_no %}
+                                <div class="cell-title" style="font-family: monospace; font-size: 13px; letter-spacing: .4px;">
+                                    {{ purchase.mpesa_receipt_no }}
+                                </div>
+                                <div class="cell-muted">Verify before approval</div>
+                            {% else %}
+                                <span class="badge failed">Missing</span>
+                            {% endif %}
+                        </td>
+
+
+                        <td>
                             {{ purchase.requested_by or "-" }}
                         </td>
 
@@ -1146,6 +1159,8 @@ input[readonly] {
 
 
                         <td class="no-print">
+
+                            {% if purchase.mpesa_receipt_no %}
 
                             <form
                                 method="post"
@@ -1161,9 +1176,12 @@ input[readonly] {
                                             purchase.school_id,
                                             'this school'
                                         )|e }}',
-                                        '{{ purchase.package_sms or 0 }}'
+                                        '{{ purchase.package_sms or 0 }}',
+                                        '{{ purchase.amount or 0 }}',
+                                        '{{ purchase.mpesa_receipt_no|e }}'
                                     );
                                 "
+                                style="margin:0;"
                             >
 
                                 <button
@@ -1174,6 +1192,19 @@ input[readonly] {
                                 </button>
 
                             </form>
+
+                            {% else %}
+
+                            <button
+                                type="button"
+                                class="btn"
+                                disabled
+                                style="background:#cbd5e1; color:#64748b; cursor:not-allowed;"
+                            >
+                                Cannot Approve
+                            </button>
+
+                            {% endif %}
 
                         </td>
 
@@ -1863,16 +1894,32 @@ input[readonly] {
 
 
 <script>
-function confirmSmsApproval(schoolName, smsCount) {
+function confirmSmsApproval(
+    schoolName,
+    smsCount,
+    amount,
+    mpesaReference
+) {
 
     return confirm(
-        "Approve " +
-        smsCount +
-        " SMS for " +
-        schoolName +
-        "?\n\n" +
-        "This will deduct the SMS from the " +
-        "EduManage Platform Pool and credit " +
+        "VERIFY PAYMENT BEFORE APPROVAL\n\n" +
+        "School: " + schoolName +
+        "\nSMS: " + Number(smsCount).toLocaleString() +
+        "\nAmount: KES " +
+        Number(amount).toLocaleString(
+            undefined,
+            {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+        ) +
+        "\nM-Pesa Reference: " + mpesaReference +
+        "\n\nHave you confirmed that this payment " +
+        "was received in the EduManage Equity account?" +
+        "\n\nClick OK only after verifying payment." +
+        "\n\nApproval will deduct " +
+        Number(smsCount).toLocaleString() +
+        " SMS from the Platform Pool and credit " +
         "the school's SMS Wallet."
     );
 }
