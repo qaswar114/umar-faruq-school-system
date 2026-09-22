@@ -260,6 +260,74 @@
     color:#94a3b8;
 }
 
+/* ========================================================= */
+/* SMS SEGMENT COUNTER */
+/* ========================================================= */
+
+.sms-counter{
+    margin-top:8px;
+    margin-bottom:12px;
+    padding:10px 12px;
+    border:1px solid #e2e8f0;
+    background:#f8fafc;
+    border-radius:10px;
+}
+
+.sms-counter-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+}
+
+.sms-counter-item{
+    font-size:12px;
+    color:#475569;
+}
+
+.sms-counter-item strong{
+    color:#0f172a;
+}
+
+.sms-counter-status{
+    margin-top:7px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.sms-counter-ok{
+    color:#15803d;
+}
+
+.sms-counter-danger{
+    color:#dc2626;
+}
+
+.sms-length-warning{
+    display:none;
+    padding:9px 11px;
+    margin-bottom:12px;
+    background:#fff1f2;
+    color:#9f1239;
+    border:1px solid #fecdd3;
+    border-radius:9px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.sms-rule-note{
+    margin-top:-5px;
+    margin-bottom:12px;
+    color:#64748b;
+    font-size:12px;
+    line-height:1.45;
+}
+
+.sms-submit:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+}
+
 @media(max-width:1200px){
     .sms-grid{
         grid-template-columns:1fr;
@@ -441,6 +509,8 @@
         <form
             method="post"
             action="{{ url_for('sms_messages') }}"
+            id="smsCreateForm"
+            onsubmit="return validateSmsForm();"
         >
 
             <input
@@ -485,6 +555,7 @@
 
                     <input
                         name="recipient_name"
+                        id="recipient_name"
                         placeholder="For one parent only"
                     >
 
@@ -497,6 +568,7 @@
 
                     <input
                         name="phone"
+                        id="sms_phone"
                         placeholder="0712345678"
                     >
 
@@ -511,7 +583,10 @@
 
                     <label>Grade / Class</label>
 
-                    <select name="grade">
+                    <select
+                        name="grade"
+                        id="sms_grade"
+                    >
 
                         <option value="">
                             Select Grade
@@ -534,7 +609,10 @@
 
                     <label>Category</label>
 
-                    <select name="category">
+                    <select
+                        name="category"
+                        id="sms_category"
+                    >
 
                         <option value="General">
                             General
@@ -571,16 +649,87 @@
 
             <textarea
                 name="message"
+                id="sms_message"
                 rows="4"
                 required
-                maxlength="1000"
                 placeholder="Type SMS message here..."
+                oninput="updateSmsCounter();"
             ></textarea>
+
+
+            <!-- ============================================= -->
+            <!-- LIVE ONE-SMS COUNTER -->
+            <!-- ============================================= -->
+
+            <div class="sms-counter">
+
+                <div class="sms-counter-row">
+
+                    <div class="sms-counter-item">
+                        Encoding:
+                        <strong id="sms_encoding">
+                            GSM-7
+                        </strong>
+                    </div>
+
+                    <div class="sms-counter-item">
+                        Used:
+                        <strong id="sms_used">
+                            0
+                        </strong>
+                    </div>
+
+                    <div class="sms-counter-item">
+                        Maximum:
+                        <strong id="sms_limit">
+                            160
+                        </strong>
+                    </div>
+
+                    <div class="sms-counter-item">
+                        Remaining:
+                        <strong id="sms_remaining">
+                            160
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="sms_counter_status"
+                    class="
+                        sms-counter-status
+                        sms-counter-ok
+                    "
+                >
+                    One SMS segment
+                </div>
+
+            </div>
+
+
+            <div
+                id="sms_length_warning"
+                class="sms-length-warning"
+            >
+                ⚠️ This message is too long for one SMS.
+                Shorten it before queueing.
+            </div>
+
+
+            <div class="sms-rule-note">
+                GSM-7 messages allow up to 160 units.
+                Some symbols use two units.
+                Arabic, emoji and other Unicode characters
+                use the 70-character Unicode limit.
+            </div>
 
 
             <button
                 type="submit"
-                class="btn"
+                class="btn sms-submit"
+                id="sms_submit_button"
             >
                 Save SMS as Pending
             </button>
@@ -707,7 +856,7 @@
             </a>
 
 
-            <!-- SEND ALL LAST / DANGEROUS ACTION -->
+            <!-- SEND ALL LAST -->
 
             <form
                 method="post"
@@ -1156,55 +1305,405 @@
 
 
 <script>
+
+/* ========================================================= */
+/* RECIPIENT FIELDS */
+/* ========================================================= */
+
 function updateSmsFields() {
 
-    const sendTo = document.getElementById(
-        "sms_send_to"
-    ).value;
+    const sendTo =
+        document.getElementById(
+            "sms_send_to"
+        ).value;
 
-    const nameBox = document.getElementById(
-        "recipient_name_box"
-    );
+    const nameBox =
+        document.getElementById(
+            "recipient_name_box"
+        );
 
-    const phoneBox = document.getElementById(
-        "phone_box"
-    );
+    const phoneBox =
+        document.getElementById(
+            "phone_box"
+        );
 
-    const gradeBox = document.getElementById(
-        "grade_box"
-    );
+    const gradeBox =
+        document.getElementById(
+            "grade_box"
+        );
+
+    const phoneInput =
+        document.getElementById(
+            "sms_phone"
+        );
+
+    const gradeInput =
+        document.getElementById(
+            "sms_grade"
+        );
 
 
     if (sendTo === "single") {
 
-        nameBox.style.display = "block";
-        phoneBox.style.display = "block";
-        gradeBox.style.display = "none";
+        nameBox.style.display =
+            "block";
+
+        phoneBox.style.display =
+            "block";
+
+        gradeBox.style.display =
+            "none";
+
+        phoneInput.required =
+            true;
+
+        gradeInput.required =
+            false;
 
     }
 
     else if (sendTo === "grade") {
 
-        nameBox.style.display = "none";
-        phoneBox.style.display = "none";
-        gradeBox.style.display = "block";
+        nameBox.style.display =
+            "none";
+
+        phoneBox.style.display =
+            "none";
+
+        gradeBox.style.display =
+            "block";
+
+        phoneInput.required =
+            false;
+
+        gradeInput.required =
+            true;
 
     }
 
     else {
 
-        nameBox.style.display = "none";
-        phoneBox.style.display = "none";
-        gradeBox.style.display = "none";
+        nameBox.style.display =
+            "none";
+
+        phoneBox.style.display =
+            "none";
+
+        gradeBox.style.display =
+            "none";
+
+        phoneInput.required =
+            false;
+
+        gradeInput.required =
+            false;
 
     }
 }
 
 
+/* ========================================================= */
+/* GSM-7 CHARACTER SET */
+/* ========================================================= */
+
+const GSM7_BASIC =
+    "@£$¥èéùìòÇ\nØø\rÅå" +
+    "Δ_ΦΓΛΩΠΨΣΘΞ" +
+    "ÆæßÉ" +
+    " !\"#¤%&'()*+,-./" +
+    "0123456789:;<=>?" +
+    "¡ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+    "ÄÖÑÜ§¿" +
+    "abcdefghijklmnopqrstuvwxyz" +
+    "äöñüà";
+
+
+const GSM7_EXTENDED =
+    "^{}\\[~]|€";
+
+
+/* ========================================================= */
+/* CALCULATE ONE SMS SEGMENT */
+/* ========================================================= */
+
+function getSmsSegmentInfo(text) {
+
+    let gsmUnits = 0;
+
+    for (const char of text) {
+
+        if (
+            GSM7_BASIC.includes(char)
+        ) {
+
+            gsmUnits += 1;
+
+        }
+
+        else if (
+            GSM7_EXTENDED.includes(char)
+        ) {
+
+            gsmUnits += 2;
+
+        }
+
+        else {
+
+            const unicodeUnits =
+                Array.from(text).length;
+
+            return {
+                fits:
+                    unicodeUnits <= 70,
+
+                encoding:
+                    "UCS-2",
+
+                used:
+                    unicodeUnits,
+
+                limit:
+                    70
+            };
+        }
+    }
+
+
+    return {
+        fits:
+            gsmUnits <= 160,
+
+        encoding:
+            "GSM-7",
+
+        used:
+            gsmUnits,
+
+        limit:
+            160
+    };
+}
+
+
+/* ========================================================= */
+/* UPDATE LIVE COUNTER */
+/* ========================================================= */
+
+function updateSmsCounter() {
+
+    const message =
+        document.getElementById(
+            "sms_message"
+        );
+
+    const submitButton =
+        document.getElementById(
+            "sms_submit_button"
+        );
+
+    const warning =
+        document.getElementById(
+            "sms_length_warning"
+        );
+
+    const status =
+        document.getElementById(
+            "sms_counter_status"
+        );
+
+    const info =
+        getSmsSegmentInfo(
+            message.value
+        );
+
+    const remaining =
+        Math.max(
+            info.limit - info.used,
+            0
+        );
+
+
+    document.getElementById(
+        "sms_encoding"
+    ).textContent =
+        info.encoding;
+
+
+    document.getElementById(
+        "sms_used"
+    ).textContent =
+        info.used;
+
+
+    document.getElementById(
+        "sms_limit"
+    ).textContent =
+        info.limit;
+
+
+    document.getElementById(
+        "sms_remaining"
+    ).textContent =
+        remaining;
+
+
+    if (info.fits) {
+
+        status.textContent =
+            "One SMS segment";
+
+        status.className =
+            "sms-counter-status sms-counter-ok";
+
+        warning.style.display =
+            "none";
+
+        submitButton.disabled =
+            false;
+
+    }
+
+    else {
+
+        status.textContent =
+            "Too long - shorten message";
+
+        status.className =
+            "sms-counter-status sms-counter-danger";
+
+        warning.style.display =
+            "block";
+
+        submitButton.disabled =
+            true;
+
+    }
+}
+
+
+/* ========================================================= */
+/* FINAL FORM VALIDATION */
+/* ========================================================= */
+
+function validateSmsForm() {
+
+    const sendTo =
+        document.getElementById(
+            "sms_send_to"
+        ).value;
+
+    const message =
+        document.getElementById(
+            "sms_message"
+        ).value.trim();
+
+    const phone =
+        document.getElementById(
+            "sms_phone"
+        ).value.trim();
+
+    const grade =
+        document.getElementById(
+            "sms_grade"
+        ).value;
+
+
+    if (!message) {
+
+        alert(
+            "Please type the SMS message."
+        );
+
+        return false;
+    }
+
+
+    const info =
+        getSmsSegmentInfo(
+            message
+        );
+
+
+    if (!info.fits) {
+
+        alert(
+            "This message is too long for one SMS. " +
+            "Please shorten it before queueing."
+        );
+
+        return false;
+    }
+
+
+    if (
+        sendTo === "single"
+        && !phone
+    ) {
+
+        alert(
+            "Please enter the parent's phone number."
+        );
+
+        return false;
+    }
+
+
+    if (
+        sendTo === "grade"
+        && !grade
+    ) {
+
+        alert(
+            "Please select a grade."
+        );
+
+        return false;
+    }
+
+
+    let destination =
+        "the selected recipient";
+
+
+    if (sendTo === "grade") {
+
+        destination =
+            "all valid guardians in " +
+            grade;
+
+    }
+
+    else if (sendTo === "all") {
+
+        destination =
+            "all active pupils' guardians";
+
+    }
+
+
+    return confirm(
+        "Queue this SMS for " +
+        destination +
+        "?"
+    );
+}
+
+
+/* ========================================================= */
+/* INITIALIZE */
+/* ========================================================= */
+
 document.addEventListener(
     "DOMContentLoaded",
-    updateSmsFields
+    function () {
+
+        updateSmsFields();
+        updateSmsCounter();
+
+    }
 );
+
 </script>
 
 {% endblock %}
