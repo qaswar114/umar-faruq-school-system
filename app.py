@@ -171,56 +171,7 @@ class SMSWallet(db.Model):
         db.DateTime,
         default=datetime.now
     )
-class SMSLoad(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
 
-    school_id = db.Column(
-        db.Integer,
-        db.ForeignKey("school.id"),
-        nullable=False
-    )
-
-    provider = db.Column(
-        db.String(100),
-        default="Other"
-    )
-
-    sms_count = db.Column(
-        db.Integer,
-        nullable=False
-    )
-
-    amount_paid = db.Column(
-        db.Float,
-        default=0
-    )
-
-    reference_no = db.Column(
-        db.String(100),
-        default=""
-    )
-
-    purchase_date = db.Column(
-        db.Date,
-        default=date.today
-    )
-
-    loaded_by = db.Column(
-        db.String(100),
-        default=""
-    )
-
-    created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow
-    )
-
-class SMSPackage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sms_count = db.Column(db.Integer, nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default="Active")
-    created_at = db.Column(db.DateTime, default=datetime.now)
 
 class SMSTransaction(db.Model):
     __tablename__ = "sms_transaction"
@@ -851,7 +802,6 @@ class SMSMessage(db.Model):
         db.Integer,
         db.ForeignKey("school.id"),
         nullable=False,
-        default=1,
         index=True
     )
 
@@ -1962,26 +1912,6 @@ def send_sms_gateway(phone, message):
             "cost": "",
             "response": str(error)
         }
-def get_sms_wallet():
-    school_id = current_school_id()
-
-    wallet = SMSWallet.query.filter_by(
-        school_id=school_id
-    ).first()
-
-    if not wallet:
-        wallet = SMSWallet(
-            school_id=school_id,
-            sms_balance=0,
-            sms_loaded=0,
-            sms_used=0,
-            sms_low_alert=100,
-            sms_enabled=True
-        )
-        db.session.add(wallet)
-        db.session.commit()
-
-    return wallet
 
 def create_sms(
     recipient_name,
@@ -2484,41 +2414,6 @@ def init_database():
             flush=True
         )
 
-    # ---------------------------------------------------------
-    # DEFAULT SMS PACKAGES
-    # ---------------------------------------------------------
-    try:
-        if SMSPackage.query.count() == 0:
-            packages = [
-                SMSPackage(
-                    sms_count=100,
-                    price=120
-                ),
-                SMSPackage(
-                    sms_count=500,
-                    price=550
-                ),
-                SMSPackage(
-                    sms_count=1000,
-                    price=1000
-                ),
-                SMSPackage(
-                    sms_count=5000,
-                    price=4500
-                )
-            ]
-
-            db.session.add_all(packages)
-            db.session.commit()
-
-    except Exception as error:
-        db.session.rollback()
-
-        print(
-            "DEFAULT SMS PACKAGES ERROR:",
-            str(error),
-            flush=True
-        )
 
     # ---------------------------------------------------------
     # PLATFORM SMS POOL
@@ -10010,7 +9905,11 @@ def bulk_sms():
                 f"{failed_count} failed due to SMS balance or SMS disabled."
             )
         else:
-            flash(f"Bulk SMS saved for {count} parents. {count} SMS deducted.")
+            flash(
+                 f"Bulk SMS queued for {count} parents. "
+                "SMS credits will be deducted only after Mobitech accepts each message.",
+                "success"
+            )
 
         return redirect(url_for("bulk_sms", grade=grade))
 
@@ -11780,6 +11679,121 @@ def platform_sms():
 
         money=money
     )
+
+@app.route("/delete_sms_procurement/<int:procurement_id>", methods=["POST"])
+def delete_sms_procurement(procurement_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if session.get("role") != "super admin":
+        flash("Only the Super Admin can delete SMS procurement records.", "danger")
+        return redirect(url_for("dashboard"))
+
+    try:
+        # Lock the procurement record
+        procurement = (
+            SMSProcurement.query
+            .filter_by(id=procurement_id)
+            .with_for_update()
+            .first()
+        )
+
+        if not procurement:
+            flash("SMS procurement record not found.", "danger")
+            return redirect(url_for("platform_sms"))
+
+        sms_count = int(procurement.sms_count or 0)
+        amount_paid = float(procurement.amount_paid or 0)
+
+        # Lock the central platform SMS pool
+        pool = (
+            PlatformSMSPool.query
+            .with_for_update()
+            .first()
+        )
+
+        if not pool:
+            flash("Platform SMS pool was not found.", "danger")
+            return redirect(url_for("platform_sms"))
+
+        # -----------------------------------------------------
+        # SAFETY CHECK
+        # -----------------------------------------------------
+        # We must not reverse SMS stock that has already been
+        # sold/transferred to schools.
+        if int(pool.sms_balance or 0) < sms_count:
+            flash(
+                "This procurement cannot be deleted because some of its "
+                "SMS credits may already have been sold or transferred "
+                "to schools.",
+                "danger"
+            )
+            return redirect(url_for("platform_sms"))
+
+        # -----------------------------------------------------
+        # REVERSE PLATFORM STOCK
+        # -----------------------------------------------------
+        pool.sms_balance = max(
+            0,
+            int(pool.sms_balance or 0) - sms_count
+        )
+
+        pool.sms_loaded = max(
+            0,
+            int(pool.sms_loaded or 0) - sms_count
+        )
+
+        # sms_sold is NOT changed because deleting procurement
+        # does not reverse any school purchase.
+
+        reference_no = procurement.reference_no or ""
+        procurement_id_value = procurement.id
+
+        # -----------------------------------------------------
+        # DELETE PROCUREMENT RECORD
+        # -----------------------------------------------------
+        db.session.delete(procurement)
+
+        db.session.commit()
+
+        # -----------------------------------------------------
+        # AUDIT LOG
+        # -----------------------------------------------------
+        try:
+            log_audit(
+                "Delete SMS Procurement",
+                (
+                    f"Deleted Mobitech procurement ID "
+                    f"{procurement_id_value}; "
+                    f"{sms_count} SMS; "
+                    f"KES {amount_paid:,.2f}; "
+                    f"Reference {reference_no}"
+                )
+            )
+        except Exception:
+            pass
+
+        flash(
+            f"Procurement deleted successfully. "
+            f"{sms_count:,} SMS removed from the Platform SMS Pool.",
+            "success"
+        )
+
+    except Exception as e:
+        db.session.rollback()
+
+        print(
+            "DELETE SMS PROCUREMENT ERROR:",
+            str(e),
+            flush=True
+        )
+
+        flash(
+            "Could not delete the SMS procurement record.",
+            "danger"
+        )
+
+    return redirect(url_for("platform_sms"))
     
 @app.route("/buy_sms", methods=["GET", "POST"])
 def buy_sms():
