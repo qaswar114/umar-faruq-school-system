@@ -2091,7 +2091,30 @@ def send_sms_gateway(phone, message):
             "cost": "",
             "response": str(error)
         }
+# =========================================================
+# SMS SINGLE-SEGMENT VALIDATION
+# =========================================================
 
+# GSM-7 basic alphabet.
+# Characters in this set use 1 septet.
+GSM7_BASIC_CHARS = set(
+    "@£$¥èéùìòÇ\nØø\rÅå"
+    "Δ_ΦΓΛΩΠΨΣΘΞ"
+    "ÆæßÉ"
+    " !\"#¤%&'()*+,-./"
+    "0123456789:;<=>?"
+    "¡ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "ÄÖÑÜ§¿"
+    "abcdefghijklmnopqrstuvwxyz"
+    "äöñüà"
+)
+
+# GSM-7 extension characters.
+# These require the escape character and therefore
+# consume 2 septets each.
+GSM7_EXTENDED_CHARS = set(
+    "^{}\\[~]|€"
+)
 def get_sms_segment_info(message):
     """
     Determine whether a message fits inside one SMS segment.
