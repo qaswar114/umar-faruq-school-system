@@ -12,6 +12,16 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import os
 import base64
 import requests
+
+# =========================================================
+# EDUMANAGE SMS SALES CONFIGURATION
+# =========================================================
+
+SMS_SELLING_PRICE = 0.90
+
+EQUITY_PAYBILL_NUMBER = "247247"
+EQUITY_ACCOUNT_NUMBER = "1000180893918"
+
 # =============================================================
 # MOBITECH SMS CONFIGURATION
 # =============================================================
@@ -11901,37 +11911,32 @@ def buy_sms():
     # SMS PACKAGES SOLD BY EDUMANAGE
     # =========================================================
     #
-    # IMPORTANT:
     # Schools buy SMS from EduManage / Super Admin.
-    # Schools do NOT buy directly from Mobitech.
+    # Schools DO NOT buy directly from Mobitech.
     #
-    # Mobitech supplies the central Platform SMS Pool.
+    # Selling price is controlled globally by:
+    #
+    #     SMS_SELLING_PRICE = 0.90
+    #
     # =========================================================
+    package_sizes = [
+        100,
+        500,
+        1000,
+        2500,
+        5000,
+        10000
+    ]
+
     packages = [
         {
-            "sms": 100,
-            "price": 70
-        },
-        {
-            "sms": 500,
-            "price": 350
-        },
-        {
-            "sms": 1000,
-            "price": 700
-        },
-        {
-            "sms": 2500,
-            "price": 1750
-        },
-        {
-            "sms": 5000,
-            "price": 3500
-        },
-        {
-            "sms": 10000,
-            "price": 7000
+            "sms": sms_count,
+            "price": round(
+                sms_count * SMS_SELLING_PRICE,
+                2
+            )
         }
+        for sms_count in package_sizes
     ]
 
     # =========================================================
@@ -11955,16 +11960,7 @@ def buy_sms():
         # -----------------------------------------------------
         # VERIFY PACKAGE SERVER-SIDE
         # -----------------------------------------------------
-        selected_package = next(
-            (
-                package
-                for package in packages
-                if int(package["sms"]) == package_sms
-            ),
-            None
-        )
-
-        if not selected_package:
+        if package_sms not in package_sizes:
             flash(
                 "Please select a valid SMS package."
             )
@@ -11974,14 +11970,64 @@ def buy_sms():
             )
 
         # -----------------------------------------------------
-        # PRICE COMES FROM SERVER
+        # CALCULATE PRICE SERVER-SIDE
         # -----------------------------------------------------
-        amount = float(
-            selected_package["price"]
+        #
+        # Never trust a price submitted by the browser.
+        # The server calculates the amount using the
+        # EduManage selling price.
+        # -----------------------------------------------------
+        amount = round(
+            package_sms * SMS_SELLING_PRICE,
+            2
         )
 
         # -----------------------------------------------------
-        # PREVENT DUPLICATE PENDING REQUEST
+        # M-PESA PAYMENT REFERENCE
+        # -----------------------------------------------------
+        mpesa_receipt_no = (
+            request.form.get(
+                "mpesa_receipt_no",
+                ""
+            )
+            .strip()
+            .upper()
+        )
+
+        if not mpesa_receipt_no:
+            flash(
+                "Enter the M-Pesa transaction code "
+                "used to pay for the SMS package."
+            )
+
+            return redirect(
+                url_for("buy_sms")
+            )
+
+        # -----------------------------------------------------
+        # PREVENT SAME M-PESA CODE BEING REUSED
+        # -----------------------------------------------------
+        existing_receipt = (
+            SMSPurchase.query
+            .filter(
+                SMSPurchase.mpesa_receipt_no
+                == mpesa_receipt_no
+            )
+            .first()
+        )
+
+        if existing_receipt:
+            flash(
+                "This M-Pesa transaction code has "
+                "already been used for an SMS purchase."
+            )
+
+            return redirect(
+                url_for("buy_sms")
+            )
+
+        # -----------------------------------------------------
+        # PREVENT DUPLICATE PENDING PACKAGE
         # -----------------------------------------------------
         existing_pending = (
             SMSPurchase.query
@@ -12008,12 +12054,20 @@ def buy_sms():
         # CREATE PURCHASE REQUEST
         # -----------------------------------------------------
         #
-        # This does NOT credit the school wallet.
+        # IMPORTANT:
         #
-        # The SMS remains Pending until Super Admin approves it.
+        # Creating this request DOES NOT:
+        #
+        # - deduct SMS from the Platform Pool
+        # - credit the school SMS Wallet
+        # - mark the payment as verified
+        #
+        # Super Admin must verify the Equity/M-Pesa
+        # payment and approve the request.
         # -----------------------------------------------------
         purchase = SMSPurchase(
             school_id=school_id,
+
             package_sms=package_sms,
             amount=amount,
 
@@ -12022,13 +12076,14 @@ def buy_sms():
                 ""
             ),
 
-            # M-Pesa is not active for this workflow yet.
-            # Keep fields ready for future automation.
             mpesa_phone="",
+
             mpesa_checkout_request_id="",
-            mpesa_receipt_no="",
+
+            mpesa_receipt_no=mpesa_receipt_no,
 
             request_date=datetime.now(),
+
             paid_at=None,
 
             status="Pending"
@@ -12069,6 +12124,8 @@ def buy_sms():
                 f"{package_sms:,} SMS from "
                 f"EduManage Platform. "
                 f"Amount: KES {amount:,.2f}. "
+                f"M-Pesa Reference: "
+                f"{mpesa_receipt_no}. "
                 f"Purchase ID: {purchase.id}.",
                 "Communication"
             )
@@ -12086,7 +12143,9 @@ def buy_sms():
         flash(
             f"Your request for {package_sms:,} SMS "
             f"worth KES {amount:,.2f} has been "
-            f"submitted to Super Admin for approval."
+            f"submitted. Super Admin will verify "
+            f"payment reference {mpesa_receipt_no} "
+            f"before approving the SMS credits."
         )
 
         return redirect(
@@ -12145,6 +12204,11 @@ def buy_sms():
 
         pending_count=pending_count,
         completed_count=completed_count,
+
+        sms_selling_price=SMS_SELLING_PRICE,
+
+        equity_paybill=EQUITY_PAYBILL_NUMBER,
+        equity_account=EQUITY_ACCOUNT_NUMBER,
 
         money=money
     )
